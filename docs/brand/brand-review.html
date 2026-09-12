@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Septcats · 品牌标评审（A/B/C）</title>
+<style>
+  /* 本文件是品牌评审稿，允许字面值；产品代码仍走 DESIGN.md tokens */
+  :root { --ink:#1C1E21; --sec:#5B6068; --hair:#E6E6E2; --canvas:#FBFBFA; --accent:#A16207; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Geist,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--canvas); color:var(--ink); }
+  header { padding:32px 40px 8px; }
+  h1 { font-size:22px; font-weight:620; margin:0 0 6px; letter-spacing:-.005em; }
+  p.lead { margin:0; color:var(--sec); font-size:13px; line-height:1.6; max-width:72ch; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; padding:24px 40px 40px; }
+  .card { border:1px solid var(--hair); border-radius:12px; background:#fff; overflow:hidden; }
+  .stage { display:grid; place-items:center; height:260px; border-bottom:1px solid var(--hair); }
+  .stage.dark { background:#16181B; }
+  .stage svg { width:132px; height:132px; }
+  .stage.dark svg { stroke:#E9E9E6; }
+  .stage.dark circle[fill="#A16207"] { fill:#D9A441; }
+  .row { display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid var(--hair); }
+  .row:last-child { border-bottom:0; }
+  .row svg { width:40px; height:40px; flex:none; }
+  .row .t { font-size:13px; font-weight:500; }
+  .row .d { font-size:12px; color:var(--sec); margin-top:2px; line-height:1.55; }
+  .sizes { display:flex; align-items:flex-end; gap:18px; padding:16px 20px; border-bottom:1px solid var(--hair); }
+  .sizes svg { stroke:var(--ink); }
+  .sizes .s16 { width:16px; height:16px; } .sizes .s24 { width:24px; height:24px; } .sizes .s32 { width:32px; height:32px; }
+  .meta { padding:14px 20px 18px; }
+  .name { font-size:13px; font-weight:600; }
+  .why { font-size:12px; color:var(--sec); line-height:1.65; margin-top:6px; }
+  .rec { display:inline-block; margin-left:8px; font-size:11px; color:var(--accent); border:1px solid var(--accent); border-radius:999px; padding:1px 8px; vertical-align:1px; }
+  footer { padding:0 40px 40px; font-size:12px; color:var(--sec); line-height:1.7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Septcats 品牌标 · 三版评审</h1>
+  <p class="lead">按计划书 §17 规格产出：单线描猫、白底、唯一彩色元素为颈圈铃铛（accent 琥珀，深色主题自动换银线）。每版给出大图标与 16/24/32px 小尺寸可辨识度测试。选定后冻结为 assets/brand/septcats.svg。</p>
+</header>
+<div class="grid" id="g"></div>
+<footer>
+  说明：铃铛 fill 在浅色主题 #A16207，深色主题 #D9A441（与 tokens 的 accent 双值一致）。三版线宽同为 3.2/128 视口（约 2.5%），缩到 16px 时线宽约 0.4px，若不可辨将在冻结版中提粗到 4.5/128 并单独出 favicon 变体（PM 处理）。
+</footer>
+<script>
+const marks = {
+A: `<svg viewBox="0 0 128 128" fill="none" stroke="#1C1E21" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M42 34 L47 16 L58 28" /><path d="M86 34 L81 16 L70 28" />
+  <path d="M40 30 Q64 20 88 30 Q96 44 92 60 Q88 72 64 74 Q40 72 36 60 Q32 44 40 30 Z" />
+  <path d="M46 72 Q36 92 40 108 Q48 118 64 118 Q80 118 88 108 Q92 92 82 72" />
+  <path d="M88 106 Q104 104 104 88 Q104 78 96 78" /><path d="M56 100 v12" /><path d="M72 100 v12" />
+  <path d="M52 48 q4 -4 8 0" /><path d="M68 48 q4 -4 8 0" /><path d="M60 56 h8 l-4 5 Z" />
+  <path d="M34 52 h10" /><path d="M34 60 h10" /><path d="M84 52 h10" /><path d="M84 60 h10" />
+  <path d="M46 72 Q64 80 82 72" /><circle cx="64" cy="80" r="4.2" fill="#A16207" stroke="none" /></svg>`,
+B: `<svg viewBox="0 0 128 128" fill="none" stroke="#1C1E21" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M38 46 L44 22 L58 38 Q64 36 70 38 L84 22 L90 46 Q100 58 96 74 Q92 92 74 98 Q94 100 100 86 Q102 100 88 108 Q72 116 52 110 Q30 104 28 80 Q26 60 38 46 Z" />
+  <path d="M50 58 q4 -4 8 0" /><path d="M70 58 q4 -4 8 0" /><path d="M58 66 h8 l-4 5 Z" />
+  <path d="M24 62 h10" /><path d="M24 70 h10" /><path d="M94 62 h10" /><path d="M94 70 h10" />
+  <circle cx="64" cy="92" r="4.2" fill="#A16207" stroke="none" /><path d="M52 86 Q64 92 76 86" stroke-width="2.6" /></svg>`,
+C: `<svg viewBox="0 0 128 128" fill="none" stroke="#1C1E21" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="64" cy="64" r="44" />
+  <path d="M34 34 L40 16 L54 28" /><path d="M94 34 L88 16 L74 28" />
+  <path d="M48 56 q5 -5 10 0" /><path d="M70 56 q5 -5 10 0" />
+  <path d="M60 68 h8 l-4 5 Z" />
+  <path d="M28 60 h12" /><path d="M28 70 h12" /><path d="M88 60 h12" /><path d="M88 70 h12" />
+  <path d="M64 108 q10 0 14 -6" /><circle cx="58" cy="104" r="3.6" fill="#A16207" stroke="none" /></svg>`
+};
+const copy = [
+ ['A','坐姿正视 · 结构派','站得住的猫：头身分离、前爪、卷尾俱全。适合做应用图标主形（macOS/Windows 图标都吃"完整小场景"）。', '推荐：信息量与可缩放性最平衡'],
+ ['B','一笔盘猫 · 灵巧派','闭合轮廓一笔到底，尾巴绕成盘坐。最有"猫须般灵巧"的手写感，但小尺寸下尾部细节先丢。','适合 splash / 关于页大图'],
+ ['C','猫脸徽章 · 极简派','圆脸+耳+闭眼+单铃铛，16px 下辨识度最高。适合做工具栏 favicon / 托盘图。','适合 icon 位，缺身体叙事']
+];
+const g = document.getElementById('g');
+g.innerHTML = copy.map((c,i)=>{ const k=c[0];
+ return `<div class="card">
+  <div class="stage">${marks[k]}</div>
+  <div class="stage dark">${marks[k]}</div>
+  <div class="sizes">${['s16','s24','s32'].map(s=>marks[k].replace('<svg','<svg class="'+s+'"')).join('')}</div>
+  <div class="meta"><div class="name">${k} · ${c[1]}${i===0?'<span class="rec">'+c[3]+'</span>':''}</div><div class="why">${c[2]}${i!==0?'<br>定位：'+c[3]+'。':''}</div></div>
+ </div>`}).join('');
+</script>
+</body>
+</html>

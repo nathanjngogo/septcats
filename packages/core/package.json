@@ -1,0 +1,22 @@
+{
+  "name": "@septcats/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats 纯领域核心：事件/时钟/排序键/分段编解码/重放（零运行时依赖，除 zod）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

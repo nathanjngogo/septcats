@@ -155,4 +155,5 @@ node -e "import('./packages/core/src/index.ts')" # 不要求；仅证明无 elec
 
 ## 7. 边界
 - 不做：UI 视觉、数据库、迁移、同步引擎、打包签名。
-- 依赖白名单：`electron`(devDep，仅 apps/desktop)、`react`、`react-dom`、`electron-vite`、`vite`、`@vitejs/plugin-react`、`typescript`、`vitest`、`@vitest/coverage-v8`、`zod`。除此之外一律先不装，不确定的不装并在报告说明。
+- 依赖白名单：`electron`(devDep，仅 apps/desktop)、`react`、`react-dom`、`electron-vite`、`vite`、`@vitejs/plugin-react`、`typescript`、`vitest`、`@vitest/coverage-v8`、`zod`；devDeps 类型包 `@types/node`、`@types/react`、`@types/react-dom`（PM 已批准，round2 修订）。除此之外一律先不装，不确定的不装并在报告说明。
+- **git 完全由 PM 负责**：你不需要也不得执行任何 git 操作；gitignore 冲突与此无关，忽略之。src/db/README.md 占位文件由 PM 已创建。

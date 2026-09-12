@@ -1,0 +1,49 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 256 256"
+  width="256"
+  height="256"
+  role="img"
+  aria-label="Septcats 占位图标：单线描坐姿猫"
+>
+  <!-- 品牌占位稿（线条猫，白底）。正式 SVG master 由 PM 评审后冻结至 assets/brand/septcats.svg。 -->
+  <rect width="256" height="256" rx="48" fill="#FFFFFF" />
+
+  <g fill="none" stroke="#1C1E21" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 耳朵 -->
+    <path d="M96 106 L86 62 L122 84" />
+    <path d="M160 106 L170 62 L134 84" />
+    <!-- 头 -->
+    <path d="M96 106 C72 112 60 132 64 152 C68 176 96 190 128 190 C160 190 188 176 192 152 C196 132 184 112 160 106 Z" />
+    <!-- 坐姿身体 -->
+    <path d="M94 182 C86 198 84 214 88 226" />
+    <path d="M162 182 C170 198 172 214 168 226" />
+    <path d="M88 226 C110 236 146 236 168 226" />
+  </g>
+
+  <!-- 眼睛 -->
+  <g fill="#1C1E21">
+    <circle cx="108" cy="134" r="7" />
+    <circle cx="148" cy="134" r="7" />
+  </g>
+
+  <!-- 鼻与嘴 -->
+  <g fill="none" stroke="#1C1E21" stroke-width="6" stroke-linecap="round">
+    <path d="M128 148 L122 156" />
+    <path d="M128 148 L134 156" />
+  </g>
+
+  <!-- 双须各二 -->
+  <g fill="none" stroke="#1C1E21" stroke-width="5" stroke-linecap="round">
+    <path d="M84 142 L54 136" />
+    <path d="M84 152 L56 156" />
+    <path d="M172 142 L202 136" />
+    <path d="M172 152 L200 156" />
+  </g>
+
+  <!-- 颈圈铃铛：全图唯一彩色元素 -->
+  <g>
+    <path d="M100 176 C116 188 140 188 156 176" fill="none" stroke="#A16207" stroke-width="8" stroke-linecap="round" />
+    <circle cx="128" cy="192" r="9" fill="#A16207" />
+  </g>
+</svg>

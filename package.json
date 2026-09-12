@@ -1,0 +1,26 @@
+{
+  "name": "septcats",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats - 本地优先的块式笔记与轻量数据库工具（Monorepo）",
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @septcats/desktop dev",
+    "build": "pnpm --filter @septcats/desktop build",
+    "start": "pnpm --filter @septcats/desktop start",
+    "typecheck": "pnpm -r --no-bail run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

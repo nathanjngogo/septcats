@@ -1,0 +1,119 @@
+/*
+ * tokens.placeholder.css —— 骨架期占位 token。
+ *
+ * 正式的视觉 token 由根目录 DESIGN.md 作为单一来源，并在 G2 冻结后由 tokens 构建脚本
+ * 生成；本文件届时整体替换，业务代码只允许引用 var(--*)。
+ * 这里仅声明 --sc-token-placeholder（App.tsx 挂载时读取一次）与少量基础底色。
+ */
+
+:root {
+  --sc-token-placeholder: #a16207;
+  --sc-canvas: #fbfbfa;
+  --sc-surface: #f4f4f2;
+  --sc-ink: #1c1e21;
+  --sc-ink-secondary: #5b6068;
+  --sc-hairline: #e6e6e2;
+  --sc-accent: #a16207;
+  --sc-on-accent: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--sc-canvas);
+  color: var(--sc-ink);
+  font-family: Geist, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px;
+}
+
+.skeleton-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  border: 1px solid var(--sc-hairline);
+  border-radius: 12px;
+  background: var(--sc-surface);
+}
+
+.skeleton-accent {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+}
+
+.skeleton-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.skeleton-hint {
+  margin: 0;
+  color: var(--sc-ink-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.skeleton-button {
+  align-self: flex-start;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--sc-accent);
+  color: var(--sc-on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.skeleton-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.skeleton-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.skeleton-button:focus-visible {
+  outline: 2px solid var(--sc-accent);
+  outline-offset: 2px;
+}
+
+.skeleton-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.skeleton-result {
+  margin: 0;
+  color: var(--sc-ink-secondary);
+  font-family: 'Geist Mono', 'Sarasa Mono SC', Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
