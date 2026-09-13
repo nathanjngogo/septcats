@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { resolvePkgFile } from '../test/pkg-root';
 import { COLOR_NAMES, colors, colorsDark, layout, spacing, zIndex } from './tokens';
 
-const tokensCss = readFileSync('src/tokens.css', 'utf8');
+// 路径经包根锚定，不依赖 cwd——根 vitest 聚合跑时 cwd 是仓库根（见 test/pkg-root.ts）。
+const tokensCss = readFileSync(resolvePkgFile('src/tokens.css'), 'utf8');
 
 describe('token 管线产物（DESIGN.md 的投影）', () => {
   it('每个颜色 token 双值，且浅深不同（§16.3）', () => {

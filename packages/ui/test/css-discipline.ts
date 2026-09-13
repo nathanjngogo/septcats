@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect } from 'vitest';
+import { resolvePkgFile } from './pkg-root';
 
 /**
  * 组件 CSS 的 token 纪律断言（§16.1），与 tokens/no-magic.mjs 同规则：
@@ -9,10 +10,11 @@ import { expect } from 'vitest';
  *
  * 入参是组件 CSS 相对 packages/ui 根的路径（如 'src/Button.css'）。
  * 不用 `?raw` 导入——vitest 在 css:false 下把 CSS 导入 stub 成空串（探针实测），
- * 故直接磁盘读（vitest cwd = 包根）。
+ * 故直接磁盘读；路径经 resolvePkgFile 锚定包根，不依赖 cwd
+ * （根 vitest projects 聚合跑时 cwd 是仓库根）。
  */
 export function expectTokenOnlyCssFile(relPath: string): void {
-  const css = readFileSync(relPath, 'utf8');
+  const css = readFileSync(resolvePkgFile(relPath), 'utf8');
 
   const hex = css.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
   expect(hex, `${relPath} 含字面 hex`).toEqual([]);

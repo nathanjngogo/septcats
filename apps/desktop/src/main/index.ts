@@ -29,6 +29,12 @@ import {
   type MovePageInput,
   type PagesService,
 } from './pages';
+import {
+  createDbViewService,
+  registerDbViewIpc,
+  type DbViewIpcRegistrar,
+  type DbViewService,
+} from './dbview';
 import { initPlatform, type PlatformContext } from './platform';
 
 /**
@@ -113,21 +119,28 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
+/** 起库后造出的两套服务（页面树 / 行内数据库），共用同一 DbHandle 与 actor。 */
+interface DatabaseServices {
+  pages: PagesService;
+  db: DbViewService;
+}
+
 /**
- * 起 DbServer → 迁移 → 造 pagesApi。失败**不阻断开窗**：注册的 IPC 会统一回
- * `E_INVARIANT: 数据库服务不可用`，渲染器据此走 ErrorPanel（比窗都开不出来可诊断）。
+ * 起 DbServer → 迁移 → 造 pagesApi + dbViewService。失败**不阻断开窗**：注册的 IPC 会统一回
+ * `E_INVARIANT`/`E_DB_UNAVAILABLE: 数据库服务不可用`，渲染器据此走 ErrorPanel（比窗都开不出来可诊断）。
  */
-async function bootstrapDatabase(ctx: PlatformContext): Promise<PagesService | null> {
+async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices | null> {
   const logger = ctx.logger.forModule('db');
   try {
     const handle = await startDbServer({ dbPath: ctx.layout.db });
     dbHandle = handle;
     const migrated = await handle.migrate();
     logger.info(`DbServer 就绪 v${String(migrated.from)}→v${String(migrated.to)} pid=${String(handle.pid ?? 0)}`);
-    return createPagesService({
-      executor: handle,
-      actor: deriveActorId(await readMetaValue(handle, 'device_id')),
-    });
+    const actor = deriveActorId(await readMetaValue(handle, 'device_id'));
+    return {
+      pages: createPagesService({ executor: handle, actor }),
+      db: createDbViewService({ executor: handle, actor }),
+    };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
     return null;
@@ -278,7 +291,16 @@ function registerPagesIpc(service: PagesService | null): void {
   });
 }
 
-function registerIpcHandlers(ctx: PlatformContext, service: PagesService | null): void {
+/** 把 `ipcMain.handle` 适配成 DbView 注册器的最小 `handle(channel, listener)` 面。 */
+function dbViewRegistrar(): DbViewIpcRegistrar {
+  return {
+    handle: (channel, listener): void => {
+      ipcMain.handle(channel, (_event: unknown, raw: unknown): Promise<unknown> => listener(raw));
+    },
+  };
+}
+
+function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | null): void {
   const logger = ctx.logger.forModule('main');
 
   ipcMain.handle(CHANNEL_PING, () => {
@@ -295,7 +317,8 @@ function registerIpcHandlers(ctx: PlatformContext, service: PagesService | null)
     layoutRoot: basename(ctx.layout.root),
   }));
 
-  registerPagesIpc(service);
+  registerPagesIpc(services?.pages ?? null);
+  registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
 }
 
 // --- 生命周期 ---------------------------------------------------------------
@@ -307,8 +330,8 @@ async function bootstrapApplication(): Promise<void> {
   const logger = ctx.logger.forModule('main');
   app.setPath('crashDumps', ctx.layout.crashDumps);
 
-  const service = await bootstrapDatabase(ctx);
-  registerIpcHandlers(ctx, service);
+  const services = await bootstrapDatabase(ctx);
+  registerIpcHandlers(ctx, services);
   createWindow();
   logger.info(`app ready, schemaVersion=${SCHEMA_VERSION}`);
 

@@ -81,3 +81,40 @@ export const WORKSPACES_CHANNELS = {
 } as const;
 
 export type WorkspacesChannel = (typeof WORKSPACES_CHANNELS)[keyof typeof WORKSPACES_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 行内数据库（M6 · TASK-T7b-01 §1）
+// ---------------------------------------------------------------------------
+// renderer → main 请求：**pageId 为锚**（collection 通过 collection.getByPage 反查），
+// 只有 `db:create` 例外（此时还没有 pageId，用 workspaceId + parentPageId）。
+// 写路径在 main 侧造 Op 后经 commitOps（Op + 物化同事务）落 DbServer。
+
+export const CHANNEL_DB_CREATE = 'db:create';
+export const CHANNEL_DB_LOAD = 'db:load';
+export const CHANNEL_DB_RENAME = 'db:rename';
+export const CHANNEL_DB_RECORD_CREATE = 'db:record:create';
+export const CHANNEL_DB_RECORD_UPDATE = 'db:record:update';
+export const CHANNEL_DB_RECORD_DELETE = 'db:record:delete';
+export const CHANNEL_DB_PROP_ADD = 'db:prop:add';
+export const CHANNEL_DB_PROP_UPDATE = 'db:prop:update';
+export const CHANNEL_DB_PROP_REMOVE = 'db:prop:remove';
+export const CHANNEL_DB_VIEW_SAVE = 'db:view:save';
+export const CHANNEL_DB_RELATION_SEARCH = 'db:relation:search';
+export const CHANNEL_DB_EXPORT_CSV = 'db:export:csv';
+
+export const DB_CHANNELS = {
+  create: CHANNEL_DB_CREATE,
+  load: CHANNEL_DB_LOAD,
+  rename: CHANNEL_DB_RENAME,
+  recordCreate: CHANNEL_DB_RECORD_CREATE,
+  recordUpdate: CHANNEL_DB_RECORD_UPDATE,
+  recordDelete: CHANNEL_DB_RECORD_DELETE,
+  propAdd: CHANNEL_DB_PROP_ADD,
+  propUpdate: CHANNEL_DB_PROP_UPDATE,
+  propRemove: CHANNEL_DB_PROP_REMOVE,
+  viewSave: CHANNEL_DB_VIEW_SAVE,
+  relationSearch: CHANNEL_DB_RELATION_SEARCH,
+  exportCsv: CHANNEL_DB_EXPORT_CSV,
+} as const;
+
+export type DbChannel = (typeof DB_CHANNELS)[keyof typeof DB_CHANNELS];

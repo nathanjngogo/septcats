@@ -355,6 +355,8 @@ WHERE id = @id AND workspace_id = @workspace_id AND alive = 1`,
   // 写语句带 workspace_id 守卫（越界工作区 = 0 行受影响，不跨工作区写）。
   // backlinks_json 是**设备本地派生态**（relation 反链索引），不进 Op payload；
   // 从分段重建后为空，由后续 relation 编辑重新积累（口径同 page.deleted_at）。
+  // **冲突分支不覆盖 backlinks_json**：值 upsert（改标题/改值）不得清空反链索引，
+  // 反链只由 `record.setBacklinks` 维护（见 main/commit.ts 的 record 物化说明）。
   'record.upsert': {
     kind: 'run',
     sql: `INSERT INTO record (id, collection_id, workspace_id, values_json, backlinks_json, sort_key, alive, version, lamport_c, lamport_d, updated_at)
@@ -363,7 +365,6 @@ ON CONFLICT(id) DO UPDATE SET
   collection_id = excluded.collection_id,
   workspace_id = excluded.workspace_id,
   values_json = excluded.values_json,
-  backlinks_json = excluded.backlinks_json,
   sort_key = excluded.sort_key,
   alive = excluded.alive,
   version = excluded.version,
@@ -399,14 +400,20 @@ WHERE id = @id AND workspace_id = @workspace_id AND alive = 1`,
       updated_at: nullableTimestamp,
     }),
   },
-  // 记录删除前检查：还有多少条存活记录的 values_json 引用了 @id
+  // 记录删除前检查：还有多少条存活记录的 values_json 引用了 @id。
+  // 内层 json_each 的入参必须用 CASE + json_valid 收口：SQLite 的 json_each/json_type
+  // 对非 JSON 文本会直接抛「malformed JSON」（而非返回空集），裸列值「来源」之类会炸。
   'relation.countTargets': {
     kind: 'get',
     sql: `SELECT COUNT(*) AS n
-FROM record r, json_each(r.values_json) AS jt
+FROM record r
 WHERE r.workspace_id = @workspace_id AND r.alive = 1
-  AND json_valid(r.values_json) AND json_type(jt.value) = 'array'
-  AND EXISTS (SELECT 1 FROM json_each(jt.value) AS it WHERE it.value = @id)`,
+  AND EXISTS (
+    SELECT 1
+    FROM json_each(r.values_json) AS jt,
+         json_each(CASE WHEN json_valid(jt.value) AND json_type(jt.value) = 'array' THEN jt.value ELSE '[]' END) AS it
+    WHERE it.value = @id
+  )`,
     params: z.object({ id: idText, workspace_id: workspaceIdText }),
   },
   // 层尾排序键（建记录 = sort_key 追加到尾）：单查询取最大键

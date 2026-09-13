@@ -19,7 +19,7 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 export default defineConfig({
   main: {
     plugins: [
-      externalizeDepsPlugin({ exclude: ['@septcats/core', '@septcats/schema', '@septcats/platform', '@septcats/editor'] }),
+      externalizeDepsPlugin({ exclude: ['@septcats/core', '@septcats/schema', '@septcats/platform', '@septcats/editor', '@septcats/dbview'] }),
     ],
     build: {
       rollupOptions: {

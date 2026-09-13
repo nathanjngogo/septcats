@@ -4,6 +4,7 @@
  */
 import type { Op } from '@septcats/core';
 import type { PageNode } from '@septcats/editor';
+import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 
 export interface SeptcatsAppMeta {
   name: string;
@@ -86,6 +87,47 @@ export interface SeptcatsRecentApi {
   list(): Promise<{ pageIds: string[] }>;
 }
 
+/**
+ * 行内数据库（M6 · TASK-T7b-01 §3）。通道与 `src/shared/ipc.ts` 的 `DB_CHANNELS`
+ * 一对一；`pageId` 为锚，只有 `create` 用 `workspaceId + parentPageId`。
+ * 错误经 Error.message 透传（E_NOT_FOUND / E_REFERRED / E_UNSUPPORTED / E_DB_UNAVAILABLE）。
+ */
+export interface SeptcatsDbApi {
+  /** 建独立 DB 页（同事务 page.upsert + collection.upsert）。 */
+  create(input: {
+    workspaceId: string;
+    parentPageId?: string | null | undefined;
+    title: string;
+  }): Promise<{ pageId: string; collectionId: string }>;
+  load(input: { pageId: string }): Promise<{ collection: CollectionEntity; records: RecordEntity[] }>;
+  rename(input: { pageId: string; title: string }): Promise<{ ok: true }>;
+  recordCreate(input: {
+    pageId: string;
+    values?: Record<string, unknown> | undefined;
+  }): Promise<{ record: RecordEntity }>;
+  recordUpdate(input: {
+    pageId: string;
+    recordId: string;
+    patch: Record<string, unknown>;
+  }): Promise<{ record: RecordEntity }>;
+  recordDelete(input: { pageId: string; ids: string[] }): Promise<{ ok: true }>;
+  propAdd(input: { pageId: string; type: FieldType }): Promise<{ collection: CollectionEntity }>;
+  /** 一期只允许 rename；type 变更 → E_UNSUPPORTED（值迁移后续任务）。 */
+  propUpdate(input: {
+    pageId: string;
+    pid: string;
+    patch: { name?: string | undefined; type?: FieldType | undefined };
+  }): Promise<{ collection: CollectionEntity }>;
+  propRemove(input: { pageId: string; pid: string }): Promise<{ collection: CollectionEntity }>;
+  viewSave(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
+  relationSearch(input: {
+    pageId: string;
+    targetCollectionId: string;
+    query: string;
+  }): Promise<{ candidates: Array<{ id: string; title: string }> }>;
+  exportCsv(input: { pageId: string }): Promise<{ csv: string }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -97,6 +139,8 @@ export interface SeptcatsApi {
   favorites: SeptcatsFavoritesApi;
   recent: SeptcatsRecentApi;
   workspaces: SeptcatsWorkspacesApi;
+  /** 行内数据库（M6）。 */
+  db: SeptcatsDbApi;
 }
 
 declare global {

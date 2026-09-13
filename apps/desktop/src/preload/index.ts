@@ -4,6 +4,7 @@ import {
   BLOCKS_CHANNELS,
   CHANNEL_META,
   CHANNEL_PING,
+  DB_CHANNELS,
   FAVORITES_CHANNELS,
   PAGES_CHANNELS,
   RECENT_CHANNELS,
@@ -65,6 +66,29 @@ const api: SeptcatsApi = {
     rename: (input) => ipcRenderer.invoke(WORKSPACES_CHANNELS.rename, input) as Promise<{ id: string }>,
     switch: (input) => ipcRenderer.invoke(WORKSPACES_CHANNELS.switch, input) as Promise<{ activeId: string }>,
     onChanged: (listener) => subscribe(WORKSPACES_CHANNELS.changed, listener),
+  },
+  db: {
+    create: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.create, input) as ReturnType<SeptcatsApi['db']['create']>,
+    load: (input) => ipcRenderer.invoke(DB_CHANNELS.load, input) as ReturnType<SeptcatsApi['db']['load']>,
+    rename: (input) => ipcRenderer.invoke(DB_CHANNELS.rename, input) as ReturnType<SeptcatsApi['db']['rename']>,
+    recordCreate: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.recordCreate, input) as ReturnType<SeptcatsApi['db']['recordCreate']>,
+    recordUpdate: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.recordUpdate, input) as ReturnType<SeptcatsApi['db']['recordUpdate']>,
+    recordDelete: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.recordDelete, input) as ReturnType<SeptcatsApi['db']['recordDelete']>,
+    propAdd: (input) => ipcRenderer.invoke(DB_CHANNELS.propAdd, input) as ReturnType<SeptcatsApi['db']['propAdd']>,
+    propUpdate: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.propUpdate, input) as ReturnType<SeptcatsApi['db']['propUpdate']>,
+    propRemove: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.propRemove, input) as ReturnType<SeptcatsApi['db']['propRemove']>,
+    viewSave: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.viewSave, input) as ReturnType<SeptcatsApi['db']['viewSave']>,
+    relationSearch: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.relationSearch, input) as ReturnType<SeptcatsApi['db']['relationSearch']>,
+    exportCsv: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.exportCsv, input) as ReturnType<SeptcatsApi['db']['exportCsv']>,
   },
 };
 

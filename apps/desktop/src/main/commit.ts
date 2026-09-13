@@ -14,6 +14,20 @@
  * | move     | `page.setChildrenOrder` | 改 parent + 同层 sort_key |
  * | reorder  | `page.setSort`        | 只改 sort_key（含整层重平衡批量） |
  * | delete   | `page.setDeleted`     | soft=进回收站（deleted_at=op.at）/ purge=彻底删除标记（0） |
+ *
+ * T7b 扩展（M6 行内数据库）：目标表新增 `collection` / `record`，Op payload 用
+ * **领域形态**（`schema`/`views`/`values` 是 JSON 安全对象，同 schema-v1 §4），
+ * 由本文件 stringify 成物化列（`schema_json`/`views_json`/`values_json`）：
+ * | table      | kind   | 语句                  | 说明 |
+ * |---|---|---|---|
+ * | collection | upsert | `collection.upsert`   | 新建/改名/属性变更（整对象写，version+lamport 前进） |
+ * | collection | patch  | `collection.setViews` | 视图落盘（只动 views_json 的局部 patch） |
+ * | record     | upsert | `record.upsert`       | 记录新建/改值（backlinks_json 由 setBacklinks 维护，upsert 不覆盖） |
+ * | record     | delete | `record.softDelete`   | soft delete（alive=0） |
+ *
+ * **派生物化**：relation 双写里对方记录的 backlink 索引（`backlinks_json`）是**设备本地
+ * 派生态**，不进 Op payload；由调用方经 `extraStatements` 在同一 batch（同事务）追加
+ * `record.setBacklinks` 步骤（见 dbview.ts 的 relation 双写）。
  */
 import { encodeOp } from '@septcats/core';
 import type { Op } from '@septcats/core';
@@ -46,6 +60,12 @@ export interface CommitOptions {
   /** 活动工作区（Q4 单库分片）：所有物化语句的 workspace_id 都取它，越界即 0 行。 */
   readonly workspaceId: string;
   readonly deletionMode?: DeletionMode;
+  /**
+   * 同事务追加的物化步骤（**派生态**写入，如 relation 反链 `record.setBacklinks`）。
+   * 排在全部 op 的 ledger+物化之后，仍属同一 batch/事务：任一失败整体回滚。
+   * 派生态不进 Op payload（见 v3 注释），故只能由调用方在 batch 内直接追加。
+   */
+  readonly extraStatements?: readonly DbBatchStatement[];
 }
 
 function malformed(op: Op, reason: string): CommitError {
@@ -107,6 +127,21 @@ function readRequiredString(op: Op, key: string): string {
   return value;
 }
 
+/**
+ * 读「领域对象」字段并序列化成物化列文本（collection.schema/views、record.values）。
+ * payload 里应放 JSON 安全对象（schema-v1 §4）；已传字符串则原样采用（幂等重建路径）。
+ */
+function readJsonField(op: Op, key: string, fallback: string): string {
+  const value = op.payload[key];
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return JSON.stringify(value);
+}
+
 /** upsert：整对象 payload → page.upsert 参数（version 取 lamport.c，不由 payload 携带）。 */
 function pageUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
   return {
@@ -127,16 +162,103 @@ function pageUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
   };
 }
 
+/** collection upsert：整对象写（name/schema/views 一起，version+lamport 前进）。 */
+function collectionUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
+  return {
+    sqlId: 'collection.upsert',
+    params: {
+      id: op.target.id,
+      page_id: readNullableString(op, 'page_id'),
+      workspace_id: workspaceId,
+      name: readString(op, 'name', ''),
+      schema_json: readJsonField(op, 'schema', '{}'),
+      views_json: readJsonField(op, 'views', '[]'),
+      alive: readNumber(op, 'alive', 1) === 0 ? 0 : 1,
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
+}
+
+/** collection patch：视图落盘（只动 views_json）。 */
+function collectionSetViewsStatement(op: Op, workspaceId: string): DbBatchStatement {
+  return {
+    sqlId: 'collection.setViews',
+    params: {
+      id: op.target.id,
+      workspace_id: workspaceId,
+      views_json: readJsonField(op, 'views', '[]'),
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
+}
+
+/**
+ * record upsert：整对象写值表。**不携带 backlinks**（设备本地派生态）：
+ * `record.upsert` 的冲突分支不覆盖 `backlinks_json`，反链由 `record.setBacklinks` 单独维护。
+ */
+function recordUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
+  return {
+    sqlId: 'record.upsert',
+    params: {
+      id: op.target.id,
+      collection_id: readRequiredString(op, 'collection_id'),
+      workspace_id: workspaceId,
+      values_json: readJsonField(op, 'values', '{}'),
+      backlinks_json: '{}',
+      sort_key: readRequiredString(op, 'sort_key'),
+      alive: readNumber(op, 'alive', 1) === 0 ? 0 : 1,
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
+}
+
+/** record delete：soft delete（alive=0）。 */
+function recordSoftDeleteStatement(op: Op): DbBatchStatement {
+  return {
+    sqlId: 'record.softDelete',
+    params: {
+      id: op.target.id,
+      version: op.lamport.c,
+      updated_at: op.at,
+    },
+  };
+}
+
 /** 单个 op → 物化语句。未知 kind/表一律 throw（绝不静默跳过，避免真相层与物化层分叉）。 */
 export function materializeStatement(
   op: Op,
   workspaceId: string,
   deletionMode: DeletionMode = 'soft',
 ): DbBatchStatement {
-  if (op.target.table !== 'page') {
-    throw new CommitError('E_UNSUPPORTED_TARGET', `commitOps 暂不支持 target.table=${op.target.table}`);
+  switch (op.target.table) {
+    case 'page':
+      return materializePageStatement(op, workspaceId, deletionMode);
+    case 'collection':
+      return materializeCollectionStatement(op, workspaceId);
+    case 'record':
+      return materializeRecordStatement(op, workspaceId);
+    default:
+      throw new CommitError(
+        'E_UNSUPPORTED_TARGET',
+        `commitOps 暂不支持 target.table=${op.target.table}`,
+      );
   }
+}
 
+function materializePageStatement(
+  op: Op,
+  workspaceId: string,
+  deletionMode: DeletionMode,
+): DbBatchStatement {
   switch (op.kind) {
     case 'upsert':
       return pageUpsertStatement(op, workspaceId);
@@ -200,8 +322,34 @@ export function materializeStatement(
 
     default: {
       const exhaustive: never = op.kind;
-      throw new CommitError('E_MALFORMED_OP', `未知 op.kind：${String(exhaustive)}`);
+      throw new CommitError('E_MALFORMED_OP', `未知 page op.kind：${String(exhaustive)}`);
     }
+  }
+}
+
+function materializeCollectionStatement(op: Op, workspaceId: string): DbBatchStatement {
+  switch (op.kind) {
+    case 'upsert':
+      return collectionUpsertStatement(op, workspaceId);
+    case 'patch':
+      return collectionSetViewsStatement(op, workspaceId);
+    default:
+      throw new CommitError('E_MALFORMED_OP', `collection 暂不支持 op.kind=${op.kind}`);
+  }
+}
+
+function materializeRecordStatement(op: Op, workspaceId: string): DbBatchStatement {
+  switch (op.kind) {
+    case 'upsert':
+      return recordUpsertStatement(op, workspaceId);
+    case 'delete': {
+      if (Object.keys(op.payload).length > 0) {
+        throw malformed(op, 'delete 的 payload 必须为空对象（schema-v1 §1）');
+      }
+      return recordSoftDeleteStatement(op);
+    }
+    default:
+      throw new CommitError('E_MALFORMED_OP', `record 暂不支持 op.kind=${op.kind}`);
   }
 }
 
@@ -247,6 +395,12 @@ export async function commitOps(
   for (const op of ops) {
     stmts.push(ledgerStatement(op, null));
     stmts.push(materializeStatement(op, options.workspaceId, mode));
+  }
+  for (const extra of options.extraStatements ?? []) {
+    stmts.push(extra);
+  }
+  if (stmts.length === 0) {
+    return 0;
   }
   await executor.batch(stmts);
   return ops.length;

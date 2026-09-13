@@ -31,6 +31,8 @@ import {
   type BlockAction,
   type SelectionRect,
 } from '@septcats/editor/react';
+import { Button } from '@septcats/ui';
+import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
 const PAGE_ID = 'pg00000000000000000000demo';
@@ -38,6 +40,20 @@ const PAGE_ID = 'pg00000000000000000000demo';
 const PAGE_ACTOR = 'desktop0001';
 /** 演示用图片 sha（内容寻址 file_id 的形状，不是真文件）。 */
 const DEMO_IMAGE_SHA = 'a'.repeat(64);
+
+/** PageView 的内容分发输入（T7b：database 页走 DbPage，其余走编辑器）。 */
+export interface PageViewPage {
+  id: string;
+  title: string;
+  /** 一期 page 行无 kind 列；'database' 表示行内数据库页（缺省按普通编辑器页处理）。 */
+  kind?: 'page' | 'database' | undefined;
+}
+
+export interface PageViewProps {
+  page?: PageViewPage | undefined;
+}
+
+const DEMO_PAGE: PageViewPage = { id: PAGE_ID, title: '暗物质探测实验笔记', kind: 'page' };
 
 type EditorHandle = Exclude<
   Parameters<NonNullable<ComponentProps<typeof Editor>['onReady']>>[0],
@@ -113,12 +129,14 @@ function blockIdentityOf(target: EventTarget | null): string | null {
   return target.closest('[data-id]')?.getAttribute('data-id') ?? null;
 }
 
-export function PageView() {
+export function PageView({ page = DEMO_PAGE }: PageViewProps) {
   const [initialDoc] = useState(buildDemoDoc);
   const docRef = useRef<BlockDoc>(initialDoc);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const ledgerRef = useRef<Op[]>([]);
   const dragIdRef = useRef<string | null>(null);
+  /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载）。 */
+  const [dbPageId, setDbPageId] = useState<string | null>(null);
 
   const [editor, setEditor] = useState<EditorHandle | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -396,13 +414,38 @@ export function PageView() {
     [editor, session],
   );
 
+  const convertToDatabase = useCallback((): void => {
+    void (async () => {
+      const workspaces = await window.septcats.workspaces.list();
+      const workspaceId = workspaces.activeId;
+      if (workspaceId === null) {
+        console.error('[PageView] 转为数据库失败：无活动工作区');
+        return;
+      }
+      const created = await window.septcats.db.create({ workspaceId, title: page.title });
+      setDbPageId(created.pageId);
+    })().catch((error: unknown) => {
+      console.error('[PageView] 转为数据库失败（不吞）', error);
+    });
+  }, [page.title]);
+
+  if (page.kind === 'database') {
+    return <DbPage pageId={page.id} />;
+  }
+  if (dbPageId !== null) {
+    return <DbPage pageId={dbPageId} />;
+  }
+
   return (
     <div className="pv-root" ref={containerRef}>
       <div className="pv-title-row">
         <span className="pv-page-icon" aria-hidden="true">
           🔭
         </span>
-        <h1 className="pv-page-title">暗物质探测实验笔记</h1>
+        <h1 className="pv-page-title">{page.title}</h1>
+        <Button variant="secondary" size="sm" onClick={convertToDatabase}>
+          转为数据库
+        </Button>
       </div>
       <div
         className="pv-body"
