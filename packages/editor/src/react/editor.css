@@ -1,0 +1,298 @@
+/*
+ * editor.css —— 编辑器视图样式。
+ * 纪律：只用 DESIGN.md 产出的 var(--sc-*) token（本包不依赖 packages/ui，
+ * 但 token 由 apps 层统一 import 后全局生效）；字面值仅 1px / 0 / 100% 之类结构性数值。
+ * 视觉基准：docs/mockups/01-editor.html（.blocks / .handle / .menu / .floating）。
+ */
+
+.sc-editor {
+  color: var(--sc-color-ink);
+  font: var(--sc-text-editor-body);
+  letter-spacing: var(--sc-tracking-editor-body);
+  max-width: var(--sc-space-editor-measure);
+  margin: 0 auto;
+  padding: var(--sc-space-md) 0 var(--sc-space-xxl);
+}
+
+.sc-editor .ProseMirror {
+  outline: none;
+  min-height: var(--sc-space-editor-measure);
+}
+
+.sc-block {
+  position: relative;
+  padding: var(--sc-space-xs) 0;
+  border-radius: var(--sc-radius-sm);
+}
+
+.sc-block:focus-within {
+  background: color-mix(in srgb, var(--sc-color-surface) 42%, transparent);
+}
+
+.sc-block--heading {
+  padding-top: var(--sc-space-xs);
+  padding-bottom: var(--sc-space-xxs);
+}
+
+h1.sc-block--heading {
+  font: var(--sc-text-h1);
+  letter-spacing: var(--sc-tracking-h1);
+  margin: var(--sc-space-md) 0 0;
+}
+
+h2.sc-block--heading {
+  font: var(--sc-text-h2);
+  letter-spacing: var(--sc-tracking-h2);
+  margin: var(--sc-space-md) 0 0;
+}
+
+h3.sc-block--heading {
+  font: var(--sc-text-h3);
+  margin: var(--sc-space-sm) 0 0;
+}
+
+.sc-block--bulleted_list,
+.sc-block--numbered_list,
+.sc-block--to_do {
+  margin: 0;
+  padding-left: var(--sc-space-xl);
+}
+
+.sc-block--quote,
+.sc-block--callout {
+  margin: 0;
+  padding-left: var(--sc-space-md);
+  border-left: 2px solid var(--sc-color-hairline-strong);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-block--callout {
+  border-left-color: var(--sc-color-accent);
+  color: var(--sc-color-ink);
+}
+
+.sc-block--code {
+  font: var(--sc-text-code);
+  background: var(--sc-color-surface);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  padding: var(--sc-space-md);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.sc-block--code--wrap .sc-code-body {
+  white-space: pre-wrap;
+}
+
+.sc-block--divider {
+  border: 0;
+  border-top: 1px solid var(--sc-color-hairline);
+  margin: var(--sc-space-sm) 0;
+}
+
+.sc-block--image {
+  margin: 0;
+  border-radius: var(--sc-radius-md);
+  overflow: hidden;
+  background: var(--sc-color-surface);
+}
+
+.sc-image-body {
+  display: block;
+  max-width: 100%;
+}
+
+.sc-mark-code {
+  font: var(--sc-text-code);
+  background: var(--sc-color-surface);
+  border-radius: var(--sc-radius-xs);
+  padding: 0 var(--sc-space-xxs);
+}
+
+.sc-link--blocked {
+  text-decoration: underline dotted var(--sc-color-danger);
+  text-underline-offset: 2px;
+}
+
+.sc-mention {
+  color: var(--sc-color-accent);
+  background: var(--sc-color-accent-soft);
+  border-radius: var(--sc-radius-xs);
+  padding: 0 var(--sc-space-xxs);
+}
+
+/* 块手柄：hover 显形（对齐 mockup .handle 的 28px 命中区） */
+.sc-blockcontrol {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.sc-blockcontrol--visible,
+.sc-editor:hover .sc-blockcontrol {
+  opacity: 1;
+}
+
+.sc-blockcontrol__handle {
+  display: grid;
+  place-items: center;
+  width: var(--sc-size-control-sm);
+  height: var(--sc-size-control-sm);
+  border-radius: var(--sc-radius-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-blockcontrol__handle:hover {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-blockcontrol__handle:disabled {
+  opacity: 0;
+  cursor: default;
+}
+
+.sc-blockcontrol__menu {
+  position: absolute;
+  z-index: var(--sc-z-dropdown);
+  top: calc(var(--sc-size-control-sm) + var(--sc-space-xs));
+  left: 0;
+  min-width: 264px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: var(--sc-space-xs);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-blockcontrol__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  width: 100%;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  text-align: left;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-blockcontrol__item--active {
+  background: var(--sc-color-accent-soft);
+}
+
+.sc-blockcontrol__glyph {
+  display: grid;
+  place-items: center;
+  width: var(--sc-space-lg);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-blockcontrol__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sc-blockcontrol__hint {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+/* 斜杠菜单（对齐 mockup .menu） */
+.sc-slashmenu {
+  position: absolute;
+  z-index: var(--sc-z-dropdown);
+  min-width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: var(--sc-space-xs);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-slashmenu__title {
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-slashmenu__empty {
+  padding: var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-slashmenu__item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  text-align: left;
+}
+
+.sc-slashmenu__item--active {
+  background: var(--sc-color-accent-soft);
+}
+
+.sc-slashmenu__label {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-slashmenu__hint {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+/* 选区浮动工具条（对齐 mockup .floating） */
+.sc-selectiontoolbar {
+  position: absolute;
+  z-index: var(--sc-z-sticky-bar);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  height: var(--sc-layout-row-h);
+  padding: 0 var(--sc-space-xs);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-selectiontoolbar__btn {
+  display: grid;
+  place-items: center;
+  min-width: var(--sc-size-control-sm);
+  height: var(--sc-size-control-sm);
+  border-radius: var(--sc-radius-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-selectiontoolbar__btn:hover:not(:disabled) {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+}
+
+.sc-selectiontoolbar__btn--active {
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-accent);
+}
+
+.sc-selectiontoolbar__btn:disabled {
+  color: var(--sc-color-ink-faint);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sc-selectiontoolbar__glyph {
+  font: var(--sc-text-ui-sm);
+}

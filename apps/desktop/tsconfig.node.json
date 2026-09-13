@@ -9,6 +9,7 @@
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
     "src/db/**/*.ts",
+    "src/shared/**/*.ts",
     "src/types/**/*.d.ts",
     "test/**/*.ts"
   ]

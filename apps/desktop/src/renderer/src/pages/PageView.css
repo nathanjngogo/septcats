@@ -1,0 +1,62 @@
+/*
+ * PageView 骨架样式（apps 侧；编辑器自身样式在 @septcats/editor/editor.css）。
+ * 只用 var(--sc-*) token，视觉基准 = docs/mockups/01-editor.html 的 .editor / .handle / .dragline。
+ */
+
+.pv-root {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--sc-color-canvas);
+  padding: var(--sc-space-xl) var(--sc-space-gutter) var(--sc-space-xxl);
+}
+
+.pv-title-row {
+  max-width: var(--sc-space-editor-measure);
+  margin: 0 auto var(--sc-space-md);
+}
+
+.pv-page-icon {
+  font-size: var(--sc-space-xxl);
+  line-height: 1;
+}
+
+.pv-page-title {
+  font: var(--sc-text-h1);
+  letter-spacing: var(--sc-tracking-h1);
+  margin: var(--sc-space-sm) 0 0;
+}
+
+.pv-body {
+  position: relative;
+  max-width: var(--sc-space-editor-measure);
+  margin: 0 auto;
+}
+
+.pv-handle {
+  position: absolute;
+  left: calc(var(--sc-space-gutter) * -1);
+  width: var(--sc-space-xl);
+  display: grid;
+  place-items: center;
+  cursor: grab;
+}
+
+.pv-dropline {
+  height: 2px;
+  margin: var(--sc-space-xxs) 0;
+  background: var(--sc-color-accent);
+  border-radius: var(--sc-radius-full);
+  position: relative;
+}
+
+.pv-dropline::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--sc-space-xs) * -1);
+  top: -3px;
+  width: var(--sc-space-sm);
+  height: var(--sc-space-sm);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-accent);
+}

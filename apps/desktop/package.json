@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@septcats/core": "workspace:*",
+    "@septcats/editor": "workspace:*",
     "@septcats/platform": "workspace:*",
     "@septcats/schema": "workspace:*",
     "@septcats/ui": "workspace:*",

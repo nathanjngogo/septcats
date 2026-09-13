@@ -1,0 +1,38 @@
+{
+  "name": "@septcats/editor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats 块编辑器：M3 块模型 ↔ ProseMirror 投影（Tiptap v3）+ 输入规则/斜杠菜单/手柄/选区工具条（真相是块模型，PM doc 只是投影）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react/index.ts",
+    "./editor.css": "./src/react/editor.css"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@septcats/core": "workspace:*",
+    "@tiptap/core": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "zod": "^4.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^15.0.7",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "jsdom": "^25.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

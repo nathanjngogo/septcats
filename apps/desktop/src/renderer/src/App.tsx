@@ -5,7 +5,6 @@ import {
   Breadcrumb,
   CaretRight,
   Clock,
-  EmptyState,
   FileText,
   FolderSimple,
   GearSix,
@@ -18,6 +17,7 @@ import {
   SyncPill,
   Trash,
 } from '@septcats/ui';
+import { PageView } from './pages/PageView';
 import './App.css';
 
 interface TreeRowProps {
@@ -45,8 +45,8 @@ function TreeRow({ label, icon, depth = 0, active = false, branch = false, count
 }
 
 /**
- * M0 骨架的应用外壳（TASK-T4-01 §4）：
- * 顶栏（面包屑 + 搜索/同步/设置）+ 侧栏（3 层假树）+ 内容区占位。
+ * 应用外壳（M0 骨架 → T5 内容区接入编辑器）：
+ * 顶栏（面包屑 + 搜索/同步/设置）+ 侧栏（3 层假树）+ 内容区 PageView。
  * 视觉基准 = docs/mockups/01-editor.html 与 02-sidebar-tree.html，正式视觉由 PM 真机截图复审。
  */
 export function App() {
@@ -92,10 +92,7 @@ export function App() {
         </div>
       }
     >
-      <EmptyState
-        title="工程骨架就绪"
-        description="组件层与 DESIGN.md token 管线已接通。编辑器将在 M4 接入，先把这份骨架跑成可日常使用的壳。"
-      />
+      <PageView />
     </AppShell>
   );
 }
