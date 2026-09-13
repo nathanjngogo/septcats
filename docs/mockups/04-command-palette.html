@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>04 命令面板 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>.bg-blur { filter: blur(2px) saturate(.9); pointer-events: none; } .scrim-hint { margin-top:auto; padding:var(--sp-md) var(--sp-lg); border-top:1px solid var(--color-hairline); display:flex; gap:var(--sp-lg); font:var(--text-ui-xs); color:var(--color-ink-faint);} .scrim-hint b{font-family:var(--font-mono);font-weight:400;color:var(--color-ink-secondary)}</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<!-- 背景：编辑器页（模糊处理） -->
+<div class="shell bg-blur" aria-hidden="true">
+  <div class="topbar"><div class="crumb"><span class="cur">暗物质探测实验笔记</span></div></div>
+  <div class="body"><aside class="sidebar"></aside><main class="canvas"><article class="editor" style="padding-top:var(--sp-xxl)">
+    <h1 class="page-title">暗物质探测实验笔记</h1>
+    <div class="blocks"><div class="block b-p"><span></span><span></span><div class="content">本页汇总 LZ 类稀有事件探测的实验现状与文献线索。</div></div>
+    <div class="block b-h2"><span></span><span></span><div class="content" style="font:var(--text-h2)">一、探测器矩阵</div></div></div>
+  </article></main></div>
+</div>
+
+<div class="overlay">
+  <div class="palette" role="dialog" aria-label="命令面板">
+    <div class="palette-input">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+      <span class="q">移动</span><span class="caret"></span>
+      <span class="t2" style="margin-left:auto;font:var(--text-ui-xs);color:var(--color-ink-faint)">Esc 关闭</span>
+    </div>
+    <div class="pgroup">命令</div>
+    <div class="prow"><svg class="ic" viewBox="0 0 24 24"><path d="M9 12h6M12 9v6M5 5h14v14H5Z" /><path d="m9 9 .01.01"/></svg><span class="t1"><b style="font-weight:500">移动</b>到…（将当前页面移入子节点）</span><span class="t2"><span class="kbd">Ctrl</span> <span class="kbd">Shift</span> <span class="kbd">M</span></span></div>
+    <div class="prow sel"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v14M7 8l5-5 5 5"/><path d="M5 20h14"/></svg><span class="t1"><b style="font-weight:500">移动</b>到回收站</span><span class="t2"><span class="kbd">Del</span></span></div>
+    <div class="prow"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17"/></svg><span class="t1"><b style="font-weight:500">移动</b>布局：切换双栏</span><span class="t2">界面</span></div>
+    <div class="pgroup">页面与跳转</div>
+    <div class="prow"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg><span class="t1">探测器矩阵 <span class="dim">/ 研究 / 暗物质探测实验笔记</span></span><span class="t2">页面</span></div>
+    <div class="prow"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg><span class="t1">实验数据台账 <span class="dim">/ 研究</span></span><span class="t2">数据库</span></div>
+    <div class="scrim-hint"><span><b>↑↓</b> 选择</span><span><b>Enter</b> 执行</span><span><b>&gt;</b> 仅命令</span><span><b>@</b> 仅页面</span></div>
+  </div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>

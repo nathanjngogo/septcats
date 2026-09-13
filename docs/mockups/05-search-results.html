@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>05 搜索结果 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+.results { max-width: 760px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-gutter) 120px; }
+.f-bar { display:flex; gap:var(--sp-sm); margin-bottom:var(--sp-xl); flex-wrap: wrap; align-items:center; }
+.f-bar .qchip { display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 var(--sp-md);border-radius:var(--rounded-full);background:var(--color-accent-soft);color:var(--color-accent);font:var(--text-ui-xs); }
+.res-h { font: var(--text-ui-xs); color: var(--color-ink-faint); margin: var(--sp-xl) 0 var(--sp-sm); }
+.res { display:block; text-decoration:none; padding: var(--sp-md) var(--sp-md) var(--sp-md) var(--sp-md); border-radius: var(--rounded-md); border: 1px solid transparent; }
+.res:hover { background: var(--color-surface); }
+.res.sel { background: var(--color-surface-raised); border-color: var(--color-hairline); box-shadow: var(--shadow-popover); }
+.res h3 { font: var(--text-h3); margin: 0 0 4px; display:flex; align-items:center; gap:8px; }
+.res .path { font: var(--text-ui-xs); color: var(--color-ink-faint); margin-bottom: var(--sp-sm); }
+.res .snip { font: var(--text-ui-sm); color: var(--color-ink-secondary); line-height: 1.65; }
+.res .snip mark { font-weight: 500; }
+.res .meta { margin-top:6px; font: 11px var(--font-mono); color: var(--color-ink-faint); }
+.skelwrap { display:flex; flex-direction:column; gap:var(--sp-md); margin-top:var(--sp-lg); }
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar">
+    <button class="iconbtn" aria-label="返回"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="crumb"><span class="cur">搜索</span></div>
+    <div class="top-actions"><span class="sync-pill"><span class="dot"></span>已同步</span></div>
+  </div>
+  <div class="body"><aside class="sidebar"><div class="side-scroll" style="padding-top:var(--sp-md)">
+    <div class="nav-row"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>全部</div>
+    <div class="nav-row"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>页面</div>
+    <div class="nav-row active"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17"/></svg>数据库</div>
+    <div class="nav-row"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>最近编辑</div>
+  </div></aside>
+  <main class="canvas">
+    <div class="results">
+      <div class="f-bar">
+        <span class="qchip"><svg class="ic" style="width:12px;height:12px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>核反冲</span>
+        <button class="chip">范围：个人工作区<svg class="ic" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button class="chip">类型：全部<svg class="ic" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <span style="margin-left:auto;font:var(--text-ui-xs);color:var(--color-ink-faint)">12 条结果 · 38 ms</span>
+      </div>
+
+      <div class="res-h">页面 · 9</div>
+      <a class="res sel" href="#">
+        <h3><svg class="ic" style="width:15px;height:15px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>暗物质探测实验笔记</h3>
+        <div class="path">研究 / 暗物质探测实验笔记</div>
+        <div class="snip">…复核 LZ <mark>核反冲</mark>效率曲线的统计误差来源，并与 XENONnT 的<mark>核反冲</mark>能谱拟合结果对齐…</div>
+        <div class="meta">编辑于 2026-09-11 21:47 · 命中 3 处</div>
+      </a>
+      <a class="res" href="#">
+        <h3><svg class="ic" style="width:15px;height:15px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>本底估算与中子污染</h3>
+        <div class="path">研究 / 暗物质探测实验笔记 / 本底估算</div>
+        <div class="snip">…快<mark>中子</mark>与<mark>核反冲</mark>信号在 S2/S1 比上高度简并，需…</div>
+        <div class="meta">2026-08-30</div>
+      </a>
+      <a class="res" href="#">
+        <h3><svg class="ic" style="width:15px;height:15px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>实验数据台账</h3>
+        <div class="path">研究</div>
+        <div class="snip">…导出字段：live-time / 曝光量 / <mark>核反冲</mark>候选事例数…</div>
+        <div class="meta">2026-07-19</div>
+      </a>
+      <div class="res-h">数据库记录 · 3</div>
+      <a class="res" href="#">
+        <h3>实验数据台账 <span class="tag" style="margin-left:6px">行 17 / 记录：LZ-2024-run3</span></h3>
+        <div class="snip">备注列：「<mark>核反冲</mark>等效能 4.2 keVnr，接受」…</div>
+      </a>
+      <div class="res-h" style="margin-top:var(--sp-xxl)">索引状态演示 · 骨架屏</div>
+      <div class="skelwrap">
+        <div style="display:flex;gap:var(--sp-md);align-items:center"><span class="skel" style="width:22px;height:22px;border-radius:var(--rounded-sm)"></span><div style="flex:1"><div class="skel" style="width:45%;height:14px;margin-bottom:8px"></div><div class="skel" style="width:80%;height:10px"></div></div></div>
+        <div style="display:flex;gap:var(--sp-md);align-items:center"><span class="skel" style="width:22px;height:22px;border-radius:var(--rounded-sm)"></span><div style="flex:1"><div class="skel" style="width:38%;height:14px;margin-bottom:8px"></div><div class="skel" style="width:72%;height:10px"></div></div></div>
+      </div>
+      <p class="db-sub" style="margin-top:var(--sp-lg)">本屏要点：查询 chip 可移除 / 范围与类型筛选 / <mark>高亮走 selection token</mark> / 结果含路径与时间 / 骨架形状与真实结果行同构 / 深色下高亮仍可读。</p>
+    </div>
+  </main></div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>

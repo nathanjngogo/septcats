@@ -1,0 +1,89 @@
+/* Septcats tokens —— 由 DESIGN.md front matter 人工映射（PM 维护）。
+   产品代码将改由 build-tokens.mjs 自动生成；本文件供 docs/mockups 直接引用。 */
+:root {
+  --color-canvas: #FBFBFA;
+  --color-surface: #F4F4F2;
+  --color-surface-raised: #FFFFFF;
+  --color-ink: #1C1E21;
+  --color-ink-secondary: #5B6068;
+  --color-ink-faint: #8A8F98;
+  --color-hairline: #E6E6E2;
+  --color-hairline-strong: #D2D2CC;
+  --color-accent: #A16207;
+  --color-accent-soft: #F6EEDD;
+  --color-on-accent: #FFFFFF;
+  --color-danger: #8A2B1C;
+  --color-danger-soft: #FBEFEC;
+  --color-success: #3F6B34;
+  --color-focus-ring: #A16207;
+  --color-selection: #E8DDBC;
+
+  --font-ui: Geist, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: "Geist Mono", "Sarasa Mono SC", "Microsoft YaHei Mono", Consolas, monospace;
+
+  --text-editor: 400 16px/1.75 var(--font-ui);
+  --text-editor-letter: 0.01em;
+  --text-h1: 650 28px/1.3 var(--font-ui);
+  --text-h2: 620 22px/1.35 var(--font-ui);
+  --text-h3: 600 18px/1.4 var(--font-ui);
+  --text-ui-sm: 500 13px/1.5 var(--font-ui);
+  --text-ui-xs: 450 12px/1.5 var(--font-ui);
+  --text-code: 400 14px/1.6 var(--font-mono);
+
+  --rounded-xs: 4px; --rounded-sm: 6px; --rounded-md: 8px;
+  --rounded-lg: 12px; --rounded-xl: 16px; --rounded-full: 999px;
+
+  --sp-xxs: 2px; --sp-xs: 4px; --sp-sm: 8px; --sp-md: 12px;
+  --sp-lg: 16px; --sp-xl: 24px; --sp-xxl: 32px; --sp-gutter: 40px;
+  --sp-block-gap: 6px; --layout-measure: 720px;
+  --layout-topbar: 40px; --layout-sidebar: 240px;
+  --layout-row-h: 36px; --layout-head-h: 32px;
+
+  --shadow-popover: 0 8px 24px -12px rgba(28,30,33,.18), 0 2px 6px rgba(28,30,33,.06);
+  --shadow-modal: 0 24px 64px -16px rgba(28,30,33,.28), 0 4px 12px rgba(28,30,33,.08);
+
+  --motion-fast: 120ms; --motion-base: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --z-dropdown: 20; --z-sticky: 30; --z-dialog: 40; --z-toast: 50; --z-drop: 60;
+}
+
+[data-theme="dark"] {
+  --color-canvas: #16181B;
+  --color-surface: #1E2124;
+  --color-surface-raised: #26292D;
+  --color-ink: #E9E9E6;
+  --color-ink-secondary: #A3A8AF;
+  --color-ink-faint: #6E737B;
+  --color-hairline: #2C2F34;
+  --color-hairline-strong: #3B3F45;
+  --color-accent: #D9A441;
+  --color-accent-soft: #33290F;
+  --color-on-accent: #1C1E21;
+  --color-danger: #F2B8AD;
+  --color-danger-soft: #3A1E1A;
+  --color-success: #9CCB8F;
+  --color-focus-ring: #D9A441;
+  --color-selection: #42381C;
+  --shadow-popover: 0 8px 24px -12px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+  --shadow-modal: 0 24px 64px -16px rgba(0,0,0,.65), 0 4px 12px rgba(0,0,0,.4);
+}
+
+/* 基础 reset */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font: var(--text-ui-sm);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+a { color: inherit; }
+::selection { background: var(--color-selection); }
+:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; border-radius: var(--rounded-xs); }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

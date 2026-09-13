@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>10 回收站 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+  .tp { max-width: 760px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-gutter) 120px; }
+  .trow2 { display:flex; align-items:center; gap:var(--sp-md); padding: var(--sp-md) var(--sp-sm); border-radius: var(--rounded-md); }
+  .trow2:hover { background: var(--color-surface); }
+  .trow2 .ti { min-width:0; flex:1 }
+  .trow2 b { font: var(--text-ui-sm); font-weight:500; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .trow2 .via { font: var(--text-ui-xs); color: var(--color-ink-faint); margin-top:2px }
+  .trow2 .days { font: 12px var(--font-mono); color: var(--color-ink-secondary); width: 76px; text-align:right }
+  .trow2 .days.warn { color: var(--color-danger) }
+  .trow2 .acts { display:flex; gap:2px }
+  .trow2 .acts .iconbtn { opacity:0; transition: opacity var(--motion-fast) var(--ease-out) }
+  .trow2:hover .acts .iconbtn { opacity:1 }
+  .trow2:focus-within .acts .iconbtn { opacity:1 }
+  .dlgwrap { display:grid; place-items:center; min-height: 60vh; }
+  .dlg { width: 440px; background: var(--color-surface-raised); border:1px solid var(--color-hairline); border-radius: var(--rounded-lg); box-shadow: var(--shadow-modal); padding: var(--sp-xl); }
+  .dlg h3 { font: var(--text-h3); margin: 0 0 var(--sp-sm); }
+  .dlg p { font: var(--text-ui-sm); color: var(--color-ink-secondary); line-height:1.7; margin: 0 0 var(--sp-lg); }
+  .dlg p b { color: var(--color-ink); font-weight: 500; }
+  .dlg .acts { display:flex; gap: var(--sp-sm); justify-content:flex-end; }
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar"><div class="crumb"><svg class="ic" viewBox="0 0 24 24"><path d="M5 7h14M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7m-9.5 0 .7 12A1.5 1.5 0 0 0 8.7 20h6.6a1.5 1.5 0 0 0 1.5-1.4l.7-11.6"/></svg><span class="cur">回收站</span></div>
+  <div class="top-actions"><span class="sync-pill"><span class="dot"></span>已同步</span></div></div>
+  <div class="body" style="grid-template-columns:1fr"><main class="canvas"><div class="tp">
+    <h1 class="page-title" style="margin:0 0 var(--sp-xs)">回收站</h1>
+    <p class="db-sub">删除的页面与块保留 30 天后自动清除。恢复会写回原位置；若原父页面也已被删，则回到其父级的父级。</p>
+
+    <div style="display:flex;gap:var(--sp-sm);margin:var(--sp-xl) 0 var(--sp-sm);align-items:center">
+      <span class="chip on">全部 12</span><span class="chip">页面 7</span><span class="chip">块 5</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost btn-sm">排序：删除时间 ↓</button>
+    </div>
+
+    <div>
+      <div class="trow2"><svg class="ic" style="width:16px;height:16px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>
+        <div class="ti"><b>旧版探测器对比表</b><div class="via">来自 研究 / 暗物质探测实验笔记</div></div>
+        <span class="days">剩 27 天</span>
+        <div class="acts"><button class="iconbtn" aria-label="恢复"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg></button><button class="iconbtn" aria-label="彻底删除" style="color:var(--color-danger)"><svg class="ic" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2m-8 0 .6 12h8.8L17 7"/></svg></button></div></div>
+
+      <div class="trow2"><svg class="ic" style="width:16px;height:16px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17"/></svg>
+        <div class="ti"><b>会议纪要归档 2024</b><div class="via">来自 工作 · 含 41 个子页面与 1 个数据库</div></div>
+        <span class="days">剩 12 天</span>
+        <div class="acts"><button class="iconbtn" aria-label="恢复"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg></button><button class="iconbtn" aria-label="彻底删除" style="color:var(--color-danger)"><svg class="ic" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2m-8 0 .6 12h8.8L17 7"/></svg></button></div></div>
+
+      <div class="trow2"><svg class="ic" style="width:16px;height:16px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M7 8h10M7 12h6m-8 4 2.5-9h11l2.5 9Z" /></svg>
+        <div class="ti"><b>草稿想法（代码块）</b><div class="via">来自 生活 / 随手记 · 单个块</div></div>
+        <span class="days warn">剩 2 天</span>
+        <div class="acts"><button class="iconbtn" aria-label="恢复"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg></button><button class="iconbtn" aria-label="彻底删除" style="color:var(--color-danger)"><svg class="ic" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2m-8 0 .6 12h8.8L17 7"/></svg></button></div></div>
+    </div>
+
+    <div style="border-top:1px solid var(--color-hairline);margin-top:var(--sp-xl);padding-top:var(--sp-lg);display:flex;align-items:center;gap:var(--sp-md)">
+      <span style="font:var(--text-ui-xs);color:var(--color-ink-faint)">磁盘占用 8.4 MB（含 214 个附件，附件在 GC 后 7 天物理清除）</span>
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary btn-sm">清空回收站</button>
+    </div>
+
+    <div class="dlgwrap">
+      <div class="dlg" role="dialog" aria-modal="true">
+        <h3>清空回收站？</h3>
+        <p>将<b>永久删除 12 项</b>（3 个页面含 42 个子页面、9 个块、214 个附件）。此操作<b>不可恢复</b>，且会向同步文件夹写入一批删除事件，其他设备上的这些内容同样会消失。</p>
+        <p style="margin-bottom:var(--sp-lg)">建议先导出一份备份：<button class="btn btn-ghost btn-sm" style="height:22px;padding:0 6px;color:var(--color-accent)">导出便携包</button></p>
+        <div class="acts"><button class="btn btn-ghost">取消</button><button class="btn btn-danger">永久删除</button></div>
+      </div>
+    </div>
+    <p class="db-sub" style="margin-top:var(--sp-lg)">本屏评审要点：剩余天数以 mono 呈现并临近阈值转 danger / 行内动作 hover 才显形（键盘 focus 同样显形，可 Tab 达）/ 危险确认弹窗写明影响面与不可逆性，并提供逃生口。</p>
+  </div></main></div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>

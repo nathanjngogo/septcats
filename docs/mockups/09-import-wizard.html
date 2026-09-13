@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>09 导入向导 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+  .wiz { max-width: 720px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-gutter) 120px; }
+  .stepper { display:flex; gap:0; align-items:center; margin-bottom: var(--sp-xxl); }
+  .sp { display:flex; align-items:center; gap:8px; font: var(--text-ui-xs); color: var(--color-ink-faint); }
+  .sp .no { width:20px;height:20px;border-radius:var(--rounded-full);border:1.5px solid var(--color-hairline-strong);display:grid;place-items:center;font:10px var(--font-mono) }
+  .sp.on { color: var(--color-ink); font-weight:500 } .sp.on .no { background:var(--color-accent);border-color:var(--color-accent);color:var(--color-on-accent) }
+  .sp.done { color: var(--color-ink-secondary) } .sp.done .no { border-color: var(--color-accent); color: var(--color-accent) }
+  .sp-line { flex:1; height:1px; background: var(--color-hairline); margin: 0 var(--sp-md); min-width: 32px; }
+  .drop { border: 1.5px dashed var(--color-hairline-strong); border-radius: var(--rounded-lg); padding: var(--sp-xxl); text-align:center; color: var(--color-ink-secondary); }
+  .drop svg.up { width:28px;height:28px;color:var(--color-ink-faint);margin:0 auto var(--sp-md) }
+  .rpt { background: var(--color-surface-raised); border:1px solid var(--color-hairline); border-radius: var(--rounded-md); padding: var(--sp-md) var(--sp-lg); display:flex; align-items:center; gap: var(--sp-md); }
+  .rpt .meta { flex:1; min-width:0 } .rpt b{font:500 13px var(--font-ui)} .rpt span{display:block;font:var(--text-ui-xs);color:var(--color-ink-secondary);margin-top:2px}
+  .tree { border:1px solid var(--color-hairline); border-radius:var(--rounded-md); background:var(--color-surface-raised); padding: var(--sp-sm); font: var(--text-ui-sm); max-height: 240px; overflow: auto; }
+  .trow { display:flex; gap:8px; align-items:center; height:26px; padding:0 var(--sp-sm); border-radius: var(--rounded-xs); }
+  .trow svg{width:14px;height:14px;color:var(--color-ink-faint)} .trow .n{margin-left:auto;font:11px var(--font-mono);color:var(--color-ink-faint)}
+  .warnlist { margin-top: var(--sp-lg); }
+  .warnlist .w { display:flex; gap:var(--sp-md); padding: var(--sp-sm) var(--sp-md); border-radius: var(--rounded-sm); font: var(--text-ui-xs); color: var(--color-ink-secondary); background: var(--color-accent-soft); margin-bottom: var(--sp-xs); }
+  .warnlist .w b{color:var(--color-accent);font-weight:500}
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar"><div class="crumb"><svg class="ic" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/><path d="M5 20h14"/></svg><span class="cur">导入 · Notion 导出包</span></div></div>
+  <div class="body" style="grid-template-columns:1fr"><main class="canvas"><div class="wiz">
+    <div class="stepper">
+      <div class="sp done"><span class="no"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>选择文件</div><div class="sp-line"></div>
+      <div class="sp on"><span class="no">2</span>预览报告</div><div class="sp-line"></div>
+      <div class="sp"><span class="no">3</span>执行</div>
+    </div>
+
+    <h1 class="page-title" style="margin:0 0 var(--sp-sm)">导入预览</h1>
+    <p class="db-sub">源包已校验：zip 结构与「Markdown & CSV」导出格式匹配。导入将创建以下对象；无法识别的语法不会静默丢弃，全部列入下方清单。</p>
+
+    <div class="rpt" style="margin: var(--sp-lg) 0 var(--sp-md)">
+      <svg class="ic" style="width:20px;height:20px;color:var(--color-ink-secondary)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/><path d="M14 3.5V8h4.5"/></svg>
+      <div class="meta"><b>septcats-export.zip</b><span>Notion 导出 · 2026-09-10 · 4.1 MB · 412 个条目</span></div>
+      <button class="btn btn-ghost btn-sm">更换文件</button>
+    </div>
+
+    <div class="tree">
+      <div class="trow"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H10l2 2h6.5A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18Z"/></svg>研究 <span class="n">页面 26 · 子 2</span></div>
+      <div class="trow" style="padding-left:24px"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>暗物质探测实验笔记.md <span class="n">块 148</span></div>
+      <div class="trow" style="padding-left:24px"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17"/></svg>实验数据台账 <span class="n">DB · 行 47 · CSV 1 + 子目录 47</span></div>
+      <div class="trow" style="padding-left:24px"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg>论文速览.md <span class="n">块 92</span></div>
+      <div class="trow"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H10l2 2h6.5A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18Z"/></svg>读书 <span class="n">页面 58</span></div>
+      <div class="trow" style="color:var(--color-ink-faint)"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 16.5 8 9l4 5 2.5-3 6 5.5Z"/><circle cx="8.5" cy="6.5" r="1.5"/></svg>附件（图片 / PDF） <span class="n">63 个 · 按 sha256 重命名去重 4 个</span></div>
+    </div>
+
+    <div class="warnlist">
+      <div class="w"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4Z"/><path d="M12 10v4.5M12 17.5h.01"/></svg><div><b>3 处页面引用</b> 目标不在包内（已同步删除的页面）→ 转为纯文本链接并保留原标题。</div></div>
+      <div class="w"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4Z"/><path d="M12 10v4.5M12 17.5h.01"/></svg><div><b>12 个公式块</b> 一期不支持 → 转为代码块（保留 LaTeX 源文）。</div></div>
+      <div class="w"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4Z"/><path d="M12 10v4.5M12 17.5h.01"/></svg><div><b>2 个嵌入视图</b> 转为指向对应数据库的普通链接。</div></div>
+    </div>
+
+    <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-xxl)">
+      <button class="btn btn-secondary">上一步</button>
+      <button class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/><path d="M5 20h14"/></svg>开始导入（可整体撤销）</button>
+      <span style="margin-left:auto;font:var(--text-ui-xs);color:var(--color-ink-faint);align-self:center">幂等：重复导入同包不会产生重复页面</span>
+    </div>
+  </div></main></div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>

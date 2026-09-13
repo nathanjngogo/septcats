@@ -6,3 +6,5 @@ out/
 coverage/
 *.tsbuildinfo
 .screenshots/
+.worktrees/
+apps/desktop/.abi-target

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" stroke="#1C1E21" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+  <title>Septcats mark C - 猫脸徽章·极简派（正圆脸，用于 favicon/托盘/工具栏）</title>
+  <!-- 脸轮廓：正圆 -->
+  <circle cx="64" cy="66" r="42" />
+  <!-- 双耳：三角外伸，开口端落在圆上，耳尖由 round linejoin 自然倒圆，耳内无线 -->
+  <path d="M36 35 L45 10 L54 25" />
+  <path d="M92 35 L83 10 L74 25" />
+  <!-- 眼：向下闭眼弧（宽 10 高 4），安静满足感 -->
+  <path d="M49 56 q5 4 10 0" />
+  <path d="M69 56 q5 4 10 0" />
+  <!-- 鼻：小三角（宽 8 高 5），居中 y≈68 -->
+  <path d="M60 66 h8 l-4 5 Z" />
+  <!-- 胡须：左右各两条短线，与脸圆轮廓线保持 6px 间隙，不与圆相交 -->
+  <path d="M7 58 h9" />
+  <path d="M7 66 h9" />
+  <path d="M112 58 h9" />
+  <path d="M112 66 h9" />
+  <!-- 领口弧线 + 铃铛（唯一彩色元素，弧中点） -->
+  <path d="M44 103 Q64 118 84 103" />
+  <circle cx="64" cy="110.5" r="4.2" fill="#A16207" stroke="none" />
+</svg>

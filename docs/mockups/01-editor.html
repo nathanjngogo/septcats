@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>01 编辑器 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+  .canvas { background: var(--color-canvas); }
+  .dragline { height: 2px; background: var(--color-accent); border-radius: var(--rounded-full); margin: 2px 0 2px 52px; position: relative; }
+  .dragline::before { content:""; position:absolute; left:-4px; top:-3px; width:8px; height:8px; border-radius:var(--rounded-full); background:var(--color-accent); }
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar">
+    <div class="crumb"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg><span>研究</span><span class="sep">/</span><span class="cur">暗物质探测实验笔记</span></div>
+    <div class="top-actions">
+      <button class="iconbtn" aria-label="搜索（Ctrl+K）"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button>
+      <span class="sync-pill" title="上次同步 09:41"><span class="dot"></span>已同步</span>
+      <button class="iconbtn" aria-label="设置"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.9 1.9M16.6 16.6l1.9 1.9M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9"/></svg></button>
+    </div>
+  </div>
+  <div class="body">
+    <aside class="sidebar">
+      <div class="side-head"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>个人工作区<svg class="ic" style="width:12px;height:12px;margin-left:auto" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+      <div class="side-scroll">
+        <div class="nav-row"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建页面</div>
+        <div class="nav-row"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5 4 7v10l8 3.5 8-3.5V7Z"/><path d="M12 12.5 4 7M12 12.5 20 7M12 12.5v8"/></svg>收藏</div>
+        <div class="nav-row"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="M6 9h12l-6 7Z"/></svg></span><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg>最近</div>
+        <div class="nav-kids">
+          <div class="nav-row"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/><path d="M14 3.5V8h4.5"/></svg>周记 2026-W37</div>
+        </div>
+        <div class="nav-row" style="margin-top:6px"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="M6 9h12l-6 7Z"/></svg></span><svg class="ic" viewBox="0 0 24 24"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H10l2 2h6.5A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18Z"/></svg>研究</div>
+        <div class="nav-kids">
+          <div class="nav-row"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/><path d="M14 3.5V8h4.5"/></svg>论文速览</div>
+          <div class="nav-row active"><span class="tw"></span><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/><path d="M14 3.5V8h4.5"/></svg>暗物质探测实验笔记</div>
+          <div class="dragline" title="拖拽插入位置"></div>
+          <div class="nav-row"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span><svg class="ic" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/><path d="M14 3.5V8h4.5"/></svg>数据管线</div>
+        </div>
+        <div class="nav-row"><span class="tw"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span><svg class="ic" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>读书</div>
+      </div>
+      <div class="side-foot"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h14a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5Z"/><path d="M8 5v14"/></svg>工作区 2<svg class="ic" style="width:12px;height:12px;margin-left:auto" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
+    </aside>
+
+    <main class="canvas">
+      <article class="editor">
+        <div class="page-icon">🔭</div>
+        <h1 class="page-title">暗物质探测实验笔记</h1>
+        <div class="blocks">
+          <div class="block b-p"><span></span><span class="handle" aria-label="块操作"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="2.5"/></svg></span><div class="content">本页汇总 LZ 类稀有事件探测的实验现状与文献线索。<span class="caret"></span></div></div>
+
+          <div class="block b-h2" style="grid-template-columns:24px 28px 1fr"><span></span><span class="handle"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="2.5"/></svg></span><div class="content" style="font:var(--text-h2)">一、探测器矩阵</div></div>
+
+          <div class="block b-todo"><span></span><span class="handle"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="2.5"/></svg></span><div class="content"><span class="cbx on"><svg class="ic" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span> 整理 XENONnT 2025 SR 的 WIMP 上限图，录入阅读清单</div></div>
+          <div class="block b-todo"><span></span><span class="handle"></span><div class="content"><span class="cbx"></span> 复核 LZ 核反冲效率曲线的统计误差来源</div></div>
+
+          <div class="block b-callout"><span></span><span class="handle"></span><div class="content" style="display:flex;gap:var(--sp-md)"><svg class="ic" style="width:18px;height:18px;color:var(--color-accent);margin-top:4px;flex:none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg><div><b style="font-weight:600">口径提醒：</b>各家实验的曝光量单位不同（kg·yr 与 ton·yr），制表前统一换算为 ton·yr，并在表注里写明。</div></div></div>
+
+          <div class="block b-quote"><span></span><span class="handle"></span><div class="content">「稀有事件率本底是暗物质直接探测的终极限制。」—— 摘自 <a class="b-link" href="#">《稀有事件低本底实验室综述》</a>，2026-03。</div></div>
+
+          <div class="block"><span></span><span class="handle"></span><div class="content b-code"><span style="color:var(--color-ink-faint)"># 效率曲线拟合（占位）</span><br>er = np.interp(energy_kev, breakpoints, values)<span class="caret" style="height:1em"></span></div></div>
+
+          <div class="hr-line"></div>
+
+          <div class="block b-img"><span></span><span class="handle"></span><div class="content"><figure class="b-img" style="margin:0"><div class="ph"><svg class="ic" style="width:24px;height:24px" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><circle cx="9" cy="10.5" r="1.6"/><path d="m5 16 4.5-4.5 3 3 3-2.5 4 4"/></svg></div><figcaption style="font:var(--text-ui-xs);color:var(--color-ink-faint);padding:var(--sp-sm) var(--sp-md)">图 1：排除曲线（待插入，拖拽或粘贴）</figcaption></figure></div></div>
+        </div>
+      </article>
+
+      <!-- 斜杠菜单（演示态，锚定在末块下方） -->
+      <div class="menu" style="left:50%; transform:translateX(calc(-50% + 120px)); top:56%">
+        <div class="menu-title">转为块类型 · 输入 <b style="color:var(--color-ink)">“/”</b> 后继续过滤</div>
+        <div class="menu-item sel"><span class="mi"><svg class="ic" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg></span><div><b>文本</b><span>普通段落 · Ctrl+Shift+S</span></div></div>
+        <div class="menu-item"><span class="mi"><svg class="ic" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14"/></svg></span><div><b>标题 2</b><span>大节标题</span></div></div>
+        <div class="menu-item"><span class="mi"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m9 4 3 16" opacity="0"/></svg></span><div><b>数据库</b><span>行内表格 · 行属性</span></div></div>
+        <div class="menu-item"><span class="mi"><svg class="ic" viewBox="0 0 24 24"><path d="M6.5 8a3.5 3.5 0 1 1 3-5.2M6.5 8 11 12M6.5 8 3 11M12 16a3.5 3.5 0 1 0 5.5 4M11 12l3.5 3M11 12 8 15"/></svg></span><div><b>代码</b><span>语法高亮片段</span></div></div>
+      </div>
+
+      <!-- 选区工具条（演示态） -->
+      <div class="floating" style="left:50%; transform:translateX(-160px); top:40%">
+        <button aria-label="加粗"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5h6.5a3.5 3.5 0 0 1 0 7H7Zm0 7h7.5a3.5 3.5 0 0 1 0 7H7Z"/></svg></button>
+        <button aria-label="斜体"><svg class="ic" viewBox="0 0 24 24"><path d="M11 5h6M7 19h6M14 5l-4 14"/></svg></button>
+        <button aria-label="下划线"><svg class="ic" viewBox="0 0 24 24"><path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/></svg></button>
+        <span class="divider"></span>
+        <button aria-label="行内代码"><svg class="ic" viewBox="0 0 24 24"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg></button>
+        <button aria-label="链接"><svg class="ic" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7.3l3-3a4 4 0 1 0-5.7-5.7l-1.3 1.3"/><path d="M13.5 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 1 0 5.7 5.7l1.3-1.3"/></svg></button>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+function set(t){ document.documentElement.dataset.theme=t;
+  document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on', b.textContent.includes(t==='light'?'浅':'深'))); }
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+/**
+ * 版本化迁移框架（TASK-T2-01 §4）。
+ *
+ * 规则：
+ * - `user_version` 是唯一进度来源；`MIGRATIONS` 按 id 升序应用，只跑 > 当前版本的部分；
+ * - 每个迁移在**自己的事务**里执行（SQLite 的 DDL 是事务性的），任一步失败自动回滚；
+ * - 迁移前先 `PRAGMA wal_checkpoint(TRUNCATE)` 并备份到 `<db>.bak-v<from>`；
+ * - 失败时做**文件级还原**：关闭连接 → 用备份覆盖主库（清掉 -wal/-shm）→ 重新打开新连接，
+ *   并把新连接放进返回值 `db`（better-sqlite3 关闭后无法再 open，只能新建实例——见 §DECISIONS）。
+ * - `schema.sql.ts` 即 migration #1；以后加列从 #2 起步，**禁止改 #1**。
+ */
+
+import { copyFileSync, existsSync, rmSync } from 'node:fs';
+import type Database from 'better-sqlite3';
+import { ulid } from '@septcats/core';
+import { PRAGMA_BASELINE, SCHEMA_V1_STATEMENTS } from './schema.sql';
+
+/** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
+export type SqliteDatabase = Database.Database;
+
+/** 构造一个连接的最小构造签名（测试/自检注入 better-sqlite3 的真实构造器）。 */
+export interface SqliteConstructor {
+  new (filename: string): SqliteDatabase;
+}
+
+/** 单条迁移：`up` 必须幂等（内部全用 IF NOT EXISTS / ON CONFLICT）。 */
+export interface Migration {
+  readonly id: number;
+  readonly name: string;
+  up(db: SqliteDatabase): void;
+}
+
+/** 迁移结果里描述的“失败后如何收场”。 */
+export type MigrationRecovery = 'none' | 'restored' | 'rolled-back' | 'failed';
+
+export interface MigrationFailure {
+  readonly code: 'E_MIGRATION_FAILED';
+  readonly message: string;
+}
+
+export interface MigrateResult {
+  /** 应用前的 user_version。 */
+  readonly from: number;
+  /** 应用后（或失败回滚后）的 user_version。 */
+  readonly to: number;
+  /** 本次实际应用的迁移 id（失败时为空）。 */
+  readonly applied: readonly number[];
+  /** 迁移前备份文件路径；内存库或 `backup:false` 时为 null。 */
+  readonly backupPath: string | null;
+  /** 失败收场方式；成功为 'none'。 */
+  readonly recovery: MigrationRecovery;
+  /** 失败信息；成功时缺省。 */
+  readonly error?: MigrationFailure;
+  /**
+   * 当前可用连接。正常情况就是入参 db；若发生文件级还原则为**新连接**，
+   * 调用方必须改用它（旧连接已 close）。
+   */
+  readonly db: SqliteDatabase;
+}
+
+export interface MigrateOptions {
+  /** 是否在迁移前备份（默认 true；仅对文件型数据库生效）。 */
+  readonly backup?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PRAGMA 基线
+// ---------------------------------------------------------------------------
+
+/** 在连接打开后立即执行 PRAGMA 基线（journal_mode 不可在事务内切换，故不进迁移）。 */
+export function applyPragmaBaseline(db: SqliteDatabase): void {
+  for (const pragma of PRAGMA_BASELINE) {
+    db.pragma(pragma);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 迁移表
+// ---------------------------------------------------------------------------
+
+/** migration #1：v1 建表 + FTS + 触发器，并写入 meta 基线。 */
+function applySchemaV1(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V1_STATEMENTS) {
+    db.exec(statement);
+  }
+  insertMetaIfAbsent(db, 'schema_version', '1');
+  insertMetaIfAbsent(db, 'installed_at', String(Date.now()));
+  insertMetaIfAbsent(db, 'device_id', ulid());
+}
+
+function insertMetaIfAbsent(db: SqliteDatabase, key: string, value: string): void {
+  db.prepare('INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)').run(key, value);
+}
+
+/**
+ * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
+ * （改了会让已升级用户的库与代码描述不一致）。
+ */
+export const MIGRATIONS: readonly Migration[] = [
+  { id: 1, name: 'v1-schema', up: applySchemaV1 },
+];
+
+/** 最新 schema 版本 = 迁移表最后一项的 id。 */
+export const LATEST_SCHEMA_VERSION: number =
+  MIGRATIONS.length === 0 ? 0 : MIGRATIONS[MIGRATIONS.length - 1]!.id;
+
+// ---------------------------------------------------------------------------
+// user_version 读写
+// ---------------------------------------------------------------------------
+
+/** 读取 `PRAGMA user_version`（非整数一律按 0 处理）。 */
+export function readUserVersion(db: SqliteDatabase): number {
+  const value = db.pragma('user_version', { simple: true });
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  return 0;
+}
+
+function writeUserVersion(db: SqliteDatabase, version: number): void {
+  // version 来自内部迁移表（整数），不存在注入面
+  db.pragma(`user_version = ${Math.trunc(version)}`);
+}
+
+// ---------------------------------------------------------------------------
+// 迁移主流程
+// ---------------------------------------------------------------------------
+
+/** 用默认迁移表迁移。 */
+export function migrate(db: SqliteDatabase, options: MigrateOptions = {}): Promise<MigrateResult> {
+  return runMigrations(db, MIGRATIONS, options);
+}
+
+/**
+ * 用给定迁移表迁移（暴露出来是为了能在测试里注入“必然失败的迁移”验证还原路径）。
+ */
+export async function runMigrations(
+  db: SqliteDatabase,
+  migrations: readonly Migration[],
+  options: MigrateOptions = {},
+): Promise<MigrateResult> {
+  const from = readUserVersion(db);
+  const pending = [...migrations].filter((migration) => migration.id > from).sort((a, b) => a.id - b.id);
+  if (pending.length === 0) {
+    return { from, to: from, applied: [], backupPath: null, recovery: 'none', db };
+  }
+  const target = pending[pending.length - 1]!.id;
+
+  const backupPath = options.backup === false ? null : await createPreMigrationBackup(db, from);
+
+  try {
+    for (const migration of pending) {
+      const apply = db.transaction(() => {
+        migration.up(db);
+        writeUserVersion(db, migration.id);
+      });
+      apply();
+    }
+  } catch (error) {
+    const reason = describeError(error);
+    const outcome = await tryFileLevelRestore(db, backupPath);
+    const suffix =
+      outcome.recovery === 'restored'
+        ? '（已从备份文件还原）'
+        : outcome.recovery === 'rolled-back'
+          ? '（事务已回滚，库保持原版本）'
+          : '（文件级还原失败，请人工检查备份）';
+    return {
+      from,
+      to: readUserVersionSafe(outcome.db),
+      applied: [],
+      backupPath,
+      recovery: outcome.recovery,
+      error: { code: 'E_MIGRATION_FAILED', message: `迁移 v${from}→v${target} 失败：${reason}${suffix}` },
+      db: outcome.db,
+    };
+  }
+
+  return { from, to: target, applied: pending.map((migration) => migration.id), backupPath, recovery: 'none', db };
+}
+
+// ---------------------------------------------------------------------------
+// 备份 / 还原
+// ---------------------------------------------------------------------------
+
+function isFileDatabase(name: string): boolean {
+  return name.length > 0 && name !== ':memory:';
+}
+
+function removeFile(path: string): void {
+  try {
+    rmSync(path, { force: true });
+  } catch {
+    // 删除失败不致命：后续 backup/rename 会给出真实错误
+  }
+}
+
+/** 连同 -wal / -shm 一起清理，避免还原后残留半写日志污染新库。 */
+function removeSidecarFiles(dbPath: string): void {
+  removeFile(`${dbPath}-wal`);
+  removeFile(`${dbPath}-shm`);
+}
+
+/**
+ * 迁移前备份：checkpoint(TRUNCATE) 后调用 better-sqlite3 的 backup API。
+ * 内存库返回 null（没有可备份的文件）。
+ */
+async function createPreMigrationBackup(db: SqliteDatabase, from: number): Promise<string | null> {
+  const dbPath = db.name;
+  if (!isFileDatabase(dbPath)) {
+    return null;
+  }
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)');
+  } catch {
+    // 非 WAL 模式或空库时忽略
+  }
+  const backupPath = `${dbPath}.bak-v${from}`;
+  removeFile(backupPath);
+  removeSidecarFiles(backupPath);
+  await db.backup(backupPath);
+  return backupPath;
+}
+
+interface RestoreOutcome {
+  readonly recovery: MigrationRecovery;
+  readonly db: SqliteDatabase;
+}
+
+/**
+ * 文件级还原：close → 备份覆盖主库 → 新建连接。
+ * 备份不可用时返回 'rolled-back'（此时事务回滚已保证库完好）。
+ */
+async function tryFileLevelRestore(
+  db: SqliteDatabase,
+  backupPath: string | null,
+): Promise<RestoreOutcome> {
+  const dbPath = db.name;
+  if (backupPath === null || !isFileDatabase(dbPath) || !existsSync(backupPath)) {
+    return { recovery: 'rolled-back', db };
+  }
+  try {
+    db.close();
+    removeSidecarFiles(dbPath);
+    copyFileSync(backupPath, dbPath);
+    return { recovery: 'restored', db: await reopenDatabase(dbPath) };
+  } catch {
+    // 还原途中出错：尽量把原文件重新打开，保证调用方仍有可用连接
+    try {
+      return { recovery: 'failed', db: await reopenDatabase(dbPath) };
+    } catch {
+      return { recovery: 'failed', db };
+    }
+  }
+}
+
+function readUserVersionSafe(db: SqliteDatabase): number {
+  try {
+    return readUserVersion(db);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 动态加载 better-sqlite3 的构造器。用动态 import 是为了：
+ * 1) 本模块顶层零原生依赖——纯逻辑测试 import 本文件时不会触发原生模块加载；
+ * 2) 兼容两种互操作形态：Node ESM 下动态 import CJS 得到 `{ default: ctor }`，
+ *    而个别打包产物可能直接给出构造器本身。
+ */
+export async function loadSqliteConstructor(): Promise<SqliteConstructor> {
+  const imported: unknown = await import('better-sqlite3');
+  if (
+    typeof imported === 'object' &&
+    imported !== null &&
+    typeof (imported as { default?: unknown }).default === 'function'
+  ) {
+    return (imported as { default: SqliteConstructor }).default;
+  }
+  return imported as SqliteConstructor;
+}
+
+/** 重新打开连接（文件级还原后使用）。 */
+async function reopenDatabase(dbPath: string): Promise<SqliteDatabase> {
+  const SqliteCtor = await loadSqliteConstructor();
+  const next = new SqliteCtor(dbPath);
+  applyPragmaBaseline(next);
+  return next;
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

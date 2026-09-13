@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>07 同步状态 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+  .syncpage { max-width: 680px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-gutter) 120px; }
+  .card { background: var(--color-surface-raised); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); padding: var(--sp-xl); margin-bottom: var(--sp-lg); }
+  .card h3 { font: var(--text-h3); margin: 0 0 var(--sp-lg); display:flex; align-items:center; gap:var(--sp-sm); }
+  .kv { display:flex; justify-content:space-between; align-items:center; height:32px; font:var(--text-ui-sm); }
+  .kv .k { color: var(--color-ink-secondary); }
+  .kv .v { font: 13px var(--font-mono); }
+  .q { display:flex; align-items:center; gap:var(--sp-md); padding:var(--sp-sm) 0; border-top:1px solid var(--color-hairline); font:var(--text-ui-sm); }
+  .q .name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .q .sz { font: 12px var(--font-mono); color: var(--color-ink-faint); }
+  .hint { font: var(--text-ui-xs); color: var(--color-ink-faint); line-height:1.7; margin-top: var(--sp-md); }
+  .hint b{color:var(--color-ink-secondary);font-weight:500}
+  .steps { counter-reset:s; display:flex; flex-direction:column; gap:var(--sp-md); margin-top:var(--sp-lg); }
+  .steps .st { display:flex; gap:var(--sp-md); align-items:flex-start; }
+  .st .no { width:22px;height:22px;border-radius:var(--rounded-full);border:1px solid var(--color-hairline-strong);display:grid;place-items:center;font:11px var(--font-mono);color:var(--color-ink-secondary);flex:none }
+  .st .no.ok{ background:var(--color-accent); border-color:var(--color-accent); color:var(--color-on-accent) }
+  .st .no.err{ background:var(--color-danger); border-color:var(--color-danger); color:#fff }
+  .st b{font-weight:500;display:block;font:var(--text-ui-sm)} .st span{font:var(--text-ui-xs);color:var(--color-ink-secondary);line-height:1.6;display:block;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar">
+    <div class="crumb"><svg class="ic" viewBox="0 0 24 24"><path d="M7 16a4 4 0 0 0 0-8 5 5 0 0 1 9.6-1.4A3.5 3.5 0 0 1 18 16Z"/></svg><span class="cur">同步状态</span></div>
+    <div class="top-actions"><span class="sync-pill busy"><span class="dot"></span>同步中 · 2 项上传</span></div>
+  </div>
+  <div class="body" style="grid-template-columns:1fr"><main class="canvas"><div class="syncpage">
+    <div class="card">
+      <h3><svg class="ic" style="width:18px;height:18px;color:var(--color-accent)" viewBox="0 0 24 24"><path d="M7 16a4 4 0 0 0 0-8 5 5 0 0 1 9.6-1.4A3.5 3.5 0 0 1 18 16Z"/></svg>夸克网盘 · 同步文件夹</h3>
+      <div class="kv"><span class="k">状态</span><span class="v" style="color:var(--color-accent)">进行中 · 2/4</span></div>
+      <div class="kv"><span class="k">上次同步成功</span><span class="v">今天 10:41（3 分钟前）</span></div>
+      <div class="kv"><span class="k">同步文件夹</span><span class="v">E:\QuarkSync\septcats</span></div>
+      <div style="height:4px;border-radius:var(--rounded-full);background:var(--color-hairline);margin:var(--sp-md) 0 var(--sp-xs)"><i style="display:block;height:100%;width:52%;border-radius:var(--rounded-full);background:var(--color-accent)"></i></div>
+      <span style="font:11px var(--font-mono);color:var(--color-ink-faint)">42.3 MB / 81.4 MB · 约剩 1 分 20 秒</span>
+      <div class="q"><svg class="ic" style="width:14px;height:14px;color:var(--color-accent)" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/></svg><span class="name">Notion 导入 · 实验数据台账 · 附件 ×3（图片）</span><span class="sz">38.2 MB</span><span class="tag amber">上传中</span></div>
+      <div class="q"><svg class="ic" style="width:14px;height:14px;color:var(--color-accent)" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/></svg><span class="name">seg-00001a3f-9c2e-000012.jsonl（3 个事件段）</span><span class="sz">147 KB</span><span class="tag amber">上传中</span></div>
+      <div class="q"><svg class="ic" style="width:14px;height:14px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/></svg><span class="name">snapshot-000018.json</span><span class="sz">512 KB</span><span class="tag">排队</span></div>
+      <div class="q"><svg class="ic" style="width:14px;height:14px;color:var(--color-ink-faint)" viewBox="0 0 24 24"><path d="M12 17V7M7 12l5-5 5 5"/></svg><span class="name">files/8f4d…b21.png（图 1 排除曲线）</span><span class="sz">2.1 MB</span><span class="tag">排队</span></div>
+      <div style="display:flex;gap:var(--sp-sm);margin-top:var(--sp-lg)"><button class="btn btn-secondary btn-sm"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5v14M17 5v14"/></svg>暂停全部</button><button class="btn btn-ghost btn-sm">重试失败项</button></div>
+      <p class="hint"><b>Septcats 把数据写入同步文件夹，由夸克官方客户端负责搬运</b>——它不经手你的账号与文件，因此同步是分钟级异步的：本页面反映「本地已就绪」与「远端已确认」两个水位差。事件段一旦写出即为不可变，网盘只会复制、不会改写。</p>
+    </div>
+    <div class="card">
+      <h3>设备</h3>
+      <div class="kv"><span class="k">本机 · 办公室 PC（9c2e）</span><span class="v" style="color:var(--color-success)">写入 3 段 · 已确认</span></div>
+      <div class="kv"><span class="k">家里 · ThinkPad（4f8a）</span><span class="v" style="color:var(--color-ink-secondary)">最后见 昨天 22:14 · 落后 2 段</span></div>
+      <p class="hint">设备水位来自各设备写回 manifest 的 Lamport 值；落后设备上线后自动拉齐，无需任何操作。</p>
+    </div>
+    <div class="card">
+      <h3>首次接入（向导预览 · 第 2/4 步）</h3>
+      <div class="steps">
+        <div class="st"><span class="no ok">✓</span><div><b>选择同步文件夹</b><span>E:\QuarkSync\septcats —— 目录须位于夸克客户端同步范围内</span></div></div>
+        <div class="st"><span class="no" style="border-color:var(--color-accent);color:var(--color-accent)">2</span><div><b>检测到夸克网盘客户端</b><span>正在验证该目录已被纳入同步…若未检测到，请先在夸克客户端添加该目录为同步盘。</span></div></div>
+        <div class="st"><span class="no">3</span><div><b>建立首份快照</b><span>将生成 snapshot-000000.json 与 2 个事件段（约 1.2 MB）</span></div></div>
+        <div class="st"><span class="no">4</span><div><b>等待远端确认</b><span>首次确认可能需要 1–3 分钟（取决于网盘客户端轮询）</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:var(--sp-md)">异常示例（本屏需评审的失败态）</h3>
+      <div class="alertbar" style="border-radius:var(--rounded-md);border:1px solid var(--color-danger);border-bottom:1px solid var(--color-danger)">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4Z"/><path d="M12 10v4.5M12 17.5h.01"/></svg>
+        <div style="flex:1">同步文件夹 14 分钟无写入迹象 —— 夸克客户端可能已暂停或退出。<b style="color:var(--color-danger);font-weight:500">本地数据不受影响</b>，事件段已排队（8 段）。</div>
+        <button class="btn btn-secondary btn-sm" style="flex:none">重新检测</button>
+      </div>
+      <p class="hint">失败永远「说人话 + 给出路」：告知影响面（本地无损）→ 下一步动作（重新检测）→ 队列可恢复。</p>
+    </div>
+  </div></main></div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>

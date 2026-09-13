@@ -5,25 +5,35 @@
   "description": "Septcats 桌面壳（Electron + React，electron-vite 三进程脚手架）",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "dev": "node scripts/ensure-abi.mjs electron && electron-vite dev",
+    "build": "node scripts/ensure-abi.mjs electron && electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "pretest": "node scripts/ensure-abi.mjs node",
+    "test": "vitest run",
+    "preselftest": "node scripts/ensure-abi.mjs node",
+    "selftest": "node scripts/run-selftest.mjs",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-rebuild -f -w better-sqlite3 && node scripts/ensure-abi.mjs node"
   },
   "dependencies": {
     "@septcats/core": "workspace:*",
     "@septcats/schema": "workspace:*",
+    "better-sqlite3": "^12.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^5.0.0",
     "electron": "^37.0.0",
     "electron-vite": "^5.0.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.9.2",
     "vite": "^7.0.0",
     "vitest": "^3.2.4"

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>08 冲突清单 · Septcats</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="mockups.css">
+<style>
+  .page { max-width: 860px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-gutter) 120px; }
+  .cf { background: var(--color-surface-raised); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); margin-bottom: var(--sp-xl); overflow: hidden; }
+  .cf-h { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-md) var(--sp-lg); border-bottom: 1px solid var(--color-hairline); background: var(--color-surface); }
+  .cf-h .ttl { font: var(--text-ui-sm); font-weight: 600; }
+  .cf-h .sub { font: var(--text-ui-xs); color: var(--color-ink-secondary); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; }
+  .col { padding: var(--sp-lg); border-right: 1px solid var(--color-hairline); }
+  .col:last-child { border-right: 0; }
+  .col.win { background: color-mix(in srgb, var(--color-accent-soft) 40%, var(--color-surface-raised)); }
+  .col-h { display: flex; align-items: center; gap: 8px; font: var(--text-ui-xs); color: var(--color-ink-secondary); margin-bottom: var(--sp-md); }
+  .col-h .flag { display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--rounded-full);font:var(--text-ui-xs); }
+  .col-h .flag.k { background: var(--color-accent); color: var(--color-on-accent); }
+  .col-h .flag.l { background: var(--color-surface); border: 1px solid var(--color-hairline-strong); color: var(--color-ink-secondary); }
+  .col .body { font: var(--text-editor); color: var(--color-ink); }
+  .col .body del { color: var(--color-ink-faint); }
+  .col .body ins { text-decoration: none; background: var(--color-selection); border-radius: 2px; }
+  .cf-f { display: flex; gap: var(--sp-sm); padding: var(--sp-md) var(--sp-lg); border-top: 1px solid var(--color-hairline); align-items: center; }
+</style>
+</head>
+<body>
+<div class="themebar"><button class="on" onclick="set('light')">浅色</button><button onclick="set('dark')">深色</button></div>
+<div class="shell">
+  <div class="topbar">
+    <div class="crumb"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4Z"/><path d="M12 10v4.5M12 17.5h.01"/></svg><span class="cur">同步冲突</span></div>
+    <div class="top-actions"><span class="sync-pill alert"><span class="dot"></span><span class="badge-n" style="background:var(--color-danger)">2</span> 项待处理</span></div>
+  </div>
+  <div class="body" style="grid-template-columns:1fr"><main class="canvas"><div class="page">
+    <h1 class="page-title" style="margin:0 0 var(--sp-xs)">同步冲突</h1>
+    <p class="db-sub" style="margin-bottom:var(--sp-xl)">两台设备并发编辑了同一个块。Septcats 不做静默合并：保留的版本在下、被覆盖的版本也在，由你处置。所有冲突都不会自动删除。</p>
+
+    <div class="cf">
+      <div class="cf-h"><svg class="ic" style="width:16px;height:16px;color:var(--color-accent)" viewBox="0 0 24 24"><path d="M6 3.5h8L18.5 8v12.5h-13Z"/></svg><div><div class="ttl">研究 / 暗物质探测实验笔记 / 一、探测器矩阵</div><div class="sub">块 b-7d3f · 文本块 · 冲突时间 今天 09:12</div></div></div>
+      <div class="cols">
+        <div class="col win">
+          <div class="col-h"><span class="flag k"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>保留（本机 办公室 PC）</span><span>Lamport 41 · 2026-09-13 09:12</span></div>
+          <div class="body">…XENONnT 的<ins>SR3 上限已并入对比表</ins>，注意其氡本底扣除与 LZ 不一致，不能直接同轴比较。</div>
+        </div>
+        <div class="col">
+          <div class="col-h"><span class="flag l">被覆盖（家里 ThinkPad）</span><span>Lamport 38 · 2026-09-12 22:14</span></div>
+          <div class="body">…XENONnT 的<del>数据等正式发布再录</del>，本底部分下周核对。</div>
+        </div>
+      </div>
+      <div class="cf-f">
+        <button class="btn btn-primary btn-sm">保留双方（下方追加副本）</button>
+        <button class="btn btn-secondary btn-sm">采用远端版本</button>
+        <button class="btn btn-ghost btn-sm">仅忽略本次</button>
+        <span style="margin-left:auto;font:var(--text-ui-xs);color:var(--color-ink-faint)">处置后写回一对新事件，两端同步收敛</span>
+      </div>
+    </div>
+
+    <div class="cf">
+      <div class="cf-h"><svg class="ic" style="width:16px;height:16px;color:var(--color-accent)" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9h17"/></svg><div><div class="ttl">实验数据台账 / 记录 r-91af（LZ-2024-run3）</div><div class="sub">行属性「备注」 · 冲突时间 今天 09:12</div></div></div>
+      <div class="cols">
+        <div class="col win"><div class="col-h"><span class="flag k"><svg class="ic" style="width:10px;height:10px" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>保留</span></div><div class="body" style="font:var(--text-ui-sm)">核反冲等效能 4.2 keVnr，<ins>接受，已提交组会材料</ins></div></div>
+        <div class="col"><div class="col-h"><span class="flag l">被覆盖</span></div><div class="body" style="font:var(--text-ui-sm)">核反冲等效能 4.2 keVnr，待复核误差棒</div></div>
+      </div>
+      <div class="cf-f"><button class="btn btn-primary btn-sm">保留双方</button><button class="btn btn-secondary btn-sm">采用远端</button></div>
+    </div>
+
+    <p class="db-sub" style="margin-top:var(--sp-xl)">设计红线：冲突页永远可达（顶栏角标直达），处置操作本身是事件（可再被同步、可撤销），不存在「只有一边看到冲突」的可能。</p>
+  </div></main></div>
+</div>
+<script>function set(t){document.documentElement.dataset.theme=t;document.querySelectorAll('.themebar button').forEach(b=>b.classList.toggle('on',b.textContent.includes(t==='light'?'浅':'深')));}</script>
+</body>
+</html>
