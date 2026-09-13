@@ -7,7 +7,8 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   test: {
-    projects: ['packages/*', 'apps/desktop'],
+    // 显式列出各包，避免 `packages/*` 与单独条目重复跑同一个工程。
+    projects: ['packages/core', 'packages/schema', 'packages/platform', 'apps/desktop'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

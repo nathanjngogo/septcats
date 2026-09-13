@@ -1,0 +1,22 @@
+{
+  "name": "@septcats/platform",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats 平台适配层：路径布局/凭据/日志等一切 OS 差异的唯一下沉点（纯 Node，不依赖 Electron）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

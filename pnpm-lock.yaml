@@ -23,6 +23,9 @@ importers:
       '@septcats/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@septcats/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
       '@septcats/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -77,6 +80,22 @@ importers:
         version: 3.2.7(@types/node@22.20.2)(tsx@4.23.13)
 
   packages/core:
+    dependencies:
+      zod:
+        specifier: ^4.0.0
+        version: 4.6.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.2
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.2)(tsx@4.23.13)
+
+  packages/platform:
     dependencies:
       zod:
         specifier: ^4.0.0

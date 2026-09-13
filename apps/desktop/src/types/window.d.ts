@@ -7,6 +7,11 @@ export interface SeptcatsAppMeta {
   name: string;
   version: string;
   schemaVersion: number;
+  /**
+   * 数据根目录名（basename），用于状态栏/关于页展示。
+   * 隐私默认：只给目录名，不下发完整家目录路径。
+   */
+  layoutRoot: string;
 }
 
 export interface SeptcatsApi {
