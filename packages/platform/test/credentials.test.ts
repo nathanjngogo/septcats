@@ -64,6 +64,10 @@ describe('credentials/后端不可用', () => {
 
 // 真机探测：win 走 PowerShell+DPAPI，mac 走 /usr/bin/security。
 // 探测失败时跳过真实往返，但上述“不可用”语义仍被覆盖。
+// 超时放宽到 20s（默认 5s）：真后端是子进程冷启动（首次 PowerShell/DPAPI
+// 初始化可到数秒，实测出现过 5s 超时的抖动），断言本身不变。
+const REAL_BACKEND_TIMEOUT = 20_000;
+
 const probeStore = createCredentialStore({ credDir: tempDir('septcats-cred-probe-') });
 const backendAvailable = await probeStore.isAvailable();
 
@@ -74,7 +78,7 @@ describe.skipIf(!backendAvailable)('credentials/真实后端往返', () => {
     const store = createCredentialStore({ credDir: tempDir('septcats-cred-roundtrip-') });
     await store.set(SERVICE, ACCOUNT, PLAINTEXT);
     await expect(store.get(SERVICE, ACCOUNT)).resolves.toBe(PLAINTEXT);
-  });
+  }, REAL_BACKEND_TIMEOUT);
 
   it('密文文件既不等于明文、也不包含明文', async () => {
     const credDir = tempDir('septcats-cred-cipher-');
@@ -87,7 +91,7 @@ describe.skipIf(!backendAvailable)('credentials/真实后端往返', () => {
     expect(cipher).not.toBe(PLAINTEXT);
     expect(cipher.includes(PLAINTEXT)).toBe(false);
     expect(cipher.includes('correct horse')).toBe(false);
-  });
+  }, REAL_BACKEND_TIMEOUT);
 
   it('argv 审计：set 与 get 全程任何子进程参数都不含明文', async () => {
     const credDir = tempDir('septcats-cred-audit-');
@@ -108,7 +112,7 @@ describe.skipIf(!backendAvailable)('credentials/真实后端往返', () => {
       expect(joined.includes('correct horse')).toBe(false);
       expect(joined.includes('battery staple')).toBe(false);
     }
-  });
+  }, REAL_BACKEND_TIMEOUT);
 
   it('get 未写入过的凭据返回 null', async () => {
     const store = createCredentialStore({ credDir: tempDir('septcats-cred-missing-') });
@@ -121,12 +125,12 @@ describe.skipIf(!backendAvailable)('credentials/真实后端往返', () => {
     await expect(store.delete(SERVICE, ACCOUNT)).resolves.toBe(true);
     await expect(store.delete(SERVICE, ACCOUNT)).resolves.toBe(false);
     await expect(store.get(SERVICE, ACCOUNT)).resolves.toBeNull();
-  });
+  }, REAL_BACKEND_TIMEOUT);
 
   it('同一 service/account 覆盖写入返回最新值', async () => {
     const store = createCredentialStore({ credDir: tempDir('septcats-cred-overwrite-') });
     await store.set(SERVICE, ACCOUNT, 'first-value');
     await store.set(SERVICE, ACCOUNT, 'second-value');
     await expect(store.get(SERVICE, ACCOUNT)).resolves.toBe('second-value');
-  });
+  }, REAL_BACKEND_TIMEOUT);
 });
