@@ -14,7 +14,13 @@ import { copyFileSync, existsSync, rmSync } from 'node:fs';
 import type Database from 'better-sqlite3';
 import { ulid } from '@septcats/core';
 import { PRAGMA_BASELINE, SCHEMA_V1_STATEMENTS } from './schema.sql';
-import { SCHEMA_V2_ADDED_COLUMNS, SCHEMA_V2_INDEXES, SCHEMA_V2_STATEMENTS } from './schema.v2';
+import {
+  SCHEMA_V2_ADDED_COLUMNS,
+  SCHEMA_V2_INDEXES,
+  SCHEMA_V2_STATEMENTS,
+  SCHEMA_V3_ADDED_COLUMNS,
+  SCHEMA_V3_INDEXES,
+} from './schema.v2';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -129,12 +135,31 @@ function applySchemaV2(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #3：`record.backlinks_json`（relation 反链索引，TASK-T7-01 §2）。
+ *
+ * 幂等性与 #2 同：加列走 `PRAGMA table_info` 存在性判断，索引走 `IF NOT EXISTS`。
+ * 不加新表——collection/record 表在 v1 已就位，本任务只需这一列。
+ */
+function applySchemaV3(db: SqliteDatabase): void {
+  for (const column of SCHEMA_V3_ADDED_COLUMNS) {
+    if (!hasColumn(db, column.table, column.column)) {
+      db.exec(column.sql);
+    }
+  }
+  for (const statement of SCHEMA_V3_INDEXES) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '3');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
 export const MIGRATIONS: readonly Migration[] = [
   { id: 1, name: 'v1-schema', up: applySchemaV1 },
   { id: 2, name: 'v2-page-tree', up: applySchemaV2 },
+  { id: 3, name: 'v3-record-backlinks', up: applySchemaV3 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

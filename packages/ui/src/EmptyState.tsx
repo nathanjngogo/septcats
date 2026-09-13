@@ -7,9 +7,9 @@ import './EmptyState.css';
 export interface EmptyStateProps {
   /** 一句动作导向的文案（不卖萌、不堆破折号） */
   title: string;
-  description?: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  description?: string | undefined;
+  actionLabel?: string | undefined;
+  onAction?: (() => void) | undefined;
   /** 插画位；缺省用虚线占位框（有构图，不是空白） */
   illustration?: ReactNode;
   className?: string;

@@ -57,6 +57,26 @@ export const SCHEMA_V2_ADDED_COLUMNS: readonly AddedColumn[] = [
   { table: 'page', column: 'deleted_at', sql: 'ALTER TABLE page ADD COLUMN deleted_at INTEGER' },
 ];
 
+/**
+ * v3（TASK-T7-01 §2）追加列：`record.backlinks_json` —— relation 反链索引。
+ *
+ * 与 `page.deleted_at` 同口径：**设备本地派生态**，不进 Op payload（relation 双写
+ * 只发 record 的 upsert/delete op，backlink 是物化投影的副产物），
+ * 从分段重建后为空，由后续 relation 编辑重新积累。
+ */
+export const SCHEMA_V3_ADDED_COLUMNS: readonly AddedColumn[] = [
+  {
+    table: 'record',
+    column: 'backlinks_json',
+    sql: `ALTER TABLE record ADD COLUMN backlinks_json TEXT NOT NULL DEFAULT '{}'`,
+  },
+];
+
+/** v3 索引：反链查询按 collection 收窄（relation 双写与删除前检查都要用）。 */
+export const SCHEMA_V3_INDEXES: readonly string[] = [
+  `CREATE INDEX IF NOT EXISTS idx_record_backlinks ON record(workspace_id) WHERE alive = 1 AND backlinks_json != '{}'`,
+];
+
 /** v2 索引（计划书 §6.2 的两条：最近打开倒序、存活页按工作区）。 */
 export const SCHEMA_V2_INDEXES: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS idx_recent_user ON recent(user_key, last_opened DESC)`,

@@ -160,11 +160,11 @@ const V2_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 const V2_READS = new Set(['page.listAll', 'page.listTrash', 'favorite.list', 'recent.list']);
 
 describe('v2 白名单（页面树/回收站/收藏/最近）', () => {
-  it('12 条新增语句齐全，语法预算 < 40', () => {
+  it('全部语句齐全且语法预算 < 60', () => {
     for (const id of Object.keys(V2_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
-    expect(SQL_IDS.length).toBeLessThan(40);
+    expect(SQL_IDS.length).toBeLessThan(60);
     expect(SQL_IDS.length).toBeGreaterThanOrEqual(39);
   });
 

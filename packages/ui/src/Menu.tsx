@@ -7,14 +7,14 @@ import './Menu.css';
 export interface MenuEntry {
   id: string;
   label: ReactNode;
-  hint?: string;
+  hint?: string | undefined;
   danger?: boolean;
   disabled?: boolean;
 }
 
 export interface MenuProps {
   items: readonly MenuEntry[];
-  label?: string;
+  label?: string | undefined;
   onSelect?: (id: string) => void;
   onDismiss?: () => void;
   className?: string;

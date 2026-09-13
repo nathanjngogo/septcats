@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+
+const MIGRATION_IDS = MIGRATIONS.map((migration) => migration.id);
 import {
   LATEST_SCHEMA_VERSION,
   MIGRATIONS,
@@ -10,7 +12,14 @@ import {
   type SqliteDatabase,
 } from '../src/db/migrations';
 import { PRAGMA_BASELINE, SCHEMA_V1_STATEMENTS, SCHEMA_V1_TABLES } from '../src/db/schema.sql';
-import { SCHEMA_V2_INDEXES, SCHEMA_V2_STATEMENTS, SCHEMA_V2_TABLES } from '../src/db/schema.v2';
+import {
+  SCHEMA_V2_ADDED_COLUMNS,
+  SCHEMA_V2_INDEXES,
+  SCHEMA_V2_STATEMENTS,
+  SCHEMA_V2_TABLES,
+  SCHEMA_V3_ADDED_COLUMNS,
+  SCHEMA_V3_INDEXES,
+} from '../src/db/schema.v2';
 import { describeDb, makeTempDb } from './helpers';
 
 /** 列表化表/列，做结构断言。 */
@@ -42,16 +51,22 @@ describe('MIGRATIONS 表', () => {
 
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
-    expect(LATEST_SCHEMA_VERSION).toBe(2);
+    expect(LATEST_SCHEMA_VERSION).toBe(3);
   });
 
-  it('#1 未被改动：v1 仍是建表语句，v2 只做追加', () => {
+  it('#1/#2 未被改动：v1 仍是建表语句，v2/v3 只做追加', () => {
     expect(MIGRATIONS[0]!.name).toBe('v1-schema');
     expect(MIGRATIONS[1]!.name).toBe('v2-page-tree');
+    expect(MIGRATIONS[2]!.name).toBe('v3-record-backlinks');
     // v2 不碰 v1 的语句集：两批语句无交集
     const v1 = new Set(SCHEMA_V1_STATEMENTS);
     for (const statement of SCHEMA_V2_STATEMENTS) {
       expect(v1.has(statement)).toBe(false);
+    }
+    // v3 只有加列/索引，不重复 v2 的加列目标
+    const v2Columns = new Set(SCHEMA_V2_ADDED_COLUMNS.map((column) => `${column.table}.${column.column}`));
+    for (const column of SCHEMA_V3_ADDED_COLUMNS) {
+      expect(v2Columns.has(`${column.table}.${column.column}`)).toBe(false);
     }
   });
 });
@@ -71,6 +86,16 @@ describe('schema.v2.ts', () => {
     const sql = SCHEMA_V2_INDEXES.join('\n');
     expect(sql).toContain('idx_recent_user ON recent(user_key, last_opened DESC)');
     expect(sql).toContain('idx_page_ws_live ON page(workspace_id) WHERE deleted_at IS NULL');
+  });
+});
+
+describe('schema.v2.ts（v3 追加）', () => {
+  it('v3 只追加 record.backlinks_json（relation 反链索引，设备本地）', () => {
+    expect(SCHEMA_V3_ADDED_COLUMNS).toHaveLength(1);
+    expect(SCHEMA_V3_ADDED_COLUMNS[0]?.table).toBe('record');
+    expect(SCHEMA_V3_ADDED_COLUMNS[0]?.column).toBe('backlinks_json');
+    expect(SCHEMA_V3_ADDED_COLUMNS[0]?.sql).toContain('ALTER TABLE record ADD COLUMN backlinks_json');
+    expect(SCHEMA_V3_INDEXES.join('\n')).toContain('idx_record_backlinks');
   });
 });
 
@@ -118,7 +143,7 @@ describe('schema.sql.ts', () => {
 });
 
 describeDb('migrate（better-sqlite3 直连）', (ctor) => {
-  it('全新库迁移到 v2：v1 建表 + v2 追加表/列/索引 + user_version + meta 基线', async () => {
+  it('全新库迁移到最新：逐版建表/加列/索引 + user_version + meta 基线', async () => {
     const temp = makeTempDb('septcats-migrate');
     const db = new ctor(temp.path);
     try {
@@ -127,11 +152,11 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
 
       const result = await migrate(db);
       expect(result.from).toBe(0);
-      expect(result.to).toBe(2);
-      expect(result.applied).toEqual([1, 2]);
+      expect(result.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(result.applied).toEqual(MIGRATION_IDS);
       expect(result.recovery).toBe('none');
       expect(result.error).toBeUndefined();
-      expect(readUserVersion(db)).toBe(2);
+      expect(readUserVersion(db)).toBe(LATEST_SCHEMA_VERSION);
 
       const names = tableNames(db);
       for (const table of SCHEMA_V1_TABLES) {
@@ -153,7 +178,7 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
     }
   });
 
-  it('v1 → v2 增量迁移：只有 #2 被应用，deleted_at 与三表到位', async () => {
+  it('v1 → 最新增量迁移：只应用剩余版本，deleted_at 与三表到位', async () => {
     const temp = makeTempDb('septcats-migrate-v1v2');
     const db = new ctor(temp.path);
     try {
@@ -164,8 +189,8 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
 
       const v2 = await runMigrations(db, MIGRATIONS);
       expect(v2.from).toBe(1);
-      expect(v2.to).toBe(2);
-      expect(v2.applied).toEqual([2]);
+      expect(v2.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(v2.applied).toEqual(MIGRATION_IDS.slice(1));
       expect(columnNames(db, 'page')).toContain('deleted_at');
       for (const table of SCHEMA_V2_TABLES) {
         expect(tableNames(db)).toContain(table);
@@ -208,8 +233,8 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
       applyPragmaBaseline(db);
       await migrate(db);
       const again = await migrate(db);
-      expect(again.from).toBe(2);
-      expect(again.to).toBe(2);
+      expect(again.from).toBe(LATEST_SCHEMA_VERSION);
+      expect(again.to).toBe(LATEST_SCHEMA_VERSION);
       expect(again.applied).toEqual([]);
       expect(again.backupPath).toBeNull();
     } finally {
@@ -253,8 +278,8 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
       expect(result.error?.code).toBe('E_MIGRATION_FAILED');
       expect(result.error?.message).toContain('boom');
       expect(result.recovery).toBe('restored');
-      expect(result.backupPath).toBe(`${temp.path}.bak-v2`);
-      expect(readUserVersion(result.db)).toBe(2);
+      expect(result.backupPath).toBe(`${temp.path}.bak-v${String(LATEST_SCHEMA_VERSION)}`);
+      expect(readUserVersion(result.db)).toBe(LATEST_SCHEMA_VERSION);
 
       const leftovers = result.db
         .prepare(`SELECT name FROM sqlite_master WHERE name = 'boom'`)
@@ -265,7 +290,7 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
       const meta = result.db.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get() as
         | { value: string }
         | undefined;
-      expect(meta?.value).toBe('2');
+      expect(meta?.value).toBe(String(LATEST_SCHEMA_VERSION));
     } finally {
       working.close();
       temp.cleanup();
@@ -290,7 +315,7 @@ describeDb('migrate（better-sqlite3 直连）', (ctor) => {
       working = result.db;
       expect(result.backupPath).toBeNull();
       expect(result.recovery).toBe('rolled-back');
-      expect(readUserVersion(result.db)).toBe(2);
+      expect(readUserVersion(result.db)).toBe(LATEST_SCHEMA_VERSION);
     } finally {
       working.close();
       temp.cleanup();

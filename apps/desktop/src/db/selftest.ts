@@ -20,7 +20,11 @@ import {
   type Segment,
   type TargetTable,
 } from '@septcats/core';
-import { applyPragmaBaseline, loadSqliteConstructor } from './migrations';
+import {
+  applyPragmaBaseline,
+  LATEST_SCHEMA_VERSION,
+  loadSqliteConstructor,
+} from './migrations';
 import { SCHEMA_V2_TABLES } from './schema.v2';
 import { createDbServerCore, type DbServerCore } from './server';
 import type {
@@ -137,10 +141,10 @@ async function main(): Promise<void> {
     core = createDbServerCore(new ctor(dbPath));
     applyPragmaBaseline(core.activeDatabase());
     const migrated = await requestOk<MigrateData>(core, { id: nextId(), t: 'migrate' });
-    check('migrate v0→v2', migrated.from === 0 && migrated.to === 2, `from=${migrated.from} to=${migrated.to}`);
+    check('migrate v0→latest', migrated.from === 0 && migrated.to === LATEST_SCHEMA_VERSION, `from=${migrated.from} to=${migrated.to}`);
 
     const second = await requestOk<MigrateData>(core, { id: nextId(), t: 'migrate' });
-    check('migrate 幂等（第二次无变化）', second.from === 2 && second.to === 2);
+    check('migrate 幂等（第二次无变化）', second.from === LATEST_SCHEMA_VERSION && second.to === LATEST_SCHEMA_VERSION);
 
     const v2 = v2SchemaState(core);
     check(

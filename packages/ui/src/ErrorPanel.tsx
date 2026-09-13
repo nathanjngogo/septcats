@@ -8,7 +8,7 @@ export interface ErrorPanelProps {
   /** 说人话的说明（可内联、可重试） */
   description: string;
   retryLabel?: string;
-  onRetry?: () => void;
+  onRetry?: (() => void) | undefined;
   className?: string;
 }
 

@@ -312,35 +312,29 @@ ON CONFLICT(id) DO UPDATE SET
     sql: `SELECT * FROM collection WHERE workspace_id = @workspace_id AND alive = 1 ORDER BY id`,
     params: z.object({ workspace_id: z.string().min(1) }),
   },
-
-  // ---- record -------------------------------------------------------------
-  'record.upsert': {
+  // T7：独立 DB 页（page_id 指向 page 行）→ collection 反查
+  'collection.getByPage': {
+    kind: 'get',
+    sql: `SELECT * FROM collection WHERE page_id = @page_id AND alive = 1 ORDER BY id LIMIT 1`,
+    params: z.object({ page_id: idText }),
+  },
+  // T7：视图落盘是 collection 的局部 patch（只动 views_json；不整体覆盖 schema）
+  'collection.setViews': {
     kind: 'run',
-    sql: `INSERT INTO record (id, collection_id, workspace_id, values_json, sort_key, alive, version, lamport_c, lamport_d, updated_at)
-VALUES (@id, @collection_id, @workspace_id, @values_json, @sort_key, @alive, @version, @lamport_c, @lamport_d, @updated_at)
-ON CONFLICT(id) DO UPDATE SET
-  collection_id = excluded.collection_id,
-  workspace_id = excluded.workspace_id,
-  values_json = excluded.values_json,
-  sort_key = excluded.sort_key,
-  alive = excluded.alive,
-  version = excluded.version,
-  lamport_c = excluded.lamport_c,
-  lamport_d = excluded.lamport_d,
-  updated_at = excluded.updated_at`,
+    sql: `UPDATE collection SET views_json = @views_json, version = @version, lamport_c = @lamport_c, lamport_d = @lamport_d, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id AND alive = 1`,
     params: z.object({
       id: idText,
-      collection_id: idText,
-      workspace_id: z.string().min(1),
-      values_json: z.string().default('{}'),
-      sort_key: z.string().min(1),
-      alive: aliveFlag,
+      workspace_id: workspaceIdText,
+      views_json: z.string().default('[]'),
       version: versionInt,
       lamport_c: lamportCount,
       lamport_d: actorId,
       updated_at: nullableTimestamp,
     }),
   },
+
+  // ---- record（读路径）----------------------------------------------------
   'record.get': {
     kind: 'get',
     sql: `SELECT * FROM record WHERE id = @id`,
@@ -355,6 +349,76 @@ ON CONFLICT(id) DO UPDATE SET
     kind: 'run',
     sql: `UPDATE record SET alive = 0, version = @version, updated_at = @updated_at WHERE id = @id`,
     params: z.object({ id: idText, version: versionInt, updated_at: nullableTimestamp }),
+  },
+
+  // ---- record（T7：行内数据库的写路径）------------------------------------
+  // 写语句带 workspace_id 守卫（越界工作区 = 0 行受影响，不跨工作区写）。
+  // backlinks_json 是**设备本地派生态**（relation 反链索引），不进 Op payload；
+  // 从分段重建后为空，由后续 relation 编辑重新积累（口径同 page.deleted_at）。
+  'record.upsert': {
+    kind: 'run',
+    sql: `INSERT INTO record (id, collection_id, workspace_id, values_json, backlinks_json, sort_key, alive, version, lamport_c, lamport_d, updated_at)
+VALUES (@id, @collection_id, @workspace_id, @values_json, @backlinks_json, @sort_key, @alive, @version, @lamport_c, @lamport_d, @updated_at)
+ON CONFLICT(id) DO UPDATE SET
+  collection_id = excluded.collection_id,
+  workspace_id = excluded.workspace_id,
+  values_json = excluded.values_json,
+  backlinks_json = excluded.backlinks_json,
+  sort_key = excluded.sort_key,
+  alive = excluded.alive,
+  version = excluded.version,
+  lamport_c = excluded.lamport_c,
+  lamport_d = excluded.lamport_d,
+  updated_at = excluded.updated_at`,
+    params: z.object({
+      id: idText,
+      collection_id: idText,
+      workspace_id: z.string().min(1),
+      values_json: z.string().default('{}'),
+      backlinks_json: z.string().default('{}'),
+      sort_key: z.string().min(1),
+      alive: aliveFlag,
+      version: versionInt,
+      lamport_c: lamportCount,
+      lamport_d: actorId,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  // relation 双写：只改对方记录的 backlinks 索引（values/sort_key 不动）
+  'record.setBacklinks': {
+    kind: 'run',
+    sql: `UPDATE record SET backlinks_json = @backlinks_json, version = @version, lamport_c = @lamport_c, lamport_d = @lamport_d, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id AND alive = 1`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      backlinks_json: z.string().default('{}'),
+      version: versionInt,
+      lamport_c: lamportCount,
+      lamport_d: actorId,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  // 记录删除前检查：还有多少条存活记录的 values_json 引用了 @id
+  'relation.countTargets': {
+    kind: 'get',
+    sql: `SELECT COUNT(*) AS n
+FROM record r, json_each(r.values_json) AS jt
+WHERE r.workspace_id = @workspace_id AND r.alive = 1
+  AND json_valid(r.values_json) AND json_type(jt.value) = 'array'
+  AND EXISTS (SELECT 1 FROM json_each(jt.value) AS it WHERE it.value = @id)`,
+    params: z.object({ id: idText, workspace_id: workspaceIdText }),
+  },
+  // 层尾排序键（建记录 = sort_key 追加到尾）：单查询取最大键
+  'record.maxSortKey': {
+    kind: 'get',
+    sql: `SELECT COALESCE(MAX(sort_key), '') AS max_key FROM record WHERE collection_id = @collection_id AND alive = 1`,
+    params: z.object({ collection_id: idText }),
+  },
+  'record.byIds': {
+    kind: 'all',
+    sql: `SELECT * FROM record WHERE id IN (SELECT value FROM json_each(@ids_json)) AND workspace_id = @workspace_id`,
+    params: z.object({ ids_json: z.string(), workspace_id: workspaceIdText }),
   },
 
   // ---- favorite / recent（v2：设备本地派生态，不进 Op 真相层）-------------
