@@ -224,6 +224,16 @@ function readNullableJsonText(data: Record<string, unknown>, key: string): strin
   return value === undefined || value === null ? null : JSON.stringify(value);
 }
 
+/**
+ * 读可空整数（v2 的 `page.deleted_at`）。
+ * 注意：`deleted_at` 是**设备本地**列，不进 Op payload —— 因此从分段重建后，
+ * tombstone 行的 deleted_at 为 null（不再出现在回收站列表里，等同可 GC）。见交付报告未决项。
+ */
+function readNullableNumber(data: Record<string, unknown>, key: string): number | null {
+  const value = data[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 /** 把重放出的实体映射成对应 upsert 语句的参数（列名照抄 §6.2）。 */
 function entityToParams(entity: Entity): Record<string, unknown> {
   const data = entity.data;
@@ -239,6 +249,7 @@ function entityToParams(entity: Entity): Record<string, unknown> {
         sort_key: readString(data, 'sort_key', 'A00000000') ?? 'A00000000',
         alive: entity.alive,
         version: entity.version,
+        deleted_at: readNullableNumber(data, 'deleted_at'),
         updated_at: readNumber(data, 'updated_at', 0),
       };
     case 'block':

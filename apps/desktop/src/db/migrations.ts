@@ -14,6 +14,7 @@ import { copyFileSync, existsSync, rmSync } from 'node:fs';
 import type Database from 'better-sqlite3';
 import { ulid } from '@septcats/core';
 import { PRAGMA_BASELINE, SCHEMA_V1_STATEMENTS } from './schema.sql';
+import { SCHEMA_V2_ADDED_COLUMNS, SCHEMA_V2_INDEXES, SCHEMA_V2_STATEMENTS } from './schema.v2';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -92,12 +93,48 @@ function insertMetaIfAbsent(db: SqliteDatabase, key: string, value: string): voi
   db.prepare('INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)').run(key, value);
 }
 
+function setMeta(db: SqliteDatabase, key: string, value: string): void {
+  db.prepare(
+    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+  ).run(key, value);
+}
+
+/** 表上是否已有该列（`PRAGMA table_info`；表名来自内部常量，无注入面）。 */
+function hasColumn(db: SqliteDatabase, table: string, column: string): boolean {
+  const rows = db.pragma(`table_info(${table})`) as Array<{ name?: unknown }>;
+  return rows.some((row) => row.name === column);
+}
+
+/**
+ * migration #2：v2 追加表/列/索引。
+ *
+ * 幂等性来源：建表与建索引走 `IF NOT EXISTS`；加列走 `PRAGMA table_info` 存在性判断
+ * （`ALTER TABLE ADD COLUMN` 在 SQLite 里不可重复执行，也没有 `IF NOT EXISTS`）。
+ * STRICT 表原生支持 ADD COLUMN（better-sqlite3 12 捆绑的 SQLite ≥ 3.45），
+ * 因此不必走「建新表→拷数据→改名」三步。
+ */
+function applySchemaV2(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V2_STATEMENTS) {
+    db.exec(statement);
+  }
+  for (const column of SCHEMA_V2_ADDED_COLUMNS) {
+    if (!hasColumn(db, column.table, column.column)) {
+      db.exec(column.sql);
+    }
+  }
+  for (const statement of SCHEMA_V2_INDEXES) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '2');
+}
+
 /**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
 export const MIGRATIONS: readonly Migration[] = [
   { id: 1, name: 'v1-schema', up: applySchemaV1 },
+  { id: 2, name: 'v2-page-tree', up: applySchemaV2 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

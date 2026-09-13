@@ -45,6 +45,10 @@ const lamportCount = z.number().int().min(1);
 const actorId = z.string().regex(/^[a-z0-9]{8,32}$/);
 const nullableText = z.string().nullable().default(null);
 const nullableTimestamp = z.number().int().nonnegative().nullable().default(null);
+/** 工作区 id：v2 起的**每一条**页面/收藏/最近语句都必须携带它（单库多工作区分片，Q4）。 */
+const workspaceIdText = z.string().min(1).max(128);
+/** 设备本地用户键（favorite/recent 的 user_key；取 meta.device_id）。 */
+const userKeyText = z.string().min(1).max(128);
 const emptyParams = z.object({});
 
 // ---------------------------------------------------------------------------
@@ -84,8 +88,8 @@ ON CONFLICT(id) DO UPDATE SET
   // ---- page ---------------------------------------------------------------
   'page.upsert': {
     kind: 'run',
-    sql: `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, updated_at)
-VALUES (@id, @workspace_id, @title, @icon, @cover, @parent_id, @sort_key, @alive, @version, @updated_at)
+    sql: `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, deleted_at, updated_at)
+VALUES (@id, @workspace_id, @title, @icon, @cover, @parent_id, @sort_key, @alive, @version, @deleted_at, @updated_at)
 ON CONFLICT(id) DO UPDATE SET
   workspace_id = excluded.workspace_id,
   title = excluded.title,
@@ -95,10 +99,11 @@ ON CONFLICT(id) DO UPDATE SET
   sort_key = excluded.sort_key,
   alive = excluded.alive,
   version = excluded.version,
+  deleted_at = excluded.deleted_at,
   updated_at = excluded.updated_at`,
     params: z.object({
       id: idText,
-      workspace_id: z.string().min(1),
+      workspace_id: workspaceIdText,
       title: z.string().default(''),
       icon: nullableText,
       cover: nullableText,
@@ -106,6 +111,7 @@ ON CONFLICT(id) DO UPDATE SET
       sort_key: z.string().min(1),
       alive: aliveFlag,
       version: versionInt,
+      deleted_at: nullableTimestamp,
       updated_at: nullableTimestamp,
     }),
   },
@@ -130,6 +136,92 @@ ORDER BY sort_key, id`,
     kind: 'run',
     sql: `UPDATE page SET alive = 0, version = @version, updated_at = @updated_at WHERE id = @id`,
     params: z.object({ id: idText, version: versionInt, updated_at: nullableTimestamp }),
+  },
+
+  // ---- page（v2：页面树 / 回收站 / 工作区）--------------------------------
+  // 写语句的 WHERE 一律带 workspace_id：越界工作区 = 0 行受影响（不跨工作区写）。
+  'page.insert': {
+    kind: 'run',
+    sql: `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, deleted_at, updated_at)
+VALUES (@id, @workspace_id, @title, @icon, @cover, @parent_id, @sort_key, @alive, @version, @deleted_at, @updated_at)
+ON CONFLICT(id) DO NOTHING`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      title: z.string().default(''),
+      icon: nullableText,
+      cover: nullableText,
+      parent_id: nullableText,
+      sort_key: z.string().min(1),
+      alive: aliveFlag,
+      version: versionInt,
+      deleted_at: nullableTimestamp,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'page.rename': {
+    kind: 'run',
+    sql: `UPDATE page SET title = @title, version = @version, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      title: z.string(),
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'page.setSort': {
+    kind: 'run',
+    sql: `UPDATE page SET sort_key = @sort_key, version = @version, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      sort_key: z.string().min(1),
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'page.setChildrenOrder': {
+    kind: 'run',
+    sql: `UPDATE page SET parent_id = @parent_id, sort_key = @sort_key, version = @version, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      parent_id: nullableText,
+      sort_key: z.string().min(1),
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'page.setDeleted': {
+    kind: 'run',
+    // deleted_at: >0 = 软删除（进回收站）；0 = 「彻底删除」标记（M5 即时移除，物理清除归 GC）
+    sql: `UPDATE page SET alive = 0, deleted_at = @deleted_at, version = @version, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      deleted_at: nullableTimestamp,
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'page.listAll': {
+    kind: 'all',
+    // page:tree 的唯一查询：alive+deleted 全量（2000 页 < 80ms，单查询）
+    sql: `SELECT * FROM page WHERE workspace_id = @workspace_id ORDER BY sort_key, id`,
+    params: z.object({ workspace_id: workspaceIdText }),
+  },
+  'page.listTrash': {
+    kind: 'all',
+    // 只列「软删除」行（deleted_at > 0）；deleted_at = 0 的彻底删除标记不再露出
+    sql: `SELECT * FROM page
+WHERE workspace_id = @workspace_id AND alive = 0 AND deleted_at > 0
+ORDER BY deleted_at DESC, id`,
+    params: z.object({ workspace_id: workspaceIdText }),
   },
 
   // ---- block --------------------------------------------------------------
@@ -263,6 +355,65 @@ ON CONFLICT(id) DO UPDATE SET
     kind: 'run',
     sql: `UPDATE record SET alive = 0, version = @version, updated_at = @updated_at WHERE id = @id`,
     params: z.object({ id: idText, version: versionInt, updated_at: nullableTimestamp }),
+  },
+
+  // ---- favorite / recent（v2：设备本地派生态，不进 Op 真相层）-------------
+  // 两表无 workspace_id 列，故用 `EXISTS (SELECT 1 FROM page …)` 做工作区校验：
+  // 越界 workspace_id ⇒ 0 行受影响（既守住红线，也满足「全部带 workspace_id」）。
+  'favorite.add': {
+    kind: 'run',
+    sql: `INSERT OR IGNORE INTO favorite (user_key, page_id, added_at)
+SELECT @user_key, @page_id, @added_at
+WHERE EXISTS (SELECT 1 FROM page WHERE id = @page_id AND workspace_id = @workspace_id)`,
+    params: z.object({
+      user_key: userKeyText,
+      page_id: idText,
+      added_at: z.number().int().nonnegative(),
+      workspace_id: workspaceIdText,
+    }),
+  },
+  'favorite.remove': {
+    kind: 'run',
+    sql: `DELETE FROM favorite
+WHERE user_key = @user_key AND page_id = @page_id
+  AND EXISTS (SELECT 1 FROM page WHERE id = @page_id AND workspace_id = @workspace_id)`,
+    params: z.object({
+      user_key: userKeyText,
+      page_id: idText,
+      workspace_id: workspaceIdText,
+    }),
+  },
+  'favorite.list': {
+    kind: 'all',
+    sql: `SELECT f.page_id AS page_id, f.added_at AS added_at
+FROM favorite f JOIN page p ON p.id = f.page_id
+WHERE f.user_key = @user_key AND p.workspace_id = @workspace_id AND p.alive = 1
+ORDER BY f.added_at DESC, f.page_id`,
+    params: z.object({ user_key: userKeyText, workspace_id: workspaceIdText }),
+  },
+  'recent.touch': {
+    kind: 'run',
+    // UPSERT：只刷新 last_opened，历史位置由 last_opened DESC 体现
+    sql: `INSERT INTO recent (user_key, page_id, last_opened)
+SELECT @user_key, @page_id, @last_opened
+WHERE EXISTS (SELECT 1 FROM page WHERE id = @page_id AND workspace_id = @workspace_id)
+ON CONFLICT(user_key, page_id) DO UPDATE SET last_opened = excluded.last_opened`,
+    params: z.object({
+      user_key: userKeyText,
+      page_id: idText,
+      last_opened: z.number().int().nonnegative(),
+      workspace_id: workspaceIdText,
+    }),
+  },
+  'recent.list': {
+    kind: 'all',
+    // 上限 20 条；排除已删（回收站里的页面不该出现在「最近」）
+    sql: `SELECT r.page_id AS page_id, r.last_opened AS last_opened
+FROM recent r JOIN page p ON p.id = r.page_id
+WHERE r.user_key = @user_key AND p.workspace_id = @workspace_id AND p.alive = 1
+ORDER BY r.last_opened DESC, r.page_id
+LIMIT 20`,
+    params: z.object({ user_key: userKeyText, workspace_id: workspaceIdText }),
   },
 
   // ---- op_ledger（真相层） -------------------------------------------------

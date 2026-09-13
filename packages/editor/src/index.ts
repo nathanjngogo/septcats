@@ -9,6 +9,7 @@
 
 export * from './model';
 export * from './diff';
+export * from './tree';
 export * from './history';
 export * from './seq';
 export * from './marks';

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SQL_IDS, STATEMENTS, getStatement } from '../src/db/statements';
+import { describeDb, makeCore, makeTempDb, requestOk } from './helpers';
+import type { AllData, MigrateData, RunData } from '../src/db/rpc';
 
 const VALID_KINDS = new Set(['run', 'get', 'all']);
 
@@ -124,6 +126,217 @@ describe('参数 schema 校验', () => {
       const definition = getStatement(id);
       expect(definition, `缺少语句 ${id}`).not.toBeNull();
       expect(definition!.params.safeParse({}).success).toBe(true);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v2 白名单（TASK-T6-01 §2）：page 树 / 回收站 / favorite / recent
+// ---------------------------------------------------------------------------
+
+/** v2 追加的 12 条语句与各自的 happy 参数（全部必须带 workspace_id）。 */
+const V2_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
+  'page.insert': { id: 'pg-1', workspace_id: 'ws-1', sort_key: 'A00000000', version: 1 },
+  'page.rename': { id: 'pg-1', workspace_id: 'ws-1', title: '新标题', version: 2 },
+  'page.setSort': { id: 'pg-1', workspace_id: 'ws-1', sort_key: 'A00000001', version: 2 },
+  'page.setChildrenOrder': {
+    id: 'pg-1',
+    workspace_id: 'ws-1',
+    parent_id: 'pg-9',
+    sort_key: 'A00000001',
+    version: 2,
+  },
+  'page.setDeleted': { id: 'pg-1', workspace_id: 'ws-1', deleted_at: 1_700_000_000_000, version: 2 },
+  'page.listAll': { workspace_id: 'ws-1' },
+  'page.listTrash': { workspace_id: 'ws-1' },
+  'favorite.add': { user_key: 'dev-1', page_id: 'pg-1', added_at: 1, workspace_id: 'ws-1' },
+  'favorite.remove': { user_key: 'dev-1', page_id: 'pg-1', workspace_id: 'ws-1' },
+  'favorite.list': { user_key: 'dev-1', workspace_id: 'ws-1' },
+  'recent.touch': { user_key: 'dev-1', page_id: 'pg-1', last_opened: 1, workspace_id: 'ws-1' },
+  'recent.list': { user_key: 'dev-1', workspace_id: 'ws-1' },
+};
+
+/** v2 的读语句（kind=all）。 */
+const V2_READS = new Set(['page.listAll', 'page.listTrash', 'favorite.list', 'recent.list']);
+
+describe('v2 白名单（页面树/回收站/收藏/最近）', () => {
+  it('12 条新增语句齐全，语法预算 < 40', () => {
+    for (const id of Object.keys(V2_HAPPY)) {
+      expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
+    }
+    expect(SQL_IDS.length).toBeLessThan(40);
+    expect(SQL_IDS.length).toBeGreaterThanOrEqual(39);
+  });
+
+  it('每条 happy 参数通过校验，kind 与读写语义一致', () => {
+    for (const [id, params] of Object.entries(V2_HAPPY)) {
+      const definition = getStatement(id);
+      expect(definition, `缺少语句 ${id}`).not.toBeNull();
+      expect(definition!.params.safeParse(params).success, `${id} happy 参数被拒`).toBe(true);
+      expect(definition!.kind).toBe(V2_READS.has(id) ? 'all' : 'run');
+    }
+  });
+
+  it('每条都强制 workspace_id：缺省 / 空串 / 类型错一律拒绝', () => {
+    for (const [id, params] of Object.entries(V2_HAPPY)) {
+      const definition = getStatement(id)!;
+      const withoutWorkspace = { ...params };
+      delete withoutWorkspace['workspace_id'];
+      expect(definition.params.safeParse(withoutWorkspace).success, `${id} 缺 workspace_id 应拒`).toBe(false);
+      expect(
+        definition.params.safeParse({ ...params, workspace_id: '' }).success,
+        `${id} 空 workspace_id 应拒`,
+      ).toBe(false);
+      expect(
+        definition.params.safeParse({ ...params, workspace_id: 42 }).success,
+        `${id} 非字符串 workspace_id 应拒`,
+      ).toBe(false);
+    }
+  });
+
+  it('page.setDeleted：deleted_at 允许 0（彻底删除标记）与正数，拒绝负数', () => {
+    const definition = getStatement('page.setDeleted')!;
+    const base = { id: 'pg-1', workspace_id: 'ws-1', version: 2 };
+    expect(definition.params.safeParse({ ...base, deleted_at: 0 }).success).toBe(true);
+    expect(definition.params.safeParse({ ...base, deleted_at: 1_700_000_000_000 }).success).toBe(true);
+    expect(definition.params.safeParse({ ...base, deleted_at: null }).success).toBe(true);
+    expect(definition.params.safeParse({ ...base, deleted_at: -1 }).success).toBe(false);
+  });
+
+  it('page.rename / page.setChildrenOrder：必填字段缺失被拒', () => {
+    const rename = getStatement('page.rename')!;
+    expect(rename.params.safeParse({ id: 'pg-1', workspace_id: 'ws-1', version: 2 }).success).toBe(false);
+    const order = getStatement('page.setChildrenOrder')!;
+    expect(
+      order.params.safeParse({ id: 'pg-1', workspace_id: 'ws-1', sort_key: 'A', version: 2 }).success,
+    ).toBe(true);
+    expect(order.params.safeParse({ id: 'pg-1', workspace_id: 'ws-1', version: 2 }).success).toBe(false);
+  });
+
+  it('v2 写语句不含分号 / 破坏性片段；WHERE 一律带 workspace_id', () => {
+    for (const id of Object.keys(V2_HAPPY)) {
+      const sql = getStatement(id)!.sql;
+      expect(sql.includes(';'), `${id} 含分号`).toBe(false);
+      for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA']) {
+        expect(sql.toUpperCase().includes(forbidden), `${id} 含 ${forbidden}`).toBe(false);
+      }
+      expect(sql, `${id} 未带 workspace_id 约束`).toContain('workspace_id');
+    }
+  });
+});
+
+describeDb('v2 工作区隔离（better-sqlite3 直连）', (ctor) => {
+  it('越界 workspace_id 的写一律 0 行受影响（page / favorite / recent）', async () => {
+    const temp = makeTempDb('septcats-ws-guard');
+    const core = makeCore(ctor, temp.path);
+    const AT = 1_700_000_000_000;
+    try {
+      await requestOk<MigrateData>(core, { id: 'm1', t: 'migrate' });
+      await requestOk<RunData>(core, {
+        id: 'p1',
+        t: 'run',
+        sqlId: 'page.insert',
+        params: { id: 'pg-1', workspace_id: 'ws-a', title: '甲', sort_key: 'A00000000', version: 1 },
+      });
+
+      const deleted = await requestOk<RunData>(core, {
+        id: 'd1',
+        t: 'run',
+        sqlId: 'page.setDeleted',
+        params: { id: 'pg-1', workspace_id: 'ws-b', deleted_at: AT, version: 2 },
+      });
+      expect(deleted.changes).toBe(0);
+
+      const renamed = await requestOk<RunData>(core, {
+        id: 'r1',
+        t: 'run',
+        sqlId: 'page.rename',
+        params: { id: 'pg-1', workspace_id: 'ws-b', title: '乙', version: 2 },
+      });
+      expect(renamed.changes).toBe(0);
+
+      const favOther = await requestOk<RunData>(core, {
+        id: 'f1',
+        t: 'run',
+        sqlId: 'favorite.add',
+        params: { user_key: 'dev-1', page_id: 'pg-1', added_at: 1, workspace_id: 'ws-b' },
+      });
+      expect(favOther.changes).toBe(0);
+
+      const recentOther = await requestOk<RunData>(core, {
+        id: 't1',
+        t: 'run',
+        sqlId: 'recent.touch',
+        params: { user_key: 'dev-1', page_id: 'pg-1', last_opened: 1, workspace_id: 'ws-b' },
+      });
+      expect(recentOther.changes).toBe(0);
+
+      const favMine = await requestOk<RunData>(core, {
+        id: 'f2',
+        t: 'run',
+        sqlId: 'favorite.add',
+        params: { user_key: 'dev-1', page_id: 'pg-1', added_at: 1, workspace_id: 'ws-a' },
+      });
+      expect(favMine.changes).toBe(1);
+      const favList = await requestOk<AllData>(core, {
+        id: 'f3',
+        t: 'all',
+        sqlId: 'favorite.list',
+        params: { user_key: 'dev-1', workspace_id: 'ws-a' },
+      });
+      expect(favList.rows).toHaveLength(1);
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('回收站语义：deleted_at>0 进 listTrash，deleted_at=0（彻底删除标记）不露出', async () => {
+    const temp = makeTempDb('septcats-trash-guard');
+    const core = makeCore(ctor, temp.path);
+    try {
+      await requestOk<MigrateData>(core, { id: 'm1', t: 'migrate' });
+      for (const id of ['pg-a', 'pg-b']) {
+        await requestOk<RunData>(core, {
+          id: `insert-${id}`,
+          t: 'run',
+          sqlId: 'page.insert',
+          params: { id, workspace_id: 'ws-a', title: id, sort_key: `A0000000${id === 'pg-a' ? '0' : '1'}`, version: 1 },
+        });
+      }
+      const purge = await requestOk<RunData>(core, {
+        id: 'purge',
+        t: 'run',
+        sqlId: 'page.setDeleted',
+        params: { id: 'pg-a', workspace_id: 'ws-a', deleted_at: 0, version: 2 },
+      });
+      expect(purge.changes).toBe(1);
+      const soft = await requestOk<RunData>(core, {
+        id: 'soft',
+        t: 'run',
+        sqlId: 'page.setDeleted',
+        params: { id: 'pg-b', workspace_id: 'ws-a', deleted_at: 1_700_000_000_000, version: 2 },
+      });
+      expect(soft.changes).toBe(1);
+
+      const trash = await requestOk<AllData>(core, {
+        id: 'trash',
+        t: 'all',
+        sqlId: 'page.listTrash',
+        params: { workspace_id: 'ws-a' },
+      });
+      expect(trash.rows.map((row) => (row as { id: string }).id)).toEqual(['pg-b']);
+
+      const all = await requestOk<AllData>(core, {
+        id: 'all',
+        t: 'all',
+        sqlId: 'page.listAll',
+        params: { workspace_id: 'ws-a' },
+      });
+      expect(all.rows).toHaveLength(2);
+    } finally {
+      core.dispose();
+      temp.cleanup();
     }
   });
 });

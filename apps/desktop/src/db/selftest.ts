@@ -21,6 +21,7 @@ import {
   type TargetTable,
 } from '@septcats/core';
 import { applyPragmaBaseline, loadSqliteConstructor } from './migrations';
+import { SCHEMA_V2_TABLES } from './schema.v2';
 import { createDbServerCore, type DbServerCore } from './server';
 import type {
   AllData,
@@ -34,6 +35,7 @@ import type {
   IntegrityCheckData,
   MigrateData,
   RebuildData,
+  RunData,
 } from './rpc';
 
 const AT = 1_700_000_000_000;
@@ -112,6 +114,16 @@ function blockTitles(rows: readonly unknown[]): string[] {
   return titles;
 }
 
+/** v2 结构断言：三张本地表 + page.deleted_at 到位（迁移不破重建链路的前提）。 */
+function v2SchemaState(core: DbServerCore): { tables: string[]; hasDeletedAt: boolean } {
+  const db = core.activeDatabase();
+  const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{
+    name: string;
+  }>).map((row) => row.name);
+  const columns = db.pragma('table_info(page)') as Array<{ name?: unknown }>;
+  return { tables, hasDeletedAt: columns.some((column) => column.name === 'deleted_at') };
+}
+
 async function main(): Promise<void> {
   const ctor = await loadSqliteConstructor();
 
@@ -121,14 +133,22 @@ async function main(): Promise<void> {
   let core: DbServerCore | null = null;
 
   try {
-    // ---- 1. 迁移 ---------------------------------------------------------
+    // ---- 1. 迁移（v0 → v2：v2 是 T6 追加的页面树/工作区结构） --------------
     core = createDbServerCore(new ctor(dbPath));
     applyPragmaBaseline(core.activeDatabase());
     const migrated = await requestOk<MigrateData>(core, { id: nextId(), t: 'migrate' });
-    check('migrate v0→v1', migrated.from === 0 && migrated.to === 1, `from=${migrated.from} to=${migrated.to}`);
+    check('migrate v0→v2', migrated.from === 0 && migrated.to === 2, `from=${migrated.from} to=${migrated.to}`);
 
     const second = await requestOk<MigrateData>(core, { id: nextId(), t: 'migrate' });
-    check('migrate 幂等（第二次无变化）', second.from === 1 && second.to === 1);
+    check('migrate 幂等（第二次无变化）', second.from === 2 && second.to === 2);
+
+    const v2 = v2SchemaState(core);
+    check(
+      'v2 建表（favorite/recent/mention）',
+      SCHEMA_V2_TABLES.every((table) => v2.tables.includes(table)),
+      v2.tables.join(','),
+    );
+    check('v2 加列（page.deleted_at）', v2.hasDeletedAt);
 
     // ---- 2. batch 单事务写入 + op_ledger ---------------------------------
     const pageOp = makeUpsertOp('op-selftest-page-1', 1, 'page', PAGE_ID, {
@@ -249,6 +269,61 @@ async function main(): Promise<void> {
       params: { page_id: PAGE_ID },
     });
     check('all 回读 block.listByPage', blocks.rows.length === 1 && blockTitles(blocks.rows)[0] === BLOCK_TITLE);
+
+    // ---- 3b. v2 页面树/回收站语句（T6 §2 白名单落地自检） ----------------
+    const CHILD_PAGE = 'pg-selftest-child';
+    await requestOk<RunData>(core, {
+      id: nextId(),
+      t: 'run',
+      sqlId: 'page.insert',
+      params: {
+        id: CHILD_PAGE,
+        workspace_id: WORKSPACE_ID,
+        title: '子页',
+        parent_id: PAGE_ID,
+        sort_key: 'A00000001',
+        version: 1,
+      },
+    });
+    const child = await requestOk<GetData>(core, {
+      id: nextId(),
+      t: 'get',
+      sqlId: 'page.get',
+      params: { id: CHILD_PAGE },
+    });
+    check('page.insert 写入子页', (child.row as { title?: unknown } | null)?.title === '子页');
+
+    const crossWorkspace = await requestOk<RunData>(core, {
+      id: nextId(),
+      t: 'run',
+      sqlId: 'page.setDeleted',
+      params: { id: CHILD_PAGE, workspace_id: 'ws-elsewhere', deleted_at: AT, version: 2 },
+    });
+    check('越界 workspace_id 不落写（changes=0）', crossWorkspace.changes === 0, `changes=${crossWorkspace.changes}`);
+
+    const softDeleted = await requestOk<RunData>(core, {
+      id: nextId(),
+      t: 'run',
+      sqlId: 'page.setDeleted',
+      params: { id: CHILD_PAGE, workspace_id: WORKSPACE_ID, deleted_at: AT, version: 2 },
+    });
+    check('page.setDeleted 命中 1 行', softDeleted.changes === 1, `changes=${softDeleted.changes}`);
+
+    const trash = await requestOk<AllData>(core, {
+      id: nextId(),
+      t: 'all',
+      sqlId: 'page.listTrash',
+      params: { workspace_id: WORKSPACE_ID },
+    });
+    check('page.listTrash 列出软删除页', trash.rows.length === 1, `rows=${trash.rows.length}`);
+
+    const tree = await requestOk<AllData>(core, {
+      id: nextId(),
+      t: 'all',
+      sqlId: 'page.listAll',
+      params: { workspace_id: WORKSPACE_ID },
+    });
+    check('page.listAll 返回 alive+deleted 全量', tree.rows.length === 2, `rows=${tree.rows.length}`);
 
     // ---- 4. FTS 中文子串 -------------------------------------------------
     const fts = await requestOk<FtsSearchData>(core, {
@@ -372,6 +447,13 @@ async function main(): Promise<void> {
       t: 'integrityCheck',
     });
     check('rebuild 后 integrityCheck ok', integrity2.ok, integrity2.messages.join(' / '));
+
+    const v2AfterRebuild = v2SchemaState(core);
+    check(
+      'rebuild 后 v2 结构保持（三表 + page.deleted_at）',
+      SCHEMA_V2_TABLES.every((table) => v2AfterRebuild.tables.includes(table)) && v2AfterRebuild.hasDeletedAt,
+      v2AfterRebuild.tables.join(','),
+    );
   } finally {
     core?.dispose();
     rmSync(workDir, { recursive: true, force: true });
