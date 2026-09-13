@@ -13,3 +13,7 @@ export * from './provider';
 export * from './manifest';
 export * from './merger';
 export * from './writer';
+export * from './snapshot';
+export * from './gc';
+export * from './dedupe';
+export * from './quarantine';
