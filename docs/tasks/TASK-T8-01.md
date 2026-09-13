@@ -2,7 +2,7 @@
 
 > PM：Hermes ｜ 工程师：CodeBuddy ｜ 仓库：E:\Hermes Agent工作空间\Septcats
 > 前置：T6+T7 已合入。必读：docs/mockups/04-command-palette.html、05-search-results.html；apps/desktop/src/db（FTS_SEARCH_SQL 与 rebuildFromSegments 已有）；packages/editor/src/rules/slashMenu.ts（拼音表可抽出复用）。
-> 纪律：只 Write/Edit；不跑终端命令、不碰 git；禁占位符。
+> 纪律：用 Write/Edit 落盘全部交付物；可以且必须跑 pnpm 测试验证自己写的每个文件（绝不交没跑过的测试），但不碰 git；禁占位符。迁移版本号从 v4 起（v3 已被 T7 backlinks 占用），测试断言一律用 LATEST_SCHEMA_VERSION 参数化，不许硬编码版本号。
 
 ## 0. 一句话
 Ctrl+K 命令面板（搜索+命令+跳转三合一）与独立搜索结果页。检索面 = FTS5(page_block_fts) + LIKE 兜底（code 块正文不进 FTS，见 §2.3）；命令面 = 编辑器动作 + 导航 + 设置开关。
@@ -17,8 +17,8 @@ output 排序：score asc → title 命中加权(×0.6) → updated_at desc。
 ```
 性能红线：**1 万页 fixture 查询 P95 < 150ms**（vitest 计时，SQLite 真库内存表）。fixture 生成器放 test/helpers（页/块随机中文文本，mulberry32 确定性）。
 
-## 2. 索引补全（db 层小步，migration v3）
-2.1 block FTS 目前是「标题管道」——v3 扩触发器：**text 类块的 content JSON 抽纯文本**进 `page_block_fts.body`（json_extract 不可达深层 text，**改在写入路径维护**：`block.upsert` 白名单语句不动，新增 `fts.syncBlock` 语句由 commitOps 路径显式调用（batch 追加一步，事务内）；rebuildFromSegments 尾部调 FTS_RESYNC 全量重算 —— 两者都要，别只做一半）。
+## 2. 索引补全（db 层小步，migration **v4**）
+2.1 block FTS 目前是「标题管道」——v4 扩触发器：**text 类块的 content JSON 抽纯文本**进 `page_block_fts.body`（json_extract 不可达深层 text，**改在写入路径维护**：`block.upsert` 白名单语句不动，新增 `fts.syncBlock` 语句由 commitOps 路径显式调用（batch 追加一步，事务内）；rebuildFromSegments 尾部调 FTS_RESYNC 全量重算 —— 两者都要，别只做一半）。
 2.2 FTS_RESYNC_SQL 重写：聚合该页全部 text-ish 块（props_json->>'$.*' 不可靠，用 json_each/json_tree 抽 'text' 键）+ page.title。性能：2000 页全量重算 < 3s（selftest 计时）。
 2.3 code 块正文：不进 FTS（纯文本单列过大），LIKE 兜底覆盖（§1 步骤 4），`search:query` 结果标注 `via:'fts'|'like'`。
 
@@ -39,7 +39,7 @@ output 排序：score asc → title 命中加权(×0.6) → updated_at desc。
 ## 5. DoD
 ```
 pnpm -r typecheck && pnpm -r test
-pnpm -C apps/desktop selftest   # v3 迁移 + FTS_RESYNC 计时断言加入 selftest
+pnpm -C apps/desktop selftest   # v4 迁移 + FTS_RESYNC 计时断言加入 selftest
 node packages/ui/tokens/no-magic.mjs
 pnpm -C apps/desktop build
 ```
