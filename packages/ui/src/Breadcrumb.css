@@ -1,0 +1,35 @@
+.sc-crumb {
+  min-width: 0;
+}
+
+.sc-crumb__list {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-crumb__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  font: var(--sc-text-ui-sm);
+  white-space: nowrap;
+}
+
+.sc-crumb__sep {
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-crumb__link {
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-crumb__cur {
+  color: var(--sc-color-ink);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

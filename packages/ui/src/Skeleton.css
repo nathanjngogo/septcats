@@ -1,0 +1,42 @@
+.sc-skeleton {
+  display: block;
+}
+
+.sc-skeleton--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+}
+
+/* 扫光用伪元素的 transform 平移实现（§16.7：只 animate transform/opacity）。 */
+.sc-skeleton__bar {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: var(--sc-space-lg);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+}
+
+.sc-skeleton__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--sc-color-hairline), transparent);
+  transform: translateX(-100%);
+  animation: sc-shimmer 1.4s ease infinite;
+}
+
+@keyframes sc-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-skeleton__bar::after {
+    animation: none;
+    transform: none;
+    background: var(--sc-color-hairline);
+  }
+}

@@ -1,0 +1,32 @@
+.sc-empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-xxl);
+  text-align: center;
+}
+
+.sc-empty__art {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 88px;
+  border: 1px dashed var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-lg);
+  color: var(--sc-color-hairline-strong);
+}
+
+.sc-empty__title {
+  margin: 0;
+  font: var(--sc-text-h3);
+  color: var(--sc-color-ink);
+}
+
+.sc-empty__desc {
+  margin: 0;
+  max-width: 42ch;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  line-height: 1.6;
+}

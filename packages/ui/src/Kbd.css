@@ -1,0 +1,12 @@
+.sc-kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--sc-color-hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  white-space: nowrap;
+}

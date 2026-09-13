@@ -1,0 +1,135 @@
+/* 本文件由 tokens/build-tokens.mjs 从仓库根 DESIGN.md 生成，请勿手工编辑。 */
+/* 重新生成：node tokens/build-tokens.mjs --write ｜ 一致性门禁：node tokens/build-tokens.mjs --check */
+
+:root {
+  /* colors：浅色主题语义色（DESIGN.md front matter） */
+  --sc-color-canvas: #FBFBFA;
+  --sc-color-surface: #F4F4F2;
+  --sc-color-surface-raised: #FFFFFF;
+  --sc-color-ink: #1C1E21;
+  --sc-color-ink-secondary: #5B6068;
+  --sc-color-ink-faint: #8A8F98;
+  --sc-color-hairline: #E6E6E2;
+  --sc-color-hairline-strong: #D2D2CC;
+  --sc-color-accent: #A16207;
+  --sc-color-accent-soft: #F6EEDD;
+  --sc-color-on-accent: #FFFFFF;
+  --sc-color-danger: #8A2B1C;
+  --sc-color-danger-soft: #FBEFEC;
+  --sc-color-success: #3F6B34;
+  --sc-color-focus-ring: #A16207;
+  --sc-color-selection: #E8DDBC;
+
+  /* typography：字体族 + 复合字阶（font shorthand，含中文系统栈） */
+  --sc-font-ui: Geist, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --sc-font-serif-note: Geist, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --sc-font-mono: "Geist Mono", "Sarasa Mono SC", "Microsoft YaHei Mono", Consolas, monospace;
+  --sc-text-editor-body: 400 16px/1.75 var(--sc-font-ui);
+  --sc-tracking-editor-body: 0.01em;
+  --sc-text-h1: 650 28px/1.3 var(--sc-font-ui);
+  --sc-tracking-h1: -0.01em;
+  --sc-text-h2: 620 22px/1.35 var(--sc-font-ui);
+  --sc-tracking-h2: -0.005em;
+  --sc-text-h3: 600 18px/1.4 var(--sc-font-ui);
+  --sc-text-ui-sm: 500 13px/1.5 var(--sc-font-ui);
+  --sc-text-ui-xs: 450 12px/1.5 var(--sc-font-ui);
+  --sc-text-code: 400 14px/1.6 var(--sc-font-mono);
+
+  /* rounded */
+  --sc-radius-xs: 4px;
+  --sc-radius-sm: 6px;
+  --sc-radius-md: 8px;
+  --sc-radius-lg: 12px;
+  --sc-radius-xl: 16px;
+  --sc-radius-full: 999px;
+
+  /* spacing */
+  --sc-space-xxs: 2px;
+  --sc-space-xs: 4px;
+  --sc-space-sm: 8px;
+  --sc-space-md: 12px;
+  --sc-space-lg: 16px;
+  --sc-space-xl: 24px;
+  --sc-space-xxl: 32px;
+  --sc-space-gutter: 40px;
+  --sc-space-block-gap: 6px;
+  --sc-space-editor-measure: 720px;
+
+  /* elevation（仅 popover/menu 与 modal 两处阴影） */
+  --sc-shadow-popover: 0 8px 24px -12px rgba(28,30,33,0.18), 0 2px 6px rgba(28,30,33,0.06);
+  --sc-shadow-modal: 0 24px 64px -16px rgba(28,30,33,0.28), 0 4px 12px rgba(28,30,33,0.08);
+  --sc-shadow-tinted-light: 0 1px 2px rgba(28,30,33,0.05);
+
+  /* motion：时长与唯一弹簧参数；ease-out 解析自「Do's and Don'ts」 */
+  --sc-motion-fast: 120ms;
+  --sc-motion-base: 200ms;
+  --sc-motion-spring-stiffness: 100;
+  --sc-motion-spring-damping: 20;
+  --sc-ease-out: cubic-bezier(0.16,1,0.3,1);
+
+  /* layout（解析自 DESIGN.md「Layout」章节） */
+  --sc-layout-topbar: 40px;
+  --sc-layout-sidebar: 240px;
+  --sc-layout-sidebar-collapsed: 48px;
+  --sc-layout-row-h: 36px;
+  --sc-layout-head-h: 32px;
+
+  /* z-index（解析自 DESIGN.md「Elevation & Depth」章节） */
+  --sc-z-dropdown: 20;
+  --sc-z-sticky-bar: 30;
+  --sc-z-dialog: 40;
+  --sc-z-toast: 50;
+  --sc-z-drop-indicator: 60;
+
+  /* derived：无独立 DESIGN token，由既有 token 派生 */
+  --sc-size-control-md: var(--sc-space-xxl);
+  --sc-size-control-sm: calc(var(--sc-space-xxl) - var(--sc-space-xs));
+  --sc-color-overlay: color-mix(in srgb, var(--sc-color-ink) 32%, transparent);
+}
+
+[data-theme="dark"] {
+  /* colors：DESIGN.md「深色主题映射」表（focus-ring 跟随同值 token accent） */
+  --sc-color-canvas: #16181B;
+  --sc-color-surface: #1E2124;
+  --sc-color-surface-raised: #26292D;
+  --sc-color-ink: #E9E9E6;
+  --sc-color-ink-secondary: #A3A8AF;
+  --sc-color-ink-faint: #6E737B;
+  --sc-color-hairline: #2C2F34;
+  --sc-color-hairline-strong: #3B3F45;
+  --sc-color-accent: #D9A441;
+  --sc-color-accent-soft: #33290F;
+  --sc-color-on-accent: #1C1E21;
+  --sc-color-danger: #F2B8AD;
+  --sc-color-danger-soft: #3A1E1A;
+  --sc-color-success: #9CCB8F;
+  --sc-color-focus-ring: #D9A441;
+  --sc-color-selection: #42381C;
+
+  /* elevation：表「shadow 族」——几何与基色不变，透明度按 40–60% 提深 */
+  --sc-shadow-popover: 0 8px 24px -12px rgba(28,30,33,0.45), 0 2px 6px rgba(28,30,33,0.15);
+  --sc-shadow-modal: 0 24px 64px -16px rgba(28,30,33,0.7), 0 4px 12px rgba(28,30,33,0.2);
+  --sc-shadow-tinted-light: 0 1px 2px rgba(28,30,33,0.125);
+
+  /* derived：深色遮罩 */
+  --sc-color-overlay: rgb(0 0 0 / 0.6);
+}
+
+/* base reset：全局基线，仅引用 token 变量（本文件为生成产物，no-magic 扫描豁免） */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+a { color: inherit; }
+::selection { background: var(--sc-color-selection); }
+:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 2px; border-radius: var(--sc-radius-xs); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

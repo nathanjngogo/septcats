@@ -1,70 +1,101 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import type { IconGlyph } from '@septcats/ui';
+import {
+  AppShell,
+  Breadcrumb,
+  CaretRight,
+  Clock,
+  EmptyState,
+  FileText,
+  FolderSimple,
+  GearSix,
+  Icon,
+  IconButton,
+  MagnifyingGlass,
+  Note,
+  Plus,
+  Star,
+  SyncPill,
+  Trash,
+} from '@septcats/ui';
+import './App.css';
 
-type PingState =
-  | { status: 'idle' }
-  | { status: 'pending' }
-  | { status: 'ok'; value: string }
-  | { status: 'error'; message: string };
+interface TreeRowProps {
+  label: string;
+  icon: IconGlyph;
+  depth?: number;
+  active?: boolean;
+  branch?: boolean;
+  count?: number;
+}
+
+/** 侧栏行的最小假数据实现（正式页面树由 M5 接管）。 */
+function TreeRow({ label, icon, depth = 0, active = false, branch = false, count }: TreeRowProps) {
+  return (
+    <div
+      className={active ? 'app-nav-row app-nav-row--active' : 'app-nav-row'}
+      style={{ paddingLeft: `calc(var(--sc-space-sm) + var(--sc-space-md) * ${String(depth)})` }}
+    >
+      <span className="app-nav-tw">{branch ? <Icon icon={CaretRight} size="sm" /> : null}</span>
+      <Icon icon={icon} size="sm" className="app-nav-ic" />
+      <span className="app-nav-tx">{label}</span>
+      {count === undefined ? null : <span className="app-nav-count">{count}</span>}
+    </div>
+  );
+}
 
 /**
- * M0+M2a 的最小版式（不承担 UI 设计；正式视觉由 PM 在 G2 冻结 DESIGN.md 后接入）。
- * - 标题占位「Septcats · 工程骨架」
- * - 「IPC 自检」按钮调用 window.septcats.ping() 并展示主进程返回的时间戳
- * - 挂载时从 CSS 变量 --sc-token-placeholder 读一次颜色并应用（tokens 占位）
+ * M0 骨架的应用外壳（TASK-T4-01 §4）：
+ * 顶栏（面包屑 + 搜索/同步/设置）+ 侧栏（3 层假树）+ 内容区占位。
+ * 视觉基准 = docs/mockups/01-editor.html 与 02-sidebar-tree.html，正式视觉由 PM 真机截图复审。
  */
 export function App() {
-  const [accentColor, setAccentColor] = useState('');
-  const [ping, setPing] = useState<PingState>({ status: 'idle' });
-
-  useEffect(() => {
-    const value = getComputedStyle(document.documentElement)
-      .getPropertyValue('--sc-token-placeholder')
-      .trim();
-    setAccentColor(value);
-  }, []);
-
-  const handlePing = useCallback(async (): Promise<void> => {
-    setPing({ status: 'pending' });
-    try {
-      const value = await window.septcats.ping();
-      setPing({ status: 'ok', value });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setPing({ status: 'error', message });
-    }
-  }, []);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <main className="skeleton">
-      <section className="skeleton-card">
-        <span
-          className="skeleton-accent"
-          style={{ backgroundColor: accentColor === '' ? 'transparent' : accentColor }}
-          aria-hidden="true"
-        />
-        <h1 className="skeleton-title">Septcats · 工程骨架</h1>
-        <p className="skeleton-hint">
-          M0 工程基建 + M2a 纯逻辑核心。视觉 token 待 G2 的 DESIGN.md 定稿后替换。
-        </p>
-
-        <button
-          type="button"
-          className="skeleton-button"
-          onClick={() => {
-            void handlePing();
-          }}
-          disabled={ping.status === 'pending'}
-        >
-          {ping.status === 'pending' ? 'IPC 自检中…' : 'IPC 自检'}
-        </button>
-
-        <p className="skeleton-result" role="status" aria-live="polite">
-          {ping.status === 'idle' && '尚未调用'}
-          {ping.status === 'pending' && '等待主进程返回…'}
-          {ping.status === 'ok' && `主进程时间戳：${ping.value}`}
-          {ping.status === 'error' && `IPC 失败：${ping.message}`}
-        </p>
-      </section>
-    </main>
+    <AppShell
+      sidebarCollapsed={collapsed}
+      onToggleSidebar={() => {
+        setCollapsed((current) => !current);
+      }}
+      breadcrumb={
+        <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+      }
+      actions={
+        <>
+          <IconButton icon={MagnifyingGlass} label="搜索（Ctrl+K）" />
+          <SyncPill state="idle" lastSyncedAt="09:41" />
+          <IconButton icon={GearSix} label="设置" />
+        </>
+      }
+      sidebar={
+        <div className="app-side">
+          <div className="app-side-head">
+            <Icon icon={FolderSimple} size="sm" />
+            个人工作区
+          </div>
+          <div className="app-side-scroll">
+            <TreeRow label="新建页面" icon={Plus} />
+            <TreeRow label="收藏" icon={Star} count={12} />
+            <TreeRow label="最近" icon={Clock} count={8} />
+            <TreeRow label="研究" icon={FolderSimple} branch />
+            <TreeRow label="论文速览" icon={FileText} depth={1} />
+            <TreeRow label="暗物质探测实验笔记" icon={FileText} depth={1} active />
+            <TreeRow label="探测器矩阵" icon={Note} depth={2} />
+            <TreeRow label="本底估算" icon={Note} depth={2} />
+            <TreeRow label="读书" icon={FolderSimple} branch />
+          </div>
+          <div className="app-side-foot">
+            <Icon icon={Trash} size="sm" />
+            回收站
+          </div>
+        </div>
+      }
+    >
+      <EmptyState
+        title="工程骨架就绪"
+        description="组件层与 DESIGN.md token 管线已接通。编辑器将在 M4 接入，先把这份骨架跑成可日常使用的壳。"
+      />
+    </AppShell>
   );
 }

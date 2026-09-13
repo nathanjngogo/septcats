@@ -1,0 +1,29 @@
+.sc-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.sc-tooltip__bubble {
+  position: absolute;
+  left: 50%;
+  z-index: var(--sc-z-dropdown);
+  transform: translateX(-50%);
+  max-width: 280px;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-xs);
+  box-shadow: var(--sc-shadow-popover);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sc-tooltip__bubble--top {
+  bottom: calc(100% + var(--sc-space-sm));
+}
+
+.sc-tooltip__bubble--bottom {
+  top: calc(100% + var(--sc-space-sm));
+}

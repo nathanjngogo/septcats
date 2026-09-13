@@ -49,5 +49,11 @@ jobs:
           fi
           echo "ok: packages/ 无 electron 依赖"
 
+      - name: Guard - DESIGN.md tokens in sync
+        run: node packages/ui/tokens/build-tokens.mjs --check
+
+      - name: Guard - no magic values in ui css
+        run: node packages/ui/tokens/no-magic.mjs
+
       - name: Build desktop
         run: pnpm build

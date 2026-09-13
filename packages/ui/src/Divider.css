@@ -1,0 +1,15 @@
+.sc-divider {
+  background: var(--sc-color-hairline);
+  flex: none;
+}
+
+.sc-divider--horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.sc-divider--vertical {
+  width: 1px;
+  align-self: stretch;
+  min-height: var(--sc-space-lg);
+}

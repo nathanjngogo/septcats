@@ -1,0 +1,30 @@
+.sc-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-md) var(--sc-space-lg);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-danger-soft);
+  color: var(--sc-color-danger);
+}
+
+.sc-error__icon {
+  flex: none;
+}
+
+.sc-error__text {
+  min-width: 0;
+}
+
+.sc-error__title {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  font-weight: 600;
+}
+
+.sc-error__desc {
+  margin: 0;
+  font: var(--sc-text-ui-xs);
+  line-height: 1.5;
+}

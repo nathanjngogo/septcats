@@ -1,0 +1,87 @@
+/*
+ * 应用壳的少量结构样式（apps 侧，不属于 packages/ui 组件契约）。
+ * 只用 var(--sc-*) token；颜色/字号/圆角/间距一律来自 DESIGN.md 产物。
+ */
+
+.app-side {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-side-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  height: 36px;
+  padding: 0 var(--sc-space-md);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.app-side-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sc-space-xxs) var(--sc-space-sm) var(--sc-space-lg);
+}
+
+.app-nav-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-block-gap);
+  height: 26px;
+  border-radius: var(--sc-radius-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  white-space: nowrap;
+}
+
+.app-nav-row:hover {
+  background: var(--sc-color-surface);
+}
+
+.app-nav-row--active {
+  background: var(--sc-color-accent-soft);
+  font-weight: 500;
+}
+
+.app-nav-tw {
+  width: var(--sc-space-lg);
+  height: var(--sc-space-lg);
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--sc-color-ink-faint);
+}
+
+.app-nav-ic {
+  color: var(--sc-color-ink-secondary);
+  flex: none;
+}
+
+.app-nav-row--active .app-nav-ic {
+  color: var(--sc-color-accent);
+}
+
+.app-nav-tx {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-nav-count {
+  margin-left: auto;
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-ink-faint);
+}
+
+.app-side-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-top: 1px solid var(--sc-color-hairline);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}

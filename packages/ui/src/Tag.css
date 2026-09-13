@@ -1,0 +1,24 @@
+.sc-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--sc-space-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  white-space: nowrap;
+}
+
+.sc-tag--amber {
+  background: var(--sc-color-accent-soft);
+  border-color: transparent;
+  color: var(--sc-color-accent);
+}
+
+.sc-tag--red {
+  background: var(--sc-color-danger-soft);
+  border-color: transparent;
+  color: var(--sc-color-danger);
+}

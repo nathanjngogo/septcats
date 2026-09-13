@@ -1,0 +1,38 @@
+.sc-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sc-z-dialog);
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  padding-top: var(--sc-space-gutter);
+  background: var(--sc-color-overlay);
+}
+
+.sc-dialog {
+  width: 460px;
+  max-width: calc(100vw - var(--sc-space-gutter));
+  padding: var(--sc-space-xl);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-lg);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-shadow-modal);
+}
+
+.sc-dialog__title {
+  margin: 0 0 var(--sc-space-md);
+  font: var(--sc-text-h3);
+}
+
+.sc-dialog__body {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-xl);
+}

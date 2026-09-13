@@ -1,0 +1,69 @@
+.sc-cbx {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-cbx__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sc-cbx__box {
+  width: var(--sc-space-lg);
+  height: var(--sc-space-lg);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-on-accent);
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    border-color var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.sc-cbx__input:checked + .sc-cbx__box,
+.sc-cbx__input:indeterminate + .sc-cbx__box {
+  background: var(--sc-color-accent);
+  border-color: var(--sc-color-accent);
+}
+
+.sc-cbx__input:focus-visible + .sc-cbx__box {
+  box-shadow: 0 0 0 2px var(--sc-color-focus-ring);
+}
+
+.sc-cbx__input:disabled + .sc-cbx__box {
+  opacity: 0.55;
+}
+
+.sc-cbx__input:indeterminate + .sc-cbx__box .sc-cbx__tick {
+  display: none;
+}
+
+.sc-cbx__input:indeterminate + .sc-cbx__box::after {
+  content: '';
+  width: var(--sc-space-sm);
+  height: 1px;
+  background: currentColor;
+}
+
+.sc-cbx--disabled {
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-cbx__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,9 @@
+/*
+ * 图标 —— 只约束「不参与排版变形」。
+ * strokeWidth 1.5 由 Icon.tsx 的 ICON_STROKE_WIDTH 契约 + Phosphor weight="regular" 落实，
+ * 不在此写死 stroke-width：Phosphor 的字重变体自带几何，CSS 覆写反而会破形。
+ */
+.sc-icon {
+  display: block;
+  flex: none;
+}

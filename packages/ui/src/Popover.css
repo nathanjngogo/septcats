@@ -1,0 +1,25 @@
+.sc-popover {
+  position: relative;
+  display: inline-flex;
+}
+
+.sc-popover__panel {
+  position: absolute;
+  top: calc(100% + var(--sc-space-sm));
+  z-index: var(--sc-z-dropdown);
+  min-width: 200px;
+  padding: var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-popover__panel--start {
+  left: 0;
+}
+
+.sc-popover__panel--end {
+  right: 0;
+}

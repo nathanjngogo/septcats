@@ -1,0 +1,13 @@
+/*
+ * 主题切换的交叉淡化：只在切换的 120ms 窗口内给全树挂颜色过渡。
+ * reduced-motion 由 tokens.css 的全局降级（transition-duration: 0.01ms）兜住；
+ * ThemeProvider 在 reduced-motion 下也不会加 data-theme-fading。
+ */
+[data-theme-fading] *,
+[data-theme-fading] *::before,
+[data-theme-fading] *::after {
+  transition:
+    background-color var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out),
+    border-color var(--sc-motion-fast) var(--sc-ease-out);
+}
