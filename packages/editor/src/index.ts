@@ -8,6 +8,8 @@
  */
 
 export * from './model';
+// 显式命名导出优先于 star：model 的三参 pmDocToBlocks 不受影响（M12 导入器用纯版）
+export { pmDocToBlocks as pmDocToBlockSpecs, type BlockSpec } from './blocks';
 export * from './diff';
 export * from './tree';
 export * from './history';

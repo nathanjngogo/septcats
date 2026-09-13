@@ -1,0 +1,25 @@
+{
+  "name": "@septcats/importer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats 导入器（M12）：Notion 导出包 / Markdown / CSV → ImportPlan（纯逻辑零 IO，输入为注入的 ImportSourceFs，落库由 desktop main 执行）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@septcats/core": "workspace:*",
+    "@septcats/editor": "workspace:*",
+    "@septcats/schema": "workspace:*",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
