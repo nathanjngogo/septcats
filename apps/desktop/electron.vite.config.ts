@@ -49,7 +49,9 @@ export default defineConfig({
       dedupe: ['react', 'react-dom'],
     },
     optimizeDeps: {
-      include: ['@phosphor-icons/react', 'clsx'],
+      // pnpm 严格隔离下 phosphor/clsx 装在 @septcats/ui 的 node_modules，
+      // 用 Vite 的 `parent > child` 语法显式预打包嵌套依赖，避免 desktop 侧解析不到。
+      include: ['@septcats/ui > @phosphor-icons/react', '@septcats/ui > clsx'],
     },
     build: {
       rollupOptions: {
