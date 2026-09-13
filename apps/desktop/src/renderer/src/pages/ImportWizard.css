@@ -1,0 +1,266 @@
+/*
+ * ImportWizard 样式（mockup 09：stepper / drop / rpt / tree / warnlist）。
+ * 只用 var(--sc-*) token（no-magic 门禁）；单次性几何（容器宽、树高）允许单次字面。
+ */
+
+.wiz {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--sc-space-xxl) var(--sc-space-gutter) var(--sc-space-xxl);
+}
+
+.wiz-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  margin-bottom: var(--sc-space-xxl);
+}
+
+.wiz-sp {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.wiz-sp-no {
+  width: 20px;
+  aspect-ratio: 1;
+  border-radius: var(--sc-radius-full);
+  border: 1.5px solid var(--sc-color-hairline-strong);
+  display: grid;
+  place-items: center;
+  font: var(--sc-text-ui-xs);
+  flex: none;
+}
+
+.wiz-sp--on {
+  color: var(--sc-color-ink);
+  font-weight: 500;
+}
+
+.wiz-sp--on .wiz-sp-no {
+  background: var(--sc-color-accent);
+  border-color: var(--sc-color-accent);
+  color: var(--sc-color-on-accent);
+}
+
+.wiz-sp--done {
+  color: var(--sc-color-ink-secondary);
+}
+
+.wiz-sp--done .wiz-sp-no {
+  border-color: var(--sc-color-accent);
+  color: var(--sc-color-accent);
+}
+
+.wiz-title {
+  font: var(--sc-text-h2);
+  margin: 0 0 var(--sc-space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.wiz-sub {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  margin: 0 0 var(--sc-space-lg);
+}
+
+.wiz-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--sc-space-lg) 0;
+}
+
+.wiz-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-md) var(--sc-space-lg);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-danger-soft);
+  color: var(--sc-color-danger);
+  font: var(--sc-text-ui-sm);
+  margin-bottom: var(--sc-space-lg);
+}
+
+.wiz-drop {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-xxl);
+  border: 1.5px dashed var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-lg);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+  cursor: pointer;
+}
+
+.wiz-drop:hover {
+  background: var(--sc-color-surface);
+}
+
+.wiz-drop-ic {
+  color: var(--sc-color-ink-faint);
+}
+
+.wiz-drop-hint {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.wiz-rpt {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-md) var(--sc-space-lg);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  margin-bottom: var(--sc-space-md);
+}
+
+.wiz-rpt-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.wiz-rpt-meta b {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.wiz-rpt-meta span {
+  display: block;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  margin-top: var(--sc-space-xxs);
+}
+
+.wiz-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-md);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  margin-bottom: var(--sc-space-md);
+}
+
+.wiz-tree {
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface-raised);
+  padding: var(--sc-space-sm);
+  max-height: 240px;
+  overflow: auto;
+  margin-bottom: var(--sc-space-md);
+}
+
+.wiz-trow {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  height: 26px;
+  padding-right: var(--sc-space-sm);
+  border-radius: var(--sc-radius-xs);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.wiz-trow-n {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiz-trow-c {
+  font-family: var(--sc-font-mono);
+  font-size: 11px;
+  color: var(--sc-color-ink-faint);
+  flex: none;
+}
+
+.wiz-trow--more {
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+.wiz-warnlist {
+  margin-top: var(--sc-space-md);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.wiz-warnlist summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  cursor: pointer;
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-accent);
+  list-style: none;
+}
+
+.wiz-warnlist ul {
+  margin: var(--sc-space-sm) 0 0;
+  padding: 0 0 0 var(--sc-space-lg);
+  display: grid;
+  gap: var(--sc-space-xs);
+}
+
+.wiz-warnlist li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+}
+
+.wiz-warnlist b {
+  color: var(--sc-color-accent);
+  font-weight: 500;
+}
+
+.wiz-warn-path {
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-ink-faint);
+}
+
+.wiz-progress {
+  margin-bottom: var(--sc-space-md);
+}
+
+.wiz-report {
+  margin: 0 0 var(--sc-space-lg);
+  padding: var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+  max-height: 320px;
+  overflow: auto;
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.wiz-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-xxl);
+}
+
+.wiz-actions-hint {
+  margin-left: auto;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}

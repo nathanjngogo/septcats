@@ -20,10 +20,12 @@
     "@septcats/core": "workspace:*",
     "@septcats/dbview": "workspace:*",
     "@septcats/editor": "workspace:*",
+    "@septcats/importer": "workspace:*",
     "@septcats/platform": "workspace:*",
     "@septcats/schema": "workspace:*",
     "@septcats/ui": "workspace:*",
     "better-sqlite3": "^12.0.0",
+    "fflate": "0.8.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zod": "^4.0.0"

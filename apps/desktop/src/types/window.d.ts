@@ -12,6 +12,33 @@ import type {
   DiagConfirmResult,
   DiagExportResult,
 } from '../shared/settings';
+import type {
+  ImportPlanInput,
+  ImportPlanPreview,
+  ImportProgress,
+  ImportReport,
+} from '../shared/importer';
+
+/** 系统对话框选源结果：null = 用户取消。 */
+export type ImportPickResult = ImportPlanInput | null;
+
+/**
+ * 导入器 IPC（M12 · TASK-T11-01 §4）。四通道 + pick（系统对话框）。
+ * 错误经 Error.message 透传（E_MALFORMED / E_NOT_FOUND / E_TOO_LARGE / E_INVARIANT）；
+ * E_TOO_LARGE 的 message 含条目数（「单计划 N 个条目」）供向导错误态提取。
+ */
+export interface SeptcatsImportApi {
+  /** 三态入口 → 解析 + 计划（熔断/去重/孤儿/重名），回预览（不含 bytes）。 */
+  plan(input: ImportPlanInput): Promise<ImportPlanPreview>;
+  /** 系统对话框选源：按扩展名映射 zipPath/dirPath/csvPath；取消回 null。 */
+  pick(): Promise<ImportPickResult>;
+  /** 执行（confirm 必须显式 true）；失败不回滚，report.failedAt 定位断点。 */
+  execute(input: { planId: string; confirm: true }): Promise<ImportReport>;
+  /** 进度轮询（执行中每 ~400ms 一次）。 */
+  progress(input: { planId: string }): Promise<ImportProgress | null>;
+  /** 取消：下一个条目边界生效，当前 batch 原子完成。 */
+  cancel(input: { planId: string }): Promise<{ ok: true }>;
+}
 
 export interface SeptcatsAppMeta {
   name: string;
@@ -185,6 +212,8 @@ export interface SeptcatsApi {
   settings: SeptcatsSettingsApi;
   /** 诊断包导出（M9）。 */
   diag: SeptcatsDiagApi;
+  /** 导入器（M12）。 */
+  import: SeptcatsImportApi;
 }
 
 declare global {

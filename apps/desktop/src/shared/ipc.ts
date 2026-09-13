@@ -158,3 +158,28 @@ export const DIAG_CHANNELS = {
 
 export type SettingsChannel = (typeof SETTINGS_CHANNELS)[keyof typeof SETTINGS_CHANNELS];
 export type DiagChannel = (typeof DIAG_CHANNELS)[keyof typeof DIAG_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 导入器（M12 · TASK-T11-01 §4）
+// ---------------------------------------------------------------------------
+
+/** 计划：{zipPath?|dirPath?|csvPath?} → {planId, preview(不含 bytes)}。 */
+export const CHANNEL_IMPORT_PLAN = 'import:plan';
+/** 选择源文件（main 侧系统对话框）：→ {zipPath?|dirPath?|csvPath?} | null（取消）。 */
+export const CHANNEL_IMPORT_PICK = 'import:pick';
+/** 执行：{planId, confirm:true} → {report}；断点续传语义见 main/importer.ts。 */
+export const CHANNEL_IMPORT_EXECUTE = 'import:execute';
+/** 进度轮询：{planId} → {status, done, total, failedAt}。 */
+export const CHANNEL_IMPORT_PROGRESS = 'import:progress';
+/** 取消：{planId} → {ok:true}（在下一个 batch 边界生效）。 */
+export const CHANNEL_IMPORT_CANCEL = 'import:cancel';
+
+export const IMPORT_CHANNELS = {
+  plan: CHANNEL_IMPORT_PLAN,
+  pick: CHANNEL_IMPORT_PICK,
+  execute: CHANNEL_IMPORT_EXECUTE,
+  progress: CHANNEL_IMPORT_PROGRESS,
+  cancel: CHANNEL_IMPORT_CANCEL,
+} as const;
+
+export type ImportChannel = (typeof IMPORT_CHANNELS)[keyof typeof IMPORT_CHANNELS];

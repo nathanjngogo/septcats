@@ -1,6 +1,6 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, protocol } from 'electron';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings } from '@septcats/platform';
 import { startDbServer, type DbHandle } from '../db/client';
@@ -9,6 +9,11 @@ import {
   CHANNEL_DIAG_EXPORT,
   CHANNEL_FAV_LIST,
   CHANNEL_FAV_SET,
+  CHANNEL_IMPORT_CANCEL,
+  CHANNEL_IMPORT_EXECUTE,
+  CHANNEL_IMPORT_PICK,
+  CHANNEL_IMPORT_PLAN,
+  CHANNEL_IMPORT_PROGRESS,
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
@@ -29,6 +34,7 @@ import {
   CHANNEL_WORKSPACE_RENAME,
   CHANNEL_WORKSPACE_SWITCH,
 } from '../shared/ipc';
+import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
 import {
@@ -45,6 +51,11 @@ import {
   type DbViewService,
 } from './dbview';
 import { createSearchService, registerSearchIpc, type SearchService } from './search';
+import {
+  createImporterService,
+  toImporterError,
+  type ImporterService,
+} from './importer';
 import { initPlatform, type PlatformContext } from './platform';
 
 /**
@@ -107,6 +118,9 @@ function createWindow(): void {
 
 // --- 数据库与页面服务 -------------------------------------------------------
 
+// asset://（导入附件）与 attachment://（编辑器 file_id）需在 app ready 前声明特权。
+protocol.registerSchemesAsPrivileged(assetSchemePrivileges() as Parameters<typeof protocol.registerSchemesAsPrivileged>[0]);
+
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -129,11 +143,12 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
-/** 起库后造出的三套服务（页面树 / 行内数据库 / 搜索），共用同一 DbHandle 与 actor。 */
+/** 起库后造出的四套服务（页面树 / 行内数据库 / 搜索 / 导入器），共用同一 DbHandle 与 actor。 */
 interface DatabaseServices {
   pages: PagesService;
   db: DbViewService;
   search: SearchService;
+  importer: ImporterService;
 }
 
 /**
@@ -148,10 +163,23 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     const migrated = await handle.migrate();
     logger.info(`DbServer 就绪 v${String(migrated.from)}→v${String(migrated.to)} pid=${String(handle.pid ?? 0)}`);
     const actor = deriveActorId(await readMetaValue(handle, 'device_id'));
+    const pages = createPagesService({ executor: handle, actor });
     return {
-      pages: createPagesService({ executor: handle, actor }),
+      pages,
       db: createDbViewService({ executor: handle, actor }),
       search: createSearchService({ executor: handle }),
+      importer: createImporterService({
+        executor: handle,
+        actor,
+        attachmentsDir: ctx.layout.attachments,
+        activeWorkspaceId: async () => {
+          const workspaces = await pages.listWorkspaces();
+          if (workspaces.activeId === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，无法导入');
+          }
+          return workspaces.activeId;
+        },
+      }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
@@ -403,6 +431,81 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerPagesIpc(services?.pages ?? null);
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
+  registerImporterIpc(services?.importer ?? null);
+}
+
+/**
+ * 注册 import:* 四通道（M12）。`service === null`（DB 启动失败）时统一回
+ * `E_INVARIANT`；错误经 toImporterError 映射（PlanTooLargeError → E_TOO_LARGE 传导）。
+ */
+function registerImporterIpc(service: ImporterService | null): void {
+  const requireService = (): ImporterService => {
+    if (service === null) {
+      throw new PagesApiError('E_INVARIANT', '数据库服务不可用（启动失败，见日志）');
+    }
+    return service;
+  };
+
+  const readPath = (input: InputRecord, key: string): string | undefined => {
+    const value = input[key];
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    if (typeof value !== 'string' || value.length === 0) {
+      throw new PagesApiError('E_MALFORMED', `${key} 必须是非空字符串`);
+    }
+    return value;
+  };
+
+  const on = (channel: string, run: (input: InputRecord) => Promise<unknown>): void => {
+    ipcMain.handle(channel, async (_event: unknown, raw: unknown): Promise<unknown> => {
+      try {
+        return await run(asInput(raw));
+      } catch (error) {
+        const mapped = toImporterError(error);
+        throw new Error(`${mapped.code}: ${mapped.message}`);
+      }
+    });
+  };
+
+  on(CHANNEL_IMPORT_PLAN, async (input) => {
+    const result = await requireService().plan({
+      zipPath: readPath(input, 'zipPath'),
+      dirPath: readPath(input, 'dirPath'),
+      csvPath: readPath(input, 'csvPath'),
+    });
+    return result;
+  });
+  on(CHANNEL_IMPORT_EXECUTE, (input) => {
+    const confirm = readFlag(input, 'confirm');
+    if (!confirm) {
+      throw new PagesApiError('E_MALFORMED', 'confirm 必须显式为 true');
+    }
+    return requireService().execute({ planId: readText(input, 'planId'), confirm: true });
+  });
+  on(CHANNEL_IMPORT_PROGRESS, (input) => requireService().progress({ planId: readText(input, 'planId') }));
+  on(CHANNEL_IMPORT_CANCEL, (input) => requireService().cancel({ planId: readText(input, 'planId') }));
+
+  // import:pick —— 系统文件对话框（renderer sandbox 拿不到路径）。按扩展名映射三态入口：
+  // .zip → zipPath；.csv → csvPath；其余（目录 / 单 md 文件）→ dirPath（loader 内 statSync 分派）。
+  ipcMain.handle(CHANNEL_IMPORT_PICK, async (): Promise<unknown> => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      title: '选择导入源（Notion 导出 zip / Markdown 目录 / CSV）',
+      properties: ['openFile', 'openDirectory'],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    const picked = result.filePaths[0]!;
+    const lower = picked.toLowerCase();
+    if (lower.endsWith('.zip')) {
+      return { zipPath: picked };
+    }
+    if (lower.endsWith('.csv')) {
+      return { csvPath: picked };
+    }
+    return { dirPath: picked };
+  });
 }
 
 // --- 生命周期 ---------------------------------------------------------------
@@ -416,6 +519,12 @@ async function bootstrapApplication(): Promise<void> {
 
   const services = await bootstrapDatabase(ctx);
   registerIpcHandlers(ctx, services);
+
+  // asset:// / attachment://：导入附件内容寻址解析（TASK-T11-01 §C-3，main 侧协议方案）
+  const assetHandler = createAssetRequestHandler(ctx.layout.attachments);
+  protocol.handle(ASSET_SCHEME, assetHandler);
+  protocol.handle(ATTACHMENT_SCHEME, assetHandler);
+
   createWindow();
   registerPaletteShortcut();
   logger.info(`app ready, schemaVersion=${SCHEMA_VERSION}`);

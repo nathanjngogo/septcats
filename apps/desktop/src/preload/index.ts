@@ -9,6 +9,7 @@ import {
   DB_CHANNELS,
   DIAG_CHANNELS,
   FAVORITES_CHANNELS,
+  IMPORT_CHANNELS,
   PAGES_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
@@ -98,6 +99,13 @@ const api: SeptcatsApi = {
     query: (input) =>
       ipcRenderer.invoke(CHANNEL_SEARCH_QUERY, input) as ReturnType<SeptcatsApi['search']['query']>,
     onTogglePalette: (listener) => subscribe(CHANNEL_PALETTE_TOGGLE, listener),
+  },
+  import: {
+    plan: (input) => ipcRenderer.invoke(IMPORT_CHANNELS.plan, input) as ReturnType<SeptcatsApi['import']['plan']>,
+    pick: () => ipcRenderer.invoke(IMPORT_CHANNELS.pick) as ReturnType<SeptcatsApi['import']['pick']>,
+    execute: (input) => ipcRenderer.invoke(IMPORT_CHANNELS.execute, input) as ReturnType<SeptcatsApi['import']['execute']>,
+    progress: (input) => ipcRenderer.invoke(IMPORT_CHANNELS.progress, input) as ReturnType<SeptcatsApi['import']['progress']>,
+    cancel: (input) => ipcRenderer.invoke(IMPORT_CHANNELS.cancel, input) as ReturnType<SeptcatsApi['import']['cancel']>,
   },
   settings: {
     get: () =>

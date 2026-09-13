@@ -21,6 +21,7 @@ import {
   SCHEMA_V3_INDEXES,
 } from '../src/db/schema.v2';
 import { SCHEMA_V4_TRIGGERS, ftsPageBodyExpr } from '../src/db/schema.v4';
+import { SCHEMA_V5_STATEMENTS, SCHEMA_V5_TABLES } from '../src/db/schema.v5';
 import { describeDb, makeTempDb } from './helpers';
 
 /** 列表化表/列，做结构断言。 */
@@ -52,15 +53,16 @@ describe('MIGRATIONS 表', () => {
 
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
-    // v4 = M7 块正文 FTS（TASK-T8-01 §2；v3 已被 T7 backlinks 占用，从 v4 起）
-    expect(LATEST_SCHEMA_VERSION).toBe(4);
+    // v5 = M12 导入器 import_source（TASK-T11-01 §0.5；v4 已被 T8 FTS 占用）
+    expect(LATEST_SCHEMA_VERSION).toBe(5);
   });
 
-  it('#1/#2/#3 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填', () => {
+  it('#1/#2/#3/#4 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填', () => {
     expect(MIGRATIONS[0]!.name).toBe('v1-schema');
     expect(MIGRATIONS[1]!.name).toBe('v2-page-tree');
     expect(MIGRATIONS[2]!.name).toBe('v3-record-backlinks');
     expect(MIGRATIONS[3]!.name).toBe('v4-block-body-fts');
+    expect(MIGRATIONS[4]!.name).toBe('v5-import-source');
     // v2 不碰 v1 的语句集：两批语句无交集
     const v1 = new Set(SCHEMA_V1_STATEMENTS);
     for (const statement of SCHEMA_V2_STATEMENTS) {
@@ -131,6 +133,23 @@ describe('schema.v4.ts（M7 块正文 FTS）', () => {
   });
 });
 
+describe('schema.v5.ts（M12 导入幂等表）', () => {
+  it('import_source：单表 STRICT，(source_path, content_hash) 联合主键，无多余索引', () => {
+    expect(SCHEMA_V5_TABLES).toEqual(['import_source']);
+    const sql = SCHEMA_V5_STATEMENTS.join('\n');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS import_source');
+    expect(sql).toContain('STRICT');
+    expect(sql).toContain('PRIMARY KEY (source_path, content_hash)');
+    for (const column of ['source_path TEXT NOT NULL', 'content_hash TEXT NOT NULL', 'page_id TEXT NOT NULL', 'created_at INTEGER NOT NULL']) {
+      expect(sql).toContain(column);
+    }
+    // 不越权：迁移里没有索引/DROP/PRAGMA 片段
+    expect(sql).not.toContain('CREATE INDEX');
+    expect(sql).not.toContain('DROP');
+    expect(sql.toUpperCase()).not.toContain('PRAGMA');
+  });
+});
+
 describe('schema.sql.ts', () => {
   it('覆盖计划书 §6.2 的全部实体表', () => {
     const sql = SCHEMA_V1_STATEMENTS.join('\n');
@@ -171,6 +190,85 @@ describe('schema.sql.ts', () => {
     expect(pragmas).toContain('synchronous = normal');
     expect(pragmas).toContain('foreign_keys = on');
     expect(pragmas).toContain('busy_timeout = 5000');
+  });
+});
+
+describeDb('migrate v5（import_source · better-sqlite3 直连）', (ctor) => {
+  it('全新库迁移到最新：import_source 到位，列序与主键正确（版本参数化）', async () => {
+    const temp = makeTempDb('septcats-migrate-v5');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      const result = await migrate(db);
+      expect(result.from).toBe(0);
+      expect(result.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(result.applied).toEqual(MIGRATION_IDS);
+      expect(tableNames(db)).toContain('import_source');
+      const info = db.pragma('table_info(import_source)') as Array<{ name: string; pk: number }>;
+      expect(info.map((column) => column.name)).toEqual([
+        'source_path',
+        'content_hash',
+        'page_id',
+        'created_at',
+      ]);
+      const pkColumns = info.filter((column) => column.pk > 0).sort((a, b) => a.pk - b.pk);
+      expect(pkColumns.map((column) => column.name)).toEqual(['source_path', 'content_hash']);
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+
+  it('v4 → 最新增量迁移：只应用 v5', async () => {
+    const temp = makeTempDb('septcats-migrate-v4v5');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      const v4Only = await runMigrations(db, MIGRATIONS.slice(0, 4));
+      expect(v4Only.to).toBe(MIGRATIONS[3]!.id);
+      expect(tableNames(db)).not.toContain('import_source');
+
+      const v5 = await runMigrations(db, MIGRATIONS);
+      expect(v5.from).toBe(MIGRATIONS[3]!.id);
+      expect(v5.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(v5.applied).toEqual(MIGRATION_IDS.slice(4));
+      expect(tableNames(db)).toContain('import_source');
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+
+  it('v5 up 可重复执行且 (source_path, content_hash) 冲突被 OR IGNORE 收口', async () => {
+    const temp = makeTempDb('septcats-migrate-v5idem');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      const upToV5 = MIGRATIONS[MIGRATIONS.length - 1]!;
+      for (const migration of MIGRATIONS) {
+        db.transaction(() => {
+          migration.up(db);
+        })();
+      }
+      expect(() => {
+        db.transaction(() => {
+          upToV5.up(db);
+        })();
+      }).not.toThrow();
+
+      const insert = db.prepare(
+        `INSERT OR IGNORE INTO import_source (source_path, content_hash, page_id, created_at) VALUES (?, ?, ?, ?)`,
+      );
+      expect(insert.run('a/b', 'c'.repeat(64), 'pg-1', 1).changes).toBe(1);
+      expect(insert.run('a/b', 'c'.repeat(64), 'pg-2', 2).changes).toBe(0);
+      const row = db.prepare(`SELECT page_id FROM import_source WHERE source_path = 'a/b'`).get() as {
+        page_id: string;
+      };
+      expect(row.page_id).toBe('pg-1');
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
   });
 });
 

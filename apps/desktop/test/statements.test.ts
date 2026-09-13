@@ -225,6 +225,67 @@ describe('v2 白名单（页面树/回收站/收藏/最近）', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// v5 白名单（TASK-T11-01 §C-2）：import_source 导入幂等账本
+// ---------------------------------------------------------------------------
+
+const IMPORT_SOURCE_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
+  'importSource.insert': {
+    source_path: '研究/实验数据台账',
+    content_hash: 'a'.repeat(64),
+    page_id: 'pg-1',
+    created_at: 1_700_000_000_000,
+  },
+  'importSource.get': { source_path: '研究/实验数据台账', content_hash: 'a'.repeat(64) },
+};
+
+describe('v5 白名单（import_source）', () => {
+  it('三条语句齐全，预算同步（54 条，仍 < 60）', () => {
+    for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
+      expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
+    }
+    expect(getStatement('importSource.list')).not.toBeNull();
+    expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
+    expect(SQL_IDS.length).toBe(54);
+    expect(SQL_IDS.length).toBeLessThan(60);
+  });
+
+  it('每条 happy 参数通过校验，kind 与读写语义一致（run/get）', () => {
+    for (const [id, params] of Object.entries(IMPORT_SOURCE_HAPPY)) {
+      const definition = getStatement(id)!;
+      expect(definition.params.safeParse(params).success, `${id} happy 参数被拒`).toBe(true);
+      expect(definition.kind).toBe(id === 'importSource.get' ? 'get' : 'run');
+    }
+  });
+
+  it('参数校验：缺字段 / hash 形态非法 / created_at 负数一律拒绝', () => {
+    const insert = getStatement('importSource.insert')!;
+    const happy = IMPORT_SOURCE_HAPPY['importSource.insert']!;
+    expect(insert.params.safeParse({ ...happy, content_hash: 'zz' }).success).toBe(false);
+    expect(insert.params.safeParse({ ...happy, created_at: -1 }).success).toBe(false);
+    expect(insert.params.safeParse({ ...happy, page_id: '' }).success).toBe(false);
+    const shortened = { ...happy };
+    delete shortened['page_id'];
+    expect(insert.params.safeParse(shortened).success).toBe(false);
+
+    const lookup = getStatement('importSource.get')!;
+    expect(
+      lookup.params.safeParse({ source_path: 'x', content_hash: 'A'.repeat(64) }).success,
+    ).toBe(false);
+  });
+
+  it('按表实际列建模：语句不带 workspace_id 守卫（表无该列，报告 §C-2 说明）', () => {
+    for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
+      const sql = getStatement(id)!.sql;
+      expect(sql).not.toContain('workspace_id');
+      expect(sql.includes(';')).toBe(false);
+      for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA']) {
+        expect(sql.toUpperCase().includes(forbidden)).toBe(false);
+      }
+    }
+  });
+});
+
 describeDb('v2 工作区隔离（better-sqlite3 直连）', (ctor) => {
   it('越界 workspace_id 的写一律 0 行受影响（page / favorite / recent）', async () => {
     const temp = makeTempDb('septcats-ws-guard');

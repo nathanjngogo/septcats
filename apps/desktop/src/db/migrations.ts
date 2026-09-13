@@ -22,6 +22,7 @@ import {
   SCHEMA_V3_INDEXES,
 } from './schema.v2';
 import { SCHEMA_V4_STATEMENTS } from './schema.v4';
+import { SCHEMA_V5_STATEMENTS } from './schema.v5';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -168,6 +169,18 @@ function applySchemaV4(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #5：导入幂等表 `import_source`（TASK-T11-01 §0.5，M12 导入器）。
+ *
+ * 幂等性：建表走 `IF NOT EXISTS`（无加列/索引，语句自含主键）。语句见 `schema.v5.ts`。
+ */
+function applySchemaV5(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V5_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '5');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -176,6 +189,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 2, name: 'v2-page-tree', up: applySchemaV2 },
   { id: 3, name: 'v3-record-backlinks', up: applySchemaV3 },
   { id: 4, name: 'v4-block-body-fts', up: applySchemaV4 },
+  { id: 5, name: 'v5-import-source', up: applySchemaV5 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

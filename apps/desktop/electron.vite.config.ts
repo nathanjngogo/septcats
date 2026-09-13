@@ -3,6 +3,20 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 /**
+ * main/preload 需要「随包编译」的 workspace 包（TS 源直接打进产物）。
+ * 新增 workspace 包时**只改这一处**——两处列表各写一份必然漂移
+ * （缺陷账 #13/#22：漏 editor 崩过一次，这次漏 importer 又崩）。
+ */
+const BUNDLED_WORKSPACE_PACKAGES = [
+  '@septcats/core',
+  '@septcats/schema',
+  '@septcats/platform',
+  '@septcats/editor',
+  '@septcats/dbview',
+  '@septcats/importer',
+];
+
+/**
  * electron-vite 三进程配置：main / preload / renderer。
  *
  * 说明：
@@ -19,7 +33,7 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 export default defineConfig({
   main: {
     plugins: [
-      externalizeDepsPlugin({ exclude: ['@septcats/core', '@septcats/schema', '@septcats/platform', '@septcats/editor', '@septcats/dbview'] }),
+      externalizeDepsPlugin({ exclude: BUNDLED_WORKSPACE_PACKAGES }),
     ],
     build: {
       rollupOptions: {
@@ -32,7 +46,7 @@ export default defineConfig({
   },
   preload: {
     plugins: [
-      externalizeDepsPlugin({ exclude: ['@septcats/core', '@septcats/schema', '@septcats/platform', '@septcats/editor'] }),
+      externalizeDepsPlugin({ exclude: BUNDLED_WORKSPACE_PACKAGES }),
     ],
     build: {
       rollupOptions: {

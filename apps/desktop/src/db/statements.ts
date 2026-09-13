@@ -488,6 +488,37 @@ LIMIT 20`,
     params: z.object({ user_key: userKeyText, workspace_id: workspaceIdText }),
   },
 
+  // ---- import_source（v5 · M12 导入幂等账本）------------------------------
+  // 表没有 workspace_id 列（设备本地「源 → 页」记账，口径同 favorite/recent 的
+  // 本地派生态；但导入记账不与活动工作区绑定，故无 v2 式 EXISTS 守卫——见报告 §C-2）。
+  // OR IGNORE：同 (source_path, content_hash) 重跑/重放天然幂等。
+  'importSource.insert': {
+    kind: 'run',
+    sql: `INSERT OR IGNORE INTO import_source (source_path, content_hash, page_id, created_at)
+VALUES (@source_path, @content_hash, @page_id, @created_at)`,
+    params: z.object({
+      source_path: z.string().min(1).max(1024),
+      content_hash: z.string().regex(/^[0-9a-f]{64}$/),
+      page_id: idText,
+      created_at: z.number().int().nonnegative(),
+    }),
+  },
+  // 计划器去重查询：(path, contentHash) → 已存在 page_id（未命中 → row null）。
+  'importSource.get': {
+    kind: 'get',
+    sql: `SELECT page_id FROM import_source WHERE source_path = @source_path AND content_hash = @content_hash`,
+    params: z.object({
+      source_path: z.string().min(1).max(1024),
+      content_hash: z.string().regex(/^[0-9a-f]{64}$/),
+    }),
+  },
+  // 全量预载（计划期把账本装进内存 Map，供同步 ExistingLookup 查询）。
+  'importSource.list': {
+    kind: 'all',
+    sql: `SELECT source_path, content_hash, page_id FROM import_source`,
+    params: emptyParams,
+  },
+
   // ---- op_ledger（真相层） -------------------------------------------------
   'opLedger.insert': {
     kind: 'run',

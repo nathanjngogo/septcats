@@ -21,6 +21,7 @@ import {
 import { PageView } from './pages/PageView';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ImportWizard } from './pages/ImportWizard';
 import { t } from './i18n';
 import { CommandPalette } from './palette/CommandPalette';
 import { bindPaletteCommands } from './palette/commands';
@@ -52,8 +53,8 @@ function TreeRow({ label, icon, depth = 0, active = false, branch = false, count
   );
 }
 
-/** 命令行为装配（openSettings 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。 */
-function useCommandWiring(openSettings: () => void): void {
+/** 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。 */
+function useCommandWiring(openSettings: () => void, openImport: () => void): void {
   useEffect(() => {
     paletteActions.configureCommands(
       bindPaletteCommands({
@@ -77,6 +78,7 @@ function useCommandWiring(openSettings: () => void): void {
           pagesActions.showTrash();
         },
         openSettings,
+        openImport,
         notify: (message): void => {
           pushToast(message, 'info');
         },
@@ -85,7 +87,7 @@ function useCommandWiring(openSettings: () => void): void {
         },
       }),
     );
-  }, [openSettings]);
+  }, [openSettings, openImport]);
 }
 
 /**
@@ -96,12 +98,23 @@ function useCommandWiring(openSettings: () => void): void {
  */
 export function App() {
   const [collapsed, setCollapsed] = useState(false);
-  const [view, setView] = useState<'editor' | 'settings'>('editor');
+  const [view, setView] = useState<'editor' | 'settings' | 'import'>('editor');
   const searchOpen = usePalette((state) => state.searchOpen);
   const openSettings = useCallback(() => setView('settings'), []);
-  useCommandWiring(openSettings);
+  const openImport = useCallback(() => setView('import'), []);
+  useCommandWiring(openSettings, openImport);
 
   const inSettings = view === 'settings';
+  const inImport = view === 'import';
+
+  const breadcrumb =
+    inSettings ? (
+      <Breadcrumb items={[{ label: t('settings.title') }]} />
+    ) : inImport ? (
+      <Breadcrumb items={[{ label: t('importWizard.title') }]} />
+    ) : (
+      <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+    );
 
   return (
     <>
@@ -110,13 +123,7 @@ export function App() {
         onToggleSidebar={() => {
           setCollapsed((current) => !current);
         }}
-        breadcrumb={
-          inSettings ? (
-            <Breadcrumb items={[{ label: t('settings.title') }]} />
-          ) : (
-            <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
-          )
-        }
+        breadcrumb={breadcrumb}
         actions={
           <>
             <IconButton
@@ -127,6 +134,14 @@ export function App() {
               }}
             />
             <SyncPill state="idle" lastSyncedAt="09:41" />
+            <IconButton
+              icon={Plus}
+              label={t('importWizard.title')}
+              aria-pressed={inImport}
+              onClick={() => {
+                setView((current) => (current === 'import' ? 'editor' : 'import'));
+              }}
+            />
             <IconButton
               icon={GearSix}
               label="设置"
@@ -161,7 +176,15 @@ export function App() {
           </div>
         }
       >
-        {inSettings ? <SettingsPage /> : searchOpen ? <SearchPage /> : <PageView />}
+        {inSettings ? (
+          <SettingsPage />
+        ) : inImport ? (
+          <ImportWizard onOpenHome={() => setView('editor')} />
+        ) : searchOpen ? (
+          <SearchPage />
+        ) : (
+          <PageView />
+        )}
       </AppShell>
       <CommandPalette />
     </>

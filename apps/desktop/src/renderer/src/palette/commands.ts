@@ -45,6 +45,8 @@ export interface CommandDeps {
   switchToNextWorkspace(): void;
   openTrash(): void;
   openSettings(): void;
+  /** M12 起接入导入向导；未注入时回退 notify（palette 测试的兼容口径）。 */
+  openImport?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -82,7 +84,11 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
           deps.notify('同步面板将在后续里程碑提供');
           return;
         case 'app.import':
-          deps.notify('导入将在后续里程碑提供');
+          if (deps.openImport !== undefined) {
+            deps.openImport();
+          } else {
+            deps.notify('导入将在后续里程碑提供');
+          }
           return;
       }
     };
