@@ -8,13 +8,20 @@
  * 豁免：src/tokens.css 是 DESIGN.md 的生成产物，其值天然是字面量。
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = resolve(HERE, '..');
-const SRC = resolve(UI_ROOT, 'src');
+const REPO_ROOT = resolve(UI_ROOT, '..', '..');
+/** 扫描目标：ui + 后续带 CSS 的包（任务书 T6/T7 要求扩目录参数化）。 */
+const SRC_DIRS = [
+  resolve(UI_ROOT, 'src'),
+  resolve(REPO_ROOT, 'apps/desktop/src/renderer'),
+  resolve(REPO_ROOT, 'packages/editor/src'),
+  resolve(REPO_ROOT, 'packages/dbview/src'), // 不存在则跳过
+];
 const EXEMPT_FILES = new Set(['tokens.css']);
 
 const HEX_RE = /#[0-9a-fA-F]{3,8}\b/g;
@@ -38,7 +45,8 @@ function lineOf(text, index) {
 
 const violations = [];
 
-for (const file of walk(SRC)) {
+const allFiles = SRC_DIRS.filter((d) => existsSync(d)).flatMap((d) => walk(d));
+for (const file of allFiles) {
   const css = readFileSync(file, 'utf8');
   const rel = relative(UI_ROOT, file).split('\\').join('/');
 
@@ -49,7 +57,9 @@ for (const file of walk(SRC)) {
   const counts = new Map();
   for (const m of css.matchAll(PX_RE)) {
     const value = Math.abs(Number(m[1]));
-    if (value === 0 || value === 1) continue;
+    // 0/1/2px 是发丝级微调（描边、偏移），不是设计决策，无需 token；
+    // 语义不同的 2px（边框粗 vs 下划线偏移）强凑 token 反而稀释 token 表。
+    if (value <= 2) continue;
     const key = String(value);
     const entry = counts.get(key) ?? { count: 0, first: m.index };
     entry.count += 1;

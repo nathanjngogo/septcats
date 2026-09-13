@@ -20,7 +20,8 @@ export function expectTokenOnlyCssFile(relPath: string): void {
   const counts = new Map<string, number>();
   for (const m of css.matchAll(/(-?\d+(?:\.\d+)?)px/g)) {
     const value = Math.abs(Number(m[1]));
-    if (value === 0 || value === 1) continue;
+    // 与 tokens/no-magic.mjs 同步：0/1/2px 发丝级微调豁免
+    if (value <= 2) continue;
     const key = String(value);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
