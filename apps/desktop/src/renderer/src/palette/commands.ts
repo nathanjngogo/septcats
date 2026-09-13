@@ -8,7 +8,11 @@
  *
  * 别名口径与 editor slashMenu 一致：全拼 + 首字母缩写 + 英文。'sz' 只命中「打开设置」、
  * 'yin' 无命中（无打印类命令）—— 这是 §4 的两条断言基线，改别名前先看测试。
+ *
+ * T10 变更：label/hint 文案单一来源到 i18n（`t('commands.<id>')` / `t('commandHints.<id>')`）；
+ * aliases 是搜索词（拼音/英文），非展示文案，仍在本地维护。
  */
+import { t } from '../i18n';
 
 export interface PaletteCommandDef {
   readonly id: string;
@@ -23,16 +27,16 @@ export interface PaletteCommand extends PaletteCommandDef {
 
 /** 内置命令序（同分决胜依据；§4「空 query 默认命令序稳定」以此为准）。 */
 export const COMMAND_DEFS: readonly PaletteCommandDef[] = [
-  { id: 'page.new', label: '新建页面', hint: '在根层创建空白页', aliases: ['xinjianyemian', 'xinjian', 'xjym', 'xj', 'new page', 'new'] },
-  { id: 'workspace.switch', label: '切换工作区', hint: '切换到下一个工作区', aliases: ['qiehuangongzuochu', 'qiehuan', 'qh gzc', 'switch workspace', 'workspace'] },
-  { id: 'app.settings', label: '打开设置', hint: '偏好与应用设置', aliases: ['shezhi', 'sz', 'settings', 'setting', 'options'] },
-  { id: 'theme.light', label: '切换主题：浅色', hint: '界面主题', aliases: ['qianse', 'ys qs', 'light theme', 'theme light'] },
-  { id: 'theme.dark', label: '切换主题：深色', hint: '界面主题', aliases: ['shense', 'ys ss', 'dark theme', 'theme dark'] },
-  { id: 'theme.system', label: '切换主题：跟随系统', hint: '界面主题', aliases: ['gensuixitong', 'gs xt', 'system theme', 'theme system'] },
-  { id: 'app.export', label: '导出', hint: '导出当前工作区快照', aliases: ['daochu', 'dc', 'export'] },
-  { id: 'app.trash', label: '回收站', hint: '查看已删除页面', aliases: ['huishouzhan', 'hsz', 'trash', 'bin'] },
-  { id: 'app.sync', label: '同步面板', hint: '查看同步状态', aliases: ['tongbu', 'tbmianban', 'tb', 'sync'] },
-  { id: 'app.import', label: '导入', hint: '导入快照文件', aliases: ['daoru', 'dr', 'import'] },
+  { id: 'page.new', label: t('commands.page.new'), hint: t('commandHints.page.new'), aliases: ['xinjianyemian', 'xinjian', 'xjym', 'xj', 'new page', 'new'] },
+  { id: 'workspace.switch', label: t('commands.workspace.switch'), hint: t('commandHints.workspace.switch'), aliases: ['qiehuangongzuochu', 'qiehuan', 'qh gzc', 'switch workspace', 'workspace'] },
+  { id: 'app.settings', label: t('commands.app.settings'), hint: t('commandHints.app.settings'), aliases: ['shezhi', 'sz', 'settings', 'setting', 'options'] },
+  { id: 'theme.light', label: t('commands.theme.light'), hint: t('commandHints.theme.light'), aliases: ['qianse', 'ys qs', 'light theme', 'theme light'] },
+  { id: 'theme.dark', label: t('commands.theme.dark'), hint: t('commandHints.theme.dark'), aliases: ['shense', 'ys ss', 'dark theme', 'theme dark'] },
+  { id: 'theme.system', label: t('commands.theme.system'), hint: t('commandHints.theme.system'), aliases: ['gensuixitong', 'gs xt', 'system theme', 'theme system'] },
+  { id: 'app.export', label: t('commands.app.export'), hint: t('commandHints.app.export'), aliases: ['daochu', 'dc', 'export'] },
+  { id: 'app.trash', label: t('commands.app.trash'), hint: t('commandHints.app.trash'), aliases: ['huishouzhan', 'hsz', 'trash', 'bin'] },
+  { id: 'app.sync', label: t('commands.app.sync'), hint: t('commandHints.app.sync'), aliases: ['tongbu', 'tbmianban', 'tb', 'sync'] },
+  { id: 'app.import', label: t('commands.app.import'), hint: t('commandHints.app.import'), aliases: ['daoru', 'dr', 'import'] },
 ];
 
 /** 命令行为依赖（App 装配时注入；测试注入 spy）。 */
@@ -40,6 +44,7 @@ export interface CommandDeps {
   createPage(): void;
   switchToNextWorkspace(): void;
   openTrash(): void;
+  openSettings(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -56,7 +61,7 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
           deps.switchToNextWorkspace();
           return;
         case 'app.settings':
-          deps.notify('设置面板将在后续里程碑提供');
+          deps.openSettings();
           return;
         case 'theme.light':
           deps.setThemeMode('light');

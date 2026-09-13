@@ -15,6 +15,7 @@ export * from './Input';
 export * from './Checkbox';
 export * from './Switch';
 export * from './Select';
+export * from './RadioGroup';
 export * from './Kbd';
 export * from './Tag';
 export * from './Divider';

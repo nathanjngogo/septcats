@@ -1,11 +1,13 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { resolveLayout } from '../src/layout';
 import {
+  DEFAULT_APP_SETTINGS,
   bootstrapPaths,
   copyFileAtomic,
+  mergeSettingsPatch,
   migrateRootPath,
   readSettings,
   writeSettings,
@@ -35,26 +37,67 @@ function sourceLayout(root: string) {
 }
 
 describe('settings/读写', () => {
-  it('文件缺失/损坏时退化为 { schema: 1 }', () => {
+  it('文件缺失时退化为默认应用配置（不告警）', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const userData = tempDir('septcats-settings-empty-');
-    expect(readSettings(userData)).toEqual({ schema: 1 });
-
-    writeFileSync(join(userData, 'septcats.settings.json'), '{ not json', 'utf8');
-    expect(readSettings(userData)).toEqual({ schema: 1 });
-
-    writeFileSync(join(userData, 'septcats.settings.json'), '{"schema":1,"rootPath":""}', 'utf8');
-    expect(readSettings(userData)).toEqual({ schema: 1 });
+    expect(readSettings(userData)).toEqual({ schema: 1, ...DEFAULT_APP_SETTINGS });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
-  it('writeSettings 原子写且可读回', () => {
+  it('损坏 JSON / 非法 app 配置回退默认值并 console.warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const userData = tempDir('septcats-settings-corrupt-');
+
+    writeFileSync(join(userData, 'septcats.settings.json'), '{ not json', 'utf8');
+    expect(readSettings(userData)).toEqual({ schema: 1, ...DEFAULT_APP_SETTINGS });
+    expect(warn).toHaveBeenCalled();
+
+    warn.mockClear();
+    writeFileSync(join(userData, 'septcats.settings.json'), '{"schema":1,"theme":"neon"}', 'utf8');
+    expect(readSettings(userData)).toEqual({ schema: 1, ...DEFAULT_APP_SETTINGS });
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('writeSettings 原子写且可读回（rootPath replace + app settings merge）', () => {
     const userData = tempDir('septcats-settings-write-');
     const root = tempDir('septcats-settings-root-');
 
     writeSettings(userData, { rootPath: root });
-    expect(readSettings(userData)).toEqual({ schema: 1, rootPath: root });
+    expect(readSettings(userData)).toEqual({ schema: 1, rootPath: root, ...DEFAULT_APP_SETTINGS });
 
+    // rootPath 清空，app settings 保持
     writeSettings(userData, {});
-    expect(readSettings(userData)).toEqual({ schema: 1 });
+    expect(readSettings(userData)).toEqual({ schema: 1, ...DEFAULT_APP_SETTINGS });
+  });
+
+  it('app 配置 roundtrip：theme/privacy/editor 持久化并可读回', () => {
+    const userData = tempDir('septcats-settings-app-');
+    writeSettings(userData, {
+      theme: 'dark',
+      privacy: { telemetry: false, linkPreviewOnType: false },
+      editor: { defaultEditMode: 'markdown', spellcheck: false },
+    });
+    const s = readSettings(userData);
+    expect(s.theme).toBe('dark');
+    expect(s.privacy).toEqual({ telemetry: false, linkPreviewOnType: false });
+    expect(s.editor).toEqual({ defaultEditMode: 'markdown', spellcheck: false });
+  });
+});
+
+describe('settings/mergeSettingsPatch', () => {
+  it('合并局部 patch 并严格校验（非法值抛 E_SETTINGS_INVALID）', () => {
+    const base = DEFAULT_APP_SETTINGS;
+    expect(mergeSettingsPatch(base, { theme: 'dark' }).theme).toBe('dark');
+    expect(mergeSettingsPatch(base, { privacy: { linkPreviewOnType: false } }).privacy).toEqual({
+      telemetry: false,
+      linkPreviewOnType: false,
+    });
+    expect(() => mergeSettingsPatch(base, { theme: 'neon' })).toThrow(/E_SETTINGS_INVALID/);
+    expect(() => mergeSettingsPatch(base, { privacy: { telemetry: true } })).toThrow(
+      /E_SETTINGS_INVALID/,
+    );
   });
 });
 

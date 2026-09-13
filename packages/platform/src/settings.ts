@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
+import { z } from 'zod';
 import {
   ensureDirs,
   isAbsolutePath,
@@ -26,11 +27,104 @@ import {
  *   settings 不更新，旧目录保守不删。
  */
 
-export interface SeptcatsSettings {
+// ---------------------------------------------------------------------------
+// 应用配置（TASK-T10-01 §1：在既有 settings.json 上扩展，单一读写口）
+// ---------------------------------------------------------------------------
+
+export const THEME_MODES = ['light', 'dark', 'system'] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
+
+export const LOCALES = ['zh-CN', 'en-US'] as const;
+export type Locale = (typeof LOCALES)[number];
+
+export const EDIT_MODES = ['rich', 'markdown'] as const;
+export type EditMode = (typeof EDIT_MODES)[number];
+
+/**
+ * 应用配置的严格校验 schema（desktop main 的 `settings:patch` 用它全量再校验，
+ * 不信任 renderer）。theme/locale/defaultEditMode 用 enum 收口；`privacy.telemetry`
+ * 用 literal(false) 表达「一期恒 false、占位承诺」；`data.note` 为同步文件夹路径
+ * （仅展示不可改，改路径归 M8b）。
+ */
+export const appSettingsSchema = z.object({
+  theme: z.enum(THEME_MODES),
+  locale: z.enum(LOCALES),
+  privacy: z.object({
+    telemetry: z.literal(false),
+    linkPreviewOnType: z.boolean(),
+  }),
+  editor: z.object({
+    defaultEditMode: z.enum(EDIT_MODES),
+    spellcheck: z.boolean(),
+  }),
+  data: z.object({
+    note: z.string(),
+  }),
+});
+
+export type AppSettings = z.infer<typeof appSettingsSchema>;
+
+/** 应用配置默认值（读缺失/损坏、写合并时共用；深拷贝后再返回，避免共享引用）。 */
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  theme: 'system',
+  locale: 'zh-CN',
+  privacy: { telemetry: false, linkPreviewOnType: true },
+  editor: { defaultEditMode: 'rich', spellcheck: true },
+  data: { note: '' },
+};
+
+export interface SeptcatsSettings extends AppSettings {
   /** 用户自定义数据根（绝对路径）。 */
   rootPath?: string;
   /** 设置 schema 版本，当前恒为 1。 */
   schema: 1;
+}
+
+/** 写入口接受的局部配置：rootPath 与 app settings 均可缺省（缺省 = 保持现状/清除 rootPath）。 */
+export type SeptcatsSettingsPatch = Partial<AppSettings> & { rootPath?: string };
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function cloneDefaultAppSettings(): AppSettings {
+  return {
+    ...DEFAULT_APP_SETTINGS,
+    privacy: { ...DEFAULT_APP_SETTINGS.privacy },
+    editor: { ...DEFAULT_APP_SETTINGS.editor },
+    data: { ...DEFAULT_APP_SETTINGS.data },
+  };
+}
+
+/** 组装 SeptcatsSettings（exactOptionalPropertyTypes 下 rootPath 只在有值时出现）。 */
+function composeSettings(rootPath: string | undefined, app: AppSettings): SeptcatsSettings {
+  return rootPath === undefined ? { schema: 1, ...app } : { schema: 1, rootPath, ...app };
+}
+
+function warnSettingsCorrupted(): void {
+  console.warn('[septcats] settings.json 损坏或含非法值，已回退默认设置');
+}
+
+/** 合并局部 patch 并用严格 schema 校验；非法值抛 E_SETTINGS_INVALID。 */
+export function mergeSettingsPatch(current: AppSettings, patch: unknown): AppSettings {
+  const src = isPlainObject(patch) ? patch : {};
+  const merged: Record<string, unknown> = {
+    theme: src['theme'] ?? current.theme,
+    locale: src['locale'] ?? current.locale,
+    privacy: isPlainObject(src['privacy'])
+      ? { ...current.privacy, ...src['privacy'] }
+      : { ...current.privacy },
+    editor: isPlainObject(src['editor'])
+      ? { ...current.editor, ...src['editor'] }
+      : { ...current.editor },
+    data: isPlainObject(src['data']) ? { ...current.data, ...src['data'] } : { ...current.data },
+  };
+  const result = appSettingsSchema.safeParse(merged);
+  if (!result.success) {
+    const issues = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ');
+    throw new Error(`E_SETTINGS_INVALID：${issues}`);
+  }
+  return result.data;
 }
 
 export interface BootstrapPathsOptions {
@@ -56,28 +150,78 @@ function settingsFilePath(userDataDir: string): string {
   return join(userDataDir, SETTINGS_FILE_NAME);
 }
 
-/** 读设置；文件缺失/损坏一律退化为默认值，永不抛。 */
+/** 读设置；文件缺失静默退默认值，损坏/非法值回退默认值并 console.warn，永不抛。 */
 export function readSettings(userDataDir: string): SeptcatsSettings {
+  let raw: string;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(settingsFilePath(userDataDir), 'utf8'));
-    if (parsed === null || typeof parsed !== 'object') {
-      return { schema: 1 };
-    }
-    const rootPath = (parsed as { rootPath?: unknown }).rootPath;
-    if (typeof rootPath === 'string' && rootPath.length > 0) {
-      return { schema: 1, rootPath };
-    }
-    return { schema: 1 };
+    raw = readFileSync(settingsFilePath(userDataDir), 'utf8');
   } catch {
-    return { schema: 1 };
+    return composeSettings(undefined, cloneDefaultAppSettings());
   }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    warnSettingsCorrupted();
+    return composeSettings(undefined, cloneDefaultAppSettings());
+  }
+
+  if (!isPlainObject(parsed)) {
+    warnSettingsCorrupted();
+    return composeSettings(undefined, cloneDefaultAppSettings());
+  }
+
+  const rootPath =
+    typeof parsed['rootPath'] === 'string' && parsed['rootPath'].length > 0
+      ? parsed['rootPath']
+      : undefined;
+
+  const app = parseAppSettings(parsed);
+  if (app === null) {
+    warnSettingsCorrupted();
+    return composeSettings(rootPath, cloneDefaultAppSettings());
+  }
+
+  return composeSettings(rootPath, app);
 }
 
-/** 原子写设置：写 tmp → rename（同目录 rename 保证不出现半截文件）。 */
-export function writeSettings(userDataDir: string, s: { rootPath?: string }): void {
-  const rootPath = s.rootPath;
-  const payload: SeptcatsSettings =
-    rootPath !== undefined && rootPath.length > 0 ? { schema: 1, rootPath } : { schema: 1 };
+/** 解析 app settings：缺失字段填默认，非法值（如 theme:'neon'）整体判 null（回退默认）。 */
+function parseAppSettings(raw: Record<string, unknown>): AppSettings | null {
+  const merged: Record<string, unknown> = {
+    theme: raw['theme'] ?? DEFAULT_APP_SETTINGS.theme,
+    locale: raw['locale'] ?? DEFAULT_APP_SETTINGS.locale,
+    privacy: isPlainObject(raw['privacy'])
+      ? { ...DEFAULT_APP_SETTINGS.privacy, ...raw['privacy'] }
+      : { ...DEFAULT_APP_SETTINGS.privacy },
+    editor: isPlainObject(raw['editor'])
+      ? { ...DEFAULT_APP_SETTINGS.editor, ...raw['editor'] }
+      : { ...DEFAULT_APP_SETTINGS.editor },
+    data: isPlainObject(raw['data'])
+      ? { ...DEFAULT_APP_SETTINGS.data, ...raw['data'] }
+      : { ...DEFAULT_APP_SETTINGS.data },
+  };
+  const result = appSettingsSchema.safeParse(merged);
+  return result.success ? result.data : null;
+}
+
+/**
+ * 原子写设置：写 tmp → rename（同目录 rename 保证不出现半截文件）。
+ * rootPath 为 replace 语义（undefined/'' = 清除）；app settings 为 merge 语义（缺省保持现状）。
+ * 合并结果经严格 schema 校验，非法值抛 E_SETTINGS_INVALID。
+ */
+export function writeSettings(userDataDir: string, patch: SeptcatsSettingsPatch): void {
+  const current = readSettings(userDataDir);
+
+  const rootPath =
+    patch.rootPath !== undefined && patch.rootPath.length > 0 ? patch.rootPath : undefined;
+
+  const merged = mergeSettingsPatch(
+    { ...current, privacy: current.privacy, editor: current.editor, data: current.data },
+    patch,
+  );
+
+  const payload = composeSettings(rootPath, merged);
   const target = settingsFilePath(userDataDir);
   mkdirSync(dirname(target), { recursive: true });
   const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;

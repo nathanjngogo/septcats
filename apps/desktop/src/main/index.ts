@@ -1,8 +1,12 @@
-import { basename, join } from 'node:path';
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
+import { readSettings } from '@septcats/platform';
 import { startDbServer, type DbHandle } from '../db/client';
 import {
+  CHANNEL_DIAG_CONFIRM,
+  CHANNEL_DIAG_EXPORT,
   CHANNEL_FAV_LIST,
   CHANNEL_FAV_SET,
   CHANNEL_META,
@@ -17,12 +21,16 @@ import {
   CHANNEL_PING,
   CHANNEL_RECENT_LIST,
   CHANNEL_RECENT_TOUCH,
+  CHANNEL_SETTINGS_GET,
+  CHANNEL_SETTINGS_PATCH,
   CHANNEL_WORKSPACE_CHANGED,
   CHANNEL_WORKSPACE_CREATE,
   CHANNEL_WORKSPACE_LIST,
   CHANNEL_WORKSPACE_RENAME,
   CHANNEL_WORKSPACE_SWITCH,
 } from '../shared/ipc';
+import { buildDiagnosticPackage } from './diag';
+import { patchAppSettings, readAppSettings } from './settings';
 import {
   PagesApiError,
   createPagesService,
@@ -320,6 +328,43 @@ function dbViewRegistrar(): DbViewIpcRegistrar {
   };
 }
 
+/** 诊断包落盘目录（userData/diagnostics），文件名带时间戳。 */
+function diagnosticFilePath(userDataDir: string): string {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return join(userDataDir, 'diagnostics', `diag-${stamp}.json`);
+}
+
+/** 读取数据库 `PRAGMA user_version`（迁移版本）；DbServer 不可用/失败时回 0。 */
+async function readDbUserVersion(): Promise<number> {
+  if (dbHandle === null) {
+    return 0;
+  }
+  try {
+    return (await dbHandle.migrate()).to;
+  } catch {
+    return 0;
+  }
+}
+
+/** 组装诊断包构建入参（脱敏基准 = homeDir；settings 取完整内容）。 */
+async function gatherDiagnosticPackage(ctx: PlatformContext): Promise<{ path: string; preview: string }> {
+  const userVersion = await readDbUserVersion();
+  const pkg = await buildDiagnosticPackage({
+    appVersion: app.getVersion(),
+    platform: process.platform,
+    userVersion,
+    dbFilePath: ctx.layout.db,
+    logsDir: ctx.layout.logs,
+    syncDir: ctx.layout.root,
+    homeDir: ctx.homeDir,
+    settings: readSettings(ctx.userDataDir),
+  });
+  return {
+    path: diagnosticFilePath(ctx.userDataDir),
+    preview: JSON.stringify(pkg, null, 2),
+  };
+}
+
 function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | null): void {
   const logger = ctx.logger.forModule('main');
 
@@ -336,6 +381,24 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     // 隐私默认：只暴露数据根目录名，不泄露完整家目录路径
     layoutRoot: basename(ctx.layout.root),
   }));
+
+  // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份
+  ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, ctx.layout.root));
+  ipcMain.handle(CHANNEL_SETTINGS_PATCH, (_event: unknown, raw: unknown) =>
+    patchAppSettings(ctx.userDataDir, ctx.layout.root, raw),
+  );
+
+  // 诊断（M9）：export 只生成预览（不落盘）；confirm 才写最终文件
+  ipcMain.handle(CHANNEL_DIAG_EXPORT, () => gatherDiagnosticPackage(ctx));
+  ipcMain.handle(CHANNEL_DIAG_CONFIRM, async () => {
+    const { preview } = await gatherDiagnosticPackage(ctx);
+    const path = diagnosticFilePath(ctx.userDataDir);
+    mkdirSync(dirname(path), { recursive: true });
+    const tmp = `${path}.${process.pid}.${Date.now()}.tmp`;
+    writeFileSync(tmp, `${preview}\n`, 'utf8');
+    renameSync(tmp, path);
+    return { path };
+  });
 
   registerPagesIpc(services?.pages ?? null);
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());

@@ -7,9 +7,11 @@ import {
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
   DB_CHANNELS,
+  DIAG_CHANNELS,
   FAVORITES_CHANNELS,
   PAGES_CHANNELS,
   RECENT_CHANNELS,
+  SETTINGS_CHANNELS,
   WORKSPACES_CHANNELS,
 } from '../shared/ipc';
 
@@ -96,6 +98,18 @@ const api: SeptcatsApi = {
     query: (input) =>
       ipcRenderer.invoke(CHANNEL_SEARCH_QUERY, input) as ReturnType<SeptcatsApi['search']['query']>,
     onTogglePalette: (listener) => subscribe(CHANNEL_PALETTE_TOGGLE, listener),
+  },
+  settings: {
+    get: () =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.get) as ReturnType<SeptcatsApi['settings']['get']>,
+    patch: (patch) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.patch, patch) as ReturnType<SeptcatsApi['settings']['patch']>,
+  },
+  diag: {
+    export: () =>
+      ipcRenderer.invoke(DIAG_CHANNELS.export) as ReturnType<SeptcatsApi['diag']['export']>,
+    confirm: () =>
+      ipcRenderer.invoke(DIAG_CHANNELS.confirm) as ReturnType<SeptcatsApi['diag']['confirm']>,
   },
 };
 

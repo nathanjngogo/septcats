@@ -1,0 +1,125 @@
+/*
+ * SettingsPage 样式（mockup 06）。只用 var(--sc-*) token（no-magic 门禁）。
+ * 一次性几何（页面/预览/路径的最大宽高）允许单次字面，不携带跨组件语义。
+ */
+
+.settings-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--sc-space-xxl) var(--sc-space-gutter) 120px;
+}
+
+.settings-title {
+  font: var(--sc-text-h2);
+  margin: 0 0 var(--sc-space-xl);
+}
+
+.settings-error {
+  margin-bottom: var(--sc-space-lg);
+}
+
+.settings-section {
+  margin: 0 0 var(--sc-space-xxl);
+  padding: 0;
+  border: 0;
+}
+
+.settings-legend {
+  width: 100%;
+  margin: 0 0 var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  border-bottom: 1px solid var(--sc-color-hairline);
+  padding-bottom: var(--sc-space-sm);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-lg);
+  padding: var(--sc-space-md) 0;
+  border-bottom: 1px solid var(--sc-color-hairline);
+}
+
+.settings-row:last-child {
+  border-bottom: 0;
+}
+
+.settings-lab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+.settings-lab-b {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.settings-lab-d {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.settings-ctl {
+  flex: none;
+}
+
+.settings-path {
+  display: inline-block;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-ink-secondary);
+}
+
+.settings-cat {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.settings-preview-wrap {
+  margin-top: var(--sc-space-md);
+}
+
+.settings-preview-title {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  margin-bottom: var(--sc-space-sm);
+}
+
+.settings-preview {
+  margin: 0;
+  padding: var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+  max-height: 320px;
+  overflow: auto;
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.settings-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-md);
+}
+
+.settings-saved {
+  margin-top: var(--sc-space-md);
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-success);
+  word-break: break-all;
+}

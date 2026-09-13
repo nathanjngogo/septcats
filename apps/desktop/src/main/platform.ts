@@ -21,18 +21,24 @@ export interface PlatformContext {
   layout: PathLayout;
   logger: Logger;
   credentials: CredentialStore;
+  /** Electron `app.getPath('userData')`（settings.json 所在）。 */
+  userDataDir: string;
+  /** Electron `app.getPath('home')`（诊断包路径脱敏用）。 */
+  homeDir: string;
 }
 
 export async function initPlatform(): Promise<PlatformContext> {
+  const userDataDir = app.getPath('userData');
+  const homeDir = app.getPath('home');
   const layout = await bootstrapPaths({
     appName: 'septcats',
-    electronUserData: app.getPath('userData'),
-    homeDir: app.getPath('home'),
+    electronUserData: userDataDir,
+    homeDir,
     platform: process.platform,
   });
 
   const logger = createLogger(layout);
   const credentials = createCredentialStore({ credDir: join(layout.root, 'credentials') });
 
-  return { layout, logger, credentials };
+  return { layout, logger, credentials, userDataDir, homeDir };
 }

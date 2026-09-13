@@ -6,6 +6,12 @@ import type { Op } from '@septcats/core';
 import type { PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 import type { SearchInput, SearchResponse } from '../shared/search';
+import type {
+  AppSettings,
+  AppSettingsPatch,
+  DiagConfirmResult,
+  DiagExportResult,
+} from '../shared/settings';
 
 export interface SeptcatsAppMeta {
   name: string;
@@ -141,6 +147,25 @@ export interface SeptcatsSearchApi {
   onTogglePalette(listener: () => void): () => void;
 }
 
+/**
+ * 设置与诊断（M9 · TASK-T10-01 §1/§4）。
+ * `get`/`patch` 回整份 AppSettings（`data.note` 为同步目录绝对路径，仅展示不可改）；
+ * patch 非法值（如 theme:'neon'）经 main 侧 zod 拒绝，Error.message 携带 `E_SETTINGS_INVALID`。
+ */
+export interface SeptcatsSettingsApi {
+  get(): Promise<AppSettings>;
+  patch(patch: AppSettingsPatch): Promise<AppSettings>;
+}
+
+/**
+ * 诊断包导出（M9 · §4，默认脱敏 + 人工预览）。
+ * `export()` 只生成预览（不落盘）；`confirm()` 才写 userData/diagnostics/diag-<ts>.json。
+ */
+export interface SeptcatsDiagApi {
+  export(): Promise<DiagExportResult>;
+  confirm(): Promise<DiagConfirmResult>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -156,6 +181,10 @@ export interface SeptcatsApi {
   db: SeptcatsDbApi;
   /** 搜索 + 命令面板（M7）。 */
   search: SeptcatsSearchApi;
+  /** 设置（M9）。 */
+  settings: SeptcatsSettingsApi;
+  /** 诊断包导出（M9）。 */
+  diag: SeptcatsDiagApi;
 }
 
 declare global {

@@ -64,6 +64,7 @@ function makeCommands() {
     createPage: () => undefined,
     switchToNextWorkspace: () => undefined,
     openTrash: () => undefined,
+    openSettings: () => undefined,
     notify: () => undefined,
     setThemeMode: () => undefined,
   });
@@ -113,6 +114,7 @@ describe('CommandPalette（无障碍 + 键盘序列）', () => {
         createPage: runSpy,
         switchToNextWorkspace: () => undefined,
         openTrash: () => undefined,
+        openSettings: () => undefined,
         notify: () => undefined,
         setThemeMode: () => undefined,
       }),

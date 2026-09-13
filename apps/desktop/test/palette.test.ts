@@ -53,6 +53,7 @@ describe('命令清单（COMMAND_DEFS）', () => {
       createPage: () => calls.push('page.new'),
       switchToNextWorkspace: () => calls.push('workspace.switch'),
       openTrash: () => calls.push('app.trash'),
+      openSettings: () => calls.push('app.settings'),
       notify: (message) => calls.push(`notify:${message}`),
       setThemeMode: (mode) => calls.push(`theme:${mode}`),
     });
@@ -62,11 +63,13 @@ describe('命令清单（COMMAND_DEFS）', () => {
     expect(calls).toContain('page.new');
     expect(calls).toContain('workspace.switch');
     expect(calls).toContain('app.trash');
+    // app.settings 已接真跳转（不再 notify）
+    expect(calls).toContain('app.settings');
     expect(calls).toContain('theme:light');
     expect(calls).toContain('theme:dark');
     expect(calls).toContain('theme:system');
-    // 暂未落地里程碑的命令：notify 兜底，不是静默 no-op
-    expect(calls.filter((call) => call.startsWith('notify:')).length).toBe(4);
+    // 暂未落地里程碑的命令：notify 兜底，不是静默 no-op（导出/同步/导入 3 条）
+    expect(calls.filter((call) => call.startsWith('notify:')).length).toBe(3);
   });
 });
 

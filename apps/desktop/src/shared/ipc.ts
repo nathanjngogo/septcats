@@ -134,3 +134,27 @@ export const SEARCH_CHANNELS = {
 } as const;
 
 export type SearchChannel = (typeof SEARCH_CHANNELS)[keyof typeof SEARCH_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 设置与诊断（M9 · TASK-T10-01 §1/§4）
+// ---------------------------------------------------------------------------
+
+export const CHANNEL_SETTINGS_GET = 'settings:get';
+export const CHANNEL_SETTINGS_PATCH = 'settings:patch';
+/** 生成脱敏诊断包预览（不落盘）。 */
+export const CHANNEL_DIAG_EXPORT = 'diag:export';
+/** 用户确认后落最终诊断文件。 */
+export const CHANNEL_DIAG_CONFIRM = 'diag:confirm';
+
+export const SETTINGS_CHANNELS = {
+  get: CHANNEL_SETTINGS_GET,
+  patch: CHANNEL_SETTINGS_PATCH,
+} as const;
+
+export const DIAG_CHANNELS = {
+  export: CHANNEL_DIAG_EXPORT,
+  confirm: CHANNEL_DIAG_CONFIRM,
+} as const;
+
+export type SettingsChannel = (typeof SETTINGS_CHANNELS)[keyof typeof SETTINGS_CHANNELS];
+export type DiagChannel = (typeof DIAG_CHANNELS)[keyof typeof DIAG_CHANNELS];

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { IconGlyph } from '@septcats/ui';
 import { setGlobalThemeMode } from '@septcats/ui';
 import {
@@ -20,6 +20,8 @@ import {
 } from '@septcats/ui';
 import { PageView } from './pages/PageView';
 import { SearchPage } from './pages/SearchPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { t } from './i18n';
 import { CommandPalette } from './palette/CommandPalette';
 import { bindPaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
@@ -50,8 +52,8 @@ function TreeRow({ label, icon, depth = 0, active = false, branch = false, count
   );
 }
 
-/** 命令行为装配（一次性；空 deps 防御在 commands.ts 的调用方保证）。 */
-function useCommandWiring(): void {
+/** 命令行为装配（openSettings 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。 */
+function useCommandWiring(openSettings: () => void): void {
   useEffect(() => {
     paletteActions.configureCommands(
       bindPaletteCommands({
@@ -74,6 +76,7 @@ function useCommandWiring(): void {
         openTrash: (): void => {
           pagesActions.showTrash();
         },
+        openSettings,
         notify: (message): void => {
           pushToast(message, 'info');
         },
@@ -82,7 +85,7 @@ function useCommandWiring(): void {
         },
       }),
     );
-  }, []);
+  }, [openSettings]);
 }
 
 /**
@@ -93,8 +96,12 @@ function useCommandWiring(): void {
  */
 export function App() {
   const [collapsed, setCollapsed] = useState(false);
+  const [view, setView] = useState<'editor' | 'settings'>('editor');
   const searchOpen = usePalette((state) => state.searchOpen);
-  useCommandWiring();
+  const openSettings = useCallback(() => setView('settings'), []);
+  useCommandWiring(openSettings);
+
+  const inSettings = view === 'settings';
 
   return (
     <>
@@ -104,7 +111,11 @@ export function App() {
           setCollapsed((current) => !current);
         }}
         breadcrumb={
-          <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+          inSettings ? (
+            <Breadcrumb items={[{ label: t('settings.title') }]} />
+          ) : (
+            <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+          )
         }
         actions={
           <>
@@ -116,7 +127,14 @@ export function App() {
               }}
             />
             <SyncPill state="idle" lastSyncedAt="09:41" />
-            <IconButton icon={GearSix} label="设置" />
+            <IconButton
+              icon={GearSix}
+              label="设置"
+              aria-pressed={inSettings}
+              onClick={() => {
+                setView((current) => (current === 'settings' ? 'editor' : 'settings'));
+              }}
+            />
           </>
         }
         sidebar={
@@ -143,7 +161,7 @@ export function App() {
           </div>
         }
       >
-        {searchOpen ? <SearchPage /> : <PageView />}
+        {inSettings ? <SettingsPage /> : searchOpen ? <SearchPage /> : <PageView />}
       </AppShell>
       <CommandPalette />
     </>
