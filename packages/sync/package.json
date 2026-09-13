@@ -1,0 +1,22 @@
+{
+  "name": "@septcats/sync",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Septcats 同步引擎核心：段命名/攒段/合并/快照/GC（纯逻辑零 IO 副作用，唯一 IO 面 = SyncFs）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@septcats/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
