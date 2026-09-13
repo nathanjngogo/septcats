@@ -2,7 +2,7 @@
 
 > PM：Hermes ｜ 工程师：CodeBuddy ｜ 仓库：E:\Hermes Agent工作空间\Septcats
 > 前置：T6（页面树）已合入。必读：docs/PROJECT_PLAN.md §3（D2/D3 两条架构决策，**本任务的存在理由**）、§6.3（同步文件夹布局）、§8.3（合并时序）、§9.3（故障注入矩阵 S1–S10）；packages/core/src/segment.ts（Segment 编解码/自校验，**复用禁止重写**）；docs/schema-v1.md §5。
-> 纪律：只 Write/Edit；不跑终端命令、不碰 git；禁占位符。**本包必须能在纯 Node + 内存假 fs 下跑全部测试**（真网盘/真双机由 PM 真机做）。
+> 纪律：用 Write/Edit 落盘全部交付物；可以且必须跑 `pnpm -C packages/sync test` 验证自己写的每个测试（绝不交没跑过的测试），不碰 git；禁占位符。**本包必须能在纯 Node + 内存假 fs 下跑全部测试**（真网盘/真双机由 PM 真机做）。
 
 ## 0. 铁律（违反=打回）
 1. **不碰网络、不碰 electron、不碰 better-sqlite3**。唯一 IO 抽象 = `SyncFs` 接口（§2）。所有 fs 访问经注入，测试用 `MemoryFs`。
