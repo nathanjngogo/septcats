@@ -16,6 +16,7 @@
 | └ T6 pages（M5） | 09-13 | ✅ | 真机 CDP 验收 ALL-PASS 7 项（tree/create/rename/tombstone/restore/E_CYCLE/E_PARENT_GONE、pageerror 0）；desktop 57 tests |
 | └ T7 dbview 库侧（M6） | 09-13 | ✅ | 79 tests（1 万条筛选/排序性能夹具、CSV 转义、relation 计划、四态渲染）；v3 backlinks 迁移；no-magic ✓ |
 | └ T7b dbview 接线（M6） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 11 项**（db 桥注入/转为数据库按钮/IPC 建库→记录→改名→relation 双写→E_REFERRED 拒删→删除→exportCsv 含 BOM/pageerror 0）；desktop 73 tests；全仓 7 包 typecheck+test 绿；commitOps 同源扩展 collection/record 物化 |
+| └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
 
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
@@ -46,5 +47,7 @@
 - 额度：429 是按模型分桶的日窗口（与积分无关），flash 档耗尽可 `--model` 切换。
 
 ## 待修清单（低优先级，不阻塞）
+- [ ] **FTS trigram 对 2 字中文查询零命中**（真机视觉审计抓出：「审计」不中、3 字以上正常）——设计使然非缺陷，但中文双字词高频；二期与 unicode61+分词器一并解，或短期给 <3 字查询加 LIKE 兜底
+- [ ] 面板/次级文字（空态、键帽说明、Esc）深色主题对比度未达 WCAG AA 舒适阈（vision 审计），G4 UI 打磨统一提亮一级灰阶
 - [ ] editor 渲染 callout 时 `sc-block` class 重复拼接（cosmetic）
 - [ ] mac 分支 credentials/keychain 需在 macOS CI runner 上真跑（本机 Windows）

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { IconGlyph } from '@septcats/ui';
+import { setGlobalThemeMode } from '@septcats/ui';
 import {
   AppShell,
   Breadcrumb,
@@ -18,6 +19,11 @@ import {
   Trash,
 } from '@septcats/ui';
 import { PageView } from './pages/PageView';
+import { SearchPage } from './pages/SearchPage';
+import { CommandPalette } from './palette/CommandPalette';
+import { bindPaletteCommands } from './palette/commands';
+import { paletteActions, usePalette } from './state/palette';
+import { pagesStore, pagesActions, pushToast } from './state/pages';
 import './App.css';
 
 interface TreeRowProps {
@@ -44,55 +50,102 @@ function TreeRow({ label, icon, depth = 0, active = false, branch = false, count
   );
 }
 
+/** 命令行为装配（一次性；空 deps 防御在 commands.ts 的调用方保证）。 */
+function useCommandWiring(): void {
+  useEffect(() => {
+    paletteActions.configureCommands(
+      bindPaletteCommands({
+        createPage: (): void => {
+          void pagesActions.createPage(null);
+        },
+        switchToNextWorkspace: (): void => {
+          const state = pagesStore.getState();
+          const ids = state.workspaces.map((item) => item.id);
+          if (state.workspaceId === null || ids.length < 2) {
+            pushToast('没有可切换的工作区', 'info');
+            return;
+          }
+          const nextIndex = (ids.indexOf(state.workspaceId) + 1) % ids.length;
+          const nextId = ids[nextIndex];
+          if (nextId !== undefined) {
+            void pagesActions.switchWorkspace(nextId);
+          }
+        },
+        openTrash: (): void => {
+          pagesActions.showTrash();
+        },
+        notify: (message): void => {
+          pushToast(message, 'info');
+        },
+        setThemeMode: (mode): void => {
+          setGlobalThemeMode(mode);
+        },
+      }),
+    );
+  }, []);
+}
+
 /**
- * 应用外壳（M0 骨架 → T5 内容区接入编辑器）：
- * 顶栏（面包屑 + 搜索/同步/设置）+ 侧栏（3 层假树）+ 内容区 PageView。
- * 视觉基准 = docs/mockups/01-editor.html 与 02-sidebar-tree.html，正式视觉由 PM 真机截图复审。
+ * 应用外壳（M0 骨架 → T5 内容区接入编辑器 → M7 命令面板/搜索页）：
+ * 顶栏（面包屑 + 搜索/同步/设置）+ 侧栏（3 层假树）+ 内容区（PageView / SearchPage）。
+ * 视觉基准 = docs/mockups/01-editor.html、02-sidebar-tree.html、04/05（面板与搜索页），
+ * 正式视觉由 PM 真机截图复审。
  */
 export function App() {
   const [collapsed, setCollapsed] = useState(false);
+  const searchOpen = usePalette((state) => state.searchOpen);
+  useCommandWiring();
 
   return (
-    <AppShell
-      sidebarCollapsed={collapsed}
-      onToggleSidebar={() => {
-        setCollapsed((current) => !current);
-      }}
-      breadcrumb={
-        <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
-      }
-      actions={
-        <>
-          <IconButton icon={MagnifyingGlass} label="搜索（Ctrl+K）" />
-          <SyncPill state="idle" lastSyncedAt="09:41" />
-          <IconButton icon={GearSix} label="设置" />
-        </>
-      }
-      sidebar={
-        <div className="app-side">
-          <div className="app-side-head">
-            <Icon icon={FolderSimple} size="sm" />
-            个人工作区
+    <>
+      <AppShell
+        sidebarCollapsed={collapsed}
+        onToggleSidebar={() => {
+          setCollapsed((current) => !current);
+        }}
+        breadcrumb={
+          <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+        }
+        actions={
+          <>
+            <IconButton
+              icon={MagnifyingGlass}
+              label="搜索（Ctrl+K）"
+              onClick={() => {
+                paletteActions.open();
+              }}
+            />
+            <SyncPill state="idle" lastSyncedAt="09:41" />
+            <IconButton icon={GearSix} label="设置" />
+          </>
+        }
+        sidebar={
+          <div className="app-side">
+            <div className="app-side-head">
+              <Icon icon={FolderSimple} size="sm" />
+              个人工作区
+            </div>
+            <div className="app-side-scroll">
+              <TreeRow label="新建页面" icon={Plus} />
+              <TreeRow label="收藏" icon={Star} count={12} />
+              <TreeRow label="最近" icon={Clock} count={8} />
+              <TreeRow label="研究" icon={FolderSimple} branch />
+              <TreeRow label="论文速览" icon={FileText} depth={1} />
+              <TreeRow label="暗物质探测实验笔记" icon={FileText} depth={1} active />
+              <TreeRow label="探测器矩阵" icon={Note} depth={2} />
+              <TreeRow label="本底估算" icon={Note} depth={2} />
+              <TreeRow label="读书" icon={FolderSimple} branch />
+            </div>
+            <div className="app-side-foot">
+              <Icon icon={Trash} size="sm" />
+              回收站
+            </div>
           </div>
-          <div className="app-side-scroll">
-            <TreeRow label="新建页面" icon={Plus} />
-            <TreeRow label="收藏" icon={Star} count={12} />
-            <TreeRow label="最近" icon={Clock} count={8} />
-            <TreeRow label="研究" icon={FolderSimple} branch />
-            <TreeRow label="论文速览" icon={FileText} depth={1} />
-            <TreeRow label="暗物质探测实验笔记" icon={FileText} depth={1} active />
-            <TreeRow label="探测器矩阵" icon={Note} depth={2} />
-            <TreeRow label="本底估算" icon={Note} depth={2} />
-            <TreeRow label="读书" icon={FolderSimple} branch />
-          </div>
-          <div className="app-side-foot">
-            <Icon icon={Trash} size="sm" />
-            回收站
-          </div>
-        </div>
-      }
-    >
-      <PageView />
-    </AppShell>
+        }
+      >
+        {searchOpen ? <SearchPage /> : <PageView />}
+      </AppShell>
+      <CommandPalette />
+    </>
   );
 }

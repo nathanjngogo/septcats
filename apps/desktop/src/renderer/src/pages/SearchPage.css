@@ -1,0 +1,150 @@
+/*
+ * SearchPage 样式（mockup 05）。只用 var(--sc-*) token（no-magic 门禁）。
+ */
+
+.search-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sc-space-xxl) var(--sc-space-gutter) 120px;
+}
+
+.search-fbar {
+  display: flex;
+  gap: var(--sc-space-sm);
+  margin-bottom: var(--sc-space-xl);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* 筛选/查询 chips 共用的胶囊高度（合并声明：同一裸 px 只出现一次） */
+.search-qchip,
+.search-chip {
+  height: 28px;
+}
+
+.search-qchip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding: 0 var(--sc-space-md);
+  border: none;
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-accent);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+}
+
+.search-qchip-ic {
+  flex: none;
+}
+
+.search-qchip-x {
+  flex: none;
+  color: var(--sc-color-ink-faint);
+}
+
+.search-qchip:hover .search-qchip-x {
+  color: var(--sc-color-danger);
+}
+
+.search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding: 0 var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-full);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+}
+
+.search-chip:hover {
+  background: var(--sc-color-surface);
+}
+
+.search-count {
+  margin-left: auto;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.search-recents {
+  margin-bottom: var(--sc-space-lg);
+}
+
+.search-recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+}
+
+.search-res-h {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  margin: var(--sc-space-xl) 0 var(--sc-space-sm);
+}
+
+.search-res {
+  display: block;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  padding: var(--sc-space-md);
+  border-radius: var(--sc-radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--sc-color-ink);
+  cursor: pointer;
+}
+
+.search-res:hover {
+  background: var(--sc-color-surface);
+}
+
+.search-res h3 {
+  font: var(--sc-text-h3);
+  margin: 0 0 var(--sc-space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.search-res-ic {
+  color: var(--sc-color-ink-faint);
+  flex: none;
+}
+
+.search-res-path {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  margin-bottom: var(--sc-space-sm);
+}
+
+.search-snip {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  line-height: 1.65;
+}
+
+.search-snip mark {
+  background: var(--sc-color-selection);
+  color: inherit;
+  font-weight: 500;
+}
+
+.search-res-meta {
+  margin-top: var(--sc-space-xs);
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-ink-faint);
+}
+
+.search-empty {
+  margin-top: var(--sc-space-xxl);
+  text-align: center;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}

@@ -118,3 +118,19 @@ export const DB_CHANNELS = {
 } as const;
 
 export type DbChannel = (typeof DB_CHANNELS)[keyof typeof DB_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 搜索与命令面板（M7 · TASK-T8-01 §1/§3）
+// ---------------------------------------------------------------------------
+
+/** renderer → main：全文检索（FTS5 + LIKE 兜底），入参/出参见 shared/search.ts。 */
+export const CHANNEL_SEARCH_QUERY = 'search:query';
+/** 主进程 → 渲染器：Ctrl/Cmd+K 切换命令面板（主进程全局键；renderer 内监听为另一路，后者优先）。 */
+export const CHANNEL_PALETTE_TOGGLE = 'palette:toggle';
+
+export const SEARCH_CHANNELS = {
+  query: CHANNEL_SEARCH_QUERY,
+  togglePalette: CHANNEL_PALETTE_TOGGLE,
+} as const;
+
+export type SearchChannel = (typeof SEARCH_CHANNELS)[keyof typeof SEARCH_CHANNELS];

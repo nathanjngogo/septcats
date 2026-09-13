@@ -1,0 +1,165 @@
+/*
+ * CommandPalette 样式（mockup 04）。只用 var(--sc-*) token（no-magic 门禁）。
+ */
+
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sc-z-dialog);
+  background: var(--sc-color-overlay);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--sc-space-xxl) var(--sc-space-gutter) var(--sc-space-xxl);
+}
+
+.palette {
+  width: 640px;
+  max-width: 100%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-lg);
+  box-shadow: var(--sc-shadow-modal);
+  overflow: hidden;
+}
+
+.palette-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-md) var(--sc-space-lg);
+  border-bottom: 1px solid var(--sc-color-hairline);
+}
+
+.palette-input-ic {
+  color: var(--sc-color-ink-faint);
+  flex: none;
+}
+
+.palette-input input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: var(--sc-text-editor-body);
+  color: var(--sc-color-ink);
+}
+
+.palette-input input::placeholder {
+  color: var(--sc-color-ink-faint);
+}
+
+.palette-esc {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  flex: none;
+}
+
+.palette-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sc-space-sm);
+}
+
+.palette-group {
+  padding: var(--sc-space-sm) var(--sc-space-md) var(--sc-space-xs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+  color: var(--sc-color-ink);
+}
+
+.palette-row:hover,
+.palette-row--active {
+  background: var(--sc-color-surface);
+}
+
+.palette-row--active {
+  background: var(--sc-color-accent-soft);
+}
+
+.palette-row-ic {
+  color: var(--sc-color-ink-secondary);
+  flex: none;
+}
+
+.palette-row--active .palette-row-ic {
+  color: var(--sc-color-accent);
+}
+
+.palette-row-tx {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--sc-text-ui-sm);
+}
+
+.palette-row-tx b {
+  font-weight: 600;
+}
+
+.palette-path {
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+.palette-row-meta {
+  flex: none;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.palette-hint {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.palette-empty {
+  padding: var(--sc-space-xl) var(--sc-space-md);
+  text-align: center;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.palette-opensearch {
+  display: block;
+  width: 100%;
+  margin-top: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: 1px dashed var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  text-align: center;
+  cursor: pointer;
+}
+
+.palette-opensearch:hover {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-accent);
+}
+
+.palette-foot {
+  display: flex;
+  gap: var(--sc-space-lg);
+  padding: var(--sc-space-sm) var(--sc-space-lg);
+  border-top: 1px solid var(--sc-color-hairline);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}

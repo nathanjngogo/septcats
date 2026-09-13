@@ -9,6 +9,24 @@ export const THEME_STORAGE_KEY = 'septcats.theme';
 /** 与 --sc-motion-fast 对齐：切换主题的交叉淡化时长 */
 export const THEME_FADE_MS = 120;
 
+/** 命令面板等非 React 上下文切换主题的事件名（ThemeProvider 内部订阅）。 */
+export const THEME_MODE_EVENT = 'septcats:theme-mode';
+
+export interface ThemeModeEventData {
+  mode: ThemeMode;
+}
+
+/**
+ * setGlobalThemeMode —— 组件树外切换主题（命令面板「切换主题」命令用）。
+ * 只派发事件；ThemeProvider 监听后走同一 setMode 管道（localStorage/淡化一致）。
+ */
+export function setGlobalThemeMode(mode: ThemeMode): void {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent<ThemeModeEventData>(THEME_MODE_EVENT, { detail: { mode } }));
+}
+
 export interface ThemeContextValue {
   /** 用户选择（含 system） */
   mode: ThemeMode;
@@ -107,6 +125,19 @@ export function ThemeProvider({ children, defaultMode, storageKey = THEME_STORAG
 
   const setMode = useCallback((next: ThemeMode) => {
     setModeState(next);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event): void => {
+      const detail = (event as CustomEvent<ThemeModeEventData>).detail;
+      if (detail?.mode === 'light' || detail?.mode === 'dark' || detail?.mode === 'system') {
+        setModeState(detail.mode);
+      }
+    };
+    window.addEventListener(THEME_MODE_EVENT, handler);
+    return () => {
+      window.removeEventListener(THEME_MODE_EVENT, handler);
+    };
   }, []);
 
   const value = useMemo<ThemeContextValue>(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);

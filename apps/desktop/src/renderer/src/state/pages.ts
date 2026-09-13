@@ -153,7 +153,8 @@ function describeError(error: unknown): string {
 
 let toastSeq = 0;
 
-function pushToast(message: string, tone: ToastTone): void {
+/** 应用级 Toast 入口（pagesActions 与命令面板共用；队列上限 3 条）。 */
+export function pushToast(message: string, tone: ToastTone): void {
   toastSeq += 1;
   const item: ToastMessage = { id: `toast-${String(toastSeq)}`, message, tone };
   pagesStore.setState((state) => ({ ...state, toasts: [...state.toasts, item].slice(-3) }));

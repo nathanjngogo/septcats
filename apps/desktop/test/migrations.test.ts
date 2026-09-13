@@ -20,6 +20,7 @@ import {
   SCHEMA_V3_ADDED_COLUMNS,
   SCHEMA_V3_INDEXES,
 } from '../src/db/schema.v2';
+import { SCHEMA_V4_TRIGGERS, ftsPageBodyExpr } from '../src/db/schema.v4';
 import { describeDb, makeTempDb } from './helpers';
 
 /** 列表化表/列，做结构断言。 */
@@ -51,13 +52,15 @@ describe('MIGRATIONS 表', () => {
 
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
-    expect(LATEST_SCHEMA_VERSION).toBe(3);
+    // v4 = M7 块正文 FTS（TASK-T8-01 §2；v3 已被 T7 backlinks 占用，从 v4 起）
+    expect(LATEST_SCHEMA_VERSION).toBe(4);
   });
 
-  it('#1/#2 未被改动：v1 仍是建表语句，v2/v3 只做追加', () => {
+  it('#1/#2/#3 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填', () => {
     expect(MIGRATIONS[0]!.name).toBe('v1-schema');
     expect(MIGRATIONS[1]!.name).toBe('v2-page-tree');
     expect(MIGRATIONS[2]!.name).toBe('v3-record-backlinks');
+    expect(MIGRATIONS[3]!.name).toBe('v4-block-body-fts');
     // v2 不碰 v1 的语句集：两批语句无交集
     const v1 = new Set(SCHEMA_V1_STATEMENTS);
     for (const statement of SCHEMA_V2_STATEMENTS) {
@@ -96,6 +99,35 @@ describe('schema.v2.ts（v3 追加）', () => {
     expect(SCHEMA_V3_ADDED_COLUMNS[0]?.column).toBe('backlinks_json');
     expect(SCHEMA_V3_ADDED_COLUMNS[0]?.sql).toContain('ALTER TABLE record ADD COLUMN backlinks_json');
     expect(SCHEMA_V3_INDEXES.join('\n')).toContain('idx_record_backlinks');
+  });
+});
+
+describe('schema.v4.ts（M7 块正文 FTS）', () => {
+  it('重建全部 6 个 v1 FTS 触发器（先 DROP 再 CREATE）', () => {
+    const sql = SCHEMA_V4_TRIGGERS.join('\n');
+    for (const name of ['trg_page_fts_ai', 'trg_page_fts_au', 'trg_page_fts_ad', 'trg_block_fts_ai', 'trg_block_fts_au', 'trg_block_fts_ad']) {
+      expect(sql).toContain(`DROP TRIGGER IF EXISTS ${name}`);
+      expect(sql).toContain(`CREATE TRIGGER ${name}`);
+    }
+  });
+
+  it('body 聚合用 json_tree 抽深层 text 键，且排除 code 块', () => {
+    const body = ftsPageBodyExpr('p.id');
+    expect(body).toContain('json_tree');
+    expect(body).toContain("jt.key = 'text'");
+    expect(body).toContain("b.type != 'code'");
+    expect(body).toContain('b.page_id = p.id');
+    // pageIdExpr 参数化：触发器上下文可传 new.id
+    expect(ftsPageBodyExpr('new.id')).toContain('b.page_id = new.id');
+  });
+
+  it('迁移语句不含 PRAGMA/DROP TABLE 等越权片段（DROP 仅限触发器重建）', () => {
+    const sql = SCHEMA_V4_TRIGGERS.join('\n');
+    expect(sql).not.toContain('DROP TABLE');
+    expect(sql).not.toContain('DROP INDEX');
+    for (const forbidden of ['PRAGMA', 'ATTACH', 'ALTER']) {
+      expect(sql.toUpperCase()).not.toContain(forbidden);
+    }
   });
 });
 

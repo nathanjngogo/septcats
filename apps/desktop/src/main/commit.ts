@@ -25,6 +25,10 @@
  * | record     | upsert | `record.upsert`       | 记录新建/改值（backlinks_json 由 setBacklinks 维护，upsert 不覆盖） |
  * | record     | delete | `record.softDelete`   | soft delete（alive=0） |
  *
+ * M7 扩展（TASK-T8-01 §2.1）：目标表新增 `block` upsert（`block.upsert` 白名单语句
+ * 不动），并同 batch 追加 `fts.clearPage` + `fts.syncBlock` 把 text 块正文送进
+ * `page_block_fts.body`（按涉及 page 去重；触发器是安全网，sync 是显式维护路径）。
+ *
  * **派生物化**：relation 双写里对方记录的 backlink 索引（`backlinks_json`）是**设备本地
  * 派生态**，不进 Op payload；由调用方经 `extraStatements` 在同一 batch（同事务）追加
  * `record.setBacklinks` 步骤（见 dbview.ts 的 relation 双写）。
@@ -233,6 +237,43 @@ function recordSoftDeleteStatement(op: Op): DbBatchStatement {
   };
 }
 
+/** code/正文双形态字段：string 原样（code 纯文本），对象 stringify（PM doc），缺省 null。 */
+function readContentJsonField(op: Op): string | null {
+  const value = op.payload['content'];
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * block upsert：整对象写（TASK-T8-01 §2.1）。`block.upsert` 白名单语句不动；
+ * 正文进 FTS 由 commitOps 在同 batch 追加 `fts.clearPage` + `fts.syncBlock` 完成
+ * （见 commitOps 尾部的 ftsSyncPages）。
+ */
+function blockUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
+  return {
+    sqlId: 'block.upsert',
+    params: {
+      id: op.target.id,
+      page_id: readRequiredString(op, 'page_id'),
+      workspace_id: workspaceId,
+      type: readString(op, 'type', 'paragraph'),
+      props_json: readJsonField(op, 'props', '{}'),
+      content_json: readContentJsonField(op),
+      sort_key: readRequiredString(op, 'sort_key'),
+      alive: readNumber(op, 'alive', 1) === 0 ? 0 : 1,
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
+}
+
 /** 单个 op → 物化语句。未知 kind/表一律 throw（绝不静默跳过，避免真相层与物化层分叉）。 */
 export function materializeStatement(
   op: Op,
@@ -246,6 +287,8 @@ export function materializeStatement(
       return materializeCollectionStatement(op, workspaceId);
     case 'record':
       return materializeRecordStatement(op, workspaceId);
+    case 'block':
+      return materializeBlockStatement(op, workspaceId);
     default:
       throw new CommitError(
         'E_UNSUPPORTED_TARGET',
@@ -353,6 +396,17 @@ function materializeRecordStatement(op: Op, workspaceId: string): DbBatchStateme
   }
 }
 
+function materializeBlockStatement(op: Op, workspaceId: string): DbBatchStatement {
+  switch (op.kind) {
+    case 'upsert':
+      return blockUpsertStatement(op, workspaceId);
+    default:
+      // block delete 的 payload 恒为 {}（schema-v1 §1），拿不到 page_id 无法在此
+      // 追加 FTS 同步；删除路径的 FTS 由 v4 触发器（trg_block_fts_au/ad）维护。
+      throw new CommitError('E_MALFORMED_OP', `block 暂不支持 op.kind=${op.kind}`);
+  }
+}
+
 /** 一个 op → op_ledger.insert 参数（真相层；`op_json` 为 core.encodeOp 的稳定键序单行 JSON）。 */
 export function ledgerStatement(op: Op, segId: string | null): DbBatchStatement {
   let opJson: string;
@@ -381,6 +435,10 @@ export function ledgerStatement(op: Op, segId: string | null): DbBatchStatement 
  * 提交一批 Op：一个 batch（单事务）= ledger × N + 物化 × N。
  * 任一语句失败 → 整个事务回滚（DbServer.batch 语义），真相层与物化层不会分叉。
  * 返回提交的 op 数（空数组时**不**发请求）。
+ *
+ * M7（TASK-T8-01 §2.1）：块 upsert 的正文索引由写入路径维护——同一 batch 追加
+ * `fts.clearPage` + `fts.syncBlock`（按涉及的 page 去重，事务内，排在全部物化之后）。
+ * body 表达式与 v4 触发器 / FTS_RESYNC 同源，三条写入路径口径一致。
  */
 export async function commitOps(
   executor: BatchExecutor,
@@ -392,12 +450,23 @@ export async function commitOps(
   }
   const mode: DeletionMode = options.deletionMode ?? 'soft';
   const stmts: DbBatchStatement[] = [];
+  const ftsSyncPages = new Set<string>();
   for (const op of ops) {
     stmts.push(ledgerStatement(op, null));
     stmts.push(materializeStatement(op, options.workspaceId, mode));
+    if (op.target.table === 'block' && op.kind === 'upsert') {
+      const pageId = op.payload['page_id'];
+      if (typeof pageId === 'string' && pageId.length > 0) {
+        ftsSyncPages.add(pageId);
+      }
+    }
   }
   for (const extra of options.extraStatements ?? []) {
     stmts.push(extra);
+  }
+  for (const pageId of ftsSyncPages) {
+    stmts.push({ sqlId: 'fts.clearPage', params: { page_id: pageId } });
+    stmts.push({ sqlId: 'fts.syncBlock', params: { page_id: pageId } });
   }
   if (stmts.length === 0) {
     return 0;

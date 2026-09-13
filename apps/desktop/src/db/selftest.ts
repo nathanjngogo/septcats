@@ -26,7 +26,7 @@ import {
   loadSqliteConstructor,
 } from './migrations';
 import { SCHEMA_V2_TABLES } from './schema.v2';
-import { createDbServerCore, type DbServerCore } from './server';
+import { createDbServerCore, FTS_RESYNC_SQL, type DbServerCore } from './server';
 import type {
   AllData,
   BackupData,
@@ -458,6 +458,90 @@ async function main(): Promise<void> {
       SCHEMA_V2_TABLES.every((table) => v2AfterRebuild.tables.includes(table)) && v2AfterRebuild.hasDeletedAt,
       v2AfterRebuild.tables.join(','),
     );
+
+    // ---- 9. v4 块正文 FTS（TASK-T8-01 §2）---------------------------------
+    // 触发器（写入路径）：batch 写入的 paragraph 块 content_json 里的正文应进 FTS。
+    const ftsBody = await requestOk<FtsSearchData>(core, {
+      id: nextId(),
+      t: 'ftsSearch',
+      workspaceId: WORKSPACE_ID,
+      query: '正文段落内容',
+      limit: 10,
+    });
+    check(
+      'v4 后块正文进 FTS（触发器写入路径）',
+      ftsBody.rows.some((row) => row.page_id === PAGE_ID),
+      `rows=${ftsBody.rows.length}`,
+    );
+
+    // fts.syncBlock 显式调用（commitOps 追加的同款语句）：重算后命中保持。
+    const synced = await requestOk<RunData>(core, {
+      id: nextId(),
+      t: 'run',
+      sqlId: 'fts.syncBlock',
+      params: { page_id: PAGE_ID },
+    });
+    check('fts.syncBlock 显式重算页 FTS 行', synced.changes >= 1, `changes=${synced.changes}`);
+    const ftsBody2 = await requestOk<FtsSearchData>(core, {
+      id: nextId(),
+      t: 'ftsSearch',
+      workspaceId: WORKSPACE_ID,
+      query: '正文段落内容',
+      limit: 10,
+    });
+    check(
+      'fts.syncBlock 重算后正文命中保持',
+      ftsBody2.rows.some((row) => row.page_id === PAGE_ID),
+      `rows=${ftsBody2.rows.length}`,
+    );
+
+    const v4Triggers = (core.activeDatabase()
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'trg_%_fts_%'`)
+      .all() as Array<{ name: string }>).map((row) => row.name);
+    check(
+      'v4 触发器已重建（6 个 FTS 触发器在位）',
+      ['trg_page_fts_ai', 'trg_page_fts_au', 'trg_page_fts_ad', 'trg_block_fts_ai', 'trg_block_fts_au', 'trg_block_fts_ad']
+        .every((name) => v4Triggers.includes(name)),
+      v4Triggers.join(','),
+    );
+
+    // ---- 10. FTS_RESYNC 全量重算计时（TASK-T8-01 DoD：2000 页 < 3s）--------
+    {
+      const db = core.activeDatabase();
+      const PERF_PAGES = 2000;
+      const perfWs = 'ws-resync-perf';
+      const insPage = db.prepare(
+        `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, updated_at)
+         VALUES (?, ?, ?, NULL, NULL, NULL, ?, 1, 1, ?)`,
+      );
+      const insBlock = db.prepare(
+        `INSERT INTO block (id, page_id, workspace_id, type, props_json, content_json, sort_key, alive, version, lamport_c, lamport_d, updated_at)
+         VALUES (?, ?, ?, 'paragraph', '{}', ?, 'A00000000', 1, 1, ?, ?, ?)`,
+      );
+      db.transaction(() => {
+        for (let i = 0; i < PERF_PAGES; i += 1) {
+          const pageId = `pg-resync-${String(i).padStart(5, '0')}`;
+          insPage.run(pageId, perfWs, `重算计时页 ${String(i)}`, `B${String(i).padStart(8, '0')}`, AT);
+          const doc = {
+            type: 'doc',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: `第 ${String(i)} 页的正文内容，用于全量重算计时。` }] }],
+          };
+          insBlock.run(`bk-resync-${String(i).padStart(5, '0')}`, pageId, perfWs, JSON.stringify(doc), i + 1, DEV, AT);
+        }
+      })();
+
+      const t0 = performance.now();
+      db.exec(FTS_RESYNC_SQL);
+      const elapsedMs = performance.now() - t0;
+      console.log(`  FTS_RESYNC ${PERF_PAGES} 页全量重算耗时 ${elapsedMs.toFixed(1)} ms`);
+      check('FTS_RESYNC 2000 页全量重算 < 3000ms', elapsedMs < 3000, `elapsed=${elapsedMs.toFixed(1)}ms`);
+
+      const resyncCount = db
+        .prepare(`SELECT COUNT(*) AS n FROM page_block_fts WHERE workspace_id = ?`)
+        .get(perfWs) as { n: number };
+      check('FTS_RESYNC 后重算页全部在索引中', resyncCount.n === PERF_PAGES, `rows=${String(resyncCount.n)}`);
+    }
+
   } finally {
     core?.dispose();
     rmSync(workDir, { recursive: true, force: true });

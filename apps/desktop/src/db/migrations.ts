@@ -21,6 +21,7 @@ import {
   SCHEMA_V3_ADDED_COLUMNS,
   SCHEMA_V3_INDEXES,
 } from './schema.v2';
+import { SCHEMA_V4_STATEMENTS } from './schema.v4';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -153,6 +154,20 @@ function applySchemaV3(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #4：v4 FTS 正文管道（TASK-T8-01 §2）。
+ *
+ * 幂等性：触发器先 DROP IF EXISTS 再 CREATE（整体替换 v1 定义），回填是
+ * DELETE + INSERT（可重复执行）。语句序列见 `schema.v4.ts`：
+ * 触发器重建 → FTS 全量回填 → meta.schema_version = '4'。
+ */
+function applySchemaV4(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V4_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '4');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -160,6 +175,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 1, name: 'v1-schema', up: applySchemaV1 },
   { id: 2, name: 'v2-page-tree', up: applySchemaV2 },
   { id: 3, name: 'v3-record-backlinks', up: applySchemaV3 },
+  { id: 4, name: 'v4-block-body-fts', up: applySchemaV4 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

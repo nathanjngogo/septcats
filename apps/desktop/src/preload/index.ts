@@ -3,7 +3,9 @@ import type { SeptcatsApi, SeptcatsAppMeta } from '../types/window';
 import {
   BLOCKS_CHANNELS,
   CHANNEL_META,
+  CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PING,
+  CHANNEL_SEARCH_QUERY,
   DB_CHANNELS,
   FAVORITES_CHANNELS,
   PAGES_CHANNELS,
@@ -89,6 +91,11 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(DB_CHANNELS.relationSearch, input) as ReturnType<SeptcatsApi['db']['relationSearch']>,
     exportCsv: (input) =>
       ipcRenderer.invoke(DB_CHANNELS.exportCsv, input) as ReturnType<SeptcatsApi['db']['exportCsv']>,
+  },
+  search: {
+    query: (input) =>
+      ipcRenderer.invoke(CHANNEL_SEARCH_QUERY, input) as ReturnType<SeptcatsApi['search']['query']>,
+    onTogglePalette: (listener) => subscribe(CHANNEL_PALETTE_TOGGLE, listener),
   },
 };
 

@@ -25,6 +25,7 @@ import {
   type TargetTable,
 } from '@septcats/core';
 import { applyPragmaBaseline, loadSqliteConstructor, migrate, type SqliteDatabase } from './migrations';
+import { ftsPageBodyExpr } from './schema.v4';
 import { getStatement, type StatementDefinition, type StatementKind } from './statements';
 import {
   dbFail,
@@ -73,21 +74,15 @@ ORDER BY score ASC
 LIMIT @limit`;
 
 /**
- * 全量重算 FTS 索引。rebuild/物化写入后调用，保证结果与「插入顺序」无关
- * （FTS 行由触发器维护，而块可能先于其页面被写入）。
+ * 全量重算 FTS 索引（TASK-T8-01 §2.2 重写）：body 聚合该页全部 text-ish 块的
+ * props.title + content 深层 `text` 串（json_tree，与 v4 触发器 / fts.syncBlock
+ * 共用 ftsPageBodyExpr，见 schema.v4.ts）。rebuild/物化写入后调用，保证结果与
+ * 「插入顺序」无关（FTS 行由触发器维护，而块可能先于其页面被写入）。
+ * 导出仅供 selftest 做全量重算计时断言（TASK-T8-01 DoD）。
  */
-const FTS_RESYNC_SQL = `DELETE FROM page_block_fts;
+export const FTS_RESYNC_SQL = `DELETE FROM page_block_fts;
 INSERT INTO page_block_fts (title, body, page_id, workspace_id)
-SELECT
-  p.title,
-  COALESCE((
-    SELECT group_concat(json_extract(b.props_json, '$.title'), ' ')
-    FROM block b
-    WHERE b.page_id = p.id AND b.alive = 1 AND json_valid(b.props_json)
-      AND json_extract(b.props_json, '$.title') IS NOT NULL
-  ), ''),
-  p.id,
-  p.workspace_id
+SELECT p.title, ${ftsPageBodyExpr('p.id')}, p.id, p.workspace_id
 FROM page p
 WHERE p.alive = 1;`;
 

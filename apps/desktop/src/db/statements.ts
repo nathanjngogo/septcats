@@ -13,6 +13,7 @@
 
 import { targetTableSchema } from '@septcats/core';
 import { z } from 'zod';
+import { ftsPageBodyExpr } from './schema.v4';
 
 export type StatementKind = 'run' | 'get' | 'all';
 
@@ -557,6 +558,97 @@ ON CONFLICT(device_id) DO UPDATE SET
       pending_count: z.number().int().min(0).default(0),
       conflict_count: z.number().int().min(0).default(0),
       updated_at: nullableTimestamp,
+    }),
+  },
+  // ---- FTS 维护 / 检索（M7 · TASK-T8-01 §1/§2）----------------------------
+  // fts.clearPage + fts.syncBlock 成对使用（prepare 只接受单条语句，无法合并）：
+  // commitOps 路径对每个涉及 page 追加这一对，先删该页 FTS 行再按「标题+正文」重插。
+  // body 表达式与 v4 触发器、FTS_RESYNC 同源（schema.v4.ts 的 ftsPageBodyExpr）。
+  'fts.clearPage': {
+    kind: 'run',
+    sql: `DELETE FROM page_block_fts WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'fts.syncBlock': {
+    kind: 'run',
+    sql: `INSERT INTO page_block_fts (title, body, page_id, workspace_id)
+SELECT p.title, ${ftsPageBodyExpr('p.id')}, p.id, p.workspace_id
+FROM page p
+WHERE p.id = @page_id AND p.alive = 1`,
+    params: z.object({ page_id: idText }),
+  },
+
+  // search:query 的三条真库查询（bm25 主检索 + LIKE 兜底）。FTS 行是页粒度，
+  // join page 取存活行与 updated_at（排序键之一）。
+  'search.ftsPage': {
+    kind: 'all',
+    sql: `SELECT
+  page_block_fts.page_id AS page_id,
+  p.title AS title,
+  bm25(page_block_fts) AS score,
+  snippet(page_block_fts, -1, '[', ']', '…', 12) AS snippet,
+  p.updated_at AS updated_at
+FROM page_block_fts
+JOIN page p ON p.id = page_block_fts.page_id
+WHERE page_block_fts MATCH @query
+  AND page_block_fts.workspace_id = @workspaceId
+  AND p.alive = 1
+ORDER BY score ASC
+LIMIT @limit`,
+    params: z.object({
+      query: z.string().min(1),
+      workspaceId: z.string().min(1),
+      limit: z.number().int().min(1).max(200),
+    }),
+  },
+  // LIKE 兜底（§1 步骤 4 / §2.3）：code 块正文不进 FTS，靠 props_json/content_json
+  // 的 %q% 扫描补查；上限 50（RELATION 同款预算），ESCAPE 收口用户输入的通配符。
+  'search.likeBlock': {
+    kind: 'all',
+    sql: `SELECT b.id AS id, b.page_id AS page_id, b.type AS type,
+       b.props_json AS props_json, b.content_json AS content_json,
+       p.title AS page_title, p.updated_at AS updated_at
+FROM block b
+JOIN page p ON p.id = b.page_id
+WHERE b.workspace_id = @workspace_id AND b.alive = 1 AND p.alive = 1
+  AND b.type = 'code'
+  AND (b.props_json LIKE @like ESCAPE '\\' OR b.content_json LIKE @like ESCAPE '\\')
+ORDER BY b.updated_at DESC, b.id
+LIMIT @limit`,
+    params: z.object({
+      workspace_id: workspaceIdText,
+      like: z.string().min(1),
+      limit: z.number().int().min(1).max(50),
+    }),
+  },
+  'search.likeCollection': {
+    kind: 'all',
+    sql: `SELECT id, page_id AS page_id, name AS name, updated_at AS updated_at
+FROM collection
+WHERE workspace_id = @workspace_id AND alive = 1
+  AND name LIKE @like ESCAPE '\\'
+ORDER BY updated_at DESC, id
+LIMIT @limit`,
+    params: z.object({
+      workspace_id: workspaceIdText,
+      like: z.string().min(1),
+      limit: z.number().int().min(1).max(50),
+    }),
+  },
+  'search.likeRecord': {
+    kind: 'all',
+    sql: `SELECT r.id AS id, r.collection_id AS collection_id, r.values_json AS values_json,
+       c.page_id AS page_id, c.name AS collection_name, r.updated_at AS updated_at
+FROM record r
+JOIN collection c ON c.id = r.collection_id
+WHERE r.workspace_id = @workspace_id AND r.alive = 1 AND c.alive = 1
+  AND r.values_json LIKE @like ESCAPE '\\'
+ORDER BY r.updated_at DESC, r.id
+LIMIT @limit`,
+    params: z.object({
+      workspace_id: workspaceIdText,
+      like: z.string().min(1),
+      limit: z.number().int().min(1).max(50),
     }),
   },
 } satisfies Record<string, StatementDefinition>;

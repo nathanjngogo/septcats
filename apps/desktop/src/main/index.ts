@@ -1,11 +1,12 @@
 import { basename, join } from 'node:path';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { startDbServer, type DbHandle } from '../db/client';
 import {
   CHANNEL_FAV_LIST,
   CHANNEL_FAV_SET,
   CHANNEL_META,
+  CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
   CHANNEL_PAGE_DELETE,
   CHANNEL_PAGE_MOVE,
@@ -35,6 +36,7 @@ import {
   type DbViewIpcRegistrar,
   type DbViewService,
 } from './dbview';
+import { createSearchService, registerSearchIpc, type SearchService } from './search';
 import { initPlatform, type PlatformContext } from './platform';
 
 /**
@@ -119,10 +121,11 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
-/** 起库后造出的两套服务（页面树 / 行内数据库），共用同一 DbHandle 与 actor。 */
+/** 起库后造出的三套服务（页面树 / 行内数据库 / 搜索），共用同一 DbHandle 与 actor。 */
 interface DatabaseServices {
   pages: PagesService;
   db: DbViewService;
+  search: SearchService;
 }
 
 /**
@@ -140,6 +143,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     return {
       pages: createPagesService({ executor: handle, actor }),
       db: createDbViewService({ executor: handle, actor }),
+      search: createSearchService({ executor: handle }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
@@ -216,6 +220,22 @@ function broadcastWorkspaceChanged(activeId: string): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(CHANNEL_WORKSPACE_CHANGED, { activeId });
   }
+}
+
+/** Ctrl/Cmd+K（TASK-T8-01 §3「主进程全局」一路；renderer 内监听为另一路，后者优先）。 */
+const PALETTE_SHORTCUT = 'CommandOrControl+K';
+
+function broadcastPaletteToggle(): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(CHANNEL_PALETTE_TOGGLE, {});
+  }
+}
+
+function registerPaletteShortcut(): void {
+  if (globalShortcut.isRegistered(PALETTE_SHORTCUT)) {
+    globalShortcut.unregister(PALETTE_SHORTCUT);
+  }
+  globalShortcut.register(PALETTE_SHORTCUT, broadcastPaletteToggle);
 }
 
 /**
@@ -319,6 +339,7 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
 
   registerPagesIpc(services?.pages ?? null);
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
+  registerSearchIpc(services?.search ?? null, dbViewRegistrar());
 }
 
 // --- 生命周期 ---------------------------------------------------------------
@@ -333,6 +354,7 @@ async function bootstrapApplication(): Promise<void> {
   const services = await bootstrapDatabase(ctx);
   registerIpcHandlers(ctx, services);
   createWindow();
+  registerPaletteShortcut();
   logger.info(`app ready, schemaVersion=${SCHEMA_VERSION}`);
 
   // macOS：点 Dock 图标且无窗口时重建
@@ -373,6 +395,7 @@ if (!gotSingleInstanceLock) {
   });
 
   app.on('will-quit', () => {
+    globalShortcut.unregister(PALETTE_SHORTCUT);
     void dbHandle?.dispose();
     dbHandle = null;
   });

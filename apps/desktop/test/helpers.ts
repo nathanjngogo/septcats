@@ -15,6 +15,8 @@ import { describe, it } from 'vitest';
 import { applyPragmaBaseline, type SqliteConstructor } from '../src/db/migrations';
 import { createDbServerCore, type DbServerCore } from '../src/db/server';
 import type { DbErrorPayload, DbRequest, DbResponseData } from '../src/db/rpc';
+import type { StatementExecutor } from '../src/main/pages';
+import type { AllData, BatchData, GetData, MigrateData, RunData } from '../src/db/rpc';
 
 let cached: SqliteConstructor | null | undefined;
 let loadError = '';
@@ -109,4 +111,155 @@ export async function requestFail(core: DbServerCore, request: DbRequest): Promi
     throw new Error(`${request.t} 未预期成功`);
   }
   return response.error;
+}
+
+// ---------------------------------------------------------------------------
+// 搜索夹具（TASK-T8-01 §1/§4：mulberry32 确定性生成 页/块 随机中文文本）
+// ---------------------------------------------------------------------------
+
+/** mulberry32 确定性 PRNG（同 seed 同序列：性能/断言可复现）。 */
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return (): number => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 夹具词表（真实感中文；'核反冲' 作为探针词）。 */
+const FIXTURE_WORDS: readonly string[] = [
+  '暗物质', '探测器', '中子', '本底', '核反冲', '量子', '能谱', '实验',
+  '数据', '台账', '文献', '统计', '误差', '效率', '曲线', '信号',
+  '简并', '拟合', '曝光', '事例',
+];
+
+/** PM doc 形态的 paragraph content_json（真实深层结构，检验 json_tree 抽取）。 */
+function paragraphDoc(text: string): string {
+  return JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+  });
+}
+
+function wordAt(rand: () => number): string {
+  return FIXTURE_WORDS[Math.floor(rand() * FIXTURE_WORDS.length)] ?? '暗物质';
+}
+
+/**
+ * 建 1 个工作区 + pageCount 页夹具（每页 2–4 块），写入真库（触发器维护 FTS）。
+ * 布点：
+ *  - i % 7 === 0 → 页标题含「核反冲」；
+ *  - i % 5 === 0 → 段落正文含「核反冲」；
+ *  - i % 3 === 0 → 标题块（props.title）；
+ *  - i % 11 === 0 → code 块（content 为纯文本串，正文不进 FTS，LIKE 兜底目标）。
+ */
+export async function makeSearchFixtureDb(
+  ctor: SqliteConstructor,
+  dbPath: string,
+  pageCount: number,
+  options: { seed?: number; workspaceId?: string } = {},
+): Promise<DbServerCore> {
+  const core = makeCore(ctor, dbPath);
+  await requestOk<MigrateData>(core, { id: 'fixture-migrate', t: 'migrate' });
+  const workspaceId = options.workspaceId ?? 'ws-fixture';
+  const seed = options.seed ?? 20260913;
+  const rand = mulberry32(seed);
+  const at = 1_700_000_000_000;
+
+  const db = core.activeDatabase();
+  const insPage = db.prepare(
+    `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, updated_at)
+     VALUES (?, ?, ?, NULL, NULL, NULL, ?, 1, 1, ?)`,
+  );
+  const insBlock = db.prepare(
+    `INSERT INTO block (id, page_id, workspace_id, type, props_json, content_json, sort_key, alive, version, lamport_c, lamport_d, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?)`,
+  );
+
+  db.transaction(() => {
+    for (let i = 0; i < pageCount; i += 1) {
+      const pageId = `pg-fix-${String(i).padStart(6, '0')}`;
+      const probe = i % 7 === 0 ? '核反冲' : '';
+      const title = `${probe}${wordAt(rand)}${wordAt(rand)}研究笔记${String(i)}`;
+      insPage.run(pageId, workspaceId, title, `A${String(i).padStart(9, '0')}`, at);
+
+      const paragraphText =
+        `${wordAt(rand)}，${wordAt(rand)}与${wordAt(rand)}的${wordAt(rand)}来源` +
+        (i % 5 === 0 ? '，需复核核反冲效率曲线' : '') +
+        `。${wordAt(rand)}是关键输入。`;
+      insBlock.run(
+        `bk-fix-${String(i).padStart(6, '0')}-a`,
+        pageId,
+        workspaceId,
+        'paragraph',
+        '{}',
+        paragraphDoc(paragraphText),
+        `A0000000${String(i % 10)}`,
+        i + 1,
+        'aaaa0001',
+        at,
+      );
+      insBlock.run(
+        `bk-fix-${String(i).padStart(6, '0')}-b`,
+        pageId,
+        workspaceId,
+        'paragraph',
+        '{}',
+        paragraphDoc(`${wordAt(rand)}${wordAt(rand)}观测约束与系统性偏差评估。`),
+        `A0000001${String(i % 10)}`,
+        i + 1,
+        'aaaa0001',
+        at,
+      );
+      if (i % 3 === 0) {
+        const heading = `${wordAt(rand)}小节`;
+        insBlock.run(
+          `bk-fix-${String(i).padStart(6, '0')}-h`,
+          pageId,
+          workspaceId,
+          'heading',
+          JSON.stringify({ title: heading }),
+          paragraphDoc(heading),
+          `A0000002${String(i % 10)}`,
+          i + 1,
+          'aaaa0001',
+          at,
+        );
+      }
+      if (i % 11 === 0) {
+        insBlock.run(
+          `bk-fix-${String(i).padStart(6, '0')}-c`,
+          pageId,
+          workspaceId,
+          'code',
+          '{}',
+          JSON.stringify(`const probe_${String(i)} = "build:fast"; // 探测器原始计数`),
+          `A0000003${String(i % 10)}`,
+          i + 1,
+          'aaaa0001',
+          at,
+        );
+      }
+    }
+  })();
+  return core;
+}
+
+let executorSeq = 0;
+
+/** DbServerCore → StatementExecutor 适配（pages/dbview/search 服务测试共用）。 */
+export function coreExecutor(core: DbServerCore): StatementExecutor {
+  const nextId = (): string => {
+    executorSeq += 1;
+    return `exec-${String(executorSeq)}`;
+  };
+  return {
+    run: async (sqlId, params) => (await requestOk<RunData>(core, { id: nextId(), t: 'run', sqlId, params })) as RunData,
+    get: async (sqlId, params) => (await requestOk<GetData>(core, { id: nextId(), t: 'get', sqlId, params })) as GetData,
+    all: async (sqlId, params) => (await requestOk<AllData>(core, { id: nextId(), t: 'all', sqlId, params })) as AllData,
+    batch: async (stmts) => (await requestOk<BatchData>(core, { id: nextId(), t: 'batch', stmts })) as BatchData,
+  };
 }

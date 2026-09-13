@@ -5,6 +5,7 @@
 import type { Op } from '@septcats/core';
 import type { PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
+import type { SearchInput, SearchResponse } from '../shared/search';
 
 export interface SeptcatsAppMeta {
   name: string;
@@ -128,6 +129,18 @@ export interface SeptcatsDbApi {
   exportCsv(input: { pageId: string }): Promise<{ csv: string }>;
 }
 
+/**
+ * 搜索与命令面板（M7 · TASK-T8-01 §1/§3）。
+ * query 通道与 `src/shared/ipc.ts` 的 CHANNEL_SEARCH_QUERY 一对一；
+ * onTogglePalette 订阅主进程 Ctrl/Cmd+K 的全局键广播（CHANNEL_PALETTE_TOGGLE）。
+ * 错误经 Error.message 透传（E_MALFORMED / E_DB_UNAVAILABLE / E_INVARIANT）。
+ */
+export interface SeptcatsSearchApi {
+  query(input: SearchInput): Promise<SearchResponse>;
+  /** 订阅命令面板切换广播（主进程全局键），返回退订函数。 */
+  onTogglePalette(listener: () => void): () => void;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -141,6 +154,8 @@ export interface SeptcatsApi {
   workspaces: SeptcatsWorkspacesApi;
   /** 行内数据库（M6）。 */
   db: SeptcatsDbApi;
+  /** 搜索 + 命令面板（M7）。 */
+  search: SeptcatsSearchApi;
 }
 
 declare global {
