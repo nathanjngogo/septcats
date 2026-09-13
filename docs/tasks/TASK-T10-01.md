@@ -7,9 +7,10 @@
 ## 0. 一句话
 设置页成为真路由（面板「打开设置」不再 notify），承载外观 / 数据与隐私 / 诊断三组；i18n 立「文案单一来源」骨架（一期只 zh-CN），诊断包导出**默认脱敏 + 人工预览**。
 
-## 1. 设置存储（main 侧，settings.json）
-- 路径：`platform.paths.userData()/settings.json`（与 db 同目录树）；读写走 platform 的原子写（tmp+rename），损坏 JSON → 回退默认值并在诊断报告中记一条 warning（不炸应用）。
-- Schema（zod 定义，shared/settings.ts 导出，三端共享类型）：
+## 1. 设置存储（扩展 packages/platform 既有 settings.ts，不另立文件）
+- 现状：`SeptcatsSettings`（platform/settings.ts:29）已有 `{rootPath?}` + `readSettings(userDataDir)/writeSettings`（原子写已实现，写 tmp→rename）。**本任务在该文件上扩展应用配置**，保持单一 settings.json 与单一读写口。
+- 损坏 JSON → readSettings 现行为核实（若非回退默认值则改为回退 + warning，回归测试锁定）。
+- Schema（zod，定义放 platform/settings.ts，desktop shared 从它派生 UI 用的类型）：
   ```
   { theme: 'light'|'dark'|'system'（默认 system）,
     locale: 'zh-CN'|'en-US'（默认 zh-CN，一期 UI 不暴露切换 en）,
@@ -23,7 +24,7 @@
 ## 2. i18n 骨架（本期只求"结构对"，不求翻译量）
 - `src/renderer/src/i18n/`：`zh-CN.ts` 导出嵌套字典（`settings.appearance` 等）+ `index.ts` 提供 `t(key)` 与 `useLocale()`；key 缺失 → 返回 key 本身并 console.warn（开发期可见，不白屏）。
 - **本期迁移范围**：仅设置页 + 命令面板命令表（label/aliases）走 `t()`；其余屏**不动**（大爆炸式全仓文案搬迁禁止，后续 G4 分批）。任务书里列明的 key 清单必须全部存在。
-- `locale` 写入 settings 但一期生效面 = zh-CN；en-US 分支在 i18n/index 留 TODO-FREE 的空字典回退（`import zhCN from './zh-CN'` 兜底），不许 import 不存在的文件。
+- `locale` 写入同一 settings.json 但一期生效面 = zh-CN；en-US 分支在 i18n/index 留 TODO-FREE 的空字典回退（`import zhCN from './zh-CN'` 兜底），不许 import 不存在的文件。
 
 ## 3. 设置页（renderer，对齐 mockup 06）
 - 路由：App.tsx 内容区加 view 状态（`'editor' | 'settings'`，与 T7b 的本地分发同风格，一期无 router 库）；`app.settings` 命令与顶栏齿轮钮 → `setView('settings')`（**替换掉 notify 桩**）。

@@ -8,7 +8,7 @@
 1. **新建 `packages/importer`（纯逻辑包，零 IO）**：输入 = `ImportSourceFs`（注入的文件读抽象，测试用内存 Map 实现），输出 = **导入计划** `ImportPlan`（不直接写库）。所有落库动作由 desktop main 侧执行。
 2. **PM doc → 块模型的反向投影放 `packages/editor`**：新增导出 `pmDocToBlocks(doc): BlockSpec[]`（BlockSpec = {type, props, content(JSON)}，type 用**真相层名**，经 `blockTypeOfPmNode` 映射——codeBlock→code 等，与投影边界单源）。importer 依赖 editor 的 markdownPaste（正向）+ pmDocToBlocks（反向）完成 `.md → 块` 全链路。**不许在 importer 里再写一个 markdown 解析器**。
 3. **zip 解包 = fflate**（唯一新增依赖，只进 apps/desktop 不进 packages/importer——importer 接收已解压的 `Map<path, Uint8Array|string>`；解压发生在 desktop main）。
-4. **附件一期方案**（无 asset 实体，schema 裁决）：导入时按 sha256 内容寻址写入 `userData/assets/<hash><ext>`，image 块 props = `{src: 'asset://<hash><ext>', name}`；书签/页面引用降级见 §5。`asset://` 解析器随本任务加到 renderer（PageView 图片 src 映射）。
+4. **附件一期方案**（无 asset 实体，schema 裁决）：导入时按 sha256 内容寻址写入 `platform.layout.attachments/<hash><ext>`（PathLayout 已有该目录），image 块 props = `{src: 'asset://<hash><ext>', name}`；书签/页面引用降级见 §5。`asset://` 解析器随本任务加到 renderer（PageView 图片 src 映射）。
 5. **幂等表 `import_source`**（migration v5，**注意 v4 已被 T8 占用**）：`(source_path TEXT, content_hash TEXT, page_id TEXT, created_at INT, PRIMARY KEY(source_path, content_hash))`。执行前查重跳过；断点重跑天然幂等。断言用 `LATEST_SCHEMA_VERSION` 参数化。
 
 ## 1. ImportPlan 契约（types.ts，全部 zod）
@@ -38,7 +38,7 @@ ImportItem =
 
 ## 4. 执行器（desktop main `import:` 通道，commitOps 同源）
 - 通道：`import:plan {zipPath?|dirPath?|csvPath?} → {planId, preview(不含 bytes)}`；`import:execute {planId, confirm: true} → {report}`；`import:cancel {planId}`。
-- 执行 = 每页一个 batch：page.upsert op + N 个 block.upsert op（sort_key 依序、actor=本机）+ collection/record op（走 T7b dbview 同款物化）+ 资产落盘（先写 `userData/assets/`，**内容寻址天然幂等**）；成功后插 import_source 行（同 batch）。
+- 执行 = 每页一个 batch：page.upsert op + N 个 block.upsert op（sort_key 依序、actor=本机）+ collection/record op（走 T7b dbview 同款物化）+ 资产落盘（先写 `layout.attachments/`，**内容寻址天然幂等**）；成功后插 import_source 行（同 batch）。
 - 任一 batch 失败：已完成的**不自动回滚**（页面是 upsert 幂等，重跑续），report 记 `failedAt` 与已成功计数——断点重跑语义 = 从失败处继续，0 脏数据靠幂等而非回滚。
 - 预览页（renderer，对齐 mockup 09）：三步向导 选择→预览（counts 摘要 + warnings 折叠列表 + 树形 items 前 50）→执行（进度=已完成/总数，来自轮询 `import:progress {planId}`）→结果页（report 全文 + 「打开首页」）。**warnings 非空时确认按钮文案 = 「继续导入（N 项降级）」**，不藏警告。
 
