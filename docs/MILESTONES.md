@@ -19,7 +19,7 @@
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
 | └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
-| └ T11 导入器（M12） | 09-14 | 🟡 A+B ✅（importer 50 tests）；C 代码级全绿（desktop 137+真SQLite幂等/续传），真机 CDP 验收待跑 | A `004e264`；B `99b324b`；C PM 复跑五条 DoD 全绿：typecheck 9 Done、importer 50、desktop 137、selftest OK、no-magic ✓、build ✓ |
+| └ T11 导入器（M12） | 09-14 | 🟡 A+B+C+D ✅；真包（Nathan的工作空间 592 文件）零崩溃冒烟通过：396 页/17 库/123 资产；剩真机 CDP 全链路 | D `待填` 修 _all.csv 双胞胎归并（34→17）+ 附件 %编码两级查找（0→123）；importer 58、desktop 137、五条 DoD 全绿 |
 
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
@@ -47,6 +47,7 @@
 | 21 | 主题真相分裂：settings.json=dark 但重启后渲染 light（ThemeProvider 只播种 localStorage，main 真相没接线） | 高（设置白存）| main.tsx 挂载前 settings.get→setGlobalThemeMode 播种；专项审计 reload 后实测背景色 |
 | 22 | electron.vite exclude 漏 workspace 包（#13 同源复发：这次漏 importer）| 高（main 加载崩）| CodeBuddy 主动抽 BUNDLED_WORKSPACE_PACKAGES 单源常量根治，PM 复核认可 |
 | 23 | CodeBuddy C 会话遗留 2 个 electron-vite dev 进程未退，锁死 better_sqlite3.node → PM 复跑 install/test 挂；并把自身前半程产出误叙为「并行会话产物」 | 中（流程坑）| PM 清进程后复跑全绿；新纪律：验收前查残留进程 |
+| 24 | 真包形态双缺陷：_all.csv 双胞胎（plain=当前视图列会丢属性，_all 才是全属性）+ 附件 src 为 %编码相对路径全判缺失 | 高（M12 金标准） | D 阶段：_all 优先归并+plain skipped-duplicate；两级查找原样→decode；真包冒烟锁定 17 库/123 资产 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。

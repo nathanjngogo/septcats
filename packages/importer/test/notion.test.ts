@@ -404,3 +404,121 @@ describe('parseNotionZip：散 CSV 兜底', () => {
     expect(plan.warnings.some((w) => w.what === 'CSV 数据库' && w.path.includes('孤儿表'))).toBe(true);
   });
 });
+
+describe('parseNotionZip：_all.csv 配对归并（D 阶段真包校准）', () => {
+  it('_all+plain 配对（列不等）→ _all 优先建库、plain 跳过记 skipped-duplicate、relation 每库一次', () => {
+    const rootDir = `工作区 ${hexId(0)}`;
+    const dbDir = `${rootDir}/团队待办 ${hexId(100)}`;
+    const files: Record<string, string> = {
+      [`${rootDir}/工作区 ${hexId(0)}.md`]: '# 工作区\n',
+      // plain（当前视图）：仅可见 2 列，行集 ⊂ _all
+      [`${dbDir}/团队待办 ${hexId(100)}.csv`]: '名称,关联页面\n甲,工作区\n乙,工作区\n',
+      // _all（全属性）：3 列（列不等）
+      [`${dbDir}/团队待办 ${hexId(100)}_all.csv`]:
+        '名称,状态,关联页面\n甲,doing,工作区\n乙,todo,工作区\n丙,done,工作区\n',
+    };
+
+    const plan = parseNotionZip(memoryFs(files), '配对');
+    expect(plan.counts.collections).toBe(1);
+
+    const db = collectionsOf(plan)[0];
+    if (db?.op !== 'collection') {
+      throw new Error('unreachable');
+    }
+    expect(db.title).toBe('团队待办'); // title 清理 _all 后缀（两源同库同名）
+    expect(db.parentPath).toBe('工作区');
+    expect(db.path).toBe('工作区/团队待办');
+    // 建库源 = _all 那份：全属性 3 列 + 全行集
+    expect(Object.values(db.schema.properties).map((property) => property.name)).toEqual([
+      '名称',
+      '状态',
+      '关联页面',
+    ]);
+    expect(db.records).toHaveLength(3);
+
+    // plain 跳过 + skipped-duplicate warning（note 写明替代关系）
+    const skipped = plan.warnings.filter((w) => w.action === 'skipped-duplicate');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.path).toBe(`${dbDir}/团队待办 ${hexId(100)}.csv`);
+    expect(skipped[0]?.note).toContain('当前视图 CSV 由 _all 全属性导出替代');
+
+    // relation 候选每库只报一次（plain 与 _all 都有指向页面的列）
+    expect(plan.warnings.filter((w) => w.what === 'relation 候选')).toHaveLength(1);
+  });
+
+  it('仅 plain（无 _all 配对）→ 照旧建库，无 skipped-duplicate', () => {
+    const rootDir = `工作区 ${hexId(0)}`;
+    const dbDir = `${rootDir}/任务库 ${hexId(100)}`;
+    const files: Record<string, string> = {
+      [`${rootDir}/工作区 ${hexId(0)}.md`]: '# 工作区\n',
+      [`${dbDir}/任务库 ${hexId(100)}.csv`]: '名称,备注\n甲,x\n',
+    };
+    const plan = parseNotionZip(memoryFs(files), '仅plain');
+    expect(plan.counts.collections).toBe(1);
+    const db = collectionsOf(plan)[0];
+    if (db?.op !== 'collection') {
+      throw new Error('unreachable');
+    }
+    expect(db.title).toBe('任务库');
+    expect(Object.values(db.schema.properties).map((property) => property.name)).toEqual(['名称', '备注']);
+    expect(plan.warnings.filter((w) => w.action === 'skipped-duplicate')).toHaveLength(0);
+  });
+
+  it('仅 _all（无 plain）→ 以 _all 建库且 title 清理 _all 后缀，散 CSV 可挂到同名页', () => {
+    const rootDir = `简报 ${hexId(0)}`;
+    const files: Record<string, string> = {
+      [`${rootDir}/简报 ${hexId(0)}.md`]: '# 简报\n',
+      // 顶层散 CSV 的 _all 形态：清理名匹配同名页 → 挂为该页 database
+      [`简报 ${hexId(0)}_all.csv`]: '名称,周次\n第 1 期,W1\n',
+    };
+    const plan = parseNotionZip(memoryFs(files), '仅all');
+    expect(plan.counts.collections).toBe(1);
+    const db = collectionsOf(plan)[0];
+    if (db?.op !== 'collection') {
+      throw new Error('unreachable');
+    }
+    expect(db.title).toBe('简报'); // _all 后缀被清理
+    expect(db.parentPath).toBe('简报');
+    expect(plan.warnings.some((w) => w.what === 'CSV 数据库')).toBe(false);
+    expect(plan.warnings.filter((w) => w.action === 'skipped-duplicate')).toHaveLength(0);
+  });
+
+  it('同目录同名库（清理名同、32hex id 异）不误归并：各自与自己的 _all 配对', () => {
+    const rootDir = `工作区 ${hexId(0)}`;
+    // 真包形态：同一目录下多个「无标题」库，仅 id 不同
+    const mk = (id: number, plain: string, all: string) => ({
+      [`${rootDir}/无标题 ${hexId(id)}/无标题 ${hexId(id)}.csv`]: plain,
+      [`${rootDir}/无标题 ${hexId(id)}/无标题 ${hexId(id)}_all.csv`]: all,
+    });
+    const files: Record<string, string> = {
+      [`${rootDir}/工作区 ${hexId(0)}.md`]: '# 工作区\n',
+      ...mk(100, '名称\n甲\n', '名称,状态\n甲,doing\n'),
+      ...mk(101, '名称\n乙\n', '名称,优先级\n乙,P1\n'),
+    };
+    const plan = parseNotionZip(memoryFs(files), '同名库');
+    expect(plan.counts.collections).toBe(2); // 不能把两个库并成 1 个
+    expect(plan.warnings.filter((w) => w.action === 'skipped-duplicate')).toHaveLength(2);
+    const schemas = collectionsOf(plan).map((item) =>
+      item.op === 'collection' ? Object.values(item.schema.properties).map((property) => property.name) : [],
+    );
+    expect(schemas).toContainEqual(['名称', '状态']);
+    expect(schemas).toContainEqual(['名称', '优先级']);
+  });
+
+  it('畸形 %zz 编码附件名：原样路径命中不炸；全 miss 回退原样记缺失', () => {
+    const rootDir = `工作区 ${hexId(0)}`;
+    const hitDir = `${rootDir}/命中 ${hexId(1)}`;
+    const missDir = `${rootDir}/缺失 ${hexId(2)}`;
+    const files: Record<string, string | Uint8Array> = {
+      [`${rootDir}/工作区 ${hexId(0)}.md`]: '# 工作区\n',
+      [`${hitDir}/命中 ${hexId(1)}.md`]: '# 命中\n\n![图](pic%zz.png)\n',
+      [`${hitDir}/pic%zz.png`]: PNG_BYTES, // 源内就有字面 %zz 名 → 原样查找命中
+      [`${missDir}/缺失 ${hexId(2)}.md`]: '# 缺失\n\n![ghost](no%zzpe.png)\n',
+    };
+    const plan = parseNotionZip(memoryFs(files), '畸形编码');
+    expect(plan.counts.assets).toBe(1); // 字面 %zz 命中，解码异常不炸
+    const missing = plan.warnings.filter((w) => w.what === '本地附件缺失');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]?.note).toContain('no%zzpe.png'); // 原样 src 保留
+  });
+});

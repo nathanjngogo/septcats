@@ -354,56 +354,85 @@ export function parseNotionZip(fs: ImportSourceFs, rootName: string): ImportPlan
 
   // database：① `库名 <32hex>/` 目录内的 CSV（canonical）；② 顶层散 CSV 清理名与某页同名；
   // 都匹配不上 → 挂根 + warning（不静默）。
-  const csvPaths = fs
+  // D 阶段真包校准：Notion 对每个 database 导出两份 CSV —— `库名 <32hex>.csv`
+  // （当前视图，仅可见列）+ `库名 <32hex>_all.csv`（全属性）。配对存在时以 _all 那份
+  // 建库（列全、不丢属性），plain 那份跳过并记 skipped-duplicate warning；
+  // title 统一清理掉 `_all` 后缀（两源同库同名）。
+  const csvEntries = fs
     .list()
     .filter((path) => /\.csv$/i.test(path))
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  for (const csvPath of csvPaths) {
-    const dir = dirname(csvPath);
-    const dirTitle = cleanNotionName(basename(dir));
-    const stem = cleanNotionName(stripExt(basename(csvPath)));
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+    .map((csvPath) => {
+      const dir = dirname(csvPath);
+      const rawStem = stripExt(basename(csvPath));
+      const isAll = rawStem.endsWith('_all');
+      const baseStem = isAll ? rawStem.slice(0, rawStem.length - '_all'.length) : rawStem;
+      const canonical = NAME_ID.test(basename(dir));
+      // canonical 库以目录名定名；散 CSV 以（剥 `_all` 后的）清理名定名
+      const dbTitle = canonical ? cleanNotionName(basename(dir)) : cleanNotionName(baseStem);
+      return { csvPath, dir, canonical, isAll, dbTitle, pairStem: baseStem.trim() };
+    });
+  // 配对键 = 目录 + 剥 `_all` 后的原始 stem（含 32hex id；同目录同名「无标题」库靠
+  // id 区分）；组内存在 _all → 只由首个 _all 建库，其余成员（plain 及多余 _all）跳过。
+  // relation 候选检测随之每库只报一次（仅建库源参与）。
+  const pairKeyOf = (entry: (typeof csvEntries)[number]): string => `${entry.dir}\u0000${entry.pairStem}`;
+  const chosenAll = new Map<string, string>();
+  for (const entry of csvEntries) {
+    if (entry.isAll && !chosenAll.has(pairKeyOf(entry))) {
+      chosenAll.set(pairKeyOf(entry), entry.csvPath);
+    }
+  }
 
-    let dbTitle: string;
+  for (const entry of csvEntries) {
+    const chosenPath = chosenAll.get(pairKeyOf(entry));
+    if (chosenPath !== undefined && chosenPath !== entry.csvPath) {
+      // 配对存在：当前视图 CSV 由 _all 全属性导出替代，跳过不建库（不静默）
+      warnings.push({
+        path: entry.csvPath,
+        what: 'CSV 重复导出',
+        action: 'skipped-duplicate',
+        note: `当前视图 CSV 由 _all 全属性导出替代（“${entry.dbTitle}” 已按 _all 版本建库）`,
+      });
+      continue;
+    }
+
     let parentLogical: string | null;
-    const canonical = NAME_ID.test(basename(dir));
-    if (canonical) {
-      dbTitle = dirTitle;
-      const owner = nodes.find((node) => node.dir === dir);
+    if (entry.canonical) {
+      const owner = nodes.find((node) => node.dir === entry.dir);
       if (owner !== undefined) {
         parentLogical = owner.logical; // 页面目录内同放的 CSV
       } else {
         parentLogical = null;
         let parentDir = '';
         for (const candidate of nodes) {
-          if (isPathPrefix(candidate.dir, dir) && candidate.dir.length > parentDir.length) {
+          if (isPathPrefix(candidate.dir, entry.dir) && candidate.dir.length > parentDir.length) {
             parentDir = candidate.dir;
             parentLogical = candidate.logical;
           }
         }
       }
     } else {
-      dbTitle = stem;
-      const owner = nodes.find((node) => node.title === stem && node.dir === dir);
+      const owner = nodes.find((node) => node.title === entry.dbTitle && node.dir === entry.dir);
       parentLogical = owner !== undefined ? owner.logical : null;
       if (parentLogical === null) {
-        const byName = nodes.find((node) => node.title === stem);
+        const byName = nodes.find((node) => node.title === entry.dbTitle);
         parentLogical = byName !== undefined ? byName.logical : null;
       }
     }
 
     if (parentLogical === null) {
       warnings.push({
-        path: csvPath,
+        path: entry.csvPath,
         what: 'CSV 数据库',
         action: 'degraded',
-        note: `未找到同名页面目录，collection “${dbTitle}” 挂为根级`,
+        note: `未找到同名页面目录，collection “${entry.dbTitle}” 挂为根级`,
       });
     }
 
     const { item, relationWarnings } = databaseItem(
-      csvPath,
-      decode(fs.read(csvPath)),
-      dbTitle,
+      entry.csvPath,
+      decode(fs.read(entry.csvPath)),
+      entry.dbTitle,
       parentLogical,
       pageTitleSet,
     );

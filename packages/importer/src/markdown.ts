@@ -268,7 +268,21 @@ class BodyScanner {
       return;
     }
     const resolved = resolveRef(this.mdPath, ref);
-    if (!this.knownFiles.has(resolved)) {
+    let found: string | null = this.knownFiles.has(resolved) ? resolved : null;
+    if (found === null) {
+      // D 阶段真包校准：Notion 导出 md 内图片 src 是 URL 编码的相对路径
+      //（如 `CR209%E8%B0%83%E6%95%B4/IMG_x.jpg`）——原样 miss 后按 percent-decode
+      // 再查一次；畸形编码串（decodeURIComponent 抛 URIError）回退原样路径。
+      try {
+        const decoded = resolveRef(this.mdPath, decodeURIComponent(ref));
+        if (this.knownFiles.has(decoded)) {
+          found = decoded;
+        }
+      } catch {
+        // URIError：回退原样（下方按缺失处理，不静默）
+      }
+    }
+    if (found === null) {
       // 附件缺失：不静默丢内容——保留原 src 并出 warning
       this.blocks.push({ type: 'image', props: { src: ref, name }, content: null });
       this.warnings.push({
@@ -279,9 +293,9 @@ class BodyScanner {
       });
       return;
     }
-    const bytes = toBytes(this.fs.read(resolved));
+    const bytes = toBytes(this.fs.read(found));
     const hash = sha256Hex(bytes);
-    const ext = extOf(ref);
+    const ext = extOf(found);
     if (!this.assets.has(hash)) {
       this.assets.set(hash, { item: { op: 'asset', hash, ext, bytes } });
     }

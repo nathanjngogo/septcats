@@ -229,6 +229,56 @@ describe('markdown：附件双形态', () => {
   });
 });
 
+describe('markdown：%编码附件解析（D 阶段真包校准）', () => {
+  it('percent-decode 命中：编码 ref 按解码后路径查到源文件，asset 链路正常', () => {
+    const encoded = encodeURIComponent('图片猫'); // Notion 导出的 src 形态
+    const fs = memoryFs({
+      'page.md': `![猫](assets/${encoded}.png)\n`,
+      'assets/图片猫.png': PNG_BYTES,
+    });
+    const plan = parseMdFile(fs, 'page.md');
+    expect(plan.counts.assets).toBe(1);
+    expect(plan.warnings.filter((warning) => warning.what === '本地附件缺失')).toHaveLength(0);
+
+    const asset = assetsOf(plan)[0];
+    expect(asset?.op === 'asset' && asset.hash).toBe(sha256(PNG_BYTES));
+    expect(asset?.op === 'asset' && asset.ext).toBe('.png');
+
+    const page = pagesOf(plan)[0];
+    if (page?.op !== 'page') {
+      throw new Error('unreachable');
+    }
+    expect(page.blocks).toEqual([
+      { type: 'image', props: { src: `asset://${sha256(PNG_BYTES)}.png`, name: '猫' }, content: null },
+    ]);
+  });
+
+  it('畸形编码回退：字面 %zz 路径按原样命中，不因 URIError 崩溃', () => {
+    const fs = memoryFs({
+      'page.md': '![lit](pic%zz.png)\n',
+      'pic%zz.png': PNG_BYTES, // 源内就有字面 %zz 名 → 原样查找命中
+    });
+    const plan = parseMdFile(fs, 'page.md');
+    expect(plan.counts.assets).toBe(1);
+    expect(plan.warnings).toEqual([]);
+  });
+
+  it('仍缺失：编码合法但无源文件、畸形串全 miss → 都按原样记缺失 warning', () => {
+    const encoded = encodeURIComponent('幽灵');
+    const fs = memoryFs({
+      'page.md': `![a](assets/${encoded}.png)\n![b](x%zz.png)\n`,
+    });
+    const plan = parseMdFile(fs, 'page.md');
+    expect(assetsOf(plan)).toHaveLength(0);
+    expect(plan.warnings).toHaveLength(2);
+    expect(plan.warnings.every((warning) => warning.what === '本地附件缺失' && warning.action === 'degraded')).toBe(
+      true,
+    );
+    expect(plan.warnings.some((warning) => warning.note.includes(`assets/${encoded}.png`))).toBe(true);
+    expect(plan.warnings.some((warning) => warning.note.includes('x%zz.png'))).toBe(true);
+  });
+});
+
 describe('markdown：GFM 表降级', () => {
   it('表格 → code 块原文 + degraded warning；围栏内不触发', () => {
     const table = [
