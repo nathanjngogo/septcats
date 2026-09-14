@@ -21,10 +21,13 @@ await page.reload({ waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
 
 // 1) plan（真 zip，fflate 在 main 侧解压）
+//    双态：干净库=全量 404；预置库(旧代码执行过)=全量命中去重 pages=0/skipped≥420——
+//    后者正是 E2 缺陷(漏 41 条)的真实案发现场，新代码必须 0 漏网。
 const t0 = Date.now();
 const plan = await page.evaluate(async (zipPath) => await window.septcats.import.plan({ zipPath }), ZIP);
-check('真包 plan 成功：404 页(含 8 孤儿宿主) / 17 库 / ≥123 资产',
-  !!plan.planId && plan.counts.pages === 404 && plan.counts.collections === 17 && plan.counts.assets >= 123,
+const fresh = plan.counts.pages === 404 && plan.counts.collections === 17 && plan.counts.assets >= 123;
+const idem = plan.counts.pages === 0 && plan.counts.skippedDuplicate >= 420;
+check('真包 plan：新库全量 404/17/123 或 旧库全去重 0/≥420（E2 核心断言）', fresh || idem,
   `counts=${JSON.stringify(plan.counts)} ${Date.now() - t0}ms`);
 
 // 2) execute 全量

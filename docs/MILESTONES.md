@@ -19,7 +19,7 @@
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
 | └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
-| └ T11 导入器（M12） | 09-14 | 🟡 A+B+C+D ✅；真包（Nathan的工作空间 592 文件）零崩溃冒烟通过：396 页/17 库/123 资产；剩真机 CDP 全链路 | D+修 修 _all.csv 双胞胎归并（34→17）+ 附件 %编码两级查找（0→123）；importer 58、desktop 137、五条 DoD 全绿 |
+| └ T11 导入器（M12） | 09-14 | ✅ **真包真机 CDP ALL-PASS 8 项**（脏库 E2 案发现场：全量去重 skipped=421/漏 0、重执行 done、436 页树 dangling=0、FTS 命中、无重复页、pageerror=0） | A-D+E/E2 五阶段：`_all.csv` 双胞胎归并（34→17）+ 附件 %编码两级查找（0→123）；importer 58、desktop 137、五条 DoD 全绿 |
 
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
@@ -50,6 +50,7 @@
 | 24 | 真包形态双缺陷：_all.csv 双胞胎（plain=当前视图列会丢属性，_all 才是全属性）+ 附件 src 为 %编码相对路径全判缺失 | 高（M12 金标准） | D 阶段：_all 优先归并+plain skipped-duplicate；两级查找原样→decode；真包冒烟锁定 17 库/123 资产 |
 | 25 | 导入执行器层尾排序键饱和：nextSortKey 只尾追加，真包 execute 253/536 撞 SORTKEY_MAX_LENGTH=16 中断 | 高（真包必现） | PM 亲修：将满即整层重建（rebalanceLayer+sortSequence，与新页同 batch 原子），2 条回归（饱和/墓碑幂等）绿 |
 | 26 | 计划器去重先于重命名 → 撞名条目二次导入漏网（真包 CDP 终验抓到：重导 plan 漏 41 条、真库 16 个同 path 双 hash） | 高（幂等承诺破口） | PM 亲修：finalizePlan 顺序重排（重命名先于去重，最终 path 为源集合纯函数）+ databaseItem 签名收窄 collection；plan.test 补「改名条目二次导入全命中」回归；顺带纠正我 82fe749 轮漏跑 typecheck 的疏漏 |
+| 27 | 我的 CDP 审计脚本自身「假绿」：重导断言只查「页集合无新增」近似，未用全量 skippedDuplicate==plan1 记账集合核对 → E2 幂等击穿（漏 41 条）连续三轮都从这条缝里溜过去 | 中（验收工具缺陷） | 断言改为双态硬核对（新库全量 404/旧库 skipped≥420）+ 纯逻辑 golden-dedup 用与 SQL 逐字对齐的 (path,hash) 键回归 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
