@@ -277,10 +277,10 @@ function databaseItem(
   dbTitle: string,
   parentLogical: string | null,
   pageTitleSet: ReadonlySet<string>,
-): { item: ImportItem; relationWarnings: ImportWarning[] } {
+): { item: Extract<ImportItem, { op: 'collection' }>; relationWarnings: ImportWarning[] } {
   const { schema, records } = inferCsv(text);
   const path = parentLogical !== null ? `${parentLogical}/${dbTitle}` : `${dbTitle}/${dbTitle}`;
-  const item: ImportItem = {
+  const item: Extract<ImportItem, { op: 'collection' }> = {
     op: 'collection',
     path,
     title: dbTitle,

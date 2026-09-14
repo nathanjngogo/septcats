@@ -114,6 +114,34 @@ describe('finalizePlan：孤儿挂根 + 重名 hash 后缀', () => {
     expect(warning?.action).toBe('degraded');
     expect(warning?.note).toContain(suffix);
   });
+
+  // E2 回归（真包 CDP 抓到）：重命名先于去重 → 撞名条目第一次以改名后的 path 记账，
+  // 第二次 plan 的同一条目必须命中 skippedDuplicate。旧序（先去重后重命名）下，
+  // 后到的 'same' 拿原始 path 查不到（库里记的是 same-<hash6>）→ 漏网重复导入。
+  it('撞名条目二次导入：第一次改名记账 → 第二次全量命中去重、0 漏网', () => {
+    const mkPair = (): [ImportItem, ImportItem] => [
+      pageItem('same', null, 'first'),
+      pageItem('same', null, 'second'),
+    ];
+    const [a, b] = mkPair();
+    const hashA = contentHashOf(a);
+    const hashB = contentHashOf(b);
+    const suffix = hashB.slice(0, 6);
+    // 第一次 plan：全陌生 → b 改名为 same-<hash6>
+    const plan1 = finalizePlan({ kind: 'notion-zip', rootName: 'N' }, mkPair(), [], neverImported);
+    const paths1 = plan1.items.flatMap((item) => (item.op === 'page' ? [item.path] : []));
+    expect(paths1).toEqual(['same', `same-${suffix}`]);
+    // 模拟执行期记账：(最终 path, hash) 入 import_source
+    const ledger = new Map<string, string>([
+      [`same\u0000${hashA}`, 'page-1'],
+      [`same-${suffix}\u0000${hashB}`, 'page-2'],
+    ]);
+    const lookup: ExistingLookup = (path, hash) => ledger.get(`${path}\u0000${hash}`) ?? null;
+    // 第二次 plan：同源新解析产物（旧序实现在这里漏 b）
+    const plan2 = finalizePlan({ kind: 'notion-zip', rootName: 'N' }, mkPair(), [], lookup);
+    expect(plan2.counts.skippedDuplicate).toBe(2);
+    expect(plan2.items.filter((item) => item.op === 'page')).toHaveLength(0);
+  });
 });
 
 describe('finalizePlan：上限熔断', () => {

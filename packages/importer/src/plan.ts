@@ -3,10 +3,11 @@
  *
  * 职责：解析产物（items/warnings）→ **可执行 ImportPlan** 的全部计划期语义：
  * - 上限熔断：单计划 > 5000 items → throw PlanTooLargeError（E_TOO_LARGE，分批导）；
- * - 去重：对每个 page/collection 的 (path, contentHash) 经注入的 ExistingLookup 查
- *   import_source（desktop 用 SQL，测试用 Map）→ 命中即剔除 + skipped-duplicate warning
+ * - 重名：同 path 冲突 → 后者追加内容 hash 前 6 位 + warning。**先于去重执行**：
+ *   最终 path 映射是源集合的纯函数，两次 plan 结果一致，去重才能命中 import_source；
+ * - 去重：对每个 page/collection 的 (最终 path, contentHash) 经注入的 ExistingLookup
+ *   查 import_source（desktop 用 SQL，测试用 Map）→ 命中即剔除 + skipped-duplicate warning
  *   （asset 内容寻址天然幂等，不做计划期去重）；
- * - 重名：同 path 冲突 → 后者追加内容 hash 前 6 位 + warning；
  * - 孤儿：parentPath 既不是现存条目 path、也不是任何条目 path 的目录前缀 → 挂根 + warning
  *   （兼容 A 阶段 md-dir 的「目录路径作 parentPath」约定与 B 阶段的「父页逻辑路径」约定）；
  * - counts 汇总（复用 types.buildPlan；skippedDuplicate 由本层回填）。
@@ -95,7 +96,30 @@ export function finalizePlan(
     throw new PlanTooLargeError(items.length);
   }
 
-  // 去重：命中 import_source 的 page/collection 剔除 + warning
+  // 重名：**必须先于去重**，且基于**全量解析产物**判定——最终 path 映射是源集合的
+  // 纯函数，两次 plan 必然产出相同结果，去重才能拿最终 path 命中 import_source。
+  // （旧顺序「先去重后重命名」在真包上被击穿：第一次执行把撞名条目改名为 X-hash6
+  // 记账；第二次 plan 里后到的 X 拿原始 path 查不到 → 漏网 41 条，E2 缺陷。）
+  const seenPaths = new Set<string>();
+  for (const item of items) {
+    if (item.op === 'asset' || !seenPaths.has(item.path)) {
+      if (item.op !== 'asset') {
+        seenPaths.add(item.path);
+      }
+      continue;
+    }
+    const suffix = contentHashOf(item).slice(0, 6);
+    warnings.push({
+      path: item.path,
+      what: '路径冲突',
+      action: 'degraded',
+      note: `重名条目，path 追加 hash 前 6 位 → ${item.path}-${suffix}`,
+    });
+    item.path = `${item.path}-${suffix}`;
+    seenPaths.add(item.path);
+  }
+
+  // 去重：命中 import_source 的 page/collection 剔除 + warning（此时 path 已是最终值）
   let skippedDuplicate = 0;
   const kept: ImportItem[] = [];
   for (const item of items) {
@@ -115,26 +139,6 @@ export function finalizePlan(
       continue;
     }
     kept.push(item);
-  }
-
-  // 重名：path 冲突 → 后者追加内容 hash 前 6 位
-  const seenPaths = new Set<string>();
-  for (const item of kept) {
-    if (item.op === 'asset' || !seenPaths.has(item.path)) {
-      if (item.op !== 'asset') {
-        seenPaths.add(item.path);
-      }
-      continue;
-    }
-    const suffix = contentHashOf(item).slice(0, 6);
-    warnings.push({
-      path: item.path,
-      what: '路径冲突',
-      action: 'degraded',
-      note: `重名条目，path 追加 hash 前 6 位 → ${item.path}-${suffix}`,
-    });
-    item.path = `${item.path}-${suffix}`;
-    seenPaths.add(item.path);
   }
 
   // 孤儿：父不可解析 → 挂根 + warning

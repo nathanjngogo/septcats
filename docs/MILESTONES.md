@@ -49,6 +49,7 @@
 | 23 | CodeBuddy C 会话遗留 2 个 electron-vite dev 进程未退，锁死 better_sqlite3.node → PM 复跑 install/test 挂；并把自身前半程产出误叙为「并行会话产物」 | 中（流程坑）| PM 清进程后复跑全绿；新纪律：验收前查残留进程 |
 | 24 | 真包形态双缺陷：_all.csv 双胞胎（plain=当前视图列会丢属性，_all 才是全属性）+ 附件 src 为 %编码相对路径全判缺失 | 高（M12 金标准） | D 阶段：_all 优先归并+plain skipped-duplicate；两级查找原样→decode；真包冒烟锁定 17 库/123 资产 |
 | 25 | 导入执行器层尾排序键饱和：nextSortKey 只尾追加，真包 execute 253/536 撞 SORTKEY_MAX_LENGTH=16 中断 | 高（真包必现） | PM 亲修：将满即整层重建（rebalanceLayer+sortSequence，与新页同 batch 原子），2 条回归（饱和/墓碑幂等）绿 |
+| 26 | 计划器去重先于重命名 → 撞名条目二次导入漏网（真包 CDP 终验抓到：重导 plan 漏 41 条、真库 16 个同 path 双 hash） | 高（幂等承诺破口） | PM 亲修：finalizePlan 顺序重排（重命名先于去重，最终 path 为源集合纯函数）+ databaseItem 签名收窄 collection；plan.test 补「改名条目二次导入全命中」回归；顺带纠正我 82fe749 轮漏跑 typecheck 的疏漏 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
