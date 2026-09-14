@@ -383,6 +383,7 @@ export function parseNotionZip(fs: ImportSourceFs, rootName: string): ImportPlan
     }
   }
 
+  const hostUsedPaths = new Set<string>(); // 本批已发的孤儿 collection 宿主 path（防互相撞名）
   for (const entry of csvEntries) {
     const chosenPath = chosenAll.get(pairKeyOf(entry));
     if (chosenPath !== undefined && chosenPath !== entry.csvPath) {
@@ -436,6 +437,30 @@ export function parseNotionZip(fs: ImportSourceFs, rootName: string): ImportPlan
       parentLogical,
       pageTitleSet,
     );
+    // 孤儿 collection（parentPath=null）必须先发一个宿主页：schema 层 collection.page_id
+    // 非空、执行器对无宿主页的 collection 直接 throw（真包 CDP 抓到的契约破口）。
+    // 约定同 parseCsvFile：空正文页，collection.parentPath 指向该页。宿主 path 必须
+    // 避让已有页名与本批已发宿主（真包有 8 个孤儿「_all」散表且含重名「无标题」），
+    // 用库的 32hex id 前 6 位作后缀——绕开 plan.ts 的 hash 重命名（它会改宿主 path
+    // 而 collection.parentPath 不跟着改，解析必断）。
+    if (item.parentPath === null) {
+      let hostPath = item.title;
+      if (pageTitleSet.has(hostPath) || hostUsedPaths.has(hostPath)) {
+        const idSuffix = /([0-9a-f]{6})[0-9a-f]{26}$/.exec(entry.pairStem)?.[1] ?? hostPath.length.toString(16);
+        hostPath = `${item.title}-${idSuffix}`;
+      }
+      hostUsedPaths.add(hostPath);
+      items.push({
+        op: 'page',
+        path: hostPath,
+        title: item.title,
+        parentPath: null,
+        blocks: [],
+      });
+      items.push({ ...item, path: `${hostPath}/${item.title}`, parentPath: hostPath });
+      warnings.push(...relationWarnings);
+      continue;
+    }
     items.push(item);
     warnings.push(...relationWarnings);
   }

@@ -385,22 +385,26 @@ describe('parseNotionZip：合成 20 页 3 层嵌套 + 2 db + 附件', () => {
 });
 
 describe('parseNotionZip：散 CSV 兜底', () => {
-  it('顶层散 CSV 与某页同名 → 归为该页 database；无名可归 → 挂根 + warning', () => {
+  it('顶层散 CSV 与某页同名 → 归为该页 database；无名可归 → 挂根宿主空页 + warning（E：孤儿 collection 必须带宿主页，schema 层 page_id 非空）', () => {
     const files: Record<string, string> = {
       '会议 000000000000000000000000000000ab/会议 000000000000000000000000000000ab.md': '# 会议\n',
       // 顶层散 CSV：清理名「会议」与页面同名 → 该页的 database
       '会议 000000000000000000000000000000ab.csv': 'Name,备注\n甲,x\n',
-      // 清理名与任何页面都不同名 → 挂根 + warning
+      // 清理名与任何页面都不同名 → 挂根宿主空页 + warning
       '孤儿表 000000000000000000000000000000cd.csv': 'Name\nx\n',
     };
     const plan = parseNotionZip(memoryFs(files), '散件');
-    expect(plan.counts.pages).toBe(1);
+    expect(plan.counts.pages).toBe(2); // 会议页 + 孤儿宿主页
     expect(plan.counts.collections).toBe(2);
     const dbs = collectionsOf(plan);
     const attached = dbs.find((item) => item.op === 'collection' && item.title === '会议');
     expect(attached).toMatchObject({ parentPath: '会议', path: '会议/会议' });
     const orphan = dbs.find((item) => item.op === 'collection' && item.title === '孤儿表');
-    expect(orphan).toMatchObject({ parentPath: null });
+    expect(orphan).toMatchObject({ parentPath: '孤儿表', path: '孤儿表/孤儿表' });
+    const host = plan.items.find(
+      (it) => it.op === 'page' && it.title === '孤儿表' && it.blocks.length === 0,
+    );
+    expect(host).toMatchObject({ path: '孤儿表', parentPath: null });
     expect(plan.warnings.some((w) => w.what === 'CSV 数据库' && w.path.includes('孤儿表'))).toBe(true);
   });
 });

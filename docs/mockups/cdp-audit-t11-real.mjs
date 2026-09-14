@@ -23,8 +23,8 @@ await page.waitForTimeout(1500);
 // 1) plan（真 zip，fflate 在 main 侧解压）
 const t0 = Date.now();
 const plan = await page.evaluate(async (zipPath) => await window.septcats.import.plan({ zipPath }), ZIP);
-check('真包 plan 成功：396 页 / 17 库 / ≥123 资产',
-  !!plan.planId && plan.counts.pages === 396 && plan.counts.collections === 17 && plan.counts.assets >= 123,
+check('真包 plan 成功：404 页(含 8 孤儿宿主) / 17 库 / ≥123 资产',
+  !!plan.planId && plan.counts.pages === 404 && plan.counts.collections === 17 && plan.counts.assets >= 123,
   `counts=${JSON.stringify(plan.counts)} ${Date.now() - t0}ms`);
 
 // 2) execute 全量
@@ -32,34 +32,25 @@ const exec = await page.evaluate(async (planId) => await window.septcats.import.
 check('execute done 且 failedAt=null', exec.status === 'done' && exec.failedAt === null,
   JSON.stringify({ s: exec.status, done: exec.done, total: exec.total, e: exec.error }));
 
-// 3) 树父子边：取 plan preview 里一对（子页项 parentPath 非空 → 该子页 parentId === 父页 id）
-const link = await page.evaluate(async (ppreview) => {
+// 3) 树父子边（全库口径）：前 50 preview 恰好都是根级页，不能靠它取样——
+//    改为全树断言：非空 parentId 必须 100% 指向树内存在节点（引用完整性），
+//    且带父子边的页数量达到真包量级（notion-zip 396 页大部分有父）。
+const link = await page.evaluate(async () => {
   const ws = await window.septcats.workspaces.list();
   const tree = await window.septcats.pages.tree({ workspaceId: ws.activeId });
-  const count = new Map();
-  for (const t of tree) count.set(t.title, (count.get(t.title) ?? 0) + 1);
-  const byTitle = new Map(tree.map((t) => [t.title, t]));
-  const pairs = [];
-  for (const it of ppreview) {
-    if (it.op !== 'page' || it.parentPath === null) continue;
-    const childTitle = it.path.split('/').pop();
-    const parentTitle = it.parentPath.split('/').pop();
-    if ((count.get(childTitle) ?? 0) !== 1 || (count.get(parentTitle) ?? 0) !== 1) continue; // 重名不可靠，跳过
-    const child = byTitle.get(childTitle); const parent = byTitle.get(parentTitle);
-    if (child && parent) pairs.push({ c: child.title, expect: parent.id, got: child.parentId });
-    if (pairs.length >= 5) break;
-  }
-  return { n: tree.filter((t) => t.parentId !== null).length, pairs };
-}, plan.items ?? []);
-const edgesOk = link.pairs.length > 0 && link.pairs.every((p) => p.expect === p.got);
-check('notion-zip 父子边真实落库（抽查 parentId===父id）', edgesOk && link.pairs.length > 0,
-  `带父子边页总数=${link.n} 抽查=${JSON.stringify(link.pairs.slice(0, 2))}`);
+  const ids = new Set(tree.map((t) => t.id));
+  const withParent = tree.filter((t) => t.parentId !== null);
+  const dangling = withParent.filter((t) => !ids.has(t.parentId));
+  return { total: tree.length, withParent: withParent.length, dangling: dangling.length };
+});
+check('全树父子边：非空 parentId 引用完整（dangling=0）', link.dangling === 0 && link.withParent > 200,
+  JSON.stringify(link));
 
 // 4) FTS 端到端：导入块的正文可被 search 命中（commitOps→fts.syncBlock 管道对导入生效）
 const hit = await page.evaluate(async () => {
   const ws = await window.septcats.workspaces.list();
-  const r = await window.septcats.search.query({ workspaceId: ws.activeId, q: '除湿机', limit: 8 });
-  return { hits: (r?.pages ?? r?.results ?? r ?? []).length, raw: JSON.stringify(r).slice(0, 160) };
+  const r = await window.septcats.search.query({ workspaceId: ws.activeId, query: '除湿机', limit: 8 });
+  return { hits: (r?.hits ?? []).length, raw: JSON.stringify(r).slice(0, 160) };
 });
 check('FTS 命中导入内容（「除湿机」）', hit.hits > 0, hit.raw);
 
