@@ -1,10 +1,11 @@
-/** 取证（一次性）：对真包连跑两次 plan，第二次用第一次的 (path,hash) 当 existingLookup，
- *  找出漏网条目并按特征分类。 */
+/** 取证（一次性，PM 工具）：真包连跑两遍 plan，第二遍用第一遍的记账当 existingLookup。
+ *  正确键格式 = (path, contentHash) 两参（与 desktop import_source 表一致）。
+ *  E2 修复（395ba12：重命名先于去重）后此断言必须成立；修复前真包 CDP 实测漏 41 条。 */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildPlan, contentHashOf } from '../src/plan';
-import type { ImportItem, ImportSourceFs } from '../src/types';
+import type { ImportSourceFs } from '../src/types';
 
 const ROOT = 'E:/Hermes Agent工作空间/_scratch/real-notion';
 
@@ -33,40 +34,29 @@ function diskFs(root: string): ImportSourceFs {
   };
 }
 
-function key(it: ImportItem): string {
-  return it.op === 'asset' ? `asset:${it.hash}` : `${it.op}\0${it.path}\0${contentHashOf(it)}`;
-}
-
-describe('真包重复 plan 去重取证', () => {
-  it('第二遍 plan 的漏网条目画像', () => {
+describe('真包二次 plan 去重完整性（E2 回归）', () => {
+  it('第一遍全量记账 → 第二遍漏网必须为 0', () => {
     const fs = diskFs(ROOT);
     const src = { kind: 'notion-zip', rootName: 'Nathan的工作空间' } as const;
     const plan1 = buildPlan(src, fs, () => null);
-    const seen = new Set<string>(plan1.items.map(key));
-    const plan2 = buildPlan(src, fs, (p, h) => (seen.has(`${p}\0${h}`) ? 'dup' : null));
-
-    const leaked = plan2.items.filter(
-      (it) => it.op !== 'asset' && !seen.has(key(it)),
+    // 记账键 = (path, contentHash)，与 desktop SQL 的 (source_path, content_hash) 逐字对齐
+    const ledger = new Set<string>(
+      plan1.items
+        .filter((it) => it.op !== 'asset')
+        .map((it) => `${(it as { path: string }).path}\u0000${contentHashOf(it)}`),
     );
-    console.log(`plan1 items=${plan1.items.length} plan2 items=${plan2.items.length} 漏网=${leaked.length}`);
-    for (const it of leaked.slice(0, 12)) {
-      console.log('  LEAK', it.op, it.path.slice(0, 60), 'hash', contentHashOf(it).slice(0, 8));
+    const plan2 = buildPlan(src, fs, (path, hash) => (ledger.has(`${path}\u0000${hash}`) ? 'x' : null));
+    const leaked = plan2.items.filter(
+      (it) => it.op !== 'asset' && !ledger.has(`${(it as { path: string }).path}\u0000${contentHashOf(it)}`),
+    );
+    console.log(
+      `plan1 记账=${ledger.size} | plan2 pages=${plan2.counts.pages} skipped=${plan2.counts.skippedDuplicate} 漏网=${leaked.length}`,
+    );
+    for (const it of leaked.slice(0, 8)) {
+      console.log('  LEAK', it.op, (it as { path: string }).path.slice(0, 70));
     }
-    // 对每个漏网项，找 plan1 里 path 相同的条目对比 hash
-    for (const it of leaked.slice(0, 6)) {
-      if (it.op === 'asset') continue;
-      const same = plan1.items.filter(
-        (x) => x.op === it.op && (x as { path?: string }).path === it.path,
-      );
-      console.log(
-        `  对比 ${it.path.slice(0, 40)}: plan1 中同 path 条目 ${same.length} 个`,
-        same.map((x) => contentHashOf(x).slice(0, 8)).join(','),
-        '| plan2 hash=', contentHashOf(it).slice(0, 8),
-      );
-    }
-    const byOp: Record<string, number> = {};
-    for (const it of leaked) byOp[it.op] = (byOp[it.op] ?? 0) + 1;
-    console.log('漏网分布 =', JSON.stringify(byOp));
-    expect(leaked.length).toBe(0); // 修好后此断言必须成立
+    expect(leaked.length).toBe(0);
+    expect(plan2.counts.pages).toBe(0);
+    expect(plan2.counts.collections).toBe(0);
   }, 300_000);
 });
