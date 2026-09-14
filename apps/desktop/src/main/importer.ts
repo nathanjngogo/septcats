@@ -25,9 +25,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { unzipSync } from 'fflate';
-import { sortBetween, sortSequence, ulid } from '@septcats/core';
+import { SORTKEY_MAX_LENGTH, sortBetween, sortSequence, ulid } from '@septcats/core';
 import type { ActorId, Op } from '@septcats/core';
 import { defaultView } from '@septcats/dbview';
+import { rebalanceLayer } from '@septcats/editor';
 import {
   PlanTooLargeError,
   buildPlan,
@@ -271,20 +272,52 @@ export function createImporterService(options: ImporterServiceOptions): Importer
     return index;
   }
 
-  function nextSortKey(layerKeys: Map<string, string | null>, parentId: string | null): string {
+  /**
+   * 层尾排序键（E 修复，缺陷账 #24）：常规尾部追加；`sortBetween(prev, null)` 饱和
+   * （层尾键链撞 SORTKEY_MAX_LENGTH=16）时降级为**整层重建**——实时查库取该层全部
+   * alive 兄弟（含本计划执行期间已建页，不含新页自身），`sortSequence(n+1)` 等间隔
+   * 重排，新页挂尾。返回的 reorder ops 必须与新页 upsert 进**同一 commitOps batch**
+   * （原子性铁律：reorder 与建页要么同事务、要么都不发生）。正统模式照 pages.ts
+   * movePage 的重平衡分支与 editor/diff.ts 整层重建——复用 rebalanceLayer，不发明新机制。
+   */
+  async function nextSortKey(
+    layerKeys: Map<string, string | null>,
+    parentId: string | null,
+    workspaceId: string,
+    at: number,
+  ): Promise<{ sortKey: string; reorderOps: Op[] }> {
     const key = parentId ?? '';
     const prev = layerKeys.get(key) ?? null;
-    let next: string;
+    let next: string | null = null;
     try {
-      next = sortBetween(prev, null);
-    } catch (error) {
-      throw new ImporterApiError(
-        'E_INVARIANT',
-        `无法在父层生成排序键（${parentId ?? '根'}）：${error instanceof Error ? error.message : String(error)}`,
-      );
+      const candidate = sortBetween(prev, null);
+      // 「将满即重建」护栏：已达上限长的键一旦入层，下一次尾追加必炸——与其等炸，
+      // 不如在产出的键已无增长余量（长度达 SORTKEY_MAX_LENGTH）时当场整层重建。
+      if (candidate.length < SORTKEY_MAX_LENGTH) {
+        next = candidate;
+      }
+    } catch {
+      // 饱和：走下面的重建路径
     }
-    layerKeys.set(key, next);
-    return next;
+    if (next !== null) {
+      layerKeys.set(key, next);
+      return { sortKey: next, reorderOps: [] };
+    }
+    // 饱和 → 整层重建。siblings 实时查（listByParent 已按 sort_key,id 排序，只含 alive，
+    // 天然不含本条新页——它尚未 upsert；也不复活已删页）。
+    const siblingRows = (
+      await executor.all('page.listByParent', { workspace_id: workspaceId, parent_id: parentId })
+    ).rows as ReadonlyArray<Record<string, unknown>>;
+    const siblingIds = siblingRows.map((row) => String(row['id'] ?? ''));
+    const versions = new Map<string, number>(
+      siblingIds.map((id, i) => [id, Number(siblingRows[i]?.['version'] ?? 0)]),
+    );
+    // 存量兄弟占 keys[0..n-1]，新页独占尾键 keys[n]——严格递增且新页最大，追加序不破。
+    const keys = sortSequence(siblingIds.length + 1);
+    const reorderOps = rebalanceLayer(siblingIds, (i) => keys[i] ?? '', { actor, now: at, versions });
+    const newKey = keys[keys.length - 1] ?? '';
+    layerKeys.set(key, newKey);
+    return { sortKey: newKey, reorderOps };
   }
 
   /** 父页解析：本计划已建页 path 精确命中 → 计划期去重命中 → 深度前缀页 → 根。 */
@@ -442,8 +475,9 @@ export function createImporterService(options: ImporterServiceOptions): Importer
       }
       const pageId = ulid(at);
       const parentId = resolveParent(entry, item.parentPath);
-      const sortKey = nextSortKey(layerKeys, parentId);
-      const ops = pageOps(item, pageId, parentId, sortKey, at);
+      const { sortKey, reorderOps } = await nextSortKey(layerKeys, parentId, workspaceId, at);
+      // reorderOps（饱和重建时非空）与新页 upsert 同 batch 提交——原子性铁律（E 修复 §1）。
+      const ops = [...reorderOps, ...pageOps(item, pageId, parentId, sortKey, at)];
       await commitOps(executor, ops, {
         workspaceId,
         extraStatements: [{ ...importSourceStatement, params: { ...importSourceStatement.params, page_id: pageId } }],

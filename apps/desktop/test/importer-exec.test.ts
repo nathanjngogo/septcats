@@ -276,4 +276,95 @@ describeDb('importer 执行器（真 SQLite · commitOps 同事务）', (ctor) =
     expect(allValues).toContain('甲');
     expect(allValues).toContain(':3'); // Age 推断 number（值形 3，非 '3'）
   });
+
+  // ---- E 修复（TASK-T11-01E / 缺陷账 #24）：层尾排序键饱和 → 整层重建 ----------------
+
+  /** 直接种一个根层页（绕过导入器，模拟"库里已有密集 z 链"的历史态）。 */
+  async function seedRootPage(id: string, title: string, sortKey: string, alive: number): Promise<void> {
+    await requestOk<RunData>(core, {
+      id: `seed-${id}`,
+      t: 'run',
+      sqlId: 'page.insert',
+      params: {
+        id,
+        workspace_id: WORKSPACE_ID,
+        title,
+        icon: null,
+        cover: null,
+        parent_id: null,
+        sort_key: sortKey,
+        alive,
+        version: 1,
+        deleted_at: alive === 1 ? null : 0,
+        updated_at: 1_700_000_000_000,
+      },
+    });
+  }
+
+  function rootLayerKeys(): Array<{ id: string; title: string; sortKey: string }> {
+    return core
+      .activeDatabase()
+      .prepare(
+        `SELECT id, title, sort_key FROM page WHERE workspace_id = ? AND parent_id IS NULL AND alive = 1 ORDER BY sort_key, id`,
+      )
+      .all(WORKSPACE_ID)
+      .map((r) => r as { id: string; title: string; sort_key: string })
+      .map((r) => ({ id: r.id, title: r.title, sortKey: r.sort_key }));
+  }
+
+  it('饱和回归：根层预置 z 链（15/16 字符）→ 导入全部 done、层键 ≤16、序不乱', async () => {
+    // 密集历史态：尾键 'z'×16，下一次尾追加必撞 SORTKEY_MAX_LENGTH（真包 253/536 中断形态）
+    await seedRootPage('seed-a', '种子A', 'z'.repeat(15), 1);
+    await seedRootPage('seed-b', '种子B', 'z'.repeat(16), 1);
+
+    const preview = await service.plan({ dirPath: 'src' }); // md-dir 4 页
+    const report = await service.execute({ planId: preview.planId, confirm: true });
+    expect(report.status).toBe('done');
+    expect(report.failedAt).toBeNull();
+
+    const rows = rootLayerKeys();
+    expect(rows).toHaveLength(6); // 2 种子 + 4 导入页
+    for (const row of rows) {
+      expect(row.sortKey.length).toBeLessThanOrEqual(16);
+    }
+    // 整层重建后 keys 等间隔升序；种子在前（原 sort_key 序），导入页按先序挂尾
+    const keys = rows.map((r) => r.sortKey);
+    expect([...keys].sort()).toEqual(keys); // 返回序 == 键升序（listByParent ORDER BY 保证）
+    expect(rows[0]?.title).toBe('种子A');
+    expect(rows[1]?.title).toBe('种子B');
+    expect(rows.slice(2).map((r) => r.title)).toEqual(['页一', '页二', '页三', '页四']);
+    // 饱和点确实发生了 reorder（种子层重建 = 对存量兄弟重发；op_ledger 的 op_json 里有痕迹）
+    const reordered = rawCount(
+      `SELECT COUNT(*) AS n FROM op_ledger WHERE target_table='page' AND op_json LIKE '%"kind":"reorder"%'`,
+    );
+    expect(reordered).toBeGreaterThanOrEqual(2);
+  });
+
+  it('幂等不破：饱和重建后重跑 0 新增，且 alive=0 墓碑不被重建复活', async () => {
+    await seedRootPage('seed-a', '种子A', 'z'.repeat(16), 1);
+    await seedRootPage('seed-ghost', '墓碑页', 'z'.repeat(16) + '0', 0); // alive=0 排键尾后
+
+    const preview = await service.plan({ dirPath: 'src' });
+    const first = await service.execute({ planId: preview.planId, confirm: true });
+    expect(first.status).toBe('done');
+    const importSourceAfter = rawCount('SELECT COUNT(*) AS n FROM import_source');
+    expect(importSourceAfter).toBe(4);
+
+    // 墓碑不在任何重建集合里（listByParent 只回 alive=1），且仍是 alive=0
+    const ghost = core
+      .activeDatabase()
+      .prepare(`SELECT alive FROM page WHERE id = 'seed-ghost'`)
+      .get() as { alive: number } | undefined;
+    expect(ghost?.alive).toBe(0);
+
+    // 同 plan 重跑：0 新增（键已不密集，走常规尾追 + pageIds 幂等跳过）
+    const again = await service.execute({ planId: preview.planId, confirm: true });
+    expect(again.status).toBe('done');
+    expect(again.opCount).toBe(first.opCount);
+    expect(rawCount('SELECT COUNT(*) AS n FROM import_source')).toBe(importSourceAfter);
+    expect(rootLayerKeys()).toHaveLength(5); // 种子A + 4 页（墓碑不计）
+    expect(
+      core.activeDatabase().prepare(`SELECT alive FROM page WHERE id='seed-ghost'`).get(),
+    ).toMatchObject({ alive: 0 });
+  });
 });
