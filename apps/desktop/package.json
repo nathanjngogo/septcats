@@ -1,8 +1,9 @@
 {
   "name": "@septcats/desktop",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Septcats 桌面壳（Electron + React，electron-vite 三进程脚手架）",
+  "author": "Septcats",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "node scripts/ensure-abi.mjs electron && electron-vite dev",
@@ -14,7 +15,10 @@
     "preselftest": "node scripts/ensure-abi.mjs node",
     "selftest": "node scripts/run-selftest.mjs",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-rebuild -f -w better-sqlite3 && node scripts/ensure-abi.mjs node"
+    "postinstall": "electron-rebuild -f -w better-sqlite3 && node scripts/ensure-abi.mjs node",
+    "make-icon": "node scripts/make-icon.mjs",
+    "dist": "pnpm build && electron-builder --win --config electron-builder.yml",
+    "dist:check": "node scripts/check-dist.mjs"
   },
   "dependencies": {
     "@septcats/core": "workspace:*",
@@ -40,6 +44,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^5.0.0",
     "electron": "^37.0.0",
+    "electron-builder": "^26",
     "electron-vite": "^5.0.0",
     "jsdom": "^25.0.1",
     "tsx": "^4.20.3",

@@ -8,3 +8,7 @@ coverage/
 .screenshots/
 .worktrees/
 apps/desktop/.abi-target
+# T12-01 打包产物（dist/ 已覆盖 apps/desktop/dist/，以下为防漏规则）
+*.exe
+*.blockmap
+latest.yml

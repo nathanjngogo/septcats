@@ -20,6 +20,7 @@
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
 | └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
 | └ T11 导入器（M12） | 09-14 | ✅ **真包真机 CDP ALL-PASS 8 项**（脏库 E2 案发现场：全量去重 skipped=421/漏 0、重执行 done、436 页树 dangling=0、FTS 命中、无重复页、pageerror=0） | A-D+E/E2 五阶段：`_all.csv` 双胞胎归并（34→17）+ 附件 %编码两级查找（0→123）；importer 58、desktop 137、五条 DoD 全绿 |
+| └ T12 打包（M10-A） | 09-14 | ✅ PM 复验通过 | electron-builder 26.15.3；`Septcats Setup 0.1.0.exe` 88.15MB（R7≤150 达标）；/S 静默装→启动 5s 树存活→卸载零残留；latest.yml sha512 与产物字节级一致；asar+locales 裁剪生效（仅 zh-CN.pak）；零新增依赖除 builder；mac 配置就位待 CI；CI package job 已加（无 remote 未跑） |
 
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
@@ -56,6 +57,10 @@
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
 - T7b 起强制「每写完一个测试文件立即跑」+ 给 Bash 权限后质量显著提升：交付自带报告、主动修根级双实例问题。保留此纪律。
 - 额度：429 是按模型分桶的日窗口（与积分无关），flash 档耗尽可 `--model` 切换。
+
+## T12-01 PM 裁决（09-14）
+- **D1 安装目录 `@septcatsdesktop`**：per-user 语义实质满足，接受现状；目录名美化归 M10-B 顺手修（electron-builder.yml 的 nsis 段一行，不阻塞）。
+- **D2/D3**：工程师纠正任务书正确（NSIS 卸载器 `/S`；Electron 无裸 en locale），不改。
 
 ## 待修清单（低优先级，不阻塞）
 - [ ] **FTS trigram 对 2 字中文查询零命中**（真机视觉审计抓出：「审计」不中、3 字以上正常）——设计使然非缺陷，但中文双字词高频；二期与 unicode61+分词器一并解，或短期给 <3 字查询加 LIKE 兜底

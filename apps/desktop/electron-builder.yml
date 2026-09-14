@@ -1,0 +1,49 @@
+# TASK-T12-01 · M10 打包配置（工程师 CodeBuddy，裁决项见任务书 §0）
+# 唯一新增外部依赖 = electron-builder（devDependency）；更新器（electron-updater）归 T12-B。
+appId: cc.septcats.desktop
+productName: Septcats
+
+directories:
+  output: dist            # 产物落 apps/desktop/dist/（.gitignore 已含 dist/，不入库）
+  buildResources: build   # build/icon.ico 由 scripts/make-icon.mjs 程序化生成
+
+# —— 体积护栏（R7：安装器 ≤ 150 MB）——
+asar: true
+electronLanguages:
+  - zh-CN
+  - en
+removePackageScripts: true   # 剔 scripts；devDeps 由 builder 默认剔除，此为双保险
+
+# —— 打包内容：electron-vite 三进程产物 + 元信息（运行时依赖由 builder 按 package.json 收集）——
+files:
+  - out/**
+  - package.json
+
+# —— Win：NSIS per-user（免管理员，支持 /S 静默安装/卸载）——
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  deleteAppDataOnUninstall: false
+  # 固定形态：Septcats Setup 0.1.0.exe（任务书 §0.3）
+  artifactName: ${productName} Setup ${version}.${ext}
+
+# —— mac：配置就绪待 CI（DMG 需 macOS；Q2 一期未签名决议 → identity: null）。Windows 本机不构建 ——
+mac:
+  icon: build/icon.icns   # 由 make-icon.mjs darwin 分支经 iconutil 生成（仅 macOS 可执行）
+  identity: null
+  category: public.app-category.productivity
+  target:
+    - dmg
+
+# —— 自动更新 feed 占位（真地址待老板拍板；仓库无 remote，不许自建）——
+publish:
+  - provider: generic
+    url: file:///septcats-feed/stable
