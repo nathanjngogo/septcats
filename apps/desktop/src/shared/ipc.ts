@@ -183,3 +183,25 @@ export const IMPORT_CHANNELS = {
 } as const;
 
 export type ImportChannel = (typeof IMPORT_CHANNELS)[keyof typeof IMPORT_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 自动更新（M10-B · TASK-T12-01B）
+// 通道名放本文件（全仓单一来源，零依赖）——preload 只 import 通道名，
+// 绝不把 zod 运行时（shared/updater.ts 的 schema）带进 sandboxed preload。
+// ---------------------------------------------------------------------------
+export const CHANNEL_UPDATE_CHECK = 'update:check';
+/** main → renderer：状态机每次跃迁推送 UpdateState。 */
+export const CHANNEL_UPDATE_STATE = 'update:state';
+export const CHANNEL_UPDATE_DOWNLOAD = 'update:download';
+export const CHANNEL_UPDATE_INSTALL = 'update:install';
+export const CHANNEL_UPDATE_ROLLBACK_HINT = 'update:rollbackHint';
+
+export const UPDATE_CHANNELS = {
+  check: CHANNEL_UPDATE_CHECK,
+  state: CHANNEL_UPDATE_STATE,
+  download: CHANNEL_UPDATE_DOWNLOAD,
+  install: CHANNEL_UPDATE_INSTALL,
+  rollbackHint: CHANNEL_UPDATE_ROLLBACK_HINT,
+} as const;
+
+export type UpdateChannel = (typeof UPDATE_CHANNELS)[keyof typeof UPDATE_CHANNELS];

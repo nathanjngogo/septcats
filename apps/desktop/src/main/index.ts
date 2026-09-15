@@ -1,6 +1,7 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, protocol } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings } from '@septcats/platform';
 import { startDbServer, type DbHandle } from '../db/client';
@@ -34,6 +35,12 @@ import {
   CHANNEL_WORKSPACE_RENAME,
   CHANNEL_WORKSPACE_SWITCH,
 } from '../shared/ipc';
+import type { UpdateState } from '../shared/updater';
+import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
+import {
+  registerUpdaterIpc,
+  type AutoUpdaterLike,
+} from './updater';
 import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
@@ -75,6 +82,7 @@ import { initPlatform, type PlatformContext } from './platform';
 let mainWindow: BrowserWindow | null = null;
 let platformContext: PlatformContext | null = null;
 let dbHandle: DbHandle | null = null;
+let updaterService: { check(): Promise<UpdateState>; dispose(): void } | null = null;
 
 /** device_id 缺失/异常时的兜底 actor（[a-z0-9]{8,32}；正常路径取 meta.device_id 的小写形式）。 */
 const FALLBACK_ACTOR: ActorId = 'desktop0001';
@@ -432,6 +440,31 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
   registerImporterIpc(services?.importer ?? null);
+
+  // 自动更新（M10-B · TASK-T12-01B）：electron-updater 注入，五通道 + 启动 5s 后自动检查一次
+  updaterService = registerUpdaterIpc({
+    registrar: dbViewRegistrar(),
+    broadcast: (state: UpdateState): void => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        window.webContents.send(CHANNEL_UPDATE_STATE, state);
+      }
+    },
+    updater: autoUpdater as AutoUpdaterLike,
+    fetch: async (url: string) => {
+      const response = await net.fetch(url);
+      return {
+        ok: response.ok,
+        status: response.status,
+        bytes: async () => new Uint8Array(await response.arrayBuffer()),
+      };
+    },
+    env: process.env,
+    isPackaged: app.isPackaged,
+    autoCheckDelayMs: 5000,
+    log: (line: string): void => {
+      logger.info(`[updater] ${line}`);
+    },
+  });
 }
 
 /**
@@ -568,6 +601,8 @@ if (!gotSingleInstanceLock) {
 
   app.on('will-quit', () => {
     globalShortcut.unregister(PALETTE_SHORTCUT);
+    updaterService?.dispose();
+    updaterService = null;
     void dbHandle?.dispose();
     dbHandle = null;
   });

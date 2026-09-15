@@ -12,3 +12,7 @@ apps/desktop/.abi-target
 *.exe
 *.blockmap
 latest.yml
+# T12-01B feed 自签私钥（永不入库；正式密钥离线 keygen，公钥进 src/main/updater.ts）
+*.feed.key
+feed-keys/
+latest.yml.sig

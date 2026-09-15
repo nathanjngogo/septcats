@@ -18,6 +18,25 @@ import type {
   ImportProgress,
   ImportReport,
 } from '../shared/importer';
+import type { UpdateInstallInput, UpdateRollbackHint, UpdateState } from '../shared/updater';
+
+/**
+ * 自动更新 IPC（M10-B · TASK-T12-01B §0.4）。通道与 `src/shared/updater.ts` 的
+ * UPDATE_CHANNELS 一对一；状态经 update:state 推送（onState 订阅）。
+ * 错误经 Error.message 透传（E_FEED_SIGNATURE / E_FEED_SOURCE_DENIED / E_UPDATE_FAILED / E_MALFORMED）。
+ */
+export interface SeptcatsUpdateApi {
+  /** 手动检查（main 侧先验 feed 签名再交 electron-updater）。回当前 UpdateState。 */
+  check(): Promise<UpdateState>;
+  /** 开始/继续下载（downloaded 态幂等）。回当前 UpdateState。 */
+  download(): Promise<UpdateState>;
+  /** 退出并安装；confirm 必须显式 true（renderer 侧确认弹窗后调用）。 */
+  install(input: UpdateInstallInput): Promise<{ ok: true }>;
+  /** 安装失败回滚提示（electron-updater 自身回 pending，本端只透出提示与状态）。 */
+  rollbackHint(): Promise<UpdateRollbackHint>;
+  /** 订阅状态机推送，返回退订函数。 */
+  onState(listener: (state: UpdateState) => void): () => void;
+}
 
 /** 系统对话框选源结果：null = 用户取消。 */
 export type ImportPickResult = ImportPlanInput | null;
@@ -214,6 +233,8 @@ export interface SeptcatsApi {
   diag: SeptcatsDiagApi;
   /** 导入器（M12）。 */
   import: SeptcatsImportApi;
+  /** 自动更新（M10-B）。 */
+  update: SeptcatsUpdateApi;
 }
 
 declare global {

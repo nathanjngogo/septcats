@@ -15,6 +15,7 @@ import {
   SETTINGS_CHANNELS,
   WORKSPACES_CHANNELS,
 } from '../shared/ipc';
+import { UPDATE_CHANNELS } from '../shared/ipc';
 
 /**
  * preload：通过 contextBridge 暴露最小、类型化的窗口 API。
@@ -118,6 +119,16 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(DIAG_CHANNELS.export) as ReturnType<SeptcatsApi['diag']['export']>,
     confirm: () =>
       ipcRenderer.invoke(DIAG_CHANNELS.confirm) as ReturnType<SeptcatsApi['diag']['confirm']>,
+  },
+  update: {
+    check: () => ipcRenderer.invoke(UPDATE_CHANNELS.check) as ReturnType<SeptcatsApi['update']['check']>,
+    download: () =>
+      ipcRenderer.invoke(UPDATE_CHANNELS.download) as ReturnType<SeptcatsApi['update']['download']>,
+    install: (input) =>
+      ipcRenderer.invoke(UPDATE_CHANNELS.install, input) as ReturnType<SeptcatsApi['update']['install']>,
+    rollbackHint: () =>
+      ipcRenderer.invoke(UPDATE_CHANNELS.rollbackHint) as ReturnType<SeptcatsApi['update']['rollbackHint']>,
+    onState: (listener) => subscribe(UPDATE_CHANNELS.state, listener),
   },
 };
 

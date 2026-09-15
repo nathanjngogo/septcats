@@ -6,14 +6,45 @@
  *  - 数据与隐私：同步路径只读 + 隐私开关两项（遥测恒 off 占位、外链预览开关）；
  *  - 诊断：导出诊断包（预览 → 确认落盘）+ 关于块（版本/猫标/技术栈）。
  * 无异步加载需求 → 控件变更即时 patch（busy 态禁交互）；zod 拒绝 → ErrorPanel 内联。
+ * T12-01B：关于块加「检查更新」行（四态文案 + 重启更新 confirm 弹窗，M10-B §0.6）。
  */
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
+import { Button, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
 import type { AppSettings, AppSettingsPatch, ThemeMode } from '../../../shared/settings';
+import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { t } from '../i18n';
 import './SettingsPage.css';
+
+/** i18n 模板替换：'{version}' / '{percent}' 槽位（t() 本身不做插值）。 */
+function fillTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => vars[key] ?? match);
+}
+
+/** 状态 → 文案（四态：检查中/已是最新/下载中 N%/重启更新，外加 idle 与 error）。 */
+function describeUpdateState(state: UpdateState | null, currentVersion: string): string {
+  if (state === null || state.status === 'idle') {
+    return fillTemplate(t('settings.about.statusIdle'), { version: currentVersion });
+  }
+  switch (state.status) {
+    case 'checking':
+      return t('settings.about.statusChecking');
+    case 'not-available':
+      return fillTemplate(t('settings.about.statusNotAvailable'), { version: currentVersion });
+    case 'available':
+      return fillTemplate(t('settings.about.statusAvailable'), { version: state.version ?? '' });
+    case 'downloading':
+      return fillTemplate(t('settings.about.statusDownloading'), {
+        version: state.version ?? '',
+        percent: String(Math.round(state.progress ?? 0)),
+      });
+    case 'downloaded':
+      return fillTemplate(t('settings.about.statusDownloaded'), { version: state.version ?? '' });
+    case 'error':
+      return `${t('settings.about.statusError')}（${state.errorCode ?? 'E_UPDATE_FAILED'}）`;
+  }
+}
 
 function themeOptions(): Array<{ value: ThemeMode; label: string }> {
   return [
@@ -59,6 +90,10 @@ export function SettingsPage() {
   const [diagBusy, setDiagBusy] = useState(false);
   const [diagSavedPath, setDiagSavedPath] = useState<string | null>(null);
 
+  const [updateState, setUpdateState] = useState<UpdateState | null>(null);
+  const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -80,6 +115,17 @@ export function SettingsPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // 更新状态推送（M10-B）：订阅主→渲染 update:state
+  useEffect(() => {
+    const unsubscribe = window.septcats.update.onState((state) => {
+      setUpdateState(state);
+      if (state.status !== 'downloaded') {
+        setUpdateConfirmOpen(false);
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const patch = async (patchInput: AppSettingsPatch): Promise<void> => {
@@ -129,6 +175,31 @@ export function SettingsPage() {
       setError(describeError(cause));
     } finally {
       setDiagBusy(false);
+    }
+  };
+
+  const handleCheckUpdate = async (): Promise<void> => {
+    setUpdateBusy(true);
+    setError(null);
+    try {
+      setUpdateState(await window.septcats.update.check());
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setUpdateBusy(false);
+    }
+  };
+
+  const handleInstall = async (): Promise<void> => {
+    setUpdateBusy(true);
+    setError(null);
+    try {
+      await window.septcats.update.install({ confirm: true });
+    } catch (cause) {
+      setError(describeError(cause));
+      setUpdateConfirmOpen(false);
+    } finally {
+      setUpdateBusy(false);
     }
   };
 
@@ -260,9 +331,74 @@ export function SettingsPage() {
               title={t('settings.about.stack')}
               control={<span className="settings-lab-d">Electron · React · TypeScript · SQLite</span>}
             />
+            <SettingsRow
+              title={t('settings.about.checkUpdate')}
+              desc={describeUpdateState(updateState, meta?.version ?? '')}
+              control={
+                updateState !== null && updateState.status === 'downloaded' ? (
+                  <Button
+                    size="sm"
+                    loading={updateBusy}
+                    onClick={() => {
+                      setUpdateConfirmOpen(true);
+                    }}
+                  >
+                    {t('settings.about.restartToUpdate')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    loading={updateBusy || updateState?.status === 'checking' || updateState?.status === 'downloading'}
+                    onClick={() => {
+                      void handleCheckUpdate();
+                    }}
+                  >
+                    {t('settings.about.checkUpdate')}
+                  </Button>
+                )
+              }
+            />
           </fieldset>
         </>
       )}
+
+      <Dialog
+        open={updateConfirmOpen}
+        onClose={() => {
+          setUpdateConfirmOpen(false);
+        }}
+        title={t('settings.about.confirmTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setUpdateConfirmOpen(false);
+              }}
+            >
+              {t('settings.about.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              loading={updateBusy}
+              onClick={() => {
+                void handleInstall();
+              }}
+            >
+              {t('settings.about.confirmInstall')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="settings-update-confirm-body">
+          {fillTemplate(t('settings.about.confirmBody'), {
+            version: updateState?.version ?? '',
+          })}
+        </p>
+        <p className="settings-update-rollback">{t('settings.about.rollback')}</p>
+      </Dialog>
     </div>
   );
 }

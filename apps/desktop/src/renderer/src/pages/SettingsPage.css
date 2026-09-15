@@ -123,3 +123,16 @@
   color: var(--sc-color-success);
   word-break: break-all;
 }
+
+/* T12-01B：重启更新确认弹窗正文与回滚说明 */
+.settings-update-confirm-body {
+  margin: 0 0 var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.settings-update-rollback {
+  margin: 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}

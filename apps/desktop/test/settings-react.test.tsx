@@ -46,6 +46,14 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
       export: exportDiag,
       confirm: vi.fn(async () => ({ path: '/diagnostics/diag-1.json' })),
     },
+    // M10-B：更新桥（本文件用例不触达，仅防 SettingsPage 订阅 onState 时桥缺失）
+    update: {
+      check: vi.fn(async () => ({ status: 'idle' }) as const),
+      download: vi.fn(async () => ({ status: 'idle' }) as const),
+      install: vi.fn(async () => ({ ok: true }) as const),
+      rollbackHint: vi.fn(async () => ({ state: { status: 'idle' } as const, hint: '' })),
+      onState: vi.fn(() => () => {}),
+    },
     ...overrides,
   };
   vi.stubGlobal('septcats', bridge as unknown as SeptcatsApi);
