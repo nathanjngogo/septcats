@@ -240,13 +240,13 @@ const IMPORT_SOURCE_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 };
 
 describe('v5 白名单（import_source）', () => {
-  it('三条语句齐全，预算同步（54 条，仍 < 60）', () => {
+  it('三条语句齐全，预算同步（56 条含 v6 defer 开关，仍 < 60）', () => {
     for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(54);
+    expect(SQL_IDS.length).toBe(56);
     expect(SQL_IDS.length).toBeLessThan(60);
   });
 
@@ -282,6 +282,55 @@ describe('v5 白名单（import_source）', () => {
       for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA']) {
         expect(sql.toUpperCase().includes(forbidden)).toBe(false);
       }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v6 白名单（TASK-T15-01）：FTS 触发器 defer 开关（migration #6 的 fts_defer）
+// ---------------------------------------------------------------------------
+
+describe('v6 白名单（fts.deferOn / fts.deferOff）', () => {
+  it('两条开关语句齐全', () => {
+    expect(getStatement('fts.deferOn')).not.toBeNull();
+    expect(getStatement('fts.deferOff')).not.toBeNull();
+  });
+
+  it('kind=run、空参、单条 UPDATE、无破坏性片段', () => {
+    for (const id of ['fts.deferOn', 'fts.deferOff']) {
+      const definition = getStatement(id)!;
+      expect(definition.kind).toBe('run');
+      expect(definition.params.safeParse({}).success).toBe(true);
+      expect(definition.sql.includes(';')).toBe(false);
+      expect(definition.sql.toUpperCase()).toContain('UPDATE FTS_DEFER SET FLAG');
+      for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA', 'DELETE']) {
+        expect(definition.sql.toUpperCase().includes(forbidden), `${id} 含 ${forbidden}`).toBe(false);
+      }
+    }
+    expect(getStatement('fts.deferOn')!.sql.toUpperCase()).toContain('FLAG = 1');
+    expect(getStatement('fts.deferOff')!.sql.toUpperCase()).toContain('FLAG = 0');
+  });
+});
+
+describeDb('v6 defer 开关（better-sqlite3 直连）', (ctor) => {
+  it('deferOn → flag=1，deferOff → flag=0；越值写被表级 CHECK 拒绝', async () => {
+    const temp = makeTempDb('septcats-defer-switch');
+    const core = makeCore(ctor, temp.path);
+    try {
+      await requestOk<MigrateData>(core, { id: 'dm', t: 'migrate' });
+      const db = core.activeDatabase();
+      expect((db.prepare('SELECT flag FROM fts_defer').get() as { flag: number }).flag).toBe(0);
+
+      await requestOk<RunData>(core, { id: 'don', t: 'run', sqlId: 'fts.deferOn', params: {} });
+      expect((db.prepare('SELECT flag FROM fts_defer').get() as { flag: number }).flag).toBe(1);
+
+      await requestOk<RunData>(core, { id: 'doff', t: 'run', sqlId: 'fts.deferOff', params: {} });
+      expect((db.prepare('SELECT flag FROM fts_defer').get() as { flag: number }).flag).toBe(0);
+
+      expect(() => db.exec('UPDATE fts_defer SET flag = 2')).toThrow();
+    } finally {
+      core.dispose();
+      temp.cleanup();
     }
   });
 });

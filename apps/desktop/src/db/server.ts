@@ -159,6 +159,40 @@ function removeFileQuietly(path: string): void {
 // 语句执行（白名单唯一入口）
 // ---------------------------------------------------------------------------
 
+/**
+ * prepare 的产物类型（结构化最小面，只取本文件用到的 run/get/all）。
+ * 不直接用 better-sqlite3 的 Statement 泛型别名——其条件泛型在 ReturnType
+ * 推导下会落到元组分支，run(...args) 展开报 TS2556。
+ */
+interface PreparedStatement {
+  run(...params: unknown[]): { changes: number; lastInsertRowid: number | bigint };
+  get(...params: unknown[]): unknown;
+  all(...params: unknown[]): unknown[];
+}
+
+/**
+ * prepare 缓存（TASK-T15-01 §2.4）：按连接缓存白名单语句的 prepare 结果。
+ * rebuild 34k 条 ledger 插入与 batch 402 条语句此前**每条语句重新 prepare**，
+ * 微基准 ≈4.4s 纯开销；sqlId→sql 不可变（白名单是常量表），按 sqlId 缓存安全。
+ * 连接可变（迁移文件级还原会换连接），故外层用 WeakMap 挂在连接实例上，
+ * 旧连接被弃时缓存整体随之失效，无泄漏、无跨连接复用。
+ */
+const PREPARE_CACHE = new WeakMap<SqliteDatabase, Map<string, PreparedStatement>>();
+
+function getPrepared(db: SqliteDatabase, cacheKey: string, sql: string): PreparedStatement {
+  let cache = PREPARE_CACHE.get(db);
+  if (cache === undefined) {
+    cache = new Map<string, PreparedStatement>();
+    PREPARE_CACHE.set(db, cache);
+  }
+  let statement = cache.get(cacheKey);
+  if (statement === undefined) {
+    statement = db.prepare(sql);
+    cache.set(cacheKey, statement);
+  }
+  return statement;
+}
+
 function executeStatement(
   db: SqliteDatabase,
   sqlId: string,
@@ -181,7 +215,7 @@ function executeStatement(
     throw new RpcFailure('E_BAD_PARAMS', describeZodIssues(parsed.error));
   }
 
-  const statement = db.prepare(definition.sql);
+  const statement = getPrepared(db, sqlId, definition.sql);
   const record = parsed.data as Record<string, unknown>;
   const args: unknown[] = Object.keys(record).length > 0 ? [record] : [];
 
@@ -493,10 +527,15 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
         const ledgerSql = requireStatement('opLedger.insert').sql;
 
         const rebuild = current.transaction(() => {
+          // FTS defer（TASK-T15-01）：事务头置 flag=1，v6 触发器的 WHEN 守卫
+          // 跳过逐行整页重算（34k 块插入 × 整页重算的 O(n²) 根因）；事务末
+          // FTS_RESYNC 全量重算一次（唯一一次），再复位 flag=0。flag 与数据
+          // 同事务：中途 throw → better-sqlite3 回滚把 flag 一并回 0。
+          current.exec('UPDATE fts_defer SET flag = 1');
           for (const sql of REBUILD_CLEAR_SQL) {
             current.exec(sql);
           }
-          const insertLedger = current.prepare(ledgerSql);
+          const insertLedger = getPrepared(current, 'opLedger.insert', ledgerSql);
           for (const op of ops) {
             insertLedger.run({
               op_id: op.op_id,
@@ -513,6 +552,7 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
             applyEntity(current, entity);
           }
           current.exec(FTS_RESYNC_SQL);
+          current.exec('UPDATE fts_defer SET flag = 0');
           return { segments: segments.length, ops: ops.length, entities: entities.length };
         });
         return dbOk(id, rebuild());

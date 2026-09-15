@@ -439,6 +439,9 @@ export function ledgerStatement(op: Op, segId: string | null): DbBatchStatement 
  * M7（TASK-T8-01 §2.1）：块 upsert 的正文索引由写入路径维护——同一 batch 追加
  * `fts.clearPage` + `fts.syncBlock`（按涉及的 page 去重，事务内，排在全部物化之后）。
  * body 表达式与 v4 触发器 / FTS_RESYNC 同源，三条写入路径口径一致。
+ * T15（TASK-T15-01）：批量写块（同 batch ≥2 条 block.upsert）时头尾自动插
+ * `fts.deferOn`/`fts.deferOff`，触发器在事务内短路，FTS 只由尾部显式同步一次
+ * （单条 block.upsert 的常规路径不包 defer，触发器照常即时生效）。
  */
 export async function commitOps(
   executor: BatchExecutor,
@@ -451,15 +454,28 @@ export async function commitOps(
   const mode: DeletionMode = options.deletionMode ?? 'soft';
   const stmts: DbBatchStatement[] = [];
   const ftsSyncPages = new Set<string>();
+  let blockUpsertCount = 0;
   for (const op of ops) {
     stmts.push(ledgerStatement(op, null));
     stmts.push(materializeStatement(op, options.workspaceId, mode));
     if (op.target.table === 'block' && op.kind === 'upsert') {
+      blockUpsertCount += 1;
       const pageId = op.payload['page_id'];
       if (typeof pageId === 'string' && pageId.length > 0) {
         ftsSyncPages.add(pageId);
       }
     }
+  }
+  // FTS 触发器 defer（TASK-T15-01，性能红牌 #30）：同 batch 含 ≥2 条 block.upsert
+  // 时，v4/v6 触发器每行都会整页重算 FTS（O(n²)：200 块同页写 = 200 次整页重算，
+  // P95 实测 232ms）。batch 尾部本就有 fts.clearPage + fts.syncBlock 单次重算，
+  // 触发器在批量场景纯属重复劳动——故头尾插 fts.deferOn/deferOff（migration #6
+  // 的 fts_defer 表 + WHEN 守卫），让触发器在事务内短路，FTS 只由尾部显式同步一次。
+  // flag 与数据同事务：中途 throw 整体回滚（含 flag），单条 block.upsert 等常规
+  // 路径（flag=0）触发器照常即时生效，语义零触碰（deletionMode/extraStatements 不变）。
+  const deferFts = blockUpsertCount >= 2;
+  if (deferFts) {
+    stmts.unshift({ sqlId: 'fts.deferOn', params: {} });
   }
   for (const extra of options.extraStatements ?? []) {
     stmts.push(extra);
@@ -467,6 +483,10 @@ export async function commitOps(
   for (const pageId of ftsSyncPages) {
     stmts.push({ sqlId: 'fts.clearPage', params: { page_id: pageId } });
     stmts.push({ sqlId: 'fts.syncBlock', params: { page_id: pageId } });
+  }
+  if (deferFts) {
+    // 排在 fts 同步之后：显式 sync 语句不受触发器守卫影响，deferOff 必须兜底复位
+    stmts.push({ sqlId: 'fts.deferOff', params: {} });
   }
   if (stmts.length === 0) {
     return 0;

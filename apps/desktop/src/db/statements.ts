@@ -608,6 +608,21 @@ FROM page p
 WHERE p.id = @page_id AND p.alive = 1`,
     params: z.object({ page_id: idText }),
   },
+  // FTS 触发器 defer 开关（TASK-T15-01，migration #6 的 fts_defer 常规表）：
+  // 批量写块的场景（commitOps 同 batch ≥2 条 block.upsert / rebuild）在事务头
+  // deferOn、尾 deferOff——v6 触发器的 WHEN 守卫读到 flag=1 即跳过逐行整页重算
+  // （O(n²) 根因），批量结束后由尾部 fts.syncBlock / FTS_RESYNC 单次重算。
+  // 无参（空对象）语句；flag 与数据写入同事务，中途 throw 随事务一并回滚回 0。
+  'fts.deferOn': {
+    kind: 'run',
+    sql: `UPDATE fts_defer SET flag = 1`,
+    params: emptyParams,
+  },
+  'fts.deferOff': {
+    kind: 'run',
+    sql: `UPDATE fts_defer SET flag = 0`,
+    params: emptyParams,
+  },
 
   // search:query 的三条真库查询（bm25 主检索 + LIKE 兜底）。FTS 行是页粒度，
   // join page 取存活行与 updated_at（排序键之一）。

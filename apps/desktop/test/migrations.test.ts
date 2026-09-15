@@ -22,6 +22,13 @@ import {
 } from '../src/db/schema.v2';
 import { SCHEMA_V4_TRIGGERS, ftsPageBodyExpr } from '../src/db/schema.v4';
 import { SCHEMA_V5_STATEMENTS, SCHEMA_V5_TABLES } from '../src/db/schema.v5';
+import {
+  FTS_DEFER_GUARD_EXPR,
+  SCHEMA_V6_STATEMENTS,
+  SCHEMA_V6_TABLES,
+  SCHEMA_V6_TRIGGER_NAMES,
+  SCHEMA_V6_TRIGGERS,
+} from '../src/db/schema.v6';
 import { describeDb, makeTempDb } from './helpers';
 
 /** 列表化表/列，做结构断言。 */
@@ -53,16 +60,18 @@ describe('MIGRATIONS 表', () => {
 
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
-    // v5 = M12 导入器 import_source（TASK-T11-01 §0.5；v4 已被 T8 FTS 占用）
-    expect(LATEST_SCHEMA_VERSION).toBe(5);
+    // TASK-T15-01：版本断言一律 LATEST_SCHEMA_VERSION 参数化，不硬编码 id；
+    // v6 语义由名称锁死（FTS 触发器 defer 守卫）
+    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v6-fts-defer');
   });
 
-  it('#1/#2/#3/#4 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填', () => {
+  it('#1..#5 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填，v5 只建导入表', () => {
     expect(MIGRATIONS[0]!.name).toBe('v1-schema');
     expect(MIGRATIONS[1]!.name).toBe('v2-page-tree');
     expect(MIGRATIONS[2]!.name).toBe('v3-record-backlinks');
     expect(MIGRATIONS[3]!.name).toBe('v4-block-body-fts');
     expect(MIGRATIONS[4]!.name).toBe('v5-import-source');
+    expect(MIGRATIONS[5]!.name).toBe('v6-fts-defer');
     // v2 不碰 v1 的语句集：两批语句无交集
     const v1 = new Set(SCHEMA_V1_STATEMENTS);
     for (const statement of SCHEMA_V2_STATEMENTS) {
@@ -265,6 +274,133 @@ describeDb('migrate v5（import_source · better-sqlite3 直连）', (ctor) => {
         page_id: string;
       };
       expect(row.page_id).toBe('pg-1');
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+});
+
+describe('schema.v6.ts（FTS 触发器 defer 守卫 · TASK-T15-01）', () => {
+  it('fts_defer 常规表 + CHECK 值域 + 单行初始行语句', () => {
+    const sql = SCHEMA_V6_STATEMENTS.join('\n');
+    for (const table of SCHEMA_V6_TABLES) {
+      expect(sql).toContain(`CREATE TABLE IF NOT EXISTS ${table} `);
+    }
+    expect(sql).toContain('CHECK (flag IN (0, 1))');
+    expect(sql).toContain('STRICT');
+    // 初始行走 NOT EXISTS 守卫（幂等），且有兜底复位 flag=0
+    expect(sql).toContain('INSERT INTO fts_defer (flag) SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM fts_defer)');
+    expect(sql).toContain('UPDATE fts_defer SET flag = 0');
+    expect(sql).not.toContain('CREATE INDEX');
+    expect(sql.toUpperCase()).not.toContain('PRAGMA');
+  });
+
+  it('重建全部 6 个触发器且带 WHEN defer 守卫（触发器体与 v4 同源）', () => {
+    const sql = SCHEMA_V6_TRIGGERS.join('\n');
+    for (const name of SCHEMA_V6_TRIGGER_NAMES) {
+      expect(sql).toContain(`DROP TRIGGER IF EXISTS ${name}`);
+      expect(sql).toContain(`CREATE TRIGGER ${name}`);
+    }
+    // 六个 CREATE 全部带 WHEN 守卫（page.ai 的 alive 条件与之并列；body 里的
+    // json_tree CASE WHEN 不算——直接按守卫表达式计数）
+    expect(sql.split(FTS_DEFER_GUARD_EXPR).length - 1).toBe(6);
+    expect(sql).toContain(`WHEN new.alive = 1 AND ${FTS_DEFER_GUARD_EXPR}`);
+    // 触发器体与 v4 同源：json_tree 抽 text + 排除 code（ftsPageBodyExpr 单源注入）
+    expect(sql).toContain('json_tree');
+    expect(sql).toContain("b.type != 'code'");
+    // 不越权：DROP 仅限触发器重建
+    expect(sql).not.toContain('DROP TABLE');
+    expect(sql).not.toContain('DROP INDEX');
+  });
+});
+
+describeDb('migrate v6（fts_defer · better-sqlite3 直连）', (ctor) => {
+  it('全新库迁移到最新：fts_defer 在位、初始行 flag=0、六触发器带守卫（版本参数化）', async () => {
+    const temp = makeTempDb('septcats-migrate-v6');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      const result = await migrate(db);
+      expect(result.from).toBe(0);
+      expect(result.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(result.applied).toEqual(MIGRATION_IDS);
+      expect(tableNames(db)).toContain('fts_defer');
+
+      const flagRows = db.prepare('SELECT flag FROM fts_defer').all() as Array<{ flag: number }>;
+      expect(flagRows).toEqual([{ flag: 0 }]);
+
+      const triggers = db
+        .prepare(`SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'trg_%_fts_%'`)
+        .all() as Array<{ name: string; sql: string }>;
+      expect(triggers.map((row) => row.name).sort()).toEqual([...SCHEMA_V6_TRIGGER_NAMES].sort());
+      for (const trigger of triggers) {
+        expect(trigger.sql).toContain('WHEN');
+        expect(trigger.sql).toContain('(SELECT flag FROM fts_defer LIMIT 1) = 0');
+      }
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+
+  it('v5 → 最新增量迁移：只应用 #6，defer 表与守卫触发器到位', async () => {
+    const temp = makeTempDb('septcats-migrate-v5v6');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      const v5Only = await runMigrations(db, MIGRATIONS.slice(0, 5));
+      expect(v5Only.to).toBe(MIGRATIONS[4]!.id);
+      expect(tableNames(db)).not.toContain('fts_defer');
+
+      const v6 = await runMigrations(db, MIGRATIONS);
+      expect(v6.from).toBe(MIGRATIONS[4]!.id);
+      expect(v6.to).toBe(LATEST_SCHEMA_VERSION);
+      expect(v6.applied).toEqual(MIGRATION_IDS.slice(5));
+      expect(tableNames(db)).toContain('fts_defer');
+      expect((db.prepare('SELECT flag FROM fts_defer').get() as { flag: number }).flag).toBe(0);
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+
+  it('v6 up 可重复执行（幂等）：不抛、fts_defer 仍单行 flag=0', () => {
+    const temp = makeTempDb('septcats-migrate-v6idem');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      for (const migration of MIGRATIONS) {
+        db.transaction(() => {
+          migration.up(db);
+        })();
+      }
+      const v6 = MIGRATIONS[MIGRATIONS.length - 1]!;
+      expect(() => {
+        db.transaction(() => {
+          v6.up(db);
+        })();
+      }).not.toThrow();
+      expect(db.prepare('SELECT flag FROM fts_defer').all()).toEqual([{ flag: 0 }]);
+    } finally {
+      db.close();
+      temp.cleanup();
+    }
+  });
+
+  it('CHECK 值域：flag 只接受 0/1，越值写被拒', () => {
+    const temp = makeTempDb('septcats-migrate-v6check');
+    const db = new ctor(temp.path);
+    try {
+      applyPragmaBaseline(db);
+      for (const migration of MIGRATIONS) {
+        db.transaction(() => {
+          migration.up(db);
+        })();
+      }
+      expect(() => db.exec('UPDATE fts_defer SET flag = 2')).toThrow();
+      expect(() => db.exec('UPDATE fts_defer SET flag = 1')).not.toThrow();
+      db.exec('UPDATE fts_defer SET flag = 0');
     } finally {
       db.close();
       temp.cleanup();

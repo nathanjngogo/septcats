@@ -47,8 +47,10 @@ export function ftsPageBodyExpr(pageIdExpr = 'p.id'): string {
 /**
  * 重算「某页」的 FTS 行（v4 版，带正文）。`pageIdExpr` 是触发器上下文里的页面 id
  * 表达式（如 `new.page_id`）。page 行不在 / alive=0 时不插入（页不再被索引）。
+ * 导出供 v6 迁移复用（TASK-T15-01：v6 重建六触发器时触发器体逐字保持 v4 逻辑，
+ * 仅外层加 WHEN defer 守卫——表达式单源，避免两份手抄漂移）。
  */
-function refreshPageFtsV4(pageIdExpr: string): string {
+export function refreshPageFtsV4(pageIdExpr: string): string {
   return [
     `DELETE FROM page_block_fts WHERE page_id = ${pageIdExpr};`,
     `INSERT INTO page_block_fts (title, body, page_id, workspace_id)`,
