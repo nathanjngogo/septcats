@@ -14,18 +14,44 @@
 
 夹具：`test/helpers.ts` 的 `makeSearchFixtureDb`（mulberry32 种子 20260913，1 万页 × 2–4 块）；冷进程两项经 `node --import tsx test/perf-cold-child.ts` 真·新进程测量。
 
-## 2. 真机两项 + 安装包（`node scripts/perf-pack.mjs`，PM 执行）
+## 2. 真机两项 + 安装包（`node scripts/perf-pack.mjs`）
 
-| 指标 | 实测 | 预算 | 结果 |
-|---|---|---|---|
-| 打包冷启动（`electron . --perf-trace`，whenReady→首窗 did-finish-load） | **待真机** | ≤1.5 s | ⏳ |
-| 内存常驻（WorkingSet64 之和 ×3 取中位） | **待真机** | ≤350 MB | ⏳ |
-| 安装包体积（dist/*.exe 扫描，`--scan-only` 已跑） | **88.5 MB**（Setup 0.1.2.exe） | ≤90 MB | ✅ 绿 |
+> TASK-T16-01 重写：内存红牌 #32 逐进程解剖后改为**三口径并报**（sum-WorkingSet / sum-Private / 安装包）。
+> 实测 2026-09-16，rev 6eafbcd，打包 0.1.3（dist/win-unpacked，独立 --user-data-dir，空载）。
 
-待真机说明：
-1. **打点已接线但待重打包**：`src/main/index.ts` 的 `--perf-trace` 门（默认关、零开销）随本次源码交付，`dist/win-unpacked` 里是旧构建——PM 先 `pnpm -C apps/desktop dist` 重打包再 `node scripts/perf-pack.mjs`。
-2. **单实例锁**：测量前退出正在运行的 Septcats，否则待测 exe 会立即退出（脚本红牌提示）。
-3. 打包冷启动测量的是本机 dev 机 SSD 口径；PM 真机（目标硬件）复测后把数值回填本表。
+### 2.1 三口径总表
+
+| 指标 | 实测（稳态中位 ×3） | 静置 60s | 预算 | 结果 |
+|---|---|---|---|---|
+| 打包冷启动（whenReady→首窗 did-finish-load） | **567.7 ms** | - | ≤1.5 s | ✅ 绿 |
+| 内存 sum-of-WorkingSet（全部进程物理页之和） | **634.7 MB**（598/635/635） | 632.6 MB | ≤350 MB | ❌ 红（原口径 #32） |
+| 内存 sum-of-PrivateWorkingSet（各进程私有页之和） | **331.5 MB**（318/332/332） | 328.4 MB | ≤350 MB（口径待 PM 裁决） | ✅ 绿（同上，待裁决） |
+| 安装包体积（dist/*.exe 扫描） | **88.5 MB**（Setup 0.1.3.exe） | - | ≤90 MB | ✅ 绿 |
+
+> 口径说明：sum-of-WS 把进程间共享的物理页（Electron 各进程共享的 Chromium 代码页等）重复计入，
+> 是 Electron 应用常见的**高估**口径；sum-of-Private 只算各进程独占页，无重复计入，接近「任务管理器整组」的量级。
+> 350MB 预算落在哪个口径上由 PM 裁决（TASK-T16-01-report §4），本表两口径如实并报，不改预算语义。
+
+### 2.2 逐进程表（时点 1 稳态，2026-09-16 / rev 6eafbcd）
+
+| 角色 | PID | WorkingSet | PrivateWS | 说明 |
+|---|---|---|---|---|
+| browser(main) | 19684 | 236.5 MB | 156.7 MB | 主进程（Electron main + 各 service） |
+| utility:DbServer | 21220 | 152.3 MB | 107.9 MB | utilityProcess（node.mojom.NodeService，dbServer.js + better-sqlite3） |
+| renderer | 26876 | 98.2 MB | 29.4 MB | 渲染进程（空载，无文档打开） |
+| gpu | 25812 | 97.2 MB | 28.5 MB | GPU 进程 |
+| utility:NetworkService | 30332 | 50.9 MB | 9.3 MB | Electron 网络服务 utility |
+| **合计（5 进程）** | | **635.2 MB** | **331.7 MB** | 静置 60s 后 632.8 / 325.4 MB，稳定 |
+
+要点：DbServer utilityProcess 是第二大占用（WS 152 MB / Private 108 MB）——Node 运行时基线为主，
+SQLite 侧实测 cache_size=16 MB（better-sqlite3 编译默认 SQLITE_DEFAULT_CACHE_SIZE=-16000，
+非 PRAGMA_BASELINE 所设）、mmap_size=0、journal_mode=wal。PRAGMA 只读实测与候选旋钮见
+TASK-T16-01-report §3（**候选，待 PM 批，本任务未改任何 PRAGMA**）。
+
+### 2.3 待真机说明
+1. 打包冷启动测量的是本机 dev 机 SSD 口径；PM 真机（目标硬件）复测后把数值回填本表。
+2. 脚本已内建清场（启动前 taskkill 全部 Septcats.exe）与独立 `--user-data-dir`（PM 采样三事实 #2/#3 已固化进脚本）。
+3. `--baseline <exe路径>` 可同法测另一 Electron 应用做口径对照（可选，未给则跳过，不联网下载）。
 
 ## 3. 超预算瓶颈分析（两项红，共用同一根因）
 
@@ -68,3 +94,10 @@ cat docs/perf-history.jsonl   # append-only，按 date/git_rev 对比防回退
 ```
 
 纪律：预算断言不得为凑绿放宽；超预算如实红 + 更新 §3 分析。
+
+
+## PM 口径裁决（2026-09-16，TASK-T16-01 报告后）
+- **内存预算 350MB 绑 `memory_private_sum`**（sum-of-PrivateWorkingSet，实测 331.5MB ✅ 预算内）。理由：§9.2 的"内存常驻"本意是应用实际占用的物理 RAM；Chromium 多进程共享代码页在 sum-of-WorkingSet 里被重复计入（本机分叉 ~303MB/×1.9），不代表真实内存压力。
+- `memory_workingset_sum` 降级为**观察值**（继续入账不设红牌），跨版本趋势监控用。
+- SQLite 旋钮实验与 DbServer 合并**均不批**（前者收益 ~15MB 且威胁 T15 成果需回归成本；后者违背 T2 架构决策——主进程卡顿冻结 UI 不可接受）。
+- 目标硬件复测归 G3/G5 验收流程（`node apps/desktop/scripts/perf-pack.mjs`）。
