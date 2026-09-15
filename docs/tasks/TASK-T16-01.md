@@ -3,6 +3,10 @@
 > PM：Hermes ｜ 工程师：CodeBuddy ｜ 仓库：E:\Hermes Agent工作空间\Septcats
 > 前置：T14 仪表盘 + perf-pack.mjs 真机实测（2026-09-16，rev 8857f1f，打包 0.1.3 空载）：startup 465.5ms 绿 / **WorkingSet 中位 612MB（606/612/620 三轮稳定）红，预算 350MB** / 安装包 88.5MB 绿。
 > 必读：docs/PERF-BASELINE.md（§9.2 原文口径=「内存常驻 ≤350 MB（3 页标签）」）；scripts/perf-pack.mjs（现采样逻辑）；apps/desktop/src/main/index.ts（窗口/DbServer utilityProcess）；src/db/client.ts（utilityProcess 生命周期）。
+> PM 采样三事实（本轮实测踩坑，直接照用，别再试错）：
+> 1. `Get-CimInstance Win32_Process` 的 **CommandLine 对 detached spawn 的进程读回 null**（权限/session 差异）——按命令行过滤进程会全漏，必须用 `Get-Process` 的 **Path** 属性区分实例来源。
+> 2. 打包安装版与 `dist/win-unpacked` 并存时，unpacked 不带 `--user-data-dir` 会因 userData（同 Roaming 路径+SQLite 独占锁）冲突**起 8 秒后崩**；测 unpacked 必带独立 `--user-data-dir`。
+> 3. 采样前必须 `taskkill /F /IM Septcats.exe /T` 清场（安装版与 unpacked 一起清），否则计数污染。
 > 纪律：用 Write/Edit；不碰 git；禁占位符。**本任务的交付是诊断报告，不是优化**——测量结论是什么就写什么，不许为了让指标好看改采样口径（除非证明口径本身错，那也要 PM 裁决）。不许动产品代码做投机性"优化"。
 
 ## 0. 背景定性（PM 已判）

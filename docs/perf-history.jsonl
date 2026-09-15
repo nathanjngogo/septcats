@@ -23,3 +23,11 @@
 {"date":"2026-09-16","git_rev":"493b8fe","metric":"commit_batch_200_blocks_p95","value_ms":12.4,"budget_ms":16,"pass":true}
 {"date":"2026-09-16","git_rev":"493b8fe","metric":"rebuild_from_segments_10k_pages","value_ms":1385.7,"budget_ms":5000,"pass":true}
 {"date":"2026-09-16","git_rev":"493b8fe","metric":"cold_open_migrate_first_query_10k_pages","value_ms":39,"budget_ms":800,"pass":true}
+{"date":"2026-09-16","git_rev":"8857f1f","metric":"pack_startup","value_ms":465.5,"budget_ms":1500,"pass":true}
+{"date":"2026-09-16","git_rev":"8857f1f","metric":"memory_workingset","value":612,"unit":"MB","budget":350,"pass":false}
+{"date":"2026-09-16","git_rev":"8857f1f","metric":"installer_size","value":88.5,"unit":"MB","budget":90,"pass":true}
+{"date":"2026-09-16","git_rev":"6eafbcd","metric":"installer_size","value":88.5,"unit":"MB","budget":90,"pass":true}
+{"date":"2026-09-16","git_rev":"6eafbcd","metric":"pack_startup","value_ms":567.7,"budget_ms":1500,"pass":true}
+{"date":"2026-09-16","git_rev":"6eafbcd","metric":"memory_workingset_sum","value":634.7,"unit":"MB","budget":350,"pass":false}
+{"date":"2026-09-16","git_rev":"6eafbcd","metric":"memory_private_sum","value":331.5,"unit":"MB","budget":350,"pass":true}
+{"date":"2026-09-16","git_rev":"6eafbcd","metric":"installer_size","value":88.5,"unit":"MB","budget":90,"pass":true}
