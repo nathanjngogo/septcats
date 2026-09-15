@@ -16,3 +16,6 @@ latest.yml
 *.feed.key
 feed-keys/
 latest.yml.sig
+
+# PM/工程师诊断临时脚本区（永不入库）
+_scratch/
