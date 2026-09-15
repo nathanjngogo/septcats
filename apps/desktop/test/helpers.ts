@@ -129,8 +129,8 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-/** 夹具词表（真实感中文；'核反冲' 作为探针词）。 */
-const FIXTURE_WORDS: readonly string[] = [
+/** 夹具词表（真实感中文；'核反冲' 作为探针词）。导出供 perf.test.ts 的 Op 生成路径复用同一词表。 */
+export const FIXTURE_WORDS: readonly string[] = [
   '暗物质', '探测器', '中子', '本底', '核反冲', '量子', '能谱', '实验',
   '数据', '台账', '文献', '统计', '误差', '效率', '曲线', '信号',
   '简并', '拟合', '曝光', '事例',

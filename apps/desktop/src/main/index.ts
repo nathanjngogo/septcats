@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
@@ -90,6 +91,37 @@ let platformContext: PlatformContext | null = null;
 let dbHandle: DbHandle | null = null;
 let syncRuntime: SyncRuntime | null = null;
 let updaterService: { check(): Promise<UpdateState>; dispose(): void } | null = null;
+
+// --- 启动打点（TASK-T14-01 §2：--perf-trace 门，默认关 = 零开销） --------------
+
+const PERF_TRACE = process.argv.includes('--perf-trace');
+let perfStartedAt = 0;
+
+/**
+ * 首窗 did-finish-load 时记录 whenReady→首窗加载完成的差值：
+ * 写 userData/perf-startup.json + console.log `[perf] startup_ms=`（perf-pack.mjs 消费）。
+ */
+function captureStartupPerf(userDataDir: string): void {
+  const win = mainWindow;
+  if (win === null) {
+    return;
+  }
+  win.webContents.once('did-finish-load', () => {
+    const startupMs = performance.now() - perfStartedAt;
+    const payload = `${JSON.stringify({
+      startup_ms: Number(startupMs.toFixed(1)),
+      measured_at: new Date().toISOString(),
+    }, null, 2)}\n`;
+    const path = join(userDataDir, 'perf-startup.json');
+    try {
+      mkdirSync(userDataDir, { recursive: true });
+      writeFileSync(path, payload, 'utf8');
+    } catch (error) {
+      console.error(`[perf] 写 ${path} 失败：${describeError(error)}`);
+    }
+    console.log(`[perf] startup_ms=${startupMs.toFixed(1)}`);
+  });
+}
 
 /** device_id 缺失/异常时的兜底 actor（[a-z0-9]{8,32}；正常路径取 meta.device_id 的小写形式）。 */
 const FALLBACK_ACTOR: ActorId = 'desktop0001';
@@ -636,6 +668,10 @@ function registerImporterIpc(service: ImporterService | null): void {
 // --- 生命周期 ---------------------------------------------------------------
 
 async function bootstrapApplication(): Promise<void> {
+  // 启动打点基点 = whenReady 兑现时刻（bootstrapApplication 由 whenReady().then 直接调用）
+  if (PERF_TRACE) {
+    perfStartedAt = performance.now();
+  }
   const ctx = await initPlatform();
   platformContext = ctx;
 
@@ -652,6 +688,9 @@ async function bootstrapApplication(): Promise<void> {
 
   createWindow();
   registerPaletteShortcut();
+  if (PERF_TRACE) {
+    captureStartupPerf(ctx.userDataDir);
+  }
   logger.info(`app ready, schemaVersion=${SCHEMA_VERSION}`);
 
   // macOS：点 Dock 图标且无窗口时重建
