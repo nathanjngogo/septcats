@@ -1,4 +1,4 @@
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
@@ -38,6 +38,7 @@ import {
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
 import {
+  parseFeedUrlFromYml,
   registerUpdaterIpc,
   type AutoUpdaterLike,
 } from './updater';
@@ -450,6 +451,10 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       }
     },
     updater: autoUpdater as AutoUpdaterLike,
+    // feed 真相接线（缺陷账 #29）：打包环境从 app-update.yml 解析 feed URL 显式注入；
+    // 解析失败/未打包传 null（null=占位 file:// 源，预验签按非 http 分支跳过并记日志；
+    // undefined 才是"接线丢失"，会被 check() 拒绝）。
+    feedUrl: resolvePackagedFeedUrl(),
     fetch: async (url: string) => {
       const response = await net.fetch(url);
       return {
@@ -465,6 +470,24 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       logger.info(`[updater] ${line}`);
     },
   });
+}
+
+/**
+ * 打包环境的 feed URL：electron-builder 把 publish 配置写进
+ * `<resourcesPath>/app-update.yml`；未打包（dev）返回 null。
+ * 读失败也回 null——check() 的 http 分支会因 feedUrl=null 走非 http 跳过路径，
+ * 而占位 file:// feed 在 electron-updater 侧本就会报 E_UPDATE_FAILED（⑫ 实测），
+ * 不存在"静默跳过验签还能装上"的窗口。
+ */
+function resolvePackagedFeedUrl(): string | null {
+  if (!app.isPackaged) {
+    return null;
+  }
+  try {
+    return parseFeedUrlFromYml(readFileSync(join(process.resourcesPath, 'app-update.yml'), 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -234,7 +234,18 @@ export interface AutoUpdaterLike {
   downloadUpdate(): Promise<unknown>;
   quitAndInstall(): void;
   autoDownload: boolean;
-  readonly currentFeedURL?: string | null;
+}
+
+/**
+ * 从 app-update.yml 文本解析 feed URL（electron-builder 产物，形如
+ * `provider: generic\nurl: file:///...`）。无 url 行 → null。
+ * 真机教训（缺陷账 #29）：electron-updater 6.8.9 的**真实实例没有** currentFeedURL
+ * 属性（只有已废弃的 getFeedURL()），读它恒 undefined → 预验签被整体跳过、
+ * feed 自签防线在生产被击穿。feed URL 必须由我们自己的接线显式提供。
+ */
+export function parseFeedUrlFromYml(text: string): string | null {
+  const m = /^url:\s*['"]?([^'"\r\n]+?)['"]?\s*$/m.exec(text);
+  return m?.[1] !== undefined && m[1].length > 0 ? m[1] : null;
 }
 
 /** fetch 响应最小面（真实 net.fetch 的 Response 由 main/index.ts 适配）。 */
@@ -257,6 +268,12 @@ export interface UpdaterIpcDeps {
   fetch: FeedFetcher;
   /** 预验签公钥（默认硬编码正式公钥；测试注入临时公钥）。 */
   feedPublicKeyPem?: string | undefined;
+  /**
+   * 生产 feed URL（从 app-update.yml 解析；无/占位 file:// 传 null）。
+   * **undefined = 接线缺失**：打包环境的 check 会直接拒（E_UPDATE_UNAVAILABLE），
+   * 防止未来有人把这段接线弄丢后静默跳过验签（缺陷账 #29 的制度化）。
+   */
+  feedUrl?: string | null | undefined;
   env: Record<string, string | undefined>;
   isPackaged: boolean;
   /** 启动自动检查延迟毫秒；null = 不自动检查（测试默认关）。 */
@@ -290,10 +307,12 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
 
   // dev feed 注入（§0.2 运行期覆盖）：env 指定 URL 且过门才 setFeedURL；
   // 过门失败只记日志不注入（fail-closed，但不阻断应用启动）
+  let devFeedInjected = false;
   if (deps.updater !== null && devFeedUrl !== undefined && devFeedUrl.length > 0) {
     try {
       assertFeedUrlAllowed(devFeedUrl, devFeedEnabled);
       deps.updater.setFeedURL({ provider: 'generic', url: devFeedUrl });
+      devFeedInjected = true;
       log(`dev feed 注入：${devFeedUrl}`);
     } catch (error) {
       const mapped = toUpdaterError(error);
@@ -321,9 +340,20 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
       return currentState();
     }
 
+    // 接线守卫：打包 + 真实 updater + 既无 dev 注入又没接 feedUrl = 直接拒
+    // （不信任任何"读实例属性"的取法；见 #29）
+    if (deps.isPackaged && !devFeedInjected && deps.feedUrl === undefined) {
+      machine.dispatch({
+        type: 'error',
+        code: 'E_UPDATE_UNAVAILABLE',
+        message: 'feed URL 未接线（app-update.yml 解析缺失），拒绝跳过验签直接检查',
+      });
+      return currentState();
+    }
+
     machine.dispatch({ type: 'checking' });
 
-    const feedUrl = deps.updater.currentFeedURL ?? null;
+    const feedUrl = devFeedInjected ? (devFeedUrl ?? null) : (deps.feedUrl ?? null);
     if (feedUrl !== null && feedUrl.startsWith('http')) {
       try {
         // dev-feed 门对 http(s) 源统一生效（含注入与 app-update.yml 配置的源）

@@ -17,6 +17,7 @@ import {
   assertFeedUrlAllowed,
   createUpdaterStateMachine,
   isLocalFeedUrl,
+  parseFeedUrlFromYml,
   registerUpdaterIpc,
   toUpdaterError,
   verifyFeedDirectory,
@@ -215,7 +216,6 @@ function makeFakeUpdater(): AutoUpdaterLike & { emit(event: string, ...args: unk
       calls.push('quitAndInstall');
     },
     autoDownload: true,
-    currentFeedURL: 'http://127.0.0.1:8765/feed/',
   };
 }
 
@@ -232,6 +232,8 @@ function makeHarness(options: {
   feedPublicKeyPem?: string | undefined;
   fetchFail?: boolean;
   devFeed?: boolean;
+  /** 生产 feed URL 接线（默认本地测试源；传 undefined 模拟"接线丢失"） */
+  feedUrl?: string | null | undefined;
   isPackaged?: boolean;
   autoCheckDelayMs?: number | null;
 }): Harness {
@@ -262,7 +264,9 @@ function makeHarness(options: {
       }
       return { ok: true, status: 200, bytes: async () => feedYml };
     },
-    // 默认开 dev-feed 门（harness 的 currentFeedURL 指向本地）；门控测试显式传 devFeed:false
+    // 默认开 dev-feed 门；生产 feed 接线默认指向本地测试源（缺陷账 #29：
+    // feed URL 走 deps.feedUrl 显式注入，不再依赖 electron-updater 不存在的实例属性）
+    feedUrl: 'feedUrl' in options ? options.feedUrl : 'http://127.0.0.1:8765/feed/',
     env: options.devFeed === false ? {} : { SEPTCATS_DEV_FEED: '1' },
     feedPublicKeyPem: options.feedPublicKeyPem,
     isPackaged: options.isPackaged ?? true,
@@ -384,7 +388,6 @@ describe('registerUpdaterIpc（五通道 + 预验签 + 事件流）', () => {
 
   it('未打包且未注入 dev feed → E_UPDATE_UNAVAILABLE，不触达 updater', async () => {
     const updater = makeFakeUpdater();
-    Object.defineProperty(updater, 'currentFeedURL', { value: 'https://feed.septcats.cc/stable/' });
     const handlers = new Map<string, (raw: unknown) => Promise<unknown>>();
     registerUpdaterIpc({
       registrar: { handle: (channel, listener) => handlers.set(channel, listener) },
@@ -399,6 +402,24 @@ describe('registerUpdaterIpc（五通道 + 预验签 + 事件流）', () => {
     const state = (await handlers.get('update:check')!({})) as UpdateState;
     expect(updateStateSchema.parse(state)).toMatchObject({ status: 'error', errorCode: 'E_UPDATE_UNAVAILABLE' });
     expect(updater.calls).not.toContain('checkForUpdates');
+  });
+
+  it('接线守卫（#29）：打包 + 无 dev 注入 + feedUrl=undefined → 拒（绝不静默跳过验签）', async () => {
+    const { privatePem } = generateFeedKeyPair();
+    const h = makeHarness({
+      devFeed: false,
+      feedUrl: undefined,
+      feedSig: signFeedBytes(Buffer.from(SAMPLE_YML, 'utf8'), privatePem),
+    });
+    const state = (await h.handlers.get('update:check')!({})) as UpdateState;
+    expect(updateStateSchema.parse(state)).toMatchObject({ status: 'error', errorCode: 'E_UPDATE_UNAVAILABLE' });
+    expect(h.updater.calls).not.toContain('checkForUpdates');
+  });
+
+  it('parseFeedUrlFromYml：url 行提取 / 无行 → null', () => {
+    expect(parseFeedUrlFromYml('provider: generic\nurl: https://feed.septcats.cc/stable\n')).toBe('https://feed.septcats.cc/stable');
+    expect(parseFeedUrlFromYml("url: 'file:///septcats-feed/stable'")).toBe('file:///septcats-feed/stable');
+    expect(parseFeedUrlFromYml('provider: generic')).toBeNull();
   });
 });
 
