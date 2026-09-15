@@ -205,3 +205,25 @@ export const UPDATE_CHANNELS = {
 } as const;
 
 export type UpdateChannel = (typeof UPDATE_CHANNELS)[keyof typeof UPDATE_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 同步运行时（M8b · TASK-T13-01 §1）
+// ---------------------------------------------------------------------------
+
+/** 状态轮询：→ SyncStatusSnapshot（shared/sync.ts）。 */
+export const CHANNEL_SYNC_STATUS = 'sync:status';
+/** 启停：{on:boolean} → 运行时启停 + 设置持久化 → SyncStatusSnapshot。 */
+export const CHANNEL_SYNC_SET_ENABLED = 'sync:setEnabled';
+/** 立即跑一轮：→ SyncStatusSnapshot（await 完成）。 */
+export const CHANNEL_SYNC_NOW = 'sync:now';
+/** main → renderer：状态机跃迁推送（低频），载荷 SyncStatusSnapshot。 */
+export const CHANNEL_SYNC_STATE = 'sync:state';
+
+export const SYNC_CHANNELS = {
+  status: CHANNEL_SYNC_STATUS,
+  setEnabled: CHANNEL_SYNC_SET_ENABLED,
+  now: CHANNEL_SYNC_NOW,
+  state: CHANNEL_SYNC_STATE,
+} as const;
+
+export type SyncChannel = (typeof SYNC_CHANNELS)[keyof typeof SYNC_CHANNELS];

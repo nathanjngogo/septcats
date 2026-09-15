@@ -80,6 +80,7 @@ describe('diag 导出整体', () => {
       privacy: { telemetry: false, linkPreviewOnType: true },
       editor: { defaultEditMode: 'rich', spellcheck: true },
       data: { note: syncDir },
+      sync: { enabled: true, encrypt: false, gc: false },
       rootPath: syncDir,
       apiKey: 'sk-fake-secret-999',
     } as SeptcatsSettings;

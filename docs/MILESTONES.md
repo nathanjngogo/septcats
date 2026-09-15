@@ -17,7 +17,7 @@
 | └ T7 dbview 库侧（M6） | 09-13 | ✅ | 79 tests（1 万条筛选/排序性能夹具、CSV 转义、relation 计划、四态渲染）；v3 backlinks 迁移；no-magic ✓ |
 | └ T7b dbview 接线（M6） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 11 项**（db 桥注入/转为数据库按钮/IPC 建库→记录→改名→relation 双写→E_REFERRED 拒删→删除→exportCsv 含 BOM/pageerror 0）；desktop 73 tests；全仓 7 包 typecheck+test 绿；commitOps 同源扩展 collection/record 物化 |
 | └ T11 导入器（M12） | 09-15 | ✅ | **真机 CDP ALL-PASS 12 项**（唯一 nonce fixture：plan 2 页+GFM 降级 warning→execute→页树→attachment:///asset:// 逐字节→CSP 放行解码→幂等重跑 0 重复→向导 stepper）；PM 亲修 E2 幂等击穿（重命名先于去重）；importer 59/editor 152；golden 真包 421 页 dedup 漏=0 |
-| └ T12 更新器（M10-B） | 09-15 | ⚠ 代码合入 | updater.ts Ed25519 feed 自签（Node stdlib）+dev-feed 门 fail-closed+五通道状态机；158 tests；**PM 真机：负向 ⑩篡改/⑪缺 sig 判 FAIL=测试设计错位**（0.1.0 无更新器，需 0.1.1→0.1.2 链再验，见缺陷账 #28）；正面链预验签代码走查通过 |
+| └ T12 更新器（M10-B） | 09-15 | ⏳ 复验中 | 主链路真机 ALL-PASS（0.1.1→0.1.2 check→downloaded→install→重启）；PM 抓修 #29 生产验签击穿；负向三连需在含修复的包上复跑后定版 |
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
 | └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
@@ -55,6 +55,7 @@
 | 26 | dist 前置 rm/中文路径坑：PowerShell 直跑含中文路径 Start-Process 静默失败 | 低 | 装包复制 C:\Temp 纯 ASCII 路径 |
 | 27 | **验收工具假绿**：负向 e2e 用错版本前提（0.1.0 装的更新器代码里根本不存在 updater IPC，check() 无响应≠拒签生效）| 高（差点误判缺陷）| 教训：负向断言前先正面探针证通道存在；重设计为 0.1.1→0.1.2 链 |
 | 28 | 审计脚本 exit 前未记账 CDP 失败 → 「FAIL CDP 未起」不进 results 统计 | 中（同 #27 家族）| 前置失败也必须 check() 记账 |
+| 29 | **生产验签击穿**：electron-updater 6.8.9 真实实例无 currentFeedURL 属性（只有废弃 getFeedURL()），恒 undefined→http(s) 预验签块生产被整体跳过（单测假属性掩护）| 中高（yml 层验签失效；二进制层 sha512 仍在，篡改装包仍失败）| deps.feedUrl 显式接线 + 打包缺接线拒 check（fail-closed）+ parseFeedUrlFromYml 读 app-update.yml；守卫回归 2 条 |
 | 22 | electron.vite exclude 漏 workspace 包（#13 同源复发：这次漏 importer）| 高（main 加载崩）| CodeBuddy 主动抽 BUNDLED_WORKSPACE_PACKAGES 单源常量根治，PM 复核认可 |
 | 23 | CodeBuddy C 会话遗留 2 个 electron-vite dev 进程未退，锁死 better_sqlite3.node → PM 复跑 install/test 挂；并把自身前半程产出误叙为「并行会话产物」 | 中（流程坑）| PM 清进程后复跑全绿；新纪律：验收前查残留进程 |
 | 24 | 真包形态双缺陷：_all.csv 双胞胎（plain=当前视图列会丢属性，_all 才是全属性）+ 附件 src 为 %编码相对路径全判缺失 | 高（M12 金标准） | D 阶段：_all 优先归并+plain skipped-duplicate；两级查找原样→decode；真包冒烟锁定 17 库/123 资产 |

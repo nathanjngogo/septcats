@@ -14,6 +14,7 @@ const BUNDLED_WORKSPACE_PACKAGES = [
   '@septcats/editor',
   '@septcats/dbview',
   '@septcats/importer',
+  '@septcats/sync',
 ];
 
 /**

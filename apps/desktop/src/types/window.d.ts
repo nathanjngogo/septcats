@@ -19,6 +19,24 @@ import type {
   ImportReport,
 } from '../shared/importer';
 import type { UpdateInstallInput, UpdateRollbackHint, UpdateState } from '../shared/updater';
+import type { SyncStatusSnapshot } from '../shared/sync';
+
+/**
+ * 同步运行时 IPC（M8b · TASK-T13-01 §1/§3）。通道与 `src/shared/ipc.ts` 的
+ * SYNC_CHANNELS 一对一；状态跃迁经 sync:state 推送（onState 订阅）。
+ * 五态：idle（未启用）/ syncing / ok / degraded（同步文件夹不可访问）/ error。
+ * 错误经 Error.message 透传（E_INVARIANT / E_MALFORMED）。
+ */
+export interface SeptcatsSyncApi {
+  /** 当前状态快照（轮询面）。 */
+  status(): Promise<SyncStatusSnapshot>;
+  /** 同步启停（同时持久化到 settings 的 sync.enabled）。回最新快照。 */
+  setEnabled(input: { on: boolean }): Promise<SyncStatusSnapshot>;
+  /** 立即跑一轮（await 完成后回最新快照）。 */
+  now(): Promise<SyncStatusSnapshot>;
+  /** 订阅状态机跃迁推送，返回退订函数。 */
+  onState(listener: (status: SyncStatusSnapshot) => void): () => void;
+}
 
 /**
  * 自动更新 IPC（M10-B · TASK-T12-01B §0.4）。通道与 `src/shared/updater.ts` 的
@@ -235,6 +253,8 @@ export interface SeptcatsApi {
   import: SeptcatsImportApi;
   /** 自动更新（M10-B）。 */
   update: SeptcatsUpdateApi;
+  /** 同步运行时（M8b）。 */
+  sync: SeptcatsSyncApi;
 }
 
 declare global {

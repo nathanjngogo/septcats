@@ -44,7 +44,8 @@ export type EditMode = (typeof EDIT_MODES)[number];
  * 应用配置的严格校验 schema（desktop main 的 `settings:patch` 用它全量再校验，
  * 不信任 renderer）。theme/locale/defaultEditMode 用 enum 收口；`privacy.telemetry`
  * 用 literal(false) 表达「一期恒 false、占位承诺」；`data.note` 为同步文件夹路径
- * （仅展示不可改，改路径归 M8b）。
+ * （仅展示不可改，改路径归 M8b）。`sync` 段为 M8b 同步运行时的三项开关
+ * （TASK-T13-01 §0/§1：一期默认明文 encrypt=false，gc dry-run 默认 gc=false）。
  */
 export const appSettingsSchema = z.object({
   theme: z.enum(THEME_MODES),
@@ -60,6 +61,14 @@ export const appSettingsSchema = z.object({
   data: z.object({
     note: z.string(),
   }),
+  sync: z.object({
+    /** 同步运行时启停（sync:setEnabled 同步持久化到此）。 */
+    enabled: z.boolean(),
+    /** 段/快照静态加密（AES-256-GCM + DPAPI 包裹的 DEK）。 */
+    encrypt: z.boolean(),
+    /** gc 真删开关（false = dry-run 只计数）。 */
+    gc: z.boolean(),
+  }),
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
@@ -71,6 +80,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   privacy: { telemetry: false, linkPreviewOnType: true },
   editor: { defaultEditMode: 'rich', spellcheck: true },
   data: { note: '' },
+  sync: { enabled: true, encrypt: false, gc: false },
 };
 
 export interface SeptcatsSettings extends AppSettings {
@@ -93,6 +103,7 @@ function cloneDefaultAppSettings(): AppSettings {
     privacy: { ...DEFAULT_APP_SETTINGS.privacy },
     editor: { ...DEFAULT_APP_SETTINGS.editor },
     data: { ...DEFAULT_APP_SETTINGS.data },
+    sync: { ...DEFAULT_APP_SETTINGS.sync },
   };
 }
 
@@ -118,6 +129,7 @@ export function mergeSettingsPatch(current: AppSettings, patch: unknown): AppSet
       ? { ...current.editor, ...src['editor'] }
       : { ...current.editor },
     data: isPlainObject(src['data']) ? { ...current.data, ...src['data'] } : { ...current.data },
+    sync: isPlainObject(src['sync']) ? { ...current.sync, ...src['sync'] } : { ...current.sync },
   };
   const result = appSettingsSchema.safeParse(merged);
   if (!result.success) {
@@ -200,6 +212,9 @@ function parseAppSettings(raw: Record<string, unknown>): AppSettings | null {
     data: isPlainObject(raw['data'])
       ? { ...DEFAULT_APP_SETTINGS.data, ...raw['data'] }
       : { ...DEFAULT_APP_SETTINGS.data },
+    sync: isPlainObject(raw['sync'])
+      ? { ...DEFAULT_APP_SETTINGS.sync, ...raw['sync'] }
+      : { ...DEFAULT_APP_SETTINGS.sync },
   };
   const result = appSettingsSchema.safeParse(merged);
   return result.success ? result.data : null;

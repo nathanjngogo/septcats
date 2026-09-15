@@ -3,7 +3,7 @@ import { basename, dirname, join } from 'node:path';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
-import { readSettings } from '@septcats/platform';
+import { readSettings, writeSettings } from '@septcats/platform';
 import { startDbServer, type DbHandle } from '../db/client';
 import {
   CHANNEL_DIAG_CONFIRM,
@@ -29,6 +29,7 @@ import {
   CHANNEL_RECENT_TOUCH,
   CHANNEL_SETTINGS_GET,
   CHANNEL_SETTINGS_PATCH,
+  CHANNEL_SYNC_STATE,
   CHANNEL_WORKSPACE_CHANGED,
   CHANNEL_WORKSPACE_CREATE,
   CHANNEL_WORKSPACE_LIST,
@@ -65,6 +66,10 @@ import {
   type ImporterService,
 } from './importer';
 import { initPlatform, type PlatformContext } from './platform';
+import { SyncRuntime } from './sync/runtime';
+import { SyncKeyring } from './sync/keyring';
+import { registerSyncIpc } from './sync/ipc';
+import { withSyncHook } from './sync/bridge';
 
 /**
  * 主进程入口。
@@ -83,6 +88,7 @@ import { initPlatform, type PlatformContext } from './platform';
 let mainWindow: BrowserWindow | null = null;
 let platformContext: PlatformContext | null = null;
 let dbHandle: DbHandle | null = null;
+let syncRuntime: SyncRuntime | null = null;
 let updaterService: { check(): Promise<UpdateState>; dispose(): void } | null = null;
 
 /** device_id 缺失/异常时的兜底 actor（[a-z0-9]{8,32}；正常路径取 meta.device_id 的小写形式）。 */
@@ -161,8 +167,11 @@ interface DatabaseServices {
 }
 
 /**
- * 起 DbServer → 迁移 → 造 pagesApi + dbViewService。失败**不阻断开窗**：注册的 IPC 会统一回
- * `E_INVARIANT`/`E_DB_UNAVAILABLE: 数据库服务不可用`，渲染器据此走 ErrorPanel（比窗都开不出来可诊断）。
+ * 起 DbServer → 迁移 → 造 pagesApi + dbViewService + SyncRuntime。
+ * 失败**不阻断开窗**：注册的 IPC 会统一回 `E_INVARIANT`/`E_DB_UNAVAILABLE: 数据库服务不可用`，
+ * 渲染器据此走 ErrorPanel（比窗都开不出来可诊断）。
+ * M8b：BatchExecutor 经 withSyncHook 装饰（不动 commit.ts）——commitOps 成功后把
+ * 新 op 喂给 SyncRuntime 攒段发布；运行时自身 apply 远端 op 用未装饰的 raw handle。
  */
 async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices | null> {
   const logger = ctx.logger.forModule('db');
@@ -172,13 +181,61 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     const migrated = await handle.migrate();
     logger.info(`DbServer 就绪 v${String(migrated.from)}→v${String(migrated.to)} pid=${String(handle.pid ?? 0)}`);
     const actor = deriveActorId(await readMetaValue(handle, 'device_id'));
-    const pages = createPagesService({ executor: handle, actor });
+
+    // M8b：同步运行时（layout.root/sync 为同步文件夹；启动失败只降级，不阻断开窗）
+    let pagesRef: PagesService | null = null;
+    const syncLogger = ctx.logger.forModule('sync');
+    try {
+      const runtime = new SyncRuntime({
+        rootDir: join(ctx.layout.root, 'sync'),
+        db: handle,
+        actor,
+        enabled: readSettings(ctx.userDataDir).sync.enabled,
+        workspaceId: async () => {
+          const pages = pagesRef;
+          if (pages === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区');
+          }
+          const workspaces = await pages.listWorkspaces();
+          if (workspaces.activeId === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，远端 op 无法物化');
+          }
+          return workspaces.activeId;
+        },
+        clientVer: app.getVersion(),
+        keyring: new SyncKeyring(ctx.credentials),
+        encryptEnabled: () => readSettings(ctx.userDataDir).sync.encrypt,
+        gcEnabled: () => readSettings(ctx.userDataDir).sync.gc,
+        log: (line) => syncLogger.info(line),
+      });
+      await runtime.start();
+      syncRuntime = runtime;
+      runtime.onState((status) => {
+        for (const window of BrowserWindow.getAllWindows()) {
+          window.webContents.send(CHANNEL_SYNC_STATE, status);
+        }
+      });
+    } catch (error) {
+      syncRuntime = null;
+      syncLogger.error(`SyncRuntime 启动失败（同步停用）：${describeError(error)}`);
+    }
+
+    // 装饰执行面：页面/行内库/搜索/导入器的写路径成功后进攒段器
+    const executor =
+      syncRuntime === null
+        ? handle
+        : withSyncHook(handle, (ops) => {
+            syncRuntime?.onLocalCommit(ops);
+          });
+
+    const pages = createPagesService({ executor, actor });
+    pagesRef = pages;
     return {
       pages,
-      db: createDbViewService({ executor: handle, actor }),
+      db: createDbViewService({ executor, actor }),
       search: createSearchService({ executor: handle }),
       importer: createImporterService({
-        executor: handle,
+        executor,
         actor,
         attachmentsDir: ctx.layout.attachments,
         activeWorkspaceId: async () => {
@@ -442,6 +499,18 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
   registerImporterIpc(services?.importer ?? null);
 
+  // 同步运行时（M8b）：status / setEnabled / now 三通道 + 状态推流（sync:state 在
+  // bootstrapDatabase 的 onState 里广播）。runtime 缺失时统一回 E_INVARIANT。
+  registerSyncIpc({
+    registrar: dbViewRegistrar(),
+    getRuntime: () => syncRuntime,
+    persistEnabled: (on) => {
+      // writeSettings 只收整份 SeptcatsSettings：读当前 → 只改 sync.enabled → 回写
+      const current = readSettings(ctx.userDataDir);
+      writeSettings(ctx.userDataDir, { ...current, sync: { ...current.sync, enabled: on } });
+    },
+  });
+
   // 自动更新（M10-B · TASK-T12-01B）：electron-updater 注入，五通道 + 启动 5s 后自动检查一次
   updaterService = registerUpdaterIpc({
     registrar: dbViewRegistrar(),
@@ -626,6 +695,8 @@ if (!gotSingleInstanceLock) {
     globalShortcut.unregister(PALETTE_SHORTCUT);
     updaterService?.dispose();
     updaterService = null;
+    syncRuntime?.stop();
+    syncRuntime = null;
     void dbHandle?.dispose();
     dbHandle = null;
   });

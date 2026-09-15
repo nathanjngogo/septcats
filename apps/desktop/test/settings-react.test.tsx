@@ -18,6 +18,7 @@ function defaultSettings(): AppSettings {
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
     data: { note: '~/.septcats' },
+    sync: { enabled: true, encrypt: false, gc: false },
   };
 }
 

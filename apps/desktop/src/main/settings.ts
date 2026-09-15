@@ -12,7 +12,7 @@
 import { mergeSettingsPatch, readSettings, writeSettings } from '@septcats/platform';
 import type { AppSettings } from '../shared/settings';
 
-/** 读设置 → 渲染器面 AppSettings（data.note = 同步目录绝对路径）。 */
+/** 读设置 → 渲染器面 AppSettings（data.note = 同步目录绝对路径；sync 段透传）。 */
 export function readAppSettings(userDataDir: string, syncDir: string): AppSettings {
   const settings = readSettings(userDataDir);
   return {
@@ -21,6 +21,7 @@ export function readAppSettings(userDataDir: string, syncDir: string): AppSettin
     privacy: settings.privacy,
     editor: settings.editor,
     data: { note: syncDir },
+    sync: settings.sync,
   };
 }
 
@@ -42,5 +43,6 @@ export function patchAppSettings(
     privacy: merged.privacy,
     editor: merged.editor,
     data: { note: syncDir },
+    sync: merged.sync,
   };
 }

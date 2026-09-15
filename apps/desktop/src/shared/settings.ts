@@ -30,6 +30,12 @@ export interface AppSettings {
     /** 同步文件夹路径（仅展示不可改，改路径归 M8b）。 */
     note: string;
   };
+  /** 同步运行时开关（M8b · TASK-T13-01）：enabled/encrypt/gc，默认 true/false/false。 */
+  sync: {
+    enabled: boolean;
+    encrypt: boolean;
+    gc: boolean;
+  };
 }
 
 /**
@@ -42,6 +48,7 @@ export type AppSettingsPatch = {
   privacy?: Partial<AppSettings['privacy']>;
   editor?: Partial<AppSettings['editor']>;
   data?: Partial<AppSettings['data']>;
+  sync?: Partial<AppSettings['sync']>;
 };
 
 /** diag:export 的返回：最终落盘路径 + 脱敏预览文本（JSON 字符串）。 */

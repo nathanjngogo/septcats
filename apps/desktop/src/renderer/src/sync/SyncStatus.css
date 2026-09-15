@@ -1,0 +1,215 @@
+/* SyncStatus.css —— 顶栏同步状态钮 + 面板（mockup 07）。只用 var(--sc-*)。 */
+
+.sc-sync-status {
+  position: relative;
+  display: inline-flex;
+}
+
+/* --- 五态状态钮 ---------------------------------------------------------- */
+
+.sc-sync-status__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-block-gap);
+  height: 24px;
+  padding: 0 var(--sc-space-sm);
+  border: none;
+  border-radius: var(--sc-radius-full);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+}
+
+.sc-sync-status__pill:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 1px;
+}
+
+.sc-sync-status__dot {
+  width: 6px;
+  aspect-ratio: 1;
+  flex: none;
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-ink-faint);
+}
+
+/* idle：灰点（默认） */
+.sc-sync-status__pill--idle {
+  color: var(--sc-color-ink-faint);
+}
+
+/* syncing：琥珀呼吸点 */
+.sc-sync-status__pill--syncing {
+  color: var(--sc-color-accent);
+}
+.sc-sync-status__pill--syncing .sc-sync-status__dot {
+  background: var(--sc-color-accent);
+  animation: sc-sync-breathe 1.2s var(--sc-ease-out) infinite;
+}
+
+/* ok：绿点 */
+.sc-sync-status__pill--ok {
+  color: var(--sc-color-ink-secondary);
+}
+.sc-sync-status__pill--ok .sc-sync-status__dot {
+  background: var(--sc-color-success);
+}
+
+/* degraded：橙点 */
+.sc-sync-status__pill--degraded {
+  color: var(--sc-color-accent);
+}
+.sc-sync-status__pill--degraded .sc-sync-status__dot {
+  background: var(--sc-color-accent);
+  box-shadow: 0 0 0 2px var(--sc-color-accent-soft);
+}
+
+/* error：红点 */
+.sc-sync-status__pill--error {
+  color: var(--sc-color-danger);
+}
+.sc-sync-status__pill--error .sc-sync-status__dot {
+  background: var(--sc-color-danger);
+}
+
+@keyframes sc-sync-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-sync-status__pill--syncing .sc-sync-status__dot {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* --- 面板 ---------------------------------------------------------------- */
+
+.sc-sync-status__panel {
+  position: absolute;
+  top: calc(100% + var(--sc-space-xs));
+  right: 0;
+  z-index: var(--sc-z-dropdown);
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: var(--sc-space-lg);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-lg);
+  background: var(--sc-color-surface-raised);
+  box-shadow: var(--sc-shadow-popover);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink);
+}
+
+.sc-sync-status__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+  min-height: 28px;
+  border-top: 1px solid var(--sc-color-hairline);
+  padding: var(--sc-space-xxs) 0;
+}
+
+.sc-sync-status__row:first-child,
+.sc-sync-status__section + .sc-sync-status__row {
+  border-top: none;
+}
+
+.sc-sync-status__k {
+  color: var(--sc-color-ink-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-sync-status__v,
+.sc-sync-status__mono {
+  font-family: var(--sc-font-mono);
+  font-size: 12px;
+}
+
+.sc-sync-status__v {
+  text-align: right;
+}
+
+.sc-sync-status__section {
+  margin-top: var(--sc-space-md);
+  margin-bottom: var(--sc-space-xxs);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-sync-status__empty {
+  color: var(--sc-color-ink-faint);
+  padding: var(--sc-space-xxs) 0;
+}
+
+.sc-sync-status__error {
+  display: flex;
+  gap: var(--sc-space-sm);
+  align-items: baseline;
+  padding: var(--sc-space-xxs) 0;
+  color: var(--sc-color-danger);
+}
+
+.sc-sync-status__error span:last-child {
+  color: var(--sc-color-ink-secondary);
+  min-width: 0;
+}
+
+.sc-sync-status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sc-space-md);
+  margin-top: var(--sc-space-lg);
+}
+
+.sc-sync-status__button {
+  height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+}
+
+.sc-sync-status__button:hover:not(:disabled) {
+  border-color: var(--sc-color-accent);
+  color: var(--sc-color-accent);
+}
+
+.sc-sync-status__button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sc-sync-status__button:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 1px;
+}
+
+.sc-sync-status__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-sync-status__hint {
+  margin: var(--sc-space-md) 0 0;
+  color: var(--sc-color-ink-faint);
+  line-height: 1.7;
+}

@@ -13,6 +13,7 @@ import {
   PAGES_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
+  SYNC_CHANNELS,
   WORKSPACES_CHANNELS,
 } from '../shared/ipc';
 import { UPDATE_CHANNELS } from '../shared/ipc';
@@ -129,6 +130,13 @@ const api: SeptcatsApi = {
     rollbackHint: () =>
       ipcRenderer.invoke(UPDATE_CHANNELS.rollbackHint) as ReturnType<SeptcatsApi['update']['rollbackHint']>,
     onState: (listener) => subscribe(UPDATE_CHANNELS.state, listener),
+  },
+  sync: {
+    status: () => ipcRenderer.invoke(SYNC_CHANNELS.status) as ReturnType<SeptcatsApi['sync']['status']>,
+    setEnabled: (input) =>
+      ipcRenderer.invoke(SYNC_CHANNELS.setEnabled, input) as ReturnType<SeptcatsApi['sync']['setEnabled']>,
+    now: () => ipcRenderer.invoke(SYNC_CHANNELS.now) as ReturnType<SeptcatsApi['sync']['now']>,
+    onState: (listener) => subscribe(SYNC_CHANNELS.state, listener),
   },
 };
 
