@@ -16,6 +16,8 @@
 | └ T6 pages（M5） | 09-13 | ✅ | 真机 CDP 验收 ALL-PASS 7 项（tree/create/rename/tombstone/restore/E_CYCLE/E_PARENT_GONE、pageerror 0）；desktop 57 tests |
 | └ T7 dbview 库侧（M6） | 09-13 | ✅ | 79 tests（1 万条筛选/排序性能夹具、CSV 转义、relation 计划、四态渲染）；v3 backlinks 迁移；no-magic ✓ |
 | └ T7b dbview 接线（M6） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 11 项**（db 桥注入/转为数据库按钮/IPC 建库→记录→改名→relation 双写→E_REFERRED 拒删→删除→exportCsv 含 BOM/pageerror 0）；desktop 73 tests；全仓 7 包 typecheck+test 绿；commitOps 同源扩展 collection/record 物化 |
+| └ T11 导入器（M12） | 09-15 | ✅ | **真机 CDP ALL-PASS 12 项**（唯一 nonce fixture：plan 2 页+GFM 降级 warning→execute→页树→attachment:///asset:// 逐字节→CSP 放行解码→幂等重跑 0 重复→向导 stepper）；PM 亲修 E2 幂等击穿（重命名先于去重）；importer 59/editor 152；golden 真包 421 页 dedup 漏=0 |
+| └ T12 更新器（M10-B） | 09-15 | ⚠ 代码合入 | updater.ts Ed25519 feed 自签（Node stdlib）+dev-feed 门 fail-closed+五通道状态机；158 tests；**PM 真机：负向 ⑩篡改/⑪缺 sig 判 FAIL=测试设计错位**（0.1.0 无更新器，需 0.1.1→0.1.2 链再验，见缺陷账 #28）；正面链预验签代码走查通过 |
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
 | └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
@@ -46,6 +48,13 @@
 | 19 | T7b 遗产半成品缺 @septcats/dbview 依赖 + unused row | 低 | 补依赖/删死码（typecheck 0 错） |
 | 20 | 派发命令前置 `rm` 失败经 && 链吞掉整个 codebuddy 启动（假在飞 703s） | 中（流程坑） | 派发命令保持单一职责，清理动作放独立调用 |
 | 21 | 主题真相分裂：settings.json=dark 但重启后渲染 light（ThemeProvider 只播种 localStorage，main 真相没接线） | 高（设置白存）| main.tsx 挂载前 settings.get→setGlobalThemeMode 播种；专项审计 reload 后实测背景色 |
+| 22 | externalize 排除表**两处**各写一份再次漂移（漏 importer）| 中 | 提 BUNDLED_WORKSPACE_PACKAGES 单一常量，两处引用；新包只改一处 |
+| 23 | CSP img-src/connect-src 未放行 asset:/attachment: → 导入图片必破图 | 高（真机才测出）| index.html CSP 补两 scheme（仅本地协议，不扩大外联面）|
+| 24 | 反复强杀 electron 把默认 userData 网络服务状态弄坏→dev 静默自退 | 中（流程坑）| 审计期用 --user-data-dir 独立目录；验收后清目录 |
+| 25 | CodeBuddy 会话「自疑并发」停笔提问（第二次发生）；且旧会话被 kill 后 print 模式 stdout 不刷盘 | 中 | 派发词预置「你是唯一作者，直接动手」；报告以 git diff+PM 实测为准 |
+| 26 | dist 前置 rm/中文路径坑：PowerShell 直跑含中文路径 Start-Process 静默失败 | 低 | 装包复制 C:\Temp 纯 ASCII 路径 |
+| 27 | **验收工具假绿**：负向 e2e 用错版本前提（0.1.0 装的更新器代码里根本不存在 updater IPC，check() 无响应≠拒签生效）| 高（差点误判缺陷）| 教训：负向断言前先正面探针证通道存在；重设计为 0.1.1→0.1.2 链 |
+| 28 | 审计脚本 exit 前未记账 CDP 失败 → 「FAIL CDP 未起」不进 results 统计 | 中（同 #27 家族）| 前置失败也必须 check() 记账 |
 | 22 | electron.vite exclude 漏 workspace 包（#13 同源复发：这次漏 importer）| 高（main 加载崩）| CodeBuddy 主动抽 BUNDLED_WORKSPACE_PACKAGES 单源常量根治，PM 复核认可 |
 | 23 | CodeBuddy C 会话遗留 2 个 electron-vite dev 进程未退，锁死 better_sqlite3.node → PM 复跑 install/test 挂；并把自身前半程产出误叙为「并行会话产物」 | 中（流程坑）| PM 清进程后复跑全绿；新纪律：验收前查残留进程 |
 | 24 | 真包形态双缺陷：_all.csv 双胞胎（plain=当前视图列会丢属性，_all 才是全属性）+ 附件 src 为 %编码相对路径全判缺失 | 高（M12 金标准） | D 阶段：_all 优先归并+plain skipped-duplicate；两级查找原样→decode；真包冒烟锁定 17 库/123 资产 |
