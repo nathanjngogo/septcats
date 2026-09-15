@@ -17,9 +17,11 @@
 | └ T7 dbview 库侧（M6） | 09-13 | ✅ | 79 tests（1 万条筛选/排序性能夹具、CSV 转义、relation 计划、四态渲染）；v3 backlinks 迁移；no-magic ✓ |
 | └ T7b dbview 接线（M6） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 11 项**（db 桥注入/转为数据库按钮/IPC 建库→记录→改名→relation 双写→E_REFERRED 拒删→删除→exportCsv 含 BOM/pageerror 0）；desktop 73 tests；全仓 7 包 typecheck+test 绿；commitOps 同源扩展 collection/record 物化 |
 | └ T11 导入器（M12） | 09-15 | ✅ | **真机 CDP ALL-PASS 12 项**（唯一 nonce fixture：plan 2 页+GFM 降级 warning→execute→页树→attachment:///asset:// 逐字节→CSP 放行解码→幂等重跑 0 重复→向导 stepper）；PM 亲修 E2 幂等击穿（重命名先于去重）；importer 59/editor 152；golden 真包 421 页 dedup 漏=0 |
+| └ M8b 双实例真机 | 09-16 | ✅ | **ALL-PASS 5 项**：两独立数据根+root/sync junction 共享（网盘语义正解）；A 建页→B 追平「双子星页」、manifest+seg 文件对账；夹具三轮修正（settings 文件名 septcats.settings.json、ULID id 断言、setEnabled({on})），产品代码零改动 |
 | └ T13 同步运行时（M8b） | 09-16 | ✅ | 引擎零改动（git 0 diff 实证）+ runtime 746 行 + bridge 装饰器旁路 + AES-GCM/DEK-DPAPI + SyncStatus 五态面板；**双 runtime 十场景全真跑**（A 建 5 页 B 追平/并发 LWW 收敛+conflict 各≥1/副本去重/断链 degraded/崩溃自愈/S5 快照播种追平/加密 E2E E_SYNC_KEY_MISMATCH 红条/假时钟轮询）；filterAgainstLedger 数学复核通过（等值 op 在 replay 本就是 no-op）；desktop 194 全绿 |
 | └ T14 性能基线（G4） | 09-16 | ✅ | 四项 vitest 预算断言+perf-history.jsonl 台账+--perf-trace 打点+perf-pack.mjs；安装包 88.5MB 绿；**测出两枚真红**（commit 批 232ms、rebuild 45.7s）——红牌如实入账不凑绿，催生 T15 |
 | └ T15 FTS O(n²) 修复 | 09-16 | ✅ | 232ms→14.1ms、45.7s→1.41s（perf 预算断言原值未改）；v6 fts_defer+WHEN 守卫（PM 双探针定案：TEMP 表触发器不可见→常规表方案）+rebuild/batch 头尾 defer+prepare 缓存；fts-defer 6 断言；213 全绿；半途中断会话由遗产续作接力完成 |
+| └ 内存红牌 #32 | 09-16 | 🔴 诊断中 | perf-pack 真机：startup 465ms 绿/安装包 88.5MB 绿/**WorkingSet 总和 612MB 红（预算 350）**；空载即超→结构性；T16=逐进程解剖+三口径（Electron 多进程 sum 高估真实 RAM，口径本身待裁）+utilityProcess 账，只诊断不投机优化 |
 | └ T12 更新器（M10-B） | 09-15 | ✅ | 负向+正面四连真机 ALL-PASS（含 #29 修复的 0.1.3 实例：篡改 yml→E_FEED_SIGNATURE/缺 sig→拒/无门→fail-closed/干净 feed→not-available）；主链路 0.1.1→0.1.2 升级 ALL-PASS；公钥轮换（旧私钥遗失去不可恢复，新 keygen 同步 updater.ts+重打 0.1.3） |
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
