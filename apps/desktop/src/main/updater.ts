@@ -58,7 +58,7 @@ export class UpdaterError extends Error {
  *  4. 确认覆盖面后再弃用旧钥。过渡期可临时并列新旧两把公钥（改为数组逐一验证）。
  */
 export const FEED_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAEOmOxLNzUODcw3y1NML58+Z9iLg2zp9RiF/RZTBVtJs=
+MCowBQYDK2VwAyEAoywO20ixVcfcKHOIbGuAS+WiGY2Kxn6ttG4L7ihH/9s=
 -----END PUBLIC KEY-----`;
 
 /**
