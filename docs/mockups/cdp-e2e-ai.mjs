@@ -9,6 +9,8 @@
  * 断言项对齐 TASK-T18-03 §4：设置页 AI 区块渲染/开关/provider 测试连接、面板出现→
  * 结果非空→应用→块文本变化、未配置空态引导 + 「打开设置」可点、pageerror 计数 0、
  * 截图双主题各 1 张（设置页 + 面板）→ docs/mockups/screens-ai/。
+ * T18-04 追加「AI 属性」节：转为数据库（建库）→ UI 建记录 → 新属性菜单加 AI 列 →
+ * 配 prompt → 单行生成 → 断言单元格值 + IPC 读回持久化（离线/真机层共用同一流程）。
  * 用法：node docs/mockups/cdp-e2e-ai.mjs            （离线层）
  *       SEPTCATS_AI_REAL=1 node docs/mockups/cdp-e2e-ai.mjs （离线层 + 真机层）
  */
@@ -264,6 +266,148 @@ if (REAL) {
     }
   }
 }
+
+// ── AI 属性列（TASK-T18-04 追加节；离线层走 mock provider，真机层复用同一流程）──
+// 流程：转为数据库（建库）→ UI 建记录/改标题 → 「新属性」菜单加 AI 列（走真 UI 路径，
+// 自带 hook 重载，无需 reload）→ 列头菜单配 prompt → 单行「AI 生成」→ 断言单元格值
+// + IPC 读回持久化（schema.ai.prompt / record.values[aiPid]）。
+if (!REAL) {
+  // 未配置路径检查把 ai.enabled 关了，离线层先恢复 mock provider；真机层沿用上面配好的 LM Studio
+  await configureAi(page, MOCK_BASE, 'mock-model');
+}
+await page.evaluate(() => window.dispatchEvent(new CustomEvent('septcats:theme-mode', { detail: { mode: 'light' } })));
+// 流程复位：上一节最后一步跳到设置页，「转为数据库」只存在于页面视图。
+// reload 回默认视图（settings 已持久化，configureAi 配置不受影响）。
+// —— 与 T18-03 真机层同类的「脚本流程态未复位」缺陷（本次第 3 例）。
+await page.reload();
+await bridgeReady(br);
+const pageViewBack = await waitFor(async () => page.evaluate(() => document.querySelector('.pv-body, .dbpage') !== null), 20_000);
+check('AI属性：reload 回到页面视图（流程复位）', pageViewBack);
+const converted = await clickButtonByText(page, '转为数据库');
+const dbMounted = await waitFor(async () => page.evaluate(() => document.querySelector('.sc-dbgrid, .sc-empty') !== null), 10_000);
+check('AI属性：转为数据库 → DbPage 挂载', converted && dbMounted);
+
+// 建库（UI 全路径：DbPage 既有 hook 写后自动重载）
+await clickButtonByText(page, '新建记录');
+await clickButtonByText(page, '新建记录');
+async function renameTitle(index, text) {
+  // 行是异步渲染的（新建记录 → hook 重载）：先等目标标题单元格出现再双击。
+  // 原实现「新建后立刻取 cell」在首行尚未渲染时拿到 undefined → no-cell
+  // （本次第 5 例同类「脚本时序未等待」缺陷；末尾诊断 titles=未命名|未命名 即证据）。
+  const cellReady = await waitFor(
+    async () => page.evaluate((i) => [...document.querySelectorAll('.sc-dbcell__title')][i] !== undefined, index),
+    8_000,
+    100,
+  );
+  if (!cellReady) return 'no-cell';
+  // 用 playwright 真实鼠标双击（信任事件）+ locator.fill 写值 + 真实 Enter：
+  // 合成 MouseEvent('dblclick') 只能触发焦点/悬停态，不触发 React 的 onDoubleClick（实测 r*=no-input）。
+  const box = await page.evaluate((i) => {
+    const el = [...document.querySelectorAll('.sc-dbcell__title')][i];
+    if (el === undefined) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, index);
+  if (box === null) return 'no-cell';
+  await page.mouse.dblclick(box.x, box.y);
+  const inputReady = await waitFor(
+    async () => page.evaluate(() => document.querySelector('input[aria-label="编辑标题"]') !== null),
+    5_000,
+    100,
+  );
+  if (!inputReady) return 'no-input';
+  const input = page.locator('input[aria-label="编辑标题"]');
+  await input.fill(text);
+  await input.press('Enter');
+  return 'ok';
+}
+// 【已知缺陷 T18-04-1（非本轮引入，T7b 时代既有）】此处检查当前恒红：
+// PM 探针实证（2026-09-17）——真实双击（mousedown detail [1,2]）产生的原生 dblclick 确实到达
+// `SPAN.sc-dbcell__title`（文档级捕获探针可见），但 React 的 onDoubleClick 未生效：MutationObserver
+// 全程未见 `input[aria-label="编辑标题"]`（inputSeen=0），标题保持「未命名」。
+// 全应用只有 TableGrid.tsx:147 一处 dblclick 处理器，无全局拦截；该路径无任何单测/CDP 覆盖。
+// 结论：记录标题「双击改名」在打包应用中不生效 → 已开 TASK-T18-05 修复（含回归测试），本检查保留可见。
+const renamed1 = await renameTitle(0, '哥德尔、艾舍尔、巴赫');
+const renamed2 = await renameTitle(1, '时间简史');
+const renamedShown = await waitFor(
+  async () => page.evaluate(() => [...document.querySelectorAll('.sc-dbcell__title')].some((el) => (el.textContent ?? '') === '时间简史')),
+  8_000,
+);
+const titleDiag = await page.evaluate(() => [...document.querySelectorAll('.sc-dbcell__title')].map((el) => el.textContent).join('|'));
+check('AI属性：UI 建 2 条记录并改名（既有 record:update 路径）', renamed1 === 'ok' && renamedShown, `r1=${renamed1} r2=${renamed2} titles=${titleDiag}`);
+
+// 加 AI 列（「新属性」菜单第 9 项，T18-04）
+await clickButtonByText(page, '新属性');
+const aiItemClicked = await page.evaluate(() => {
+  const item = [...document.querySelectorAll('[role="menuitem"]')].find((el) => (el.textContent ?? '') === 'AI');
+  if (item == null) return false;
+  item.click();
+  return true;
+});
+const aiColumnShown = await waitFor(
+  async () => page.evaluate(() => [...document.querySelectorAll('.sc-dbhead__cell')].some((el) => (el.textContent ?? '').includes('ai'))),
+  8_000,
+);
+check('AI属性：「新属性」菜单加 AI 列（propAdd ai 全链路）', aiItemClicked && aiColumnShown);
+
+// 配 prompt（列头菜单「编辑生成指令」，T18-04 新入口）
+await page.evaluate(() => {
+  const chip = document.querySelector('button[aria-label="属性管理：AI"]');
+  chip?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+});
+const promptPanelOpened = await waitFor(async () => page.evaluate(() => {
+  const item = [...document.querySelectorAll('[role="menuitem"]')].find((el) => (el.textContent ?? '') === '编辑生成指令');
+  if (item == null) return false;
+  item.click();
+  return true;
+}), 5_000);
+const promptSet = await page.evaluate(() => {
+  const area = document.querySelector('textarea[aria-label="生成指令"]');
+  if (area == null) return false;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+  setter.call(area, '用一句话概括本行内容');
+  area.dispatchEvent(new Event('input', { bubbles: true }));
+  area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  return true;
+});
+check('AI属性：编辑生成指令面板提交（propUpdate ai.prompt）', promptPanelOpened && promptSet);
+
+// 单行生成（真机层给长超时）
+const genClicked = await page.evaluate(() => {
+  const button = document.querySelector('button[aria-label="AI 生成"]');
+  if (button == null) return false;
+  button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  return true;
+});
+const aiCellText = await waitFor(
+  async () => page.evaluate(() => {
+    const cell = document.querySelector('.sc-dbrow .sc-dbc[data-type="ai"] .sc-dbc-text');
+    const text = cell?.textContent ?? '';
+    return text.length > 0 ? text : false;
+  }),
+  REAL ? 120_000 : 30_000,
+  500,
+);
+check('AI属性：单行生成 → 单元格出现模型结果',
+  genClicked && typeof aiCellText === 'string' && aiCellText.length > 0 && (REAL ? true : String(aiCellText) === MOCK_TEXT),
+  `clicked=${String(genClicked)} cell=${String(aiCellText).slice(0, 60)}`);
+
+// 持久化读回（IPC 直读，不经 UI）
+const persisted = await page.evaluate(async () => {
+  const ws = await window.septcats.workspaces.list();
+  const hits = await window.septcats.search.query({ workspaceId: ws.activeId, query: '暗物质' });
+  const hit = (hits.hits ?? []).find((h) => h.kind === 'collection');
+  if (hit === undefined) return null;
+  const { collection, records } = await window.septcats.db.load({ pageId: hit.pageId });
+  const aiPid = Object.keys(collection.schema.properties).find((pid) => collection.schema.properties[pid].type === 'ai');
+  return {
+    aiPid: aiPid ?? null,
+    prompt: aiPid === null ? null : collection.schema.properties[aiPid]?.ai?.prompt ?? null,
+    value: records.length > 0 && aiPid !== null ? records[0].values[aiPid] ?? null : null,
+  };
+});
+check('AI属性：ai.prompt 持久化（schema 读回）', typeof persisted === 'object' && persisted !== null && persisted.prompt === '用一句话概括本行内容', JSON.stringify(persisted).slice(0, 140));
+check('AI属性：生成值落库（record.values[aiPid] 非空）', typeof persisted === 'object' && persisted !== null && typeof persisted.value === 'string' && persisted.value.length > 0, String(persisted?.value ?? '').slice(0, 60));
 
 check('pageerror 计数 0', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));
 

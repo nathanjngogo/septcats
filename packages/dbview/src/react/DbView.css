@@ -391,6 +391,46 @@
   color: var(--sc-color-ink-faint);
 }
 
+/* AI 列：单元格内「AI 生成」按钮（TASK-T18-04）+ 指令面板提示 */
+.sc-dbc-aibtn {
+  display: grid;
+  place-items: center;
+  width: var(--sc-space-xl);
+  height: var(--sc-space-xl);
+  margin-left: auto;
+  flex-shrink: 0;
+  border-radius: var(--sc-radius-full);
+  color: var(--sc-color-accent);
+  opacity: 0;
+}
+
+.sc-dbc:hover .sc-dbc-aibtn,
+.sc-dbc-aibtn:focus-visible,
+.sc-dbc-aibtn[aria-busy='true'] {
+  opacity: 1;
+}
+
+.sc-dbc-aibtn:hover {
+  background: var(--sc-color-accent-soft);
+}
+
+.sc-dbc-aibtn:disabled {
+  color: var(--sc-color-ink-faint);
+  cursor: default;
+}
+
+.sc-propbar__prompt {
+  height: auto;
+  padding: var(--sc-space-xs);
+  resize: vertical;
+}
+
+.sc-propbar__prompt-hint {
+  margin: var(--sc-space-xxs) 0 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
 .sc-dbc-check {
   display: grid;
   place-items: center;

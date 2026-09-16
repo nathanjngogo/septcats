@@ -20,7 +20,11 @@ import { z } from 'zod';
 // 属性类型
 // ---------------------------------------------------------------------------
 
-/** 属性类型白名单。`email` 是 `text` 的语义细分；`file` 一期只显示文件名。 */
+/**
+ * 属性类型白名单。`email` 是 `text` 的语义细分；`file` 一期只显示文件名；
+ * `ai` 是手动触发的模型生成列（TASK-T18-04 §2.1）：值 = 纯字符串（与 `text`
+ * 同构，复用 text 的值路径/CSV/聚合/同步投影），生成元数据不写入值。
+ */
 export const FIELD_TYPES = [
   'text',
   'number',
@@ -32,6 +36,7 @@ export const FIELD_TYPES = [
   'email',
   'relation',
   'file',
+  'ai',
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
@@ -41,7 +46,7 @@ export function isFieldType(value: string): value is FieldType {
   return FIELD_TYPE_SET.has(value);
 }
 
-/** 新属性菜单里的 8 种（`email`/`file` 从该菜单收起，避免一屏 10 项）。 */
+/** 新属性菜单里的 9 种（`email`/`file` 从该菜单收起，避免一屏过挤；TASK-T18-04 增 `ai`）。 */
 export const NEW_PROPERTY_TYPES = [
   'text',
   'number',
@@ -51,6 +56,7 @@ export const NEW_PROPERTY_TYPES = [
   'checkbox',
   'url',
   'relation',
+  'ai',
 ] as const satisfies readonly FieldType[];
 
 // ---------------------------------------------------------------------------
@@ -105,6 +111,8 @@ export const propertySchema = z.object({
   type: z.enum(FIELD_TYPES),
   options: z.array(propertyOptionSchema).optional(),
   format: z.string().optional(),
+  /** 仅 `ai` 列使用：生成指令（system 提示）。可选 = 旧数据/旧 op 零迁移（TASK-T18-04 §0.1）。 */
+  ai: z.object({ prompt: z.string() }).optional(),
 });
 export type Property = z.infer<typeof propertySchema>;
 
@@ -250,6 +258,8 @@ export const VALUE_SCHEMA_BY_TYPE: Readonly<Record<FieldType, z.ZodType>> = {
   email: textValue,
   relation: relationValue,
   file: fileValue,
+  // ai 列的值 = 纯字符串（与 text 同构；TASK-T18-04 §0.2）
+  ai: textValue,
 };
 
 /** 单条记录的值表：`{pid: 值}`；缺键即空值。 */

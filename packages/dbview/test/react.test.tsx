@@ -323,13 +323,13 @@ describe('PropBar', () => {
     onExportCsv: NOOP,
   };
 
-  it('「新属性」菜单 8 种类型；选中回调带 FieldType', () => {
+  it('「新属性」菜单 9 种类型（T18-04 增 AI）；选中回调带 FieldType', () => {
     const onAddProperty = vi.fn();
     render(<PropBar {...baseProps} filter={emptyFilter()} sort={[]} onAddProperty={onAddProperty} />);
     fireEvent.click(screen.getByRole('button', { name: /新属性/ }));
     const menu = screen.getByRole('menu', { name: '新属性类型' });
     const items = within(menu).getAllByRole('menuitem');
-    expect(items).toHaveLength(8);
+    expect(items).toHaveLength(9);
     expect(items.map((item) => item.textContent)).toEqual([
       '文本',
       '数字',
@@ -339,6 +339,7 @@ describe('PropBar', () => {
       '勾选',
       '链接',
       '关联',
+      'AI',
     ]);
     fireEvent.click(within(menu).getByRole('menuitem', { name: '日期' }));
     expect(onAddProperty).toHaveBeenCalledWith('date');
@@ -451,5 +452,191 @@ describe('DbView', () => {
     expect(screen.getByRole('alert')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: '重试' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AI 属性列（TASK-T18-04 追加，不改既有断言）
+// ---------------------------------------------------------------------------
+
+const P_AI = propertySchema.parse({ id: 'p_ai', name: '摘要', type: 'ai', ai: { prompt: '用一句话概括本行' } });
+const AI_SCHEMA = collectionSchemaSchema.parse({
+  properties: { p_title: P_TITLE, p_ai: P_AI },
+  title_pid: 'p_title',
+});
+const AI_COLLECTION = collectionEntitySchema.parse({
+  ...COLLECTION,
+  id: 'col-ai',
+  name: 'AI 库',
+  schema: AI_SCHEMA,
+});
+const AI_RECORDS = [makeRecord('rec-a', { p_title: '哥德尔、艾舍尔、巴赫' }, 'A1')];
+
+describe('AI 列 · CellEditor（T18-04）', () => {
+  it('ai 单元格：文本展示 + 「AI 生成」按钮（回调被调）；busy 时禁用', () => {
+    const onAiGenerate = vi.fn();
+    const { container, rerender } = render(
+      <CellEditor
+        property={P_AI}
+        value="已生成的摘要"
+        onCommit={NOOP}
+        editing={false}
+        onBeginEdit={NOOP}
+        onEndEdit={NOOP}
+        onAiGenerate={onAiGenerate}
+      />,
+    );
+    expect(screen.getByText('已生成的摘要')).toBeDefined();
+    const button = screen.getByRole('button', { name: 'AI 生成' });
+    fireEvent.click(button);
+    expect(onAiGenerate).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <CellEditor
+        property={P_AI}
+        value="已生成的摘要"
+        onCommit={NOOP}
+        editing={false}
+        onBeginEdit={NOOP}
+        onEndEdit={NOOP}
+        onAiGenerate={onAiGenerate}
+        aiBusy
+      />,
+    );
+    expect((screen.getByRole('button', { name: 'AI 生成' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(container.querySelector('.sc-spinner')).not.toBeNull();
+  });
+
+  it('ai 单元格：未提供 onAiGenerate → 按钮不渲染（库侧保持纯净）；编辑态复用文本输入器', () => {
+    const onCommit = vi.fn();
+    const { container } = render(
+      <CellEditor
+        property={P_AI}
+        value={null}
+        onCommit={onCommit}
+        editing={false}
+        onBeginEdit={NOOP}
+        onEndEdit={NOOP}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'AI 生成' })).toBeNull();
+
+    // 手工编辑与 text 一致（TASK-T18-04 §0.5）：编辑态由父级受控
+    const { container: editingContainer } = render(
+      <CellEditor
+        property={P_AI}
+        value=""
+        onCommit={onCommit}
+        editing
+        onBeginEdit={NOOP}
+        onEndEdit={NOOP}
+      />,
+    );
+    const input = editingContainer.querySelector('.sc-dbc-input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    fireEvent.change(input, { target: { value: '手工填的值' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledWith('手工填的值');
+    void container;
+  });
+});
+
+describe('AI 列 · PropBar（T18-04）', () => {
+  const aiProps = {
+    schema: AI_SCHEMA,
+    views: [defaultView('v1', '表格')],
+    activeVid: 'v1',
+    onSwitchView: NOOP,
+    onChangeFilter: NOOP,
+    onChangeSort: NOOP,
+    onAddProperty: NOOP,
+    onCreateRecord: NOOP,
+    onExportCsv: NOOP,
+  };
+
+  it('ai 列的属性菜单出现「批量生成」与「编辑生成指令」；回调被调', () => {
+    const onAiBatchGenerate = vi.fn();
+    const onUpdateAiPrompt = vi.fn();
+    render(
+      <PropBar
+        {...aiProps}
+        filter={emptyFilter()}
+        sort={[]}
+        onAiBatchGenerate={onAiBatchGenerate}
+        onUpdateAiPrompt={onUpdateAiPrompt}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '属性管理：摘要' }));
+    const menu = screen.getByRole('menu', { name: '属性管理' });
+    fireEvent.click(within(menu).getByRole('menuitem', { name: '批量生成' }));
+    expect(onAiBatchGenerate).toHaveBeenCalledWith('p_ai');
+
+    fireEvent.click(screen.getByRole('button', { name: '属性管理：摘要' }));
+    fireEvent.click(
+      within(screen.getByRole('menu', { name: '属性管理' })).getByRole('menuitem', { name: '编辑生成指令' }),
+    );
+    const textarea = screen.getByLabelText('生成指令') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('用一句话概括本行');
+    fireEvent.change(textarea, { target: { value: '改成新指令' } });
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+    expect(onUpdateAiPrompt).toHaveBeenCalledWith('p_ai', '改成新指令');
+  });
+
+  it('非 ai 列的属性菜单不含 AI 入口（text 列回归）', () => {
+    const onAiBatchGenerate = vi.fn();
+    render(<PropBar {...aiProps} filter={emptyFilter()} sort={[]} onAiBatchGenerate={onAiBatchGenerate} />);
+    fireEvent.click(screen.getByRole('button', { name: '属性管理：书名' }));
+    const menu = screen.getByRole('menu', { name: '属性管理' });
+    expect(within(menu).queryByRole('menuitem', { name: '批量生成' })).toBeNull();
+    expect(within(menu).queryByRole('menuitem', { name: '编辑生成指令' })).toBeNull();
+  });
+});
+
+describe('AI 列 · DbView 接线（T18-04）', () => {
+  const aiDbProps = {
+    collection: AI_COLLECTION,
+    records: AI_RECORDS,
+    status: 'ready' as const,
+    onCreateRecord: NOOP,
+    onDeleteRecords: NOOP,
+    onChangeValue: NOOP,
+    onRenameRecord: NOOP,
+    onAddProperty: NOOP,
+    onRemoveProperty: NOOP,
+    onRenameProperty: NOOP,
+    onSaveView: NOOP,
+    onExportCsv: NOOP,
+  };
+
+  it('透传 onAiGenerate：单元格按钮触发回调（pid + recordId）', async () => {
+    const onAiGenerate = vi.fn().mockResolvedValue(undefined);
+    render(<DbView {...aiDbProps} onAiGenerate={onAiGenerate} />);
+    fireEvent.click(screen.getByRole('button', { name: 'AI 生成' }));
+    await Promise.resolve();
+    expect(onAiGenerate).toHaveBeenCalledWith('p_ai', 'rec-a');
+  });
+
+  it('批量：onAiBatchGenerate 收到当前视图前 ≤20 行的 id（25 行只给 20）', async () => {
+    const many = Array.from({ length: 25 }, (_v, i) =>
+      makeRecord(`rec-${String(i)}`, { p_title: `书 ${String(i)}` }, `A${String(i).padStart(2, '0')}`),
+    );
+    const onAiBatchGenerate = vi.fn().mockResolvedValue({ done: 0, failed: 0 });
+    render(<DbView {...aiDbProps} records={many} onAiBatchGenerate={onAiBatchGenerate} />);
+    fireEvent.click(screen.getByRole('button', { name: '属性管理：摘要' }));
+    fireEvent.click(within(screen.getByRole('menu', { name: '属性管理' })).getByRole('menuitem', { name: '批量生成' }));
+    await Promise.resolve();
+    expect(onAiBatchGenerate).toHaveBeenCalledTimes(1);
+    const [, ids] = onAiBatchGenerate.mock.calls[0] as [string, string[]];
+    expect(ids).toHaveLength(20);
+    expect(ids[0]).toBe('rec-0');
+    expect(ids[19]).toBe('rec-19');
+  });
+
+  it('未提供 AI 回调：按钮与菜单入口都不渲染', () => {
+    const { container } = render(<DbView {...aiDbProps} />);
+    expect(screen.queryByRole('button', { name: 'AI 生成' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '属性管理：摘要' }));
+    expect(within(screen.getByRole('menu', { name: '属性管理' })).queryByRole('menuitem', { name: '批量生成' })).toBeNull();
+    expect(container.querySelector('.sc-dbc-aibtn')).toBeNull();
   });
 });

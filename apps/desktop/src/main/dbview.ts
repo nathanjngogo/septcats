@@ -107,7 +107,7 @@ export interface DbViewService {
   updateProperty(input: {
     pageId: string;
     pid: string;
-    patch: { name?: string; type?: FieldType };
+    patch: { name?: string; type?: FieldType; ai?: { prompt: string } };
   }): Promise<{ collection: CollectionEntity }>;
   removeProperty(input: { pageId: string; pid: string }): Promise<{ collection: CollectionEntity }>;
   saveView(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
@@ -282,6 +282,7 @@ const PROPERTY_DEFAULT_NAME: Readonly<Record<FieldType, string>> = {
   email: '邮箱',
   relation: '关联',
   file: '文件',
+  ai: 'AI',
 };
 
 /** 关系候选上限（§1：≤50 条）。 */
@@ -694,7 +695,7 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       if (property === undefined) {
         throw new DbViewApiError('E_NOT_FOUND', `属性不存在：${input.pid}`);
       }
-      // 一期只允许 rename；type 变更需值迁移 → E_UNSUPPORTED（写死在任务书 §1）
+      // 一期只允许 rename + ai.prompt；type 变更需值迁移 → E_UNSUPPORTED（写死在任务书 §1）
       if (input.patch.type !== undefined && input.patch.type !== property.type) {
         throw new DbViewApiError('E_UNSUPPORTED', '属性类型变更一期不支持（需值迁移）');
       }
@@ -702,6 +703,8 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       const nextProperty = {
         ...property,
         name: input.patch.name ?? property.name,
+        // ai 生成指令：仅在显式传入时覆盖（TASK-T18-04 §0.1；空串 = 清除配置回落默认指令）
+        ai: input.patch.ai ?? property.ai,
       };
       const nextSchema: CollectionSchema = {
         properties: { ...schema.properties, [input.pid]: nextProperty },
@@ -832,7 +835,7 @@ const DB_INPUT_SCHEMAS = {
   [CHANNEL_DB_PROP_UPDATE]: z.object({
     pageId: zId,
     pid: zId,
-    patch: z.object({ name: z.string().optional(), type: z.string().min(1).optional() }),
+    patch: z.object({ name: z.string().optional(), type: z.string().min(1).optional(), ai: z.object({ prompt: z.string() }).optional() }),
   }),
   [CHANNEL_DB_PROP_REMOVE]: z.object({ pageId: zId, pid: zId }),
   [CHANNEL_DB_VIEW_SAVE]: z.object({ pageId: zId, view: z.unknown() }),
@@ -855,6 +858,7 @@ const FIELD_TYPE_SET: ReadonlySet<string> = new Set<string>([
   'email',
   'relation',
   'file',
+  'ai',
 ]);
 
 function asFieldType(value: string): FieldType {
@@ -977,13 +981,16 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
 
   on(CHANNEL_DB_PROP_UPDATE, DB_INPUT_SCHEMAS[CHANNEL_DB_PROP_UPDATE], (svc, data) => {
     const input = asRecord(data);
-    const patch = input['patch'] as { name?: string; type?: string };
-    const typed: { name?: string; type?: FieldType } = {};
+    const patch = input['patch'] as { name?: string; type?: string; ai?: { prompt: string } };
+    const typed: { name?: string; type?: FieldType; ai?: { prompt: string } } = {};
     if (patch.name !== undefined) {
       typed.name = patch.name;
     }
     if (patch.type !== undefined) {
       typed.type = asFieldType(patch.type);
+    }
+    if (patch.ai !== undefined) {
+      typed.ai = { prompt: String(patch.ai.prompt) };
     }
     return svc.updateProperty({ pageId: String(input['pageId']), pid: String(input['pid']), patch: typed });
   });

@@ -52,6 +52,7 @@ const FIELD_TYPE_LABEL: Readonly<Record<FieldType, string>> = {
   email: '邮箱',
   relation: '关联',
   file: '文件',
+  ai: 'AI',
 };
 
 /** 各类型可选算子（与 view.matchesClause 的实现一一对应）。 */
@@ -66,6 +67,8 @@ export const FILTER_KINDS_BY_TYPE: Readonly<Record<FieldType, readonly FilterKin
   multi_select: ['contains', 'is_empty'],
   relation: ['contains', 'is_empty'],
   file: ['contains', 'is_empty'],
+  // ai 值 = 字符串，筛选语义与 text 同路（TASK-T18-04 §0.2）
+  ai: ['eq', 'neq', 'contains', 'is_empty'],
 };
 
 export interface PropBarProps {
@@ -82,6 +85,10 @@ export interface PropBarProps {
   /** 属性表头下拉的「重命名/删除」在 DbView 的属性管理区触发；工具条只负责新属性。 */
   onRemoveProperty?: ((pid: string) => void) | undefined;
   onRenameProperty?: ((pid: string, name: string) => void) | undefined;
+  /** AI 列「批量生成」入口（仅 ai 列渲染；目标行集由 DbView 按当前视图计算）。 */
+  onAiBatchGenerate?: ((pid: string) => void) | undefined;
+  /** AI 列「编辑生成指令」提交（仅 ai 列渲染；空串 = 清除配置回落默认指令）。 */
+  onUpdateAiPrompt?: ((pid: string, prompt: string) => void) | undefined;
   onCreateRecord: () => void;
   onExportCsv: () => void;
 }
@@ -154,6 +161,8 @@ function filterChipText(schema: CollectionSchema, clause: FilterClause): string 
 const PROP_MENU_PREFIX = 'propmenu:';
 const REMOVE_PROP_PREFIX = 'propmenu-remove:';
 const RENAME_PROP_PREFIX = 'propmenu-rename:';
+const AI_BATCH_PROP_PREFIX = 'propmenu-ai-batch:';
+const AI_PROMPT_PROP_PREFIX = 'propmenu-ai-prompt:';
 
 export function PropBar({
   schema,
@@ -167,6 +176,8 @@ export function PropBar({
   onAddProperty,
   onRemoveProperty,
   onRenameProperty,
+  onAiBatchGenerate,
+  onUpdateAiPrompt,
   onCreateRecord,
   onExportCsv,
 }: PropBarProps) {
@@ -177,6 +188,8 @@ export function PropBar({
   const [propManagePid, setPropManagePid] = useState<string | null>(null);
   const [renamePid, setRenamePid] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [promptPid, setPromptPid] = useState<string | null>(null);
+  const [promptDraft, setPromptDraft] = useState('');
 
   const properties = Object.values(schema.properties);
   const chips = flattenClauses(filter);
@@ -428,6 +441,12 @@ export function PropBar({
                 <Menu
                   items={[
                     { id: `${RENAME_PROP_PREFIX}${property.id}`, label: '重命名属性' },
+                    ...(property.type === 'ai' && onAiBatchGenerate !== undefined
+                      ? [{ id: `${AI_BATCH_PROP_PREFIX}${property.id}`, label: '批量生成' }]
+                      : []),
+                    ...(property.type === 'ai' && onUpdateAiPrompt !== undefined
+                      ? [{ id: `${AI_PROMPT_PROP_PREFIX}${property.id}`, label: '编辑生成指令' }]
+                      : []),
                     {
                       id: `${REMOVE_PROP_PREFIX}${property.id}`,
                       label: '删除属性',
@@ -441,6 +460,16 @@ export function PropBar({
                     if (id.startsWith(RENAME_PROP_PREFIX)) {
                       setRenamePid(property.id);
                       setRenameDraft(property.name);
+                      return;
+                    }
+                    if (id.startsWith(AI_BATCH_PROP_PREFIX)) {
+                      // 目标行集（当前视图前 ≤20 行）由 DbView 计算；PropBar 只上报 pid
+                      onAiBatchGenerate?.(property.id);
+                      return;
+                    }
+                    if (id.startsWith(AI_PROMPT_PROP_PREFIX)) {
+                      setPromptPid(property.id);
+                      setPromptDraft(property.ai?.prompt ?? '');
                       return;
                     }
                     if (id.startsWith(REMOVE_PROP_PREFIX)) {
@@ -481,6 +510,33 @@ export function PropBar({
               setRenamePid(null);
             }}
           />
+        </div>
+      )}
+
+      {promptPid === null ? null : (
+        <div className="sc-propbar__rename">
+          <textarea
+            autoFocus
+            className="sc-dbc-input sc-propbar__prompt"
+            value={promptDraft}
+            rows={3}
+            aria-label="生成指令"
+            placeholder="例如：用一句话概括本行内容"
+            onChange={(event) => {
+              setPromptDraft(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                onUpdateAiPrompt?.(promptPid, promptDraft);
+                setPromptPid(null);
+              }
+              if (event.key === 'Escape') {
+                setPromptPid(null);
+              }
+            }}
+          />
+          <p className="sc-propbar__prompt-hint">Enter 保存 · 留空则使用默认指令</p>
         </div>
       )}
 

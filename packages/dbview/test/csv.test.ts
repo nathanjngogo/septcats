@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { BOM, CsvError, escapeCsvField, looksLikeHeader, parseCsv, toCsv } from '../src/csv';
+import { formatValue } from '../src/values';
 
 describe('parseCsv', () => {
   it('引号内逗号不切列', () => {
@@ -94,5 +95,25 @@ describe('looksLikeHeader', () => {
     expect(looksLikeHeader(['a', 'a'])).toBe(false);
     expect(looksLikeHeader(['a', ''])).toBe(false);
     expect(looksLikeHeader([])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AI 属性列（TASK-T18-04 追加，不改既有断言）：CSV 导出不因新类型报错
+// ---------------------------------------------------------------------------
+
+describe('ai 列 CSV 导出（TASK-T18-04）', () => {
+  it('ai 值按 text 同路序列化：普通值原样、含逗号/换行加引号', () => {
+    const aiProperty = { id: 'p_ai', name: '摘要', type: 'ai' as const, ai: { prompt: '概括' } };
+    const rows = [
+      ['书名', '摘要'],
+      ['哥德尔', '一句话概括：奇书'],            // ai 列普通字符串
+      ['时间简史', escapeCsvField(formatValue(aiProperty, '要点一, 要点二'))], // formatValue → toCsv 组合
+    ];
+    const csv = toCsv(rows);
+    expect(csv).toContain('一句话概括：奇书');
+    expect(csv).toContain('"要点一, 要点二"');
+    // 序列化 → 解析往返不丢内容（新类型不炸）
+    expect(parseCsv(csv)).toEqual(rows);
   });
 });

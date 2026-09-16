@@ -44,7 +44,7 @@ const SCHEMA = collectionSchemaSchema.parse({
 });
 
 describe('属性类型白名单', () => {
-  it('白名单含 schema-v1 §4 全部值形态；新属性菜单为 8 种', () => {
+  it('白名单含 schema-v1 §4 全部值形态 + ai（T18-04）；新属性菜单 9 种', () => {
     expect([...FIELD_TYPES]).toEqual([
       'text',
       'number',
@@ -56,11 +56,14 @@ describe('属性类型白名单', () => {
       'email',
       'relation',
       'file',
+      'ai',
     ]);
-    expect([...NEW_PROPERTY_TYPES]).toHaveLength(8);
+    expect([...NEW_PROPERTY_TYPES]).toHaveLength(9);
     expect(NEW_PROPERTY_TYPES).not.toContain('file');
     expect(NEW_PROPERTY_TYPES).not.toContain('email');
+    expect(NEW_PROPERTY_TYPES).toContain('ai'); // T18-04：属性菜单可见
     expect(isFieldType('relation')).toBe(true);
+    expect(isFieldType('ai')).toBe(true);
     expect(isFieldType('callout')).toBe(false);
   });
 
@@ -193,6 +196,7 @@ describe('值类型白名单与 schema-v1 §4 的对应', () => {
     email: 'string',
     relation: '目标 record id[]',
     file: '文件名[]',
+    ai: 'string（T18-04：模型生成列）',
   };
 
   it('每个类型的取值范本都通过自身 schema', () => {
@@ -207,10 +211,38 @@ describe('值类型白名单与 schema-v1 §4 的对应', () => {
       email: 'a@b.co',
       relation: ['rec-1'],
       file: ['a.pdf'],
+      ai: '用一句话概括：这是一本讲认知科学的书。',
     };
     for (const type of FIELD_TYPES) {
       expect(EXPECTED[type], type).toBeDefined();
       expect(coerceValue(type, samples[type]), type).toEqual(samples[type]);
     }
+  });
+});
+
+describe('AI 属性列（TASK-T18-04 追加，不改既有断言）', () => {
+  it('propertySchema 接受 ai 列与可选 ai.prompt 配置；旧形状（无 ai 键）零迁移', () => {
+    const withPrompt = propertySchema.parse({ id: 'p_ai', name: '摘要', type: 'ai', ai: { prompt: '用一句话概括本行' } });
+    expect(withPrompt.type).toBe('ai');
+    expect(withPrompt.ai).toEqual({ prompt: '用一句话概括本行' });
+    // 无 ai 配置 = 合法（可选键），生成回落默认指令
+    const bare = propertySchema.parse({ id: 'p_ai2', name: '摘要', type: 'ai' });
+    expect(bare.ai).toBeUndefined();
+    // 旧数据里的 text 列带 ai 键也能保序往返（extra 键剥除由 zod 完成）
+    expect(propertySchema.safeParse({ id: 'x', name: 'x', type: 'text', ai: { prompt: 'p' } }).success).toBe(true);
+  });
+
+  it('未知类型仍被 zod 拒（ai 之外不放行，如 claude）', () => {
+    expect(propertySchema.safeParse({ id: 'x', name: 'x', type: 'claude' }).success).toBe(false);
+    expect(propertySchema.safeParse({ id: 'x', name: 'x', type: 'ai', ai: { prompt: 123 } }).success).toBe(false);
+  });
+
+  it('ai 值 = 纯字符串（与 text 同路）：isValidValue / coerceValue', () => {
+    expect(isValidValue('ai', '生成的文本')).toBe(true);
+    expect(isValidValue('ai', 42)).toBe(false);
+    expect(isValidValue('ai', { text: '对象形态拒绝' })).toBe(false);
+    expect(isValidValue('ai', null)).toBe(true);
+    expect(coerceValue('ai', '摘要')).toBe('摘要');
+    expect(coerceValue('ai', undefined)).toBeNull();
   });
 });

@@ -52,6 +52,8 @@ export interface UseDbPage {
   addProperty(type: FieldType): Promise<void>;
   removeProperty(pid: string): Promise<void>;
   renameProperty(pid: string, name: string): Promise<void>;
+  /** AI 列生成指令提交（空串 = 清除配置回落默认指令；TASK-T18-04 §2.2）。 */
+  updatePropertyPrompt(pid: string, prompt: string): Promise<void>;
   saveView(view: DbView): Promise<void>;
   renameCollection(title: string): Promise<void>;
   /** 返回 CSV 文本（由调用方决定下载/复制）。 */
@@ -141,6 +143,15 @@ export function useDbPage(pageId: string): UseDbPage {
     [pageId, reload],
   );
 
+  const updatePropertyPrompt = useCallback(
+    async (pid: string, prompt: string): Promise<void> => {
+      // PM 收口：window.d.ts 的 propUpdate.patch 已声明 ai 键，原最小断言已移除。
+      await dbApi().propUpdate({ pageId, pid, patch: { ai: { prompt } } });
+      reload();
+    },
+    [pageId, reload],
+  );
+
   const saveView = useCallback(
     async (view: DbView): Promise<void> => {
       await dbApi().viewSave({ pageId, view });
@@ -174,6 +185,7 @@ export function useDbPage(pageId: string): UseDbPage {
     addProperty,
     removeProperty,
     renameProperty,
+    updatePropertyPrompt,
     saveView,
     renameCollection,
     exportCsv,

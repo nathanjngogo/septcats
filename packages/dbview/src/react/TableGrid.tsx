@@ -74,6 +74,10 @@ export interface TableGridProps {
   onBeginEdit?: ((rowIndex: number, prop: string) => void) | undefined;
   onEndEdit?: (() => void) | undefined;
   onReorderRecord?: ((fromId: string, toId: string) => void) | undefined;
+  /** AI 列：生成中的记录 id 集合（该行按钮禁用 + spinner）。 */
+  aiBusyRecordIds?: ReadonlySet<string> | undefined;
+  /** AI 列：单行生成（未提供则单元格按钮不渲染）。 */
+  onAiGenerateCell?: ((recordId: string, pid: string) => void) | undefined;
 }
 
 function colWidthOf(widths: Readonly<Record<string, number>>, pid: string): number {
@@ -256,6 +260,8 @@ export function TableGrid(props: TableGridProps) {
     onBeginEdit,
     onEndEdit,
     onReorderRecord,
+    aiBusyRecordIds,
+    onAiGenerateCell,
   } = props;
 
   const properties = useMemo(() => propertyList(schema), [schema]);
@@ -550,6 +556,14 @@ export function TableGrid(props: TableGridProps) {
                             onEndEdit={() => {
                               onEndEdit?.();
                             }}
+                            aiBusy={property.type === 'ai' && aiBusyRecordIds !== undefined ? aiBusyRecordIds.has(row.id) : false}
+                            onAiGenerate={
+                              property.type === 'ai' && onAiGenerateCell !== undefined
+                                ? () => {
+                                    onAiGenerateCell(row.id, property.id);
+                                  }
+                                : undefined
+                            }
                           />
                         )}
                       </div>

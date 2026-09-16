@@ -183,6 +183,7 @@ export function formatValue(
     case 'text':
     case 'url':
     case 'email':
+    case 'ai': // ai 列值 = 纯字符串，显示与 text 同路（TASK-T18-04 §0.2）
       return truncate(String(value));
     case 'number': {
       if (typeof value !== 'number' || !Number.isFinite(value)) {

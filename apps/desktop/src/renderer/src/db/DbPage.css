@@ -15,3 +15,20 @@
   max-width: var(--sc-space-editor-measure);
   margin: 0 auto var(--sc-space-md);
 }
+
+/* AI 属性（TASK-T18-04）：行内引导 / 确认弹窗正文（token-only） */
+.dbpage__ai-notice {
+  margin: 0 0 var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-accent-soft);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.dbpage__ai-dialog-body {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}

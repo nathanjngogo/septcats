@@ -15,10 +15,15 @@
  * 键盘：Enter 提交、Esc 取消由本组件在**编辑态**内处理（并 `stopPropagation`，
  * 避免 TableGrid 的方向键导航抢事件）；未进入编辑态时按键交给 TableGrid。
  *
- * 纪律：本文件只 import react + `../types`/`../values`，不 import core，无 IO。
+ * `ai` 列（TASK-T18-04 §2.2）：值 = 纯字符串，非编辑态 = 文本展示 + 「AI 生成」按钮
+ * （`onAiGenerate` 未提供则按钮不渲染，库侧保持纯净）；编辑态复用 text 输入器
+ * （手工编辑与 text 一致）。
+ *
+ * 纪律：本文件只 import react + @septcats/ui 图标/Spinner + `../types`/`../values`，无 IO。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { Icon, Sparkle, Spinner } from '@septcats/ui';
 import { type FieldType, type Property, type PropertyOption } from '../types';
 import { EMPTY_DISPLAY, formatDate, formatValue, parseDateText } from '../values';
 
@@ -53,6 +58,10 @@ export interface CellEditorProps extends CellDisplayDeps {
   onEndEdit: () => void;
   /** 关系候选为空等情况下禁用编辑（仍可选中单元格）。 */
   disabled?: boolean | undefined;
+  /** AI 列：该行是否生成中（busy 态 → 按钮禁用 + spinner）。 */
+  aiBusy?: boolean | undefined;
+  /** AI 列：单行生成回调；未提供则「AI 生成」按钮不渲染。 */
+  onAiGenerate?: (() => void) | undefined;
 }
 
 function optionTone(option: PropertyOption): 'neutral' | 'amber' | 'red' {
@@ -428,6 +437,8 @@ export function CellEditor({
   relationTitle,
   onClickRelation,
   disabled = false,
+  aiBusy = false,
+  onAiGenerate,
 }: CellEditorProps) {
   const type: FieldType = property.type;
 
@@ -485,7 +496,7 @@ export function CellEditor({
           : String(value);
 
   const showDisplay =
-    !editing || (type !== 'text' && type !== 'number' && type !== 'url' && type !== 'email' && type !== 'date' && type !== 'select' && type !== 'multi_select' && type !== 'relation');
+    !editing || (type !== 'text' && type !== 'number' && type !== 'url' && type !== 'email' && type !== 'date' && type !== 'select' && type !== 'multi_select' && type !== 'relation' && type !== 'ai');
 
   return (
     <div
@@ -503,9 +514,9 @@ export function CellEditor({
       }}
       role="presentation"
     >
-      {editing && (type === 'text' || type === 'number' || type === 'url' || type === 'email' || type === 'date') ? (
+      {editing && (type === 'text' || type === 'number' || type === 'url' || type === 'email' || type === 'date' || type === 'ai') ? (
         <PlainEditor
-          type={type}
+          type={type === 'ai' ? 'text' : type}
           initial={initialText}
           onCommit={(next) => {
             onCommit(next);
@@ -549,6 +560,22 @@ export function CellEditor({
           relationTitle={relationTitle ?? (() => null)}
           onClickRelation={onClickRelation}
         />
+      ) : null}
+
+      {type === 'ai' && !editing && onAiGenerate !== undefined ? (
+        <button
+          type="button"
+          className="sc-dbc-aibtn"
+          aria-label="AI 生成"
+          aria-busy={aiBusy ? 'true' : undefined}
+          disabled={aiBusy}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAiGenerate();
+          }}
+        >
+          {aiBusy ? <Spinner size="sm" label="AI 生成中" /> : <Icon icon={Sparkle} size="sm" />}
+        </button>
       ) : null}
     </div>
   );

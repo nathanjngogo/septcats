@@ -208,6 +208,25 @@ export const zhCN = {
     emptyText: '选中文本或把光标放进有内容的块后再试',
     applied: '已应用到编辑器',
   },
+  db: {
+    ai: {
+      typeLabel: 'AI',
+      generate: 'AI 生成',
+      generating: '生成中…',
+      batch: '批量生成',
+      batchConfirmTitle: '批量生成',
+      batchConfirmBody: '将对当前视图前 {n} 条记录调用模型（每条约 1 次请求）。继续？',
+      batchConfirm: '开始生成',
+      batchResult: '完成 {done} 条，失败 {failed} 条',
+      needEnable: 'AI 未启用（设置 → AI 助手）',
+      needProvider: '未配置模型服务（设置 → AI 助手）',
+      needPrompt: '请先为该列填写生成指令',
+      promptLabel: '生成指令',
+      promptPlaceholder: '例如：用一句话概括本行内容',
+      defaultPrompt: '根据该记录各列的内容，用简洁的中文给出这一列的值；只输出结果本身。',
+      failed: '生成失败：{msg}',
+    },
+  },
   commands: {
     page: {
       new: '新建页面',

@@ -11,7 +11,7 @@
  * 交互状态（focusedCell/editingCell/selectedIds）**不落 Op**：它们是设备本地的
  * 瞬时视图状态，不进真相层（切页/重载即重置）。
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type CollectionEntity,
   type CollectionSchema,
@@ -49,6 +49,14 @@ export interface DbViewProps {
   onSaveView: (view: DbViewEntity) => void;
   onExportCsv: () => void;
   onOpenRelation?: ((recordId: string) => void) | undefined;
+  /** AI 列单行生成（受控回调：dbview 不 import electron、不直接调 window.septcats）。 */
+  onAiGenerate?: ((pid: string, recordId: string) => Promise<void>) | undefined;
+  /** AI 列批量生成（受控回调；recordIds = 当前视图前 ≤20 行，由本组件计算）。 */
+  onAiBatchGenerate?:
+    | ((pid: string, recordIds: readonly string[]) => Promise<{ done: number; failed: number }>)
+    | undefined;
+  /** AI 列生成指令提交（空串 = 清除配置，回落默认指令）。 */
+  onUpdateAiPrompt?: ((pid: string, prompt: string) => void) | undefined;
   /** 关系候选（目标 collection 的记录）；缺省时 relation 列只读。 */
   relationCandidates?: readonly RelationCandidate[] | undefined;
   /** 视口高度（px）；缺省 480。 */
@@ -72,6 +80,9 @@ export function DbView(props: DbViewProps) {
     onSaveView,
     onExportCsv,
     onOpenRelation,
+    onAiGenerate,
+    onAiBatchGenerate,
+    onUpdateAiPrompt,
     relationCandidates = [],
     viewportHeight = 480,
   } = props;
@@ -81,6 +92,9 @@ export function DbView(props: DbViewProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ rowIndex: number; prop: string } | null>(null);
   const [editingCell, setEditingCell] = useState<{ rowIndex: number; prop: string } | null>(null);
+  /** AI 生成中的记录 id 集合（设备本地瞬时态，不落 Op）。 */
+  const [aiBusyIds, setAiBusyIds] = useState<ReadonlySet<string>>(new Set());
+  const aiBusyRef = useRef<ReadonlySet<string>>(new Set());
 
   const activeView = collection.views.find((view) => view.vid === activeVid) ?? collection.views[0];
 
@@ -153,6 +167,38 @@ export function DbView(props: DbViewProps) {
     onCreateRecord({ pid: titleProperty.id, value: '未命名' });
   }, [onCreateRecord, schema]);
 
+  /** 单行 AI 生成包装：登记 busy（重复触发忽略），结束后解除。 */
+  const handleAiGenerate = useCallback(
+    (pid: string, recordId: string): void => {
+      if (onAiGenerate === undefined || aiBusyRef.current.has(recordId)) {
+        return;
+      }
+      const next = new Set(aiBusyRef.current);
+      next.add(recordId);
+      aiBusyRef.current = next;
+      setAiBusyIds(next);
+      onAiGenerate(pid, recordId).finally(() => {
+        const rest = new Set(aiBusyRef.current);
+        rest.delete(recordId);
+        aiBusyRef.current = rest;
+        setAiBusyIds(rest);
+      });
+    },
+    [onAiGenerate],
+  );
+
+  /** 批量生成入口：目标 = 当前视图前 ≤20 行（行集由本组件决定，调用方只拿 id）。 */
+  const handleAiBatchGenerate = useCallback(
+    (pid: string): void => {
+      if (onAiBatchGenerate === undefined) {
+        return;
+      }
+      const recordIds = visibleRows.slice(0, 20).map((row) => row.id);
+      void onAiBatchGenerate(pid, recordIds);
+    },
+    [onAiBatchGenerate, visibleRows],
+  );
+
   return (
     <div className="sc-db">
       <div className="sc-db__title-row">
@@ -182,6 +228,8 @@ export function DbView(props: DbViewProps) {
         onAddProperty={onAddProperty}
         onRemoveProperty={onRemoveProperty}
         onRenameProperty={onRenameProperty}
+        onAiBatchGenerate={onAiBatchGenerate === undefined ? undefined : handleAiBatchGenerate}
+        onUpdateAiPrompt={onUpdateAiPrompt}
         onCreateRecord={createRecord}
         onExportCsv={onExportCsv}
       />
@@ -232,6 +280,15 @@ export function DbView(props: DbViewProps) {
         onEndEdit={() => {
           setEditingCell(null);
         }}
+        aiBusyRecordIds={aiBusyIds}
+        onAiGenerateCell={
+          onAiGenerate === undefined
+            ? undefined
+            : (recordId, pid) => {
+                // TableGrid 给 (recordId, pid)，受控回调契约是 (pid, recordId)
+                handleAiGenerate(pid, recordId);
+              }
+        }
       />
 
       <Aggregations schema={schema} rows={visibleRows} />

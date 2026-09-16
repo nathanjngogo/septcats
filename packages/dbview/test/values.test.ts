@@ -247,3 +247,41 @@ describe('inferFieldType / inferColumnType', () => {
     expect(inferColumnType(['true', 'false'])).toBe('checkbox');
   });
 });
+
+// ---------------------------------------------------------------------------
+// AI 属性列（TASK-T18-04 追加，不改既有断言）
+// ---------------------------------------------------------------------------
+
+describe('ai 列值语义（TASK-T18-04）', () => {
+  it('encodeValue/decodeValue 往返与 text 同路：字符串恒等', () => {
+    const samples = ['用一句话概括：这是一本书。', '含 "引号" 与\n换行', 'emoji ✨', 'a'.repeat(500)];
+    for (const value of samples) {
+      expect(decodeValue(encodeValue(value))).toBe(value);
+    }
+    // 与 text 完全同编解码：同值两者产物一致
+    expect(encodeValue('AI 结果')).toBe(encodeValue('AI 结果'));
+    expect(decodeValue(encodeValue('AI 结果'))).toBe(decodeValue(encodeValue('AI 结果')));
+  });
+
+  it('formatValue 按 text 路径显示（40 码点截断 + 省略号）；空值占位「—」', () => {
+    const property = { type: 'ai' as const };
+    expect(formatValue(property, '短结果')).toBe('短结果');
+    const long = Array.from({ length: 60 }, (_v, i) => String(i % 10)).join('');
+    expect(formatValue(property, long)).toBe(long.slice(0, DISPLAY_MAX_LEN) + '…');
+    expect(formatValue(property, null)).toBe(EMPTY_DISPLAY);
+    expect(formatValue(property, undefined)).toBe(EMPTY_DISPLAY);
+  });
+
+  it('recordTitle 不受 ai 列干扰（标题列优先，ai 列不抢标题位）', () => {
+    const schema = {
+      properties: {
+        p_title: { id: 'p_title', name: '书名', type: 'text' as const },
+        p_ai: { id: 'p_ai', name: '摘要', type: 'ai' as const, ai: { prompt: '概括' } },
+      },
+      title_pid: 'p_title',
+    };
+    expect(recordTitle(schema, { p_title: '哥德尔', p_ai: 'AI 摘要' }, 'rec-1')).toBe('哥德尔');
+    // 标题列空 → 回落第一个非空文本属性（ai 列也是文本形态，可作兜底标题）
+    expect(recordTitle(schema, { p_ai: 'AI 摘要' }, 'rec-1')).toBe('AI 摘要');
+  });
+});

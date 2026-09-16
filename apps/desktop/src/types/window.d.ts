@@ -223,7 +223,12 @@ export interface SeptcatsDbApi {
   propUpdate(input: {
     pageId: string;
     pid: string;
-    patch: { name?: string | undefined; type?: FieldType | undefined };
+    patch: {
+      name?: string | undefined;
+      type?: FieldType | undefined;
+      /** `ai` 属性（type='ai'）的生成指令；空串 = 清除配置、回落默认指令（TASK-T18-04）。 */
+      ai?: { prompt: string } | undefined;
+    };
   }): Promise<{ collection: CollectionEntity }>;
   propRemove(input: { pageId: string; pid: string }): Promise<{ collection: CollectionEntity }>;
   viewSave(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
