@@ -89,8 +89,9 @@ function colWidthOf(widths: Readonly<Record<string, number>>, pid: string): numb
 }
 
 /**
- * 标题列单元格：默认展示记录标题，聚焦后可直接双击/Enter 改标题
- * （Enter 提交、Esc 取消；空串 = 清空标题）。其余列由 `CellEditor` 承担。
+ * 标题列单元格：默认展示记录标题，**双击**进入改名编辑态（没有 Enter 进入改名的
+ * 分支；编辑态内 Enter 提交、Esc 取消、失焦提交；空串 = 清空标题）。
+ * 其余列由 `CellEditor` 承担。
  */
 function TitleCell({
   rowId,
@@ -290,7 +291,11 @@ export function TableGrid(props: TableGridProps) {
     if (node === undefined) {
       return;
     }
-    if (document.activeElement !== node) {
+    if (!node.contains(document.activeElement)) {
+      // 仅当焦点不在本单元格内部时才抢焦（TASK-T18-05）：编辑态输入框挂载后
+      // focusin 冒泡会触发单元格 onFocus → focusedCell 引用变化 → 本 effect 重跑，
+      // 若无条件 node.focus() 会把焦点从编辑输入框抢回 → onBlur 提交未变更的
+      // draft → 编辑态闪退（双击改名/单元格编辑均受影响）。
       node.focus({ preventScroll: true });
     }
     node.scrollIntoView({ block: 'nearest' });

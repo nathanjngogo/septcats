@@ -9,7 +9,7 @@
  * - DbView：标题/记录数、筛选后空态提示、计算行显示平均值、ErrorPanel 重试。
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   collectionEntitySchema,
   collectionSchemaSchema,
@@ -638,5 +638,94 @@ describe('AI 列 · DbView 接线（T18-04）', () => {
     fireEvent.click(screen.getByRole('button', { name: '属性管理：摘要' }));
     expect(within(screen.getByRole('menu', { name: '属性管理' })).queryByRole('menuitem', { name: '批量生成' })).toBeNull();
     expect(container.querySelector('.sc-dbc-aibtn')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 标题双击改名（TASK-T18-05 回归，不改既有断言）
+//
+// 根因复现要点：必须经 DbView 渲染（它持有 focusedCell 状态并接通 TableGrid
+// 的「焦点落 DOM」effect 与单元格 onFocus）。双击进入编辑态后，输入框的
+// focusin 会冒泡触发单元格 onFocus → setFocusedCell（新对象）→ 焦点 effect
+// 重跑；修复前 effect 里 `activeElement !== node` 判定为真 → 把焦点从编辑
+// 输入框抢回单元格 → 输入框 onBlur 提交未变更的 draft → 编辑态闪退。
+// jsdom 未实现 scrollIntoView，本组用例局部桩掉并在收尾还原。
+// ---------------------------------------------------------------------------
+
+describe('标题双击改名（T18-05 回归）', () => {
+  const scrollIntoViewStub = vi.fn();
+  const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
+  // 先于本组每个用例的 render 生效（vi.stubGlobal 管不到原型方法，直接换原型并在收尾还原）
+  beforeAll(() => {
+    HTMLElement.prototype.scrollIntoView = scrollIntoViewStub;
+  });
+  afterAll(() => {
+    HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
+  const renameDbProps = {
+    collection: COLLECTION,
+    records: RECORDS,
+    status: 'ready' as const,
+    onCreateRecord: NOOP,
+    onDeleteRecords: NOOP,
+    onChangeValue: NOOP,
+    onAddProperty: NOOP,
+    onRemoveProperty: NOOP,
+    onRenameProperty: NOOP,
+    onSaveView: NOOP,
+    onExportCsv: NOOP,
+  };
+
+  function renderDb(onRenameRecord: (rowId: string, title: string) => void) {
+    const view = render(<DbView {...renameDbProps} onRenameRecord={onRenameRecord} />);
+    const cell = view.container.querySelector('.sc-dbcell--title') as HTMLElement;
+    const span = cell.querySelector('.sc-dbcell__title') as HTMLElement;
+    return { span, view };
+  }
+
+  it('mouseDown 聚焦 → 双击标题进入编辑态 → Enter 提交 onRenameRecord 且输入框消失', () => {
+    const onRenameRecord = vi.fn();
+    const { span, view } = renderDb(onRenameRecord);
+
+    fireEvent.mouseDown(span); // 先聚焦单元格（真实双击的第一次按下）
+    fireEvent.doubleClick(span);
+
+    const input = screen.getByLabelText('编辑标题') as HTMLInputElement;
+    expect(input.value).toBe('哥德尔、艾舍尔、巴赫');
+
+    fireEvent.change(input, { target: { value: '新书名' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onRenameRecord).toHaveBeenCalledTimes(1);
+    expect(onRenameRecord).toHaveBeenCalledWith('rec-1', '新书名');
+    expect(screen.queryByLabelText('编辑标题')).toBeNull();
+
+    // 父层数据落地后（rerender 模拟回调写回），新标题显示
+    view.rerender(
+      <DbView
+        {...renameDbProps}
+        onRenameRecord={onRenameRecord}
+        records={[makeRecord('rec-1', { p_title: '新书名' }, 'A1'), RECORDS[1]!, RECORDS[2]!]}
+      />,
+    );
+    expect(screen.getByText('新书名')).toBeDefined();
+  });
+
+  it('编辑态 Esc 取消：onRenameRecord 不被调用，原标题保持', () => {
+    const onRenameRecord = vi.fn();
+    const { span } = renderDb(onRenameRecord);
+
+    fireEvent.mouseDown(span);
+    fireEvent.doubleClick(span);
+
+    const input = screen.getByLabelText('编辑标题') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '改了一半' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(onRenameRecord).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('编辑标题')).toBeNull();
+    expect(screen.getByText('哥德尔、艾舍尔、巴赫')).toBeDefined();
   });
 });

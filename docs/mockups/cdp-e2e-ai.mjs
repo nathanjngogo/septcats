@@ -321,20 +321,28 @@ async function renameTitle(index, text) {
   await input.press('Enter');
   return 'ok';
 }
-// 【已知缺陷 T18-04-1（非本轮引入，T7b 时代既有）】此处检查当前恒红：
-// PM 探针实证（2026-09-17）——真实双击（mousedown detail [1,2]）产生的原生 dblclick 确实到达
-// `SPAN.sc-dbcell__title`（文档级捕获探针可见），但 React 的 onDoubleClick 未生效：MutationObserver
-// 全程未见 `input[aria-label="编辑标题"]`（inputSeen=0），标题保持「未命名」。
-// 全应用只有 TableGrid.tsx:147 一处 dblclick 处理器，无全局拦截；该路径无任何单测/CDP 覆盖。
-// 结论：记录标题「双击改名」在打包应用中不生效 → 已开 TASK-T18-05 修复（含回归测试），本检查保留可见。
+// 【缺陷 T18-04-1（T7b 时代既有）→ 已由 T18-05 修复（2026-09-17）】
+// 修复前 PM 探针实证：真实双击的原生 dblclick 确实到达 `SPAN.sc-dbcell__title`，但 React 的
+// onDoubleClick 结果不可见（MutationObserver 全程未见 `input[aria-label="编辑标题"]`，inputSeen=0）。
+// 根因（T18-05 证据链）：编辑框 focusin 冒泡 → 单元格 onFocus → 新 `focusedCell` 对象 →
+// TableGrid 焦点 effect 重跑并无条件 `node.focus()` 抢焦 → 输入框 onBlur 提交未变更 draft →
+// 编辑态同帧闪退。修复：effect 守卫改 `!node.contains(document.activeElement)`（TableGrid.tsx:293）。
+// 本检查现应 PASS；若再红 = 回归。
 const renamed1 = await renameTitle(0, '哥德尔、艾舍尔、巴赫');
-const renamed2 = await renameTitle(1, '时间简史');
+// 第一次改名提交会触发集合重载（DbPage 可能短暂进 loading/重渲染）——等表格恢复两行再改第二条，
+// 否则 r2=no-cell（本次第 6 例同类「时序未等待」脚本缺陷；产品侧 r1=ok 已证双击改名修复生效）。
+const gridBack = await waitFor(
+  async () => page.evaluate(() => document.querySelectorAll('.sc-dbcell__title').length >= 2),
+  15_000,
+  200,
+);
+const renamed2 = gridBack ? await renameTitle(1, '时间简史') : 'grid-not-back';
 const renamedShown = await waitFor(
   async () => page.evaluate(() => [...document.querySelectorAll('.sc-dbcell__title')].some((el) => (el.textContent ?? '') === '时间简史')),
   8_000,
 );
 const titleDiag = await page.evaluate(() => [...document.querySelectorAll('.sc-dbcell__title')].map((el) => el.textContent).join('|'));
-check('AI属性：UI 建 2 条记录并改名（既有 record:update 路径）', renamed1 === 'ok' && renamedShown, `r1=${renamed1} r2=${renamed2} titles=${titleDiag}`);
+check('AI属性：UI 建 2 条记录并改名（既有 record:update 路径）', renamed1 === 'ok' && renamed2 === 'ok' && renamedShown, `r1=${renamed1} r2=${renamed2} gridBack=${String(gridBack)} titles=${titleDiag}`);
 
 // 加 AI 列（「新属性」菜单第 9 项，T18-04）
 await clickButtonByText(page, '新属性');
