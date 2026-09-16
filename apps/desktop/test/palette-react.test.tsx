@@ -192,7 +192,8 @@ describe('CommandPalette（无障碍 + 键盘序列）', () => {
     expect(screen.queryByRole('option', { name: /实验数据台账/ })).toBeNull();
 
     paletteActions.setQuery('>');
-    await waitFor(() => expect(screen.getAllByRole('option').length).toBe(10));
+    // T18-03：命令清单 10 → 14（新增 ai.continue/summarize/rewrite/translate），断言语义不变
+    await waitFor(() => expect(screen.getAllByRole('option').length).toBe(14));
     expect(screen.queryByRole('option', { name: /暗物质探测实验笔记/ })).toBeNull();
   });
 

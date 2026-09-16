@@ -13,6 +13,7 @@
  * aliases 是搜索词（拼音/英文），非展示文案，仍在本地维护。
  */
 import { t } from '../i18n';
+import type { AiBlockAction } from '../../../shared/aiPrompts';
 
 export interface PaletteCommandDef {
   readonly id: string;
@@ -37,6 +38,10 @@ export const COMMAND_DEFS: readonly PaletteCommandDef[] = [
   { id: 'app.trash', label: t('commands.app.trash'), hint: t('commandHints.app.trash'), aliases: ['huishouzhan', 'hsz', 'trash', 'bin'] },
   { id: 'app.sync', label: t('commands.app.sync'), hint: t('commandHints.app.sync'), aliases: ['tongbu', 'tbmianban', 'tb', 'sync'] },
   { id: 'app.import', label: t('commands.app.import'), hint: t('commandHints.app.import'), aliases: ['daoru', 'dr', 'import'] },
+  { id: 'ai.continue', label: t('commands.ai.continue'), hint: t('commandHints.ai.continue'), aliases: ['aixuxie', 'xuxie', 'aixx', 'xx', 'ai continue'] },
+  { id: 'ai.summarize', label: t('commands.ai.summarize'), hint: t('commandHints.ai.summarize'), aliases: ['aizhaiyao', 'zhaiyao', 'aizy', 'zy', 'ai summarize'] },
+  { id: 'ai.rewrite', label: t('commands.ai.rewrite'), hint: t('commandHints.ai.rewrite'), aliases: ['aigaixie', 'gaixie', 'aigx', 'gx', 'ai rewrite'] },
+  { id: 'ai.translate', label: t('commands.ai.translate'), hint: t('commandHints.ai.translate'), aliases: ['aifanyi', 'fanyi', 'aify', 'fy', 'ai translate'] },
 ];
 
 /** 命令行为依赖（App 装配时注入；测试注入 spy）。 */
@@ -47,6 +52,11 @@ export interface CommandDeps {
   openSettings(): void;
   /** M12 起接入导入向导；未注入时回退 notify（palette 测试的兼容口径）。 */
   openImport?(): void;
+  /**
+   * T18-03：块级 AI 动作（App 派发 septcats:ai-action 事件，PageView 监听）。
+   * 测试注入里可缺省（缺省 = no-op，notify 基线计数断言不受影响）。
+   */
+  runAiAction?(action: AiBlockAction): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -90,6 +100,16 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
             deps.notify('导入将在后续里程碑提供');
           }
           return;
+        case 'ai.continue':
+        case 'ai.summarize':
+        case 'ai.rewrite':
+        case 'ai.translate': {
+          const action = def.id.slice('ai.'.length) as AiBlockAction;
+          if (deps.runAiAction !== undefined) {
+            deps.runAiAction(action);
+          }
+          return;
+        }
       }
     };
     return { ...def, run };

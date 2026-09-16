@@ -1,0 +1,34 @@
+/*
+ * AiActionPanel 样式（TASK-T18-03 §2.2）。只用 var(--sc-*) token（no-magic 门禁）。
+ * 结果区可手动全选复制：显式 user-select:text + pre-wrap 断行 + 限高滚动
+ * （max-height 照 SettingsPage.css 结果区既有先例取同值）。
+ */
+
+.ai-panel__result {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink);
+  user-select: text;
+}
+
+.ai-panel__busy {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.ai-panel__error {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-danger);
+  user-select: text;
+}
+
+.ai-panel__empty {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}

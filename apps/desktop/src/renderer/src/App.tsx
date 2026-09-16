@@ -79,6 +79,10 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
         },
         openSettings,
         openImport,
+        runAiAction: (action): void => {
+          // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
+          window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
+        },
         notify: (message): void => {
           pushToast(message, 'info');
         },
@@ -103,6 +107,17 @@ export function App() {
   const openSettings = useCallback(() => setView('settings'), []);
   const openImport = useCallback(() => setView('import'), []);
   useCommandWiring(openSettings, openImport);
+
+  // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
+  useEffect(() => {
+    const onOpenSettings = (): void => {
+      setView('settings');
+    };
+    window.addEventListener('septcats:open-settings', onOpenSettings);
+    return () => {
+      window.removeEventListener('septcats:open-settings', onOpenSettings);
+    };
+  }, []);
 
   const inSettings = view === 'settings';
   const inImport = view === 'import';

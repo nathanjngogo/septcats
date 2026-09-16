@@ -116,6 +116,63 @@ describe('rankCommands（拼音/别名/模糊打分）', () => {
   });
 });
 
+describe('AI 命令（TASK-T18-03 追加，不改既有断言）', () => {
+  it('4 条 AI 命令在 COMMAND_DEFS 中（id 正确）', () => {
+    for (const id of ['ai.continue', 'ai.summarize', 'ai.rewrite', 'ai.translate']) {
+      expect(COMMAND_DEFS.some((def) => def.id === id), `缺少命令 ${id}`).toBe(true);
+    }
+  });
+
+  it('拼音短别名各自命中对应命令', () => {
+    expect(rankCommands('xuxie', COMMAND_DEFS)[0]?.id).toBe('ai.continue');
+    expect(rankCommands('zhaiyao', COMMAND_DEFS)[0]?.id).toBe('ai.summarize');
+    expect(rankCommands('gaixie', COMMAND_DEFS)[0]?.id).toBe('ai.rewrite');
+    expect(rankCommands('fanyi', COMMAND_DEFS)[0]?.id).toBe('ai.translate');
+  });
+
+  it('缩写别名命中且互不串', () => {
+    expect(rankCommands('zy', COMMAND_DEFS).map((c) => c.id)[0]).toBe('ai.summarize');
+    expect(rankCommands('gx', COMMAND_DEFS).map((c) => c.id)[0]).toBe('ai.rewrite');
+    expect(rankCommands('fy', COMMAND_DEFS).map((c) => c.id)[0]).toBe('ai.translate');
+    expect(rankCommands('xx', COMMAND_DEFS).map((c) => c.id)[0]).toBe('ai.continue');
+    // 互不串：四个缩写别名不命中其它 AI 命令
+    for (const [query, self] of [
+      ['zy', 'ai.summarize'],
+      ['gx', 'ai.rewrite'],
+      ['fy', 'ai.translate'],
+      ['xx', 'ai.continue'],
+    ] as const) {
+      const ids = rankCommands(query, COMMAND_DEFS)
+        .map((c) => c.id)
+        .filter((id) => id.startsWith('ai.'));
+      expect(ids, `query ${query} 串到了其它 AI 命令`).toEqual([self]);
+    }
+  });
+
+  it('别名基线不被打破：sz 仍指设置、yin 仍无命中', () => {
+    expect(rankCommands('sz', COMMAND_DEFS)[0]?.id).toBe('app.settings');
+    expect(rankCommands('sz', COMMAND_DEFS)[0]?.label).toBe('打开设置');
+    expect(rankCommands('yin', COMMAND_DEFS)).toEqual([]);
+  });
+
+  it('bindPaletteCommands：runAiAction 注入时按动作派发（continue/summarize/rewrite/translate）', () => {
+    const actions: string[] = [];
+    const commands = bindPaletteCommands({
+      createPage: () => undefined,
+      switchToNextWorkspace: () => undefined,
+      openTrash: () => undefined,
+      openSettings: () => undefined,
+      notify: () => undefined,
+      setThemeMode: () => undefined,
+      runAiAction: (action) => {
+        actions.push(action);
+      },
+    });
+    commands.filter((c) => c.id.startsWith('ai.')).forEach((c) => c.run());
+    expect(actions).toEqual(['continue', 'summarize', 'rewrite', 'translate']);
+  });
+});
+
 describe('parsePaletteMode / rankPalette（> 与 @ 模式）', () => {
   const hits: SearchHit[] = [
     hit({ id: 'pg-1', kind: 'page', title: '暗物质探测实验笔记', pageId: 'pg-1' }),

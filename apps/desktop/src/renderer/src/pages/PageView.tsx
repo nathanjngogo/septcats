@@ -32,6 +32,11 @@ import {
   type SelectionRect,
 } from '@septcats/editor/react';
 import { Button } from '@septcats/ui';
+import { AI_BLOCK_ACTIONS, buildAiMessages } from '../../../shared/aiPrompts';
+import type { AiBlockAction } from '../../../shared/aiPrompts';
+import { AiActionPanel } from '../ai/AiActionPanel';
+import { t } from '../i18n';
+import { pushToast } from '../state/pages';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
@@ -129,6 +134,37 @@ function blockIdentityOf(target: EventTarget | null): string | null {
   return target.closest('[data-id]')?.getAttribute('data-id') ?? null;
 }
 
+/** AI 面板的受控状态（TASK-T18-03 §2.4：打开/phase/结果/错误/空态全在这里）。 */
+interface AiPanelState {
+  open: boolean;
+  action: AiBlockAction | null;
+  phase: 'idle' | 'busy' | 'ok' | 'error';
+  result: string;
+  error: string;
+  emptyReason: string | null;
+  canApply: boolean;
+}
+
+const AI_PANEL_CLOSED: AiPanelState = {
+  open: false,
+  action: null,
+  phase: 'idle',
+  result: '',
+  error: '',
+  emptyReason: null,
+  canApply: false,
+};
+
+/** 打开面板时的应用目标快照（面板期间编辑器可能变动，apply 按快照区间落地）。 */
+interface AiApplyTarget {
+  action: AiBlockAction;
+  /** 替换区间（摘要/改写/翻译）；continue 只用 insertAt。 */
+  from: number;
+  to: number;
+  /** continue 的插入点：无选中=块末，有选中=选区末尾。 */
+  insertAt: number;
+}
+
 export function PageView({ page = DEMO_PAGE }: PageViewProps) {
   const [initialDoc] = useState(buildDemoDoc);
   const docRef = useRef<BlockDoc>(initialDoc);
@@ -145,6 +181,9 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [aiPanel, setAiPanel] = useState<AiPanelState>(AI_PANEL_CLOSED);
+  const aiTargetRef = useRef<AiApplyTarget | null>(null);
+  const aiRunIdRef = useRef(0);
 
   const [session] = useState(
     () =>
@@ -429,6 +468,142 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
     });
   }, [page.title]);
 
+  /**
+   * 块级 AI 动作（TASK-T18-03 §2.4）：取文本（选中优先/块文本回退）→ ai.state() 三态门控
+   * → ai.chat() → 面板呈现。应用走 TipTap transaction + 既有保存路径，不新增旁路。
+   */
+  const runAiAction = useCallback(
+    async (action: AiBlockAction): Promise<void> => {
+      if (editor === null) {
+        return;
+      }
+      const runId = ++aiRunIdRef.current;
+      const { from, to } = editor.state.selection;
+      let text: string;
+      if (from !== to) {
+        // 选中优先：整段选中文本（块边界用换行拼接）
+        text = editor.state.doc.textBetween(from, to, '\n');
+        aiTargetRef.current = { action, from, to, insertAt: to };
+      } else {
+        // 无选中 → 光标所在最近的块级文本节点（沿 depth 向上找 isBlock && isTextblock）
+        const $from = editor.state.doc.resolve(from);
+        let blockStart = -1;
+        let blockSize = 0;
+        let blockText = '';
+        for (let depth = $from.depth; depth >= 0; depth--) {
+          const node = $from.node(depth);
+          if (node.isBlock && node.isTextblock) {
+            blockStart = $from.start(depth) - 1;
+            blockSize = node.nodeSize;
+            blockText = node.textContent;
+            break;
+          }
+        }
+        if (blockStart < 0 || blockText.length === 0) {
+          aiTargetRef.current = null;
+          setAiPanel({ ...AI_PANEL_CLOSED, open: true, action, emptyReason: t('ai.emptyText') });
+          return;
+        }
+        text = blockText;
+        const replaceFrom = blockStart + 1;
+        const replaceTo = blockStart + blockSize - 1;
+        aiTargetRef.current = { action, from: replaceFrom, to: replaceTo, insertAt: replaceTo };
+      }
+      setAiPanel({ ...AI_PANEL_CLOSED, open: true, action, phase: 'busy' });
+      try {
+        // ai.state() 门控三态：未启用 / 无 provider / 正常
+        const st = await window.septcats.ai.state();
+        if (runId !== aiRunIdRef.current) {
+          return;
+        }
+        if (!st.enabled) {
+          setAiPanel((prev) => ({ ...prev, phase: 'idle', emptyReason: t('ai.needEnable') }));
+          return;
+        }
+        if (st.providers.length === 0) {
+          setAiPanel((prev) => ({ ...prev, phase: 'idle', emptyReason: t('ai.needProvider') }));
+          return;
+        }
+        const providerId = st.activeProviderId ?? st.providers[0]?.id;
+        if (providerId === undefined) {
+          setAiPanel((prev) => ({ ...prev, phase: 'idle', emptyReason: t('ai.needProvider') }));
+          return;
+        }
+        const res = await window.septcats.ai.chat({
+          providerId,
+          messages: buildAiMessages({ action, text }),
+        });
+        if (runId !== aiRunIdRef.current) {
+          return;
+        }
+        setAiPanel((prev) => ({ ...prev, phase: 'ok', result: res.text, canApply: true }));
+      } catch (error: unknown) {
+        if (runId !== aiRunIdRef.current) {
+          return;
+        }
+        setAiPanel((prev) => ({
+          ...prev,
+          phase: 'error',
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      }
+    },
+    [editor],
+  );
+
+  // septcats:ai-action 事件入口（照 SyncStatus 的 septcats:sync-open 先例）
+  useEffect(() => {
+    const known = AI_BLOCK_ACTIONS as readonly string[];
+    const onAiAction = (event: Event): void => {
+      const action = (event as CustomEvent).detail?.action;
+      if (typeof action === 'string' && known.includes(action)) {
+        void runAiAction(action as AiBlockAction);
+      }
+    };
+    window.addEventListener('septcats:ai-action', onAiAction);
+    return () => {
+      window.removeEventListener('septcats:ai-action', onAiAction);
+    };
+  }, [runAiAction]);
+
+  const closeAiPanel = useCallback((): void => {
+    aiRunIdRef.current += 1; // 作废在途请求，防止迟到的 setState
+    aiTargetRef.current = null;
+    setAiPanel(AI_PANEL_CLOSED);
+  }, []);
+
+  /** 应用（§0.5）：摘要/改写/翻译=替换，续写=块末/选区末追加；dispatch 后走既有保存路径。 */
+  const applyAiResult = useCallback((): void => {
+    if (editor === null || aiPanel.phase !== 'ok') {
+      return;
+    }
+    const target = aiTargetRef.current;
+    if (target === null) {
+      return;
+    }
+    const tr = editor.state.tr;
+    if (target.action === 'continue') {
+      tr.insertText(aiPanel.result, target.insertAt, target.insertAt);
+    } else {
+      tr.insertText(aiPanel.result, target.from, target.to);
+    }
+    editor.view.dispatch(tr);
+    closeAiPanel();
+    pushToast(t('ai.applied'), 'info');
+  }, [editor, aiPanel.phase, aiPanel.result, closeAiPanel]);
+
+  const retryAiAction = useCallback((): void => {
+    const action = aiPanel.action;
+    if (action !== null) {
+      void runAiAction(action);
+    }
+  }, [aiPanel.action, runAiAction]);
+
+  const openAiSettings = useCallback((): void => {
+    // 跳设置页：路由在 App（本地 state），经窗口事件解耦（照 sync-open 先例）
+    window.dispatchEvent(new CustomEvent('septcats:open-settings'));
+  }, []);
+
   if (page.kind === 'database') {
     return <DbPage pageId={page.id} />;
   }
@@ -480,6 +655,19 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
         />
         <SelectionToolbar editor={editor} anchor={anchor} onRequestLink={requestLink} />
       </div>
+      <AiActionPanel
+        open={aiPanel.open}
+        action={aiPanel.action}
+        phase={aiPanel.phase}
+        result={aiPanel.result}
+        error={aiPanel.error}
+        emptyReason={aiPanel.emptyReason}
+        canApply={aiPanel.canApply}
+        onApply={applyAiResult}
+        onRetry={retryAiAction}
+        onOpenSettings={openAiSettings}
+        onClose={closeAiPanel}
+      />
     </div>
   );
 }

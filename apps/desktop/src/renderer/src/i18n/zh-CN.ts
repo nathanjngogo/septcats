@@ -170,8 +170,7 @@ export const zhCN = {
   },
   sync: {
     openPanel: '同步状态',
-    panelTitle: '同步状态',
-    stateLabel: '状态',
+    panelTitle: '同步状态',    stateLabel: '状态',
     lastSync: '上次同步成功',
     stateLoading: '同步状态加载中…',
     stateIdle: '同步未开启',
@@ -196,6 +195,19 @@ export const zhCN = {
     encrypt: '加密同步段',
     hint: 'Septcats 把事件段写入同步文件夹，由网盘客户端搬运；本地数据始终不受同步状态影响。',
   },
+  ai: {
+    panelTitle: 'AI 助手',
+    busy: '生成中…',
+    apply: '应用',
+    retry: '重试',
+    cancel: '取消',
+    needEnable: 'AI 功能尚未启用（设置 → AI 助手）',
+    needProvider: '还没有配置模型服务（设置 → AI 助手）',
+    openSettings: '打开设置',
+    noTarget: '没有可应用的文本目标',
+    emptyText: '选中文本或把光标放进有内容的块后再试',
+    applied: '已应用到编辑器',
+  },
   commands: {
     page: {
       new: '新建页面',
@@ -214,6 +226,12 @@ export const zhCN = {
       light: '切换主题：浅色',
       dark: '切换主题：深色',
       system: '切换主题：跟随系统',
+    },
+    ai: {
+      continue: 'AI 续写',
+      summarize: 'AI 摘要',
+      rewrite: 'AI 改写',
+      translate: 'AI 翻译',
     },
   },
   commandHints: {
@@ -234,6 +252,12 @@ export const zhCN = {
       light: '界面主题',
       dark: '界面主题',
       system: '界面主题',
+    },
+    ai: {
+      continue: '基于选中文本或当前块继续写',
+      summarize: '压缩为要点摘要',
+      rewrite: '保持原意改写',
+      translate: '翻译为英文（可改目标语言）',
     },
   },
 } as const;
