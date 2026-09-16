@@ -49,6 +49,8 @@ node apps/desktop/scripts/feed-sign.mjs verify --feed "${DIST}" --pub apps/deskt
 pnpm -C apps/desktop dist:check
 
 # 4) 发布双 tag：v<ver>（归档）+ latest（feed 通道，资产覆盖）
+#    注意：gh release upload 会归一化含空格的文件名为点（Septcats.Setup.0.1.4.exe），
+#    latest.yml 用带空格路径引用，GitHub releases/download 按 tag 解析，点文件名可正确解析。
 ASSETS=("${DIST}/Septcats Setup ${VER}.exe" "${DIST}/Septcats Setup ${VER}.exe.blockmap" "${DIST}/latest.yml" "${DIST}/latest.yml.sig")
 gh release create "v${VER}" --repo "${USER}/${REPO}" --title "Septcats ${VER}" \
   --notes "Septcats ${VER} 安装包。自动更新 feed：${FEED_BASE}/latest.yml(.sig)。" \
@@ -60,6 +62,26 @@ else
     --notes "自动更新 feed 通道：应用固定拉本 tag 的 latest.yml(.sig)。当前版本 ${VER}。" \
     "${ASSETS[@]}"
 fi
+# gh 归一化含空格文件名 -> 点（Septcats.Setup.0.1.4.exe）。latest.yml 由 electron-builder 生成用空格路径，
+# updater 会 URL-encode 为 %20 -> 404。故把上传的 latest.yml 重写成点文件名，匹配实际资产名。
+gh api repos/${USER}/${REPO}/contents/dist/latest.yml --jq .content | base64 -d > "${DIST}/latest.yml" 2>/dev/null || true
+python - <<PYEOF
+import io, os, re
+p = "apps/desktop/dist/latest.yml"
+try:
+    t = io.open(p, encoding="utf-8").read()
+except Exception:
+    t = ""
+# 仅把安装包路径名中的空格 -> 点（保留 latest.yml.sig 等不动）
+t = re.sub(r"Septcats Setup (\d)", r"Septcats.Setup.\1", t)
+io.open(p, "w", encoding="utf-8", newline="\n").write(t)
+print("latest.yml 归一化路径完成")
+PYEOF
+# 校验：latest.yml 中每个 files[].url 都能在对应 tag 上匿名下载
+for url in $(grep -oE "https://github\.com[^ ]+\.exe" "apps/desktop/dist/latest.yml"); do
+  code=$(curl -sL -o /dev/null -w "%{http_code}" "$url")
+  echo "check $url -> HTTP=$code"
+done
 
 # 5) 公开验证：匿名拉 feed 与包头 1KB
 echo "== 验证匿名可拉取 =="
