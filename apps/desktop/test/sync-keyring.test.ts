@@ -1,7 +1,9 @@
 /**
- * sync-keyring.test.ts —— DEK 生命周期（TASK-T13-01 §4）。
+ * sync-keyring.test.ts —— DEK 生命周期（TASK-T13-01 §4 / TASK-T17-01 §1 扩）。
  *
  * 内存假 CredentialStore 覆盖 生成/读回/轮换/缓存损坏 全路径；
+ * T17 扩：恢复码（base32 52 字符）导出→清 keyring→导入→密文可读闭环、
+ * 归一化容忍（横杠/大小写/空白）、非法码拒绝；
  * 真后端（Windows DPAPI）往返用 skipIf 探测，与 packages/platform credentials 测试同范式。
  */
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -9,8 +11,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createCredentialStore, type CredentialStore } from '@septcats/platform';
-import { encodeDek } from '../src/main/sync/crypto';
-import { SYNC_DEK_ACCOUNT, SYNC_DEK_SERVICE, SyncKeyring } from '../src/main/sync/keyring';
+import { decodeDek, decryptFromText, encodeDek, encryptToText, SyncKeyError } from '../src/main/sync/crypto';
+import {
+  RECOVERY_CODE_CHARS,
+  SYNC_DEK_ACCOUNT,
+  SYNC_DEK_SERVICE,
+  SyncKeyring,
+  decodeRecoveryCode,
+  encodeRecoveryCode,
+  encodeBase32,
+  decodeBase32,
+} from '../src/main/sync/keyring';
 
 const created: string[] = [];
 afterAll(() => {
@@ -76,6 +87,73 @@ describe('sync/keyring（内存后端）', () => {
     await expect(new SyncKeyring(store).loadDek()).rejects.toMatchObject({
       code: 'E_SYNC_KEY_MISMATCH',
     });
+  });
+});
+
+describe('sync/keyring 恢复码（T17-01 D1）', () => {
+  it('导出→清 keyring→导入→密文可读闭环；导入后 loadDek 恒等', async () => {
+    // 第一只 keyring：确保 DEK 并导出恢复码；用该 DEK 加密一段密文
+    const first = new SyncKeyring(makeFakeStore().store);
+    const dek = await first.ensureDek();
+    const code = await first.exportRecoveryCode();
+    const cipher = encryptToText(dek, 'seg-0000002a-aaaa0001-000042.jsonl', '{"h":{}}');
+
+    // 「清 keyring」：全新空 store（模拟重装系统后凭据全失）
+    const wiped = makeFakeStore();
+    expect(await new SyncKeyring(wiped.store).loadDek()).toBeNull();
+
+    // 导入恢复码 → DEK 回到凭据存储 → 密文可读、loadDek 恒等
+    const restored = new SyncKeyring(wiped.store);
+    const imported = await restored.importRecoveryCode(code);
+    expect([...imported]).toEqual([...dek]);
+    await expect(restored.loadDek()).resolves.toEqual(dek);
+    expect(decryptFromText(imported, 'seg-0000002a-aaaa0001-000042.jsonl', cipher)).toBe('{"h":{}}');
+  });
+
+  it('展示形态：52 字符、按 5 分组横杠、仅 A-Z2-7', () => {
+    const code = encodeRecoveryCode(decodeDek(encodeDek(new Uint8Array(32).fill(7))));
+    const groups = code.split('-');
+    expect(code.replace(/-/g, '')).toHaveLength(RECOVERY_CODE_CHARS);
+    expect(groups.slice(0, -1).every((g) => g.length === 5)).toBe(true);
+    expect(groups[groups.length - 1]?.length).toBe(2); // 52 = 10×5 + 2
+    expect(/^[A-Z2-7]+(-[A-Z2-7]+)*$/.test(code)).toBe(true);
+  });
+
+  it('导入归一化：小写/横杠/空白/混合形态均收敛到同一 DEK', () => {
+    const raw = encodeBase32(new Uint8Array(32).fill(3));
+    const canonical = decodeRecoveryCode(encodeRecoveryCode(new Uint8Array(32).fill(3)));
+    expect([...decodeRecoveryCode(raw.toLowerCase())]).toEqual([...canonical]);
+    expect([...decodeRecoveryCode(encodeRecoveryCode(new Uint8Array(32).fill(3)))]).toEqual([
+      ...canonical,
+    ]);
+    expect([
+      ...decodeRecoveryCode(` ${raw.match(/.{1,5}/g)!.join('-')}\n\t`),
+    ]).toEqual([...canonical]);
+  });
+
+  it('非法码拒绝：长度不符、字母表外字符、空串（不落盘）', async () => {
+    const { store, plain } = makeFakeStore();
+    const keyring = new SyncKeyring(store);
+    const before = plain.get(`${SYNC_DEK_SERVICE}/${SYNC_DEK_ACCOUNT}`);
+
+    expect(() => decodeRecoveryCode('AAAA-BBBB')).toThrow(SyncKeyError); // 长度
+    expect(() => decodeRecoveryCode('0'.repeat(52))).toThrow(SyncKeyError); // 0/1/8/9 不在 alphabet
+    expect(() => decodeRecoveryCode('')).toThrow(SyncKeyError);
+    await expect(keyring.importRecoveryCode('A'.repeat(51))).rejects.toMatchObject({
+      code: 'E_SYNC_KEY_MISMATCH',
+    });
+    expect(plain.get(`${SYNC_DEK_SERVICE}/${SYNC_DEK_ACCOUNT}`)).toBe(before); // 未落盘
+  });
+
+  it('base32 小工具：空输入恒等、256bit→52 字符、解码丢弃余位', () => {
+    expect(encodeBase32(new Uint8Array(0))).toBe('');
+    expect([...decodeBase32('')]).toEqual([]);
+    const bytes = new Uint8Array(32).fill(9);
+    expect(encodeBase32(bytes)).toHaveLength(52);
+    expect([...decodeBase32(encodeBase32(bytes))]).toEqual([...bytes]);
+    // 非 5 字节整倍：末位余位补零编码，解码丢余位后仍恒等
+    const odd = new Uint8Array([1, 2, 3]);
+    expect([...decodeBase32(encodeBase32(odd))]).toEqual([...odd]);
   });
 });
 

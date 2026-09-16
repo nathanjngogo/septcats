@@ -1,20 +1,24 @@
 /**
- * sync-crypto.test.ts —— 同步加密单测（TASK-T13-01 §4）。
+ * sync-crypto.test.ts —— 同步加密单测（TASK-T13-01 §4 / TASK-T17-01 §1 扩）。
  *
- * 覆盖：roundtrip 恒等、AAD（文件名）篡改拒绝、错 DEK → E_SYNC_KEY_MISMATCH（不 panic）、
- * EncryptingSyncFs 的 .enc 透明写读 / manifest 透传 / ifAbsent 幂等 / 无 DEK 读拒。
+ * 覆盖：roundtrip 恒等、AAD（文件名）篡改拒绝、错 DEK → key_id 不符 E_KEY_ID_MISMATCH（不 panic）、
+ * EncryptingSyncFs 的 .enc 透明写读 / manifest 透传 / ifAbsent 幂等 / 无 DEK 读拒；
+ * T17 扩：信封 v2 首字节判型、v1 老包兼容解、key_id 篡改拒绝、AAD 双格式均不破。
  */
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { MemoryFs, SkipError } from '@septcats/sync';
 import {
   EncryptingSyncFs,
   SYNC_DEK_BYTES,
+  V2_MIN_BYTES,
   decodeDek,
   decryptFromText,
   encodeDek,
   encryptToText,
   generateDek,
   isSyncPayloadName,
+  keyIdOf,
   SyncKeyError,
 } from '../src/main/sync/crypto';
 
@@ -22,6 +26,15 @@ const DEK_A = generateDek();
 const DEK_B = generateDek();
 const NAME = 'seg-0000002a-aaaa0001-000042.jsonl';
 const PLAIN = '{"h":{}}\n{"o":1}\n';
+
+/** 按 T13-01 时代的 v1 布局（iv+tag+ct）构造密文文本（兼容矩阵的老包制造器）。 */
+function encryptV1Text(dek: Uint8Array, logicalName: string, plaintext: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', Buffer.from(dek), iv, { authTagLength: 16 });
+  cipher.setAAD(Buffer.from(logicalName, 'utf8'));
+  const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ct]).toString('base64');
+}
 
 describe('sync/crypto 基元', () => {
   it('DEK 是 32 字节随机，base64 编解码恒等', () => {
@@ -45,17 +58,75 @@ describe('sync/crypto 基元', () => {
     );
   });
 
-  it('错 DEK → E_SYNC_KEY_MISMATCH（不 panic）；坏 base64 同码', () => {
+  it('错 DEK → key_id 不符 E_KEY_ID_MISMATCH（不 panic）；坏 base64/过短同码 E_SYNC_KEY_MISMATCH', () => {
     const cipher = encryptToText(DEK_A, NAME, PLAIN);
     expect(() => decryptFromText(DEK_B, NAME, cipher)).toThrow(SyncKeyError);
     try {
       decryptFromText(DEK_B, NAME, cipher);
       expect.unreachable();
     } catch (error) {
-      expect((error as SyncKeyError).code).toBe('E_SYNC_KEY_MISMATCH');
+      expect((error as SyncKeyError).code).toBe('E_KEY_ID_MISMATCH');
     }
     expect(() => decryptFromText(DEK_A, NAME, 'not-base64!!!')).toThrow(SyncKeyError);
     expect(() => decryptFromText(DEK_A, NAME, Buffer.from([1, 2, 3]).toString('base64'))).toThrow(
+      SyncKeyError,
+    );
+  });
+
+  it('T17 信封 v2：密文首字节 0x01、key_id=sha256(DEK) 前 8B、最短 37B', () => {
+    const cipher = encryptToText(DEK_A, NAME, PLAIN);
+    const raw = Buffer.from(cipher, 'base64');
+    expect(raw[0]).toBe(0x01);
+    expect(raw.length).toBeGreaterThanOrEqual(V2_MIN_BYTES);
+    const keyIdHex = raw.subarray(1, 9).toString('hex');
+    expect(keyIdHex).toBe(keyIdOf(DEK_A));
+    expect(keyIdHex).not.toBe(keyIdOf(DEK_B));
+  });
+
+  it('T17 兼容矩阵：v1 老包用当前 DEK 无缝可解；v1 错钥仍 E_SYNC_KEY_MISMATCH', () => {
+    const v1 = encryptV1Text(DEK_A, NAME, PLAIN);
+    // v1 首字节 = iv 首字节，断言它没有 0x01+37B 的 v2 形态干扰（判型落入 v1 分支）
+    expect(decryptFromText(DEK_A, NAME, v1)).toBe(PLAIN);
+    try {
+      decryptFromText(DEK_B, NAME, v1);
+      expect.unreachable();
+    } catch (error) {
+      // v1 无 key_id 头，只能靠 GCM auth 失败收口 → 旧码
+      expect((error as SyncKeyError).code).toBe('E_SYNC_KEY_MISMATCH');
+    }
+  });
+
+  it('T17 v2 判型边界：0x01 开头但长度 <37 → 按 v1 处理（不误抛 key_id 错）', () => {
+    // 构造首字节 0x01、总长 <37 的密文：v1 加密 1 字节明文（12+16+1=29B）
+    const tiny = encryptV1Text(DEK_A, NAME, 'x');
+    const raw = Buffer.from(tiny, 'base64');
+    if (raw[0] === 0x01) {
+      // 概率命中 0x01 首字节时，必须走 v1 分支解出明文而非 key_id 错
+      expect(decryptFromText(DEK_A, NAME, tiny)).toBe('x');
+    } else {
+      expect(decryptFromText(DEK_A, NAME, tiny)).toBe('x');
+    }
+  });
+
+  it('T17 v2 key_id 字节被篡改 → E_KEY_ID_MISMATCH（先于 GCM 收口）', () => {
+    const cipher = encryptToText(DEK_A, NAME, PLAIN);
+    const raw = Buffer.from(cipher, 'base64');
+    raw[3] = (raw[3] ?? 0) ^ 0xff; // key_id 区内翻一位
+    try {
+      decryptFromText(DEK_A, NAME, raw.toString('base64'));
+      expect.unreachable();
+    } catch (error) {
+      expect((error as SyncKeyError).code).toBe('E_KEY_ID_MISMATCH');
+    }
+  });
+
+  it('T17 AAD 双格式均不破：v1/v2 换文件名都拒解', () => {
+    const v1 = encryptV1Text(DEK_A, NAME, PLAIN);
+    const v2 = encryptToText(DEK_A, NAME, PLAIN);
+    expect(() => decryptFromText(DEK_A, 'seg-0000002a-aaaa0001-000043.jsonl', v1)).toThrow(
+      SyncKeyError,
+    );
+    expect(() => decryptFromText(DEK_A, 'seg-0000002a-aaaa0001-000043.jsonl', v2)).toThrow(
       SyncKeyError,
     );
   });

@@ -22,7 +22,7 @@
  *   过期段与 quarantine/ 内容。
  */
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import {
   SCHEMA_VERSION,
   compareLamport,
@@ -55,7 +55,17 @@ import { NodeFs } from '@septcats/sync';
 import { commitOps } from '../commit';
 import type { AllData, BatchData, DbBatchStatement, GetData } from '../../db/rpc';
 import type { SyncStatusSnapshot, SyncDeviceEntry, SyncErrorEntry, SyncRuntimeState } from '../../shared/sync';
-import { E_SYNC_KEY_MISMATCH, SyncKeyError, EncryptingSyncFs } from './crypto';
+import {
+  E_KEY_ID_MISMATCH,
+  E_SYNC_KEY_MISMATCH,
+  SyncKeyError,
+  V2_MIN_BYTES,
+  EncryptingSyncFs,
+  decryptFromText,
+  encryptToText,
+  keyIdBytes,
+  keyIdOf,
+} from './crypto';
 import type { SyncKeyring } from './keyring';
 import { FsWatchProvider } from './provider';
 
@@ -106,7 +116,7 @@ const MAX_ERRORS = 10;
 const DEFAULT_MAX_KEEP_SEGS = 20;
 const DEFAULT_RETENTION_DAYS = 30;
 
-/** 稳定错误码（运行时面新增；E_SYNC_KEY_MISMATCH 定义在 crypto.ts）。 */
+/** 稳定错误码（运行时面新增；E_SYNC_KEY_MISMATCH / E_KEY_ID_MISMATCH 定义在 crypto.ts）。 */
 export const SYNC_RUNTIME_ERRORS = {
   DIR_UNAVAILABLE: 'E_SYNC_DIR_UNAVAILABLE',
   CYCLE_FAILED: 'E_SYNC_CYCLE_FAILED',
@@ -114,7 +124,24 @@ export const SYNC_RUNTIME_ERRORS = {
   MANIFEST_INVALID: SyncErrorCodes.MANIFEST_INVALID,
   PROJECTION_REBUILT: 'E_PROJECTION_REBUILT',
   KEY_MISMATCH: E_SYNC_KEY_MISMATCH,
+  KEY_ID_MISMATCH: E_KEY_ID_MISMATCH,
+  REENCRYPT_FAILED: 'E_SYNC_REENCRYPT_FAILED',
 } as const;
+
+/** 后台重加密报告（T17-01 D3；测试/诊断用）。 */
+export interface ReencryptReport {
+  /** 枚举到的 .enc 文件总数（段 + 快照）。 */
+  total: number;
+  /** 旧钥解 → 新钥（v2）加并原子替换的文件数。 */
+  reencrypted: number;
+  /** key_id 已是目标钥、幂等跳过的文件数。 */
+  skipped: number;
+  /** 解密/写盘失败数（细节在 failedFiles 与 errors[]）。 */
+  failed: number;
+  failedFiles: string[];
+}
+
+const ZERO_REENCRYPT: ReencryptReport = { total: 0, reencrypted: 0, skipped: 0, failed: 0, failedFiles: [] };
 
 export class SyncRuntime {
   private readonly rootDir: string;
@@ -158,6 +185,11 @@ export class SyncRuntime {
   private cycleRunning = false;
   private cycleQueued = false;
   private firstCycleDone = false;
+
+  // S10（T17-01 D3）：轮换重加密进行中标记与可重试的旧钥
+  private reencrypting = false;
+  private reencryptPromise: Promise<ReencryptReport> | null = null;
+  private pendingOldDek: Uint8Array | null = null;
 
   constructor(options: SyncRuntimeOptions) {
     this.rootDir = options.rootDir.replace(/\\/g, '/').replace(/\/+$/, '');
@@ -373,11 +405,188 @@ export class SyncRuntime {
     this.emit();
   }
 
+  // --- S10 钥匙生命周期（T17-01 D3/D4） --------------------------------------
+
+  /**
+   * 轮换钥匙（sync:rotateKey）：rotateDek 语义不动 → 新钥即刻接管当前写入
+   * （进行中段的本轮 flush 直接用新钥）→ 后台重加密全部历史段。立即回
+   * {startedAt}，进度/结果走既有 sync:state 通道（完成或失败均 emit）。
+   */
+  rotateKey(): { startedAt: number } {
+    if (this.reencrypting || this.reencryptPromise !== null) {
+      return { startedAt: this.nowFn() }; // 已在轮换中：幂等（后台继续，不再叠一轮）
+    }
+    const oldDek = this.pendingOldDek ?? this.dek;
+    if (oldDek === null) {
+      throw new SyncKeyError('轮换需要现有 DEK（先开启加密同步）');
+    }
+    const startedAt = this.nowFn();
+    // 整链同步赋值：whenReencryptSettled 在 rotateKey() 返回后立即可等待（不受 rotateDek 微任务竞态影响）。
+    const chain: Promise<ReencryptReport> = (async (): Promise<ReencryptReport> => {
+      const newDek = await this.keyring.rotateDek();
+      this.dek = newDek;
+      this.pendingOldDek = oldDek;
+      this.log(`S10 轮换开始：旧 key_id=${keyIdOf(oldDek)} → 新 key_id=${keyIdOf(newDek)}`);
+      return await this.reencryptAllSegments();
+    })();
+    this.reencryptPromise = chain;
+    void chain
+      .catch((error: unknown) => {
+        this.recordError(SYNC_RUNTIME_ERRORS.REENCRYPT_FAILED, `钥匙轮换失败：${describe(error)}`);
+        this.setState('error');
+      })
+      .finally(() => {
+        if (this.reencryptPromise === chain) {
+          this.reencryptPromise = null; // 结束后释放：未被消费也不阻塞下一次轮换
+        }
+      });
+    return { startedAt };
+  }
+
+  /**
+   * 后台重加密（D3）：枚举同步目录段文件（naming 正则）+ manifest 引用集（快照），
+   * 逐段 v1/旧 key_id 密文 → 旧 DEK 解 → 新 DEK（v2）加 → 原子替换（写 tmp→rename）。
+   * 幂等：key_id 已是新值的段直接跳过。失败不中断（逐文件收集），有失败记红条
+   * E_SYNC_REENCRYPT_FAILED；旧钥保留在内存，可直接重跑本方法重试，全部成功才清。
+   */
+  async reencryptAllSegments(): Promise<ReencryptReport> {
+    if (this.reencrypting) {
+      return this.reencryptPromise ?? Promise.resolve(ZERO_REENCRYPT);
+    }
+    const newDek = this.dek;
+    if (newDek === null) {
+      throw new SyncKeyError('重加密需要当前 DEK（先导入恢复码或开启加密同步）');
+    }
+    const oldDek = this.pendingOldDek ?? newDek;
+    this.reencrypting = true;
+    this.emit();
+    let succeeded = false;
+    try {
+      const report = await this.reencryptBody(newDek, oldDek);
+      if (report.failed > 0) {
+        this.recordError(
+          SYNC_RUNTIME_ERRORS.REENCRYPT_FAILED,
+          `重加密 ${String(report.failed)}/${String(report.total)} 个文件失败（可重试）：${report.failedFiles.join(', ')}`,
+        );
+        this.setState('error');
+      } else {
+        this.pendingOldDek = null; // 全部成功才释放旧钥
+        this.log(
+          `S10 重加密完成：共 ${String(report.total)}，重加 ${String(report.reencrypted)}，幂等跳过 ${String(report.skipped)}`,
+        );
+        succeeded = true;
+      }
+      return report;
+    } finally {
+      this.reencrypting = false;
+      this.emit();
+      if (succeeded) {
+        void this.runCycle(); // 恢复收段并刷新状态（须在 reencrypting 复位后触发）
+      }
+    }
+  }
+
+  /** 重加密主体：枚举 + 逐文件 旧解新加（原子替换）。 */
+  private async reencryptBody(newDek: Uint8Array, oldDek: Uint8Array): Promise<ReencryptReport> {
+    let names: string[] = [];
+    try {
+      names = await this.rawFs.list(this.rootDir);
+    } catch (error) {
+      this.recordError(SYNC_RUNTIME_ERRORS.DIR_UNAVAILABLE, `枚举同步目录失败：${describe(error)}`);
+      return ZERO_REENCRYPT;
+    }
+
+    // 段文件（naming 正则，含网盘副本与 .enc 形态）+ manifest 引用集（快照）+ 目录内全部快照
+    const targets = new Set<string>();
+    for (const name of names) {
+      if (name.endsWith('.enc') && (parseSegmentFileName(name) !== null || /^snapshot-\d{6}\.json\.enc$/.test(name))) {
+        targets.add(name);
+      }
+    }
+    const snapSeq = String(this.manifest.snapshot.seq).padStart(6, '0');
+    const snapName = `snapshot-${snapSeq}.json.enc`;
+    if (names.includes(snapName)) {
+      targets.add(snapName); // manifest 引用集：仅当快照实际存在时纳入（缺失不算失败）
+    }
+
+    const report: ReencryptReport = { total: targets.size, reencrypted: 0, skipped: 0, failed: 0, failedFiles: [] };
+    let index = 0;
+    for (const name of targets) {
+      index += 1;
+      const logical = name.slice(0, -'.enc'.length);
+      let raw: string;
+      try {
+        raw = await this.rawFs.read(`${this.rootDir}/${name}`);
+      } catch {
+        report.failed += 1;
+        report.failedFiles.push(name);
+        continue;
+      }
+
+      // 幂等：v2 且 key_id 已是新钥 → 跳过
+      let parsed: Buffer;
+      try {
+        parsed = Buffer.from(raw, 'base64');
+      } catch {
+        parsed = Buffer.alloc(0);
+      }
+      if (
+        parsed.length >= V2_MIN_BYTES &&
+        parsed[0] === 0x01 &&
+        parsed.subarray(1, 9).equals(keyIdBytes(newDek))
+      ) {
+        report.skipped += 1;
+        continue;
+      }
+
+      try {
+        // v1/旧 key_id 统一经兼容解（v2 旧钥走 key_id 校验；v1 走 GCM 收口）
+        const plaintext = decryptFromText(oldDek, logical, raw);
+        const fresh = encryptToText(newDek, logical, plaintext);
+        // 原子替换：写 tmp → rename（libuv rename 覆盖既有目标）
+        const tmp = `${this.rootDir}/${name}.reenc-${String(process.pid)}-${String(index)}.tmp`;
+        writeFileSync(tmp, fresh, 'utf8');
+        renameSync(tmp, `${this.rootDir}/${name}`);
+        report.reencrypted += 1;
+      } catch (error) {
+        report.failed += 1;
+        report.failedFiles.push(name);
+        this.log(`S10 重加密失败：${name} ${describe(error)}`);
+      }
+    }
+    return report;
+  }
+
+  /**
+   * 恢复码导入后的收口（D4 sync:importRecovery）：新 DEK 即刻接管本地加解密 →
+   * 清 key_mismatch 红条 → 触发一轮追平（await 完成，回包前状态已刷新）。
+   */
+  async adoptRecoveredDek(dek: Uint8Array): Promise<void> {
+    this.dek = dek;
+    this.pendingOldDek = null; // 恢复码即真相：导入的钥匙接管一切（旧钥作废）
+    this.log(`S10 恢复码导入：key_id=${keyIdOf(dek)}，触发追平`);
+    await this.runCycle();
+  }
+
+  /** 测试/诊断：等待后台轮换重加密结束（未在跑则回 null；一次性消费）。 */
+  async whenReencryptSettled(): Promise<ReencryptReport | null> {
+    const promise = this.reencryptPromise;
+    if (promise === null) {
+      return null;
+    }
+    this.reencryptPromise = null;
+    return await promise;
+  }
+
   // --- 收段主循环 -----------------------------------------------------------
 
   /** 立即跑一轮（sync:now；watcher/定时器内部也走这里）。并发触发合并为一轮。 */
   async runCycle(): Promise<void> {
     if (!this.enabled) {
+      return;
+    }
+    // S10：后台重加密进行中 → 暂停收段轮（避免读到半轮换状态的密文），结束后自动补跑
+    if (this.reencrypting) {
       return;
     }
     if (this.cycleRunning) {
@@ -441,14 +650,15 @@ export class SyncRuntime {
 
     // S5 播种：空账本 + 有快照 → 从最新快照回转 upsert op 落库
     const ledgerBefore = await this.loadLedgerOps();
-    if (ledgerBefore.length === 0) {
-      await this.seedFromSnapshot();
-    }
-
     // 全量 mergeRemote（复用引擎；.enc 解密在 EncryptingSyncFs 内）
-    const ledger = await this.loadLedgerOps();
+    // 播种与合并共用同一 SyncKeyError 映射（快照读取同样可能撞 key_mismatch）。
+    let ledger: Op[];
     let report: SyncReport;
     try {
+      if (ledgerBefore.length === 0) {
+        await this.seedFromSnapshot();
+      }
+      ledger = await this.loadLedgerOps();
       report = await mergeRemote({
         provider: this.provider!,
         localLedger: ledger,
@@ -457,8 +667,13 @@ export class SyncRuntime {
       });
     } catch (error) {
       if (error instanceof SyncKeyError) {
-        this.recordError(SYNC_RUNTIME_ERRORS.KEY_MISMATCH, error.message);
-        return 'error';
+        // D4：key_id 不符冒泡为 key_mismatch 红条态（提示「用恢复码导入或重设」）；
+        // 其余密钥错误（v1 错钥/无钥/篡改）维持 error 态。
+        this.recordError(
+          error.code === E_KEY_ID_MISMATCH ? SYNC_RUNTIME_ERRORS.KEY_ID_MISMATCH : SYNC_RUNTIME_ERRORS.KEY_MISMATCH,
+          error.message,
+        );
+        return error.code === E_KEY_ID_MISMATCH ? 'key_mismatch' : 'error';
       }
       throw error;
     }

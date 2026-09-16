@@ -1,8 +1,14 @@
 /**
  * main/sync/crypto.ts —— 同步段/快照的静态加密（TASK-T13-01 §1，S10 运行时面）。
  *
- * 形态：AES-256-GCM，密文布局 `IV(12B) | authTag(16B) | ciphertext`，整体 base64
- * 后以**文本**落盘（SyncFs 是文本面）。AAD = 逻辑文件名（不含 `.enc` 后缀），
+ * 形态（TASK-T17-01 §0 D2，信封 v2 向后兼容 v1）：
+ * - v1（旧）：`IV(12B) | authTag(16B) | ciphertext`，整体 base64 后以**文本**落盘；
+ * - v2（现）：`0x01 | key_id(8B) | IV(12B) | authTag(16B) | ciphertext`，base64 落盘。
+ *   key_id = sha256(DEK) 前 8 字节（text 形态 = 十六进制前 16 位），轮换钥匙后可
+ *   按头判「密文属于哪把钥匙」，支撑 S10 换钥匙/重加密幂等。
+ * 解密判型：解出首字节==0x01 且长度≥37 → v2（key_id 不匹配抛 E_KEY_ID_MISMATCH）；
+ * 否则按 v1 旧格式用当前 DEK 解（老包无缝）。
+ * AAD = 逻辑文件名（不含 `.enc` 后缀），
  * 换名即解不开（绑定文件身份，防段被整体挪用到别的名字下）。
  *
  * EncryptingSyncFs：SyncFs 装饰器——
@@ -16,7 +22,7 @@
  * 本文件不实现任何同步算法（攒段/合并/快照全在 @septcats/sync），只做字节层转换。
  */
 
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { NotFoundError } from '@septcats/sync';
 import type { SyncFs } from '@septcats/sync';
 
@@ -29,23 +35,49 @@ const IV_BYTES = 12;
 /** GCM auth tag 长度。 */
 const TAG_BYTES = 16;
 
+/** 信封 v2 标记字节（首字节判型）。 */
+const ENVELOPE_V2 = 0x01;
+
+/** v2 头长：0x01(1) + key_id(8) = 9 字节（iv/tag/ct 接在其后）。 */
+const V2_HEADER_BYTES = 1 + 8;
+
+/** v2 最短长度：头 9 + iv 12 + tag 16 = 37（空明文）。 */
+export const V2_MIN_BYTES = V2_HEADER_BYTES + IV_BYTES + TAG_BYTES;
+
+/** v1 最短长度：iv 12 + tag 16 = 28（空明文）。 */
+const V1_MIN_BYTES = IV_BYTES + TAG_BYTES;
+
 /** DEK 丢失/换钥匙/密文被篡改 共用的稳定错误码（S10 红条依据，绝不静默）。 */
 export const E_SYNC_KEY_MISMATCH = 'E_SYNC_KEY_MISMATCH';
 
-/** 同步密钥错误：code 恒为 E_SYNC_KEY_MISMATCH（调用方按 code 分支，不读 message）。 */
-export class SyncKeyError extends Error {
-  readonly code = E_SYNC_KEY_MISMATCH;
+/** 密文 key_id 与当前 DEK 不符（D2：钥匙已轮换，提示「用恢复码导入或重设」）。 */
+export const E_KEY_ID_MISMATCH = 'E_KEY_ID_MISMATCH';
 
-  constructor(detail: string) {
-    super(`E_SYNC_KEY_MISMATCH：${detail}`);
+/** 同步密钥错误：code 恒定（默认 E_SYNC_KEY_MISMATCH，v2 key_id 不符为 E_KEY_ID_MISMATCH）。 */
+export class SyncKeyError extends Error {
+  readonly code: string;
+
+  constructor(detail: string, code: string = E_SYNC_KEY_MISMATCH) {
+    super(`${code}：${detail}`);
     this.name = 'SyncKeyError';
     Object.setPrototypeOf(this, SyncKeyError.prototype);
+    this.code = code;
   }
 }
 
 /** 生成 32B 随机 DEK。 */
 export function generateDek(): Uint8Array {
   return new Uint8Array(randomBytes(SYNC_DEK_BYTES));
+}
+
+/** key_id（8B 原始字节）= sha256(DEK) 前 8 字节（D2）。 */
+export function keyIdBytes(dek: Uint8Array): Buffer {
+  return createHash('sha256').update(Buffer.from(dek)).digest().subarray(0, 8);
+}
+
+/** key_id 文本形态（16 位小写 hex，UI/日志/对账用）。 */
+export function keyIdOf(dek: Uint8Array): string {
+  return createHash('sha256').update(Buffer.from(dek)).digest('hex').slice(0, 16);
 }
 
 /** DEK → base64（进凭据存储的文本形态）。 */
@@ -70,17 +102,23 @@ export function isSyncPayloadName(name: string): boolean {
   return PAYLOAD_NAME_RE.test(name);
 }
 
-/** 加密一段文本：IV 随机前置，AAD=logicalName，返回 base64 文本。 */
+/** 加密一段文本（信封 v2）：AAD=logicalName，IV 随机，返回 base64 文本。 */
 export function encryptToText(dek: Uint8Array, logicalName: string, plaintext: string): string {
   const iv = randomBytes(IV_BYTES);
   const cipher = createCipheriv('aes-256-gcm', Buffer.from(dek), iv, { authTagLength: TAG_BYTES });
   cipher.setAAD(Buffer.from(logicalName, 'utf8'));
   const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, ciphertext]).toString('base64');
+  return Buffer.concat([Buffer.from([ENVELOPE_V2]), keyIdBytes(dek), iv, tag, ciphertext]).toString(
+    'base64',
+  );
 }
 
-/** 解密一段密文文本；AAD 不符 / tag 校验失败 / 结构非法 一律抛 SyncKeyError。 */
+/**
+ * 解密一段密文文本；AAD 不符 / tag 校验失败 / 结构非法 一律抛 SyncKeyError。
+ * 判型（D2）：首字节==0x01 且长度≥37 → v2（key_id 必须匹配，否则 E_KEY_ID_MISMATCH）；
+ * 否则按 v1 旧格式（iv+tag+ct）用当前 DEK 解。
+ */
 export function decryptFromText(dek: Uint8Array, logicalName: string, text: string): string {
   let raw: Buffer;
   try {
@@ -88,12 +126,39 @@ export function decryptFromText(dek: Uint8Array, logicalName: string, text: stri
   } catch {
     throw new SyncKeyError(`'${logicalName}' 密文不是合法 base64`);
   }
-  if (raw.length < IV_BYTES + TAG_BYTES) {
+
+  const isV2 = raw.length >= V2_MIN_BYTES && raw[0] === ENVELOPE_V2;
+  if (isV2) {
+    const keyId = raw.subarray(1, V2_HEADER_BYTES);
+    if (!keyId.equals(keyIdBytes(dek))) {
+      throw new SyncKeyError(
+        `'${logicalName}' key_id 不匹配（密文属于另一把钥匙；用恢复码导入或重设同步）`,
+        E_KEY_ID_MISMATCH,
+      );
+    }
+    const iv = raw.subarray(V2_HEADER_BYTES, V2_HEADER_BYTES + IV_BYTES);
+    const tag = raw.subarray(V2_HEADER_BYTES + IV_BYTES, V2_MIN_BYTES);
+    const ciphertext = raw.subarray(V2_MIN_BYTES);
+    return gcmDecrypt(dek, logicalName, iv, tag, ciphertext);
+  }
+
+  // v1 旧格式（老包无缝）
+  if (raw.length < V1_MIN_BYTES) {
     throw new SyncKeyError(`'${logicalName}' 密文过短（${String(raw.length)} 字节）`);
   }
   const iv = raw.subarray(0, IV_BYTES);
-  const tag = raw.subarray(IV_BYTES, IV_BYTES + TAG_BYTES);
-  const ciphertext = raw.subarray(IV_BYTES + TAG_BYTES);
+  const tag = raw.subarray(IV_BYTES, V1_MIN_BYTES);
+  const ciphertext = raw.subarray(V1_MIN_BYTES);
+  return gcmDecrypt(dek, logicalName, iv, tag, ciphertext);
+}
+
+function gcmDecrypt(
+  dek: Uint8Array,
+  logicalName: string,
+  iv: Buffer,
+  tag: Buffer,
+  ciphertext: Buffer,
+): string {
   const decipher = createDecipheriv('aes-256-gcm', Buffer.from(dek), iv, { authTagLength: TAG_BYTES });
   decipher.setAAD(Buffer.from(logicalName, 'utf8'));
   decipher.setAuthTag(tag);

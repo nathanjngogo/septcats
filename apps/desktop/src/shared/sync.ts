@@ -5,8 +5,8 @@
  * main（SyncRuntime 产出）、preload、renderer（07 同步状态面板）三侧共用。
  */
 
-/** 同步状态机五态（07 屏顶栏状态钮逐态对应）。 */
-export type SyncRuntimeState = 'idle' | 'syncing' | 'ok' | 'degraded' | 'error';
+/** 同步状态机六态（07 屏顶栏状态钮逐态对应；key_mismatch = T17-01 D4 新增红条态）。 */
+export type SyncRuntimeState = 'idle' | 'syncing' | 'ok' | 'degraded' | 'error' | 'key_mismatch';
 
 /** 一条最近错误（稳定 code 供 UI 分支；message 已是中文人话）。 */
 export interface SyncErrorEntry {

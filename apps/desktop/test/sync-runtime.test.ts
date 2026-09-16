@@ -1,5 +1,5 @@
 /**
- * sync-runtime.test.ts —— SyncRuntime 双实例集成（TASK-T13-01 §4）。
+ * sync-runtime.test.ts —— SyncRuntime 双实例集成（TASK-T13-01 §4 / TASK-T17-01 §1 扩）。
  *
  * 场景（同一 temp sync 目录，两个独立内存账本 + 各自 actor）：
  *   A. 建 5 页 → B 追平投影逐 op 相等；发布文件名符合 naming；
@@ -8,7 +8,8 @@
  *   D. 断链 → degraded + 本地写入照常；恢复 → 追平；
  *   E. 崩溃恢复：半截段隔离、重启自愈不再重试；
  *   F. S5：新设备只有 snapshot+段（含 patch 折叠）→ 追平投影相等；
- *   G. 桥装饰器语义；H. setEnabled 假时钟轮询；I. 加密 E2E 与 E_SYNC_KEY_MISMATCH 红条。
+ *   G. 桥装饰器语义；H. setEnabled 假时钟轮询；I. 加密 E2E 与 E_SYNC_KEY_MISMATCH 红条；
+ *   K. S10（T17-01）：v1 老段 + 轮换重加密 → 旧钥丢失 → 导入恢复码 → 全段可读；幂等重跑。
  *
  * DB 用假 SyncDbAdapter（内存账本），纯 Node 可跑；实体物化正确性归 db 层测试。
  */
@@ -17,21 +18,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildSegment,
   decodeOp,
   encodeOp,
+  encodeSegment,
   opsToSnapshot,
   replay,
   type ActorId,
   type Op,
   type Segment,
 } from '@septcats/core';
-import { parseSegmentFileName } from '@septcats/sync';
+import { parseSegmentFileName, segmentFileName } from '@septcats/sync';
 import type { CredentialStore } from '@septcats/platform';
 import type { AllData, BatchData, DbBatchStatement, GetData } from '../src/db/rpc';
 import { withSyncHook } from '../src/main/sync/bridge';
-import { encodeDek, generateDek } from '../src/main/sync/crypto';
-import { SyncKeyring } from '../src/main/sync/keyring';
+import { encodeDek, generateDek, keyIdBytes } from '../src/main/sync/crypto';
+import { SYNC_DEK_ACCOUNT, SYNC_DEK_SERVICE, SyncKeyring } from '../src/main/sync/keyring';
 import { SyncRuntime } from '../src/main/sync/runtime';
+import { createCipheriv, randomBytes } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
 // 假 DB：内存账本（batch 只吃 opLedger.insert；all/get 支撑 runtime 读路径）
@@ -94,13 +98,19 @@ class MemoryLedger {
   }
 }
 
-/** 内存假凭据 store（DEK 预置；空 = 未设置）。 */
+/** 内存假凭据存储（可变 Map）：初始 dek 预置；set 真写（支撑 T17 轮换后读回新钥）。 */
 function fakeStore(dek: Uint8Array | null): CredentialStore {
+  const plain = new Map<string, string>();
+  if (dek !== null) {
+    plain.set(`${SYNC_DEK_SERVICE}/${SYNC_DEK_ACCOUNT}`, encodeDek(dek));
+  }
   return {
     async get(): Promise<string | null> {
-      return dek === null ? null : encodeDek(dek);
+      return plain.get(`${SYNC_DEK_SERVICE}/${SYNC_DEK_ACCOUNT}`) ?? null;
     },
-    async set(): Promise<void> {},
+    async set(_service: string, _account: string, secret: string): Promise<void> {
+      plain.set(`${_service}/${_account}`, secret);
+    },
     async delete(): Promise<boolean> {
       return true;
     },
@@ -108,6 +118,18 @@ function fakeStore(dek: Uint8Array | null): CredentialStore {
       return true;
     },
   };
+}
+
+/** T13-01 时代 v1 布局（iv+tag+ct）制造器（S10 场景的「老包」）。 */
+function encryptV1Text(dek: Uint8Array, logicalName: string, plaintext: string): string {
+  let iv = randomBytes(12);
+  while (iv[0] === 0x01) {
+    iv = randomBytes(12); // 防命中 v2 判型（1/256）：v1 密文首字节不得为 0x01
+  }
+  const cipher = createCipheriv('aes-256-gcm', Buffer.from(dek), iv, { authTagLength: 16 });
+  cipher.setAAD(Buffer.from(logicalName, 'utf8'));
+  const ct = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ct]).toString('base64');
 }
 
 interface MakeRuntimeOptions {
@@ -122,17 +144,19 @@ interface MakeRuntimeOptions {
 interface RuntimeHandle {
   ledger: MemoryLedger;
   runtime: SyncRuntime;
+  keyring: SyncKeyring;
 }
 
 function makeRuntime(options: MakeRuntimeOptions): RuntimeHandle {
   const ledger = new MemoryLedger();
+  const keyring = new SyncKeyring(fakeStore(options.dek ?? null));
   const runtime = new SyncRuntime({
     rootDir: options.syncDir,
     db: ledger,
     actor: options.actor,
     workspaceId: `ws-${options.actor}`,
     clientVer: '0.1.0',
-    keyring: new SyncKeyring(fakeStore(options.dek ?? null)),
+    keyring,
     encryptEnabled: () => options.encrypt === true,
     gcEnabled: () => false,
     idleFlushMs: 15_000,
@@ -140,7 +164,7 @@ function makeRuntime(options: MakeRuntimeOptions): RuntimeHandle {
     watchDebounceMs: 2_000,
     ...(options.maxKeepSegs === undefined ? {} : { maxKeepSegs: options.maxKeepSegs }),
   });
-  return { ledger, runtime };
+  return { ledger, runtime, keyring };
 }
 
 /** 桥接线（与 main/index.ts 同构）：batch 成功 → onCommitted → 攒段器。 */
@@ -466,7 +490,7 @@ describe('sync/runtime 双实例集成', () => {
     b.runtime.stop();
   });
 
-  it('J：DEK 缺失读 .enc → E_SYNC_KEY_MISMATCH 红条（state=error，不崩）', async () => {
+  it('J：错钥读 v2 段 → key_mismatch 红条（不崩）', async () => {
     const syncDir = tempDir('septcats-sync-key-');
     const dek = generateDek();
     const a = makeRuntime({ syncDir, actor: 'aaaa0001', dek, encrypt: true });
@@ -475,11 +499,77 @@ describe('sync/runtime 双实例集成', () => {
     await a.runtime.flushAndPublish();
     a.runtime.stop();
 
-    // B 加密开启但存的是另一把新钥 → 读段解密失败 → error 态（不 panic）
+    // B 加密开启但存的是另一把新钥 → 读段解密失败 → key_mismatch 态（不 panic）
     const b = makeRuntime({ syncDir, actor: 'bbbb0002', encrypt: true });
     await b.runtime.start();
-    expect(b.runtime.getStatus().state).toBe('error');
-    expect(b.runtime.getStatus().errors.some((e) => e.code === 'E_SYNC_KEY_MISMATCH')).toBe(true);
+    expect(b.runtime.getStatus().state).toBe('key_mismatch');
+    expect(b.runtime.getStatus().errors.some((e) => e.code === 'E_KEY_ID_MISMATCH')).toBe(true);
+    b.runtime.stop();
+  });
+
+  it('K：S10 全流程：v1 老段 + 轮换重加密 → 旧钥丢失 → 导入恢复码 → 全段可读；幂等重跑', async () => {
+    const syncDir = tempDir('septcats-sync-s10-');
+    const oldDek = generateDek();
+    const a = makeRuntime({ syncDir, actor: 'aaaa0001', dek: oldDek, encrypt: true });
+    await a.runtime.start();
+
+    // ① v1 老段（T13-01 时代布局 iv+tag+ct，内容为真段：mergeRemote 可解码）
+    const legacyOps = [upsertOp('aaaa0001', 'pg-legacy', '老段页', 1)];
+    const legacySeg = buildSegment('aaaa0001', legacyOps, 1_700_000_000_000);
+    const legacyText = encodeSegment(legacySeg);
+    const legacyName = segmentFileName(legacySeg); // seg-xxx.jsonl（naming 契约：加密落盘名 = 逻辑名 + .enc）
+    writeFileSync(join(syncDir, `${legacyName}.enc`), encryptV1Text(oldDek, legacyName, legacyText), 'utf8');
+
+    // ② v2 当前时代段（经 runtime 正常发布）
+    await commit(a, [upsertOp('aaaa0001', 'pg-s10', 'S10 页', 2)]);
+    await a.runtime.flushAndPublish();
+    expect(readdirSync(syncDir).filter((n) => n.endsWith('.jsonl.enc')).length).toBeGreaterThanOrEqual(2);
+
+    // ③ 轮换：新钥即刻接管 + 后台重加密全部历史段
+    const { startedAt } = a.runtime.rotateKey();
+    expect(startedAt).toBeGreaterThan(0);
+    const report = await a.runtime.whenReencryptSettled();
+    expect(report).not.toBeNull();
+    expect(report!.total).toBeGreaterThanOrEqual(2);
+    expect(report!.reencrypted).toBeGreaterThanOrEqual(2);
+    expect(report!.failed).toBe(0);
+
+    // ④ 落盘段全部为 v2 且 key_id == 新钥；旧钥已解不开任何段
+    const stored = await a.keyring.loadDek();
+    expect(stored).not.toBeNull();
+    const newKey = stored!;
+    const encNames = readdirSync(syncDir).filter((n) => n.endsWith('.enc'));
+    for (const name of encNames) {
+      const raw = Buffer.from(readFileSync(join(syncDir, name), 'utf8'), 'base64');
+      expect(raw[0]).toBe(0x01);
+      expect(raw.subarray(1, 9).equals(keyIdBytes(newKey))).toBe(true);
+    }
+    // 幂等重跑：全部跳过，零重加
+    const again = await a.runtime.reencryptAllSegments();
+    expect(again.reencrypted).toBe(0);
+    expect(again.skipped).toBe(again.total);
+    expect(again.failed).toBe(0);
+    // 轮换后 A 本轮读段照常（新钥全通）；重加密完成会自动补跑刷新轮，runCycle 并发合并
+    await a.runtime.runCycle();
+    await vi.waitFor(() => {
+      expect(a.runtime.getStatus().state).toBe('ok');
+    });
+    expect(a.ledger.ops.size).toBe(2);
+    a.runtime.stop();
+
+    // ⑤ 旧钥丢失：B 全新凭据（ensureDek 生成随机钥）→ v2 key_id 不符 → key_mismatch 红条
+    const b = makeRuntime({ syncDir, actor: 'bbbb0002', dek: null, encrypt: true });
+    await b.runtime.start();
+    expect(b.runtime.getStatus().state).toBe('key_mismatch');
+    expect(b.runtime.getStatus().errors.some((e) => e.code === 'E_KEY_ID_MISMATCH')).toBe(true);
+
+    // ⑥ 导入恢复码（新钥的）→ 写 keyring → 追平 → 全段可读
+    const code = await a.keyring.exportRecoveryCode(); // A 侧 store 已持新钥
+    const imported = await b.keyring.importRecoveryCode(code);
+    await b.runtime.adoptRecoveredDek(imported);
+    expect(b.runtime.getStatus().state).toBe('ok');
+    expect(b.ledger.ops.size).toBe(2);
+    expect(b.ledger.projection()).toBe(a.ledger.projection());
     b.runtime.stop();
   });
 });
