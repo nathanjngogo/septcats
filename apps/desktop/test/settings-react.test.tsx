@@ -5,9 +5,11 @@
  * 覆盖：三区块渲染（外观/数据与隐私/诊断）、主题切换派发主题事件（setGlobalThemeMode）、
  * 诊断包导出预览流程。window.septcats 用 vi.stubGlobal 假桥替换；不 import electron。
  * T17-01：同步密钥三件套（导出勾选门控 / 导入校验反馈 / 轮换确认）。
+ * T18-02：AI 助手区块（渲染/开关/添加预设/模型下拉/测试连接/密钥/云端禁用门控）。
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import type { AppSettings } from '../src/shared/settings';
 import type { SeptcatsApi } from '../src/types/window';
 import { SettingsPage } from '../src/renderer/src/pages/SettingsPage';
@@ -30,6 +32,8 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
   exportRecovery: ReturnType<typeof vi.fn>;
   importRecovery: ReturnType<typeof vi.fn>;
   rotateKey: ReturnType<typeof vi.fn>;
+  listModels: ReturnType<typeof vi.fn>;
+  setKey: ReturnType<typeof vi.fn>;
 } {
   const patch = vi.fn(async (p: Partial<AppSettings>) => ({ ...defaultSettings(), ...p }));
   const exportDiag = vi.fn(async () => ({
@@ -42,6 +46,25 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
   }));
   const importRecovery = vi.fn(async () => ({ ok: true as const, keyId: 'a1b2c3d4' }));
   const rotateKey = vi.fn(async () => ({ startedAt: 1 }));
+  // T18-02：AI 子桥（enabled:false 为隐私默认；需要启用态的用例经 overrides 覆盖）
+  const aiState = vi.fn(async () => ({
+    enabled: false,
+    cloudConsent: false,
+    activeProviderId: null,
+    providers: [
+      {
+        id: 'plocal1',
+        kind: 'lmstudio' as const,
+        name: 'LM Studio',
+        baseUrl: 'http://127.0.0.1:1234',
+        isLocal: true,
+        hasKey: false,
+        model: null,
+      },
+    ],
+  }));
+  const listModels = vi.fn(async () => ({ models: ['qwen-7b', 'deepseek-v3'], cached: false, fetchedAt: 1 }));
+  const setKey = vi.fn(async () => ({ ok: true as const }));
   const bridge = {
     ping: vi.fn(),
     appMeta: vi.fn(async () => ({
@@ -85,10 +108,18 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
       importRecovery,
       rotateKey,
     },
+    // T18-02：AI 桥（chat/clearKey 为完备性占位，用例断言走 setKey/clearKey 引用）
+    ai: {
+      state: aiState,
+      listModels,
+      chat: vi.fn(async () => ({ text: 'ok', model: 'qwen-7b' })),
+      setKey,
+      clearKey: vi.fn(async () => ({ ok: true as const })),
+    },
     ...overrides,
   };
   vi.stubGlobal('septcats', bridge as unknown as SeptcatsApi);
-  return { patch, exportDiag, exportRecovery, importRecovery, rotateKey };
+  return { patch, exportDiag, exportRecovery, importRecovery, rotateKey, listModels, setKey };
 }
 
 beforeEach(() => {
@@ -111,7 +142,9 @@ describe('SettingsPage（三区块 + 无障碍）', () => {
 
     const group = await screen.findByRole('radiogroup', { name: '主题' });
     expect(group).toBeDefined();
-    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    // 作用域收窄到主题组内：AI 助手区块（T18-02）加载后会追加自己的 radio，
+    // 全局计数会随异步时序漂移（flaky）——这里只断言主题组的 3 个选项。
+    expect(within(group).getAllByRole('radio')).toHaveLength(3);
   });
 
   it('主题切换派发 septcats:theme-mode（setGlobalThemeMode）并 patch', async () => {
@@ -222,5 +255,157 @@ describe('设置页 · 同步密钥三件套（T17-01）', () => {
 
     const note = await screen.findByTestId('settings-rotate-note');
     expect(note.textContent).toBe('已开始后台重加密，进度见顶栏同步状态');
+  });
+});
+
+/** T18-02：enabled:true 态的 AI 桥（网络门控用例前置；listModels 可 mockRejectedValueOnce）。 */
+function installEnabledAiBridge(): { patch: Mock; listModels: Mock } {
+  const listModels = vi.fn(async () => ({ models: ['qwen-7b', 'deepseek-v3'], cached: false, fetchedAt: 1 }));
+  const { patch } = installBridge({
+    ai: {
+      state: vi.fn(async () => ({
+        enabled: true,
+        cloudConsent: false,
+        activeProviderId: 'plocal1',
+        providers: [
+          {
+            id: 'plocal1',
+            kind: 'lmstudio' as const,
+            name: 'LM Studio',
+            baseUrl: 'http://127.0.0.1:1234',
+            isLocal: true,
+            hasKey: false,
+            model: null,
+          },
+        ],
+      })),
+      listModels,
+      chat: vi.fn(),
+      setKey: vi.fn(),
+      clearKey: vi.fn(),
+    },
+  } as Partial<SeptcatsApi>);
+  return { patch: patch as Mock, listModels: listModels as Mock };
+}
+
+function patchCallsWithProviders(patch: Mock): Array<Record<string, unknown>> {
+  const call = patch.mock.calls.find((args: unknown[]) => {
+    const input = args[0] as { ai?: { providers?: unknown } };
+    return Array.isArray(input.ai?.providers);
+  }) as unknown as [{ ai: { providers: Array<Record<string, unknown>> } }] | undefined;
+  return call === undefined ? [] : call[0].ai.providers;
+}
+
+describe('设置页 · AI 助手（T18-02）', () => {
+  it('渲染：AI 助手区块出现，启用开关反映 ai.enabled（默认 false）', async () => {
+    render(<SettingsPage />);
+    expect(await screen.findByText('AI 助手')).toBeDefined();
+
+    const enable = screen.getByRole('switch', { name: '启用 AI' });
+    expect(enable.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('启用开关点击 → settings.patch 收到 {ai:{enabled:true}} 且 ai.state 被重拉', async () => {
+    const { patch } = installBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+    const stateMock = window.septcats.ai.state as unknown as Mock;
+    expect(stateMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('switch', { name: '启用 AI' }));
+
+    await waitFor(() => expect(patch).toHaveBeenCalledWith({ ai: { enabled: true } }));
+    await waitFor(() => expect(stateMock).toHaveBeenCalledTimes(2));
+  });
+
+  it('添加 LM Studio 预设：弹窗选预设 → 保存 → patch 的 providers 含新项', async () => {
+    const { patch } = installBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByRole('button', { name: '添加模型服务' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'LM Studio（本地）' }));
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(patch).toHaveBeenCalled());
+    const providers = patchCallsWithProviders(patch as Mock);
+    expect(providers).toHaveLength(2);
+    const added = providers[1];
+    if (added === undefined) {
+      throw new Error('patch 未携带新增 provider');
+    }
+    expect(added.kind).toBe('lmstudio');
+    expect(added.baseUrl).toBe('http://127.0.0.1:1234');
+    expect(String(added.id)).toMatch(/^p[a-z0-9]{6,}$/);
+    expect(added.id).not.toBe('plocal1');
+  });
+
+  it('模型下拉：点开触发 listModels（含 providerId）→ 选项出现 → 选中写 model', async () => {
+    const { patch, listModels } = installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    const select = screen.getByRole('combobox', { name: '模型' });
+    fireEvent.click(select);
+
+    await waitFor(() => expect(listModels).toHaveBeenCalledWith(expect.objectContaining({ providerId: 'plocal1' })));
+    expect(await screen.findByRole('option', { name: 'qwen-7b' })).toBeDefined();
+
+    fireEvent.change(select, { target: { value: 'qwen-7b' } });
+    await waitFor(() => expect(patch).toHaveBeenCalled());
+    const providers = patchCallsWithProviders(patch);
+    const first = providers[0];
+    if (first === undefined) {
+      throw new Error('patch 未携带 providers');
+    }
+    expect(first.model).toBe('qwen-7b');
+  });
+
+  it('测试连接：成功 inline「已连接，2 个模型」；失败 inline「连接失败」含 E_AI_* 码', async () => {
+    const { listModels } = installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByRole('button', { name: '测试连接' }));
+    expect(await screen.findByText('已连接，2 个模型')).toBeDefined();
+
+    listModels.mockRejectedValueOnce(new Error('E_AI_UNREACHABLE：端点不可达：fetch failed'));
+    fireEvent.click(screen.getByRole('button', { name: '测试连接' }));
+    const fail = await screen.findByText((_, element) => {
+      return element?.textContent === '连接失败：E_AI_UNREACHABLE：端点不可达：fetch failed';
+    });
+    expect(fail).toBeDefined();
+  });
+
+  it('密钥：弹窗显示未设置 → 保存调 setKey → 反馈；清除走确认弹窗调 clearKey', async () => {
+    const { setKey } = installBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByRole('button', { name: '密钥' }));
+    const keyDialog = await screen.findByRole('dialog', { name: 'API 密钥' });
+    expect(within(keyDialog).getByText('密钥：未设置')).toBeDefined();
+
+    fireEvent.change(screen.getByLabelText('输入 API 密钥'), { target: { value: 'sk-test' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(setKey).toHaveBeenCalledWith({ providerId: 'plocal1', key: 'sk-test' }));
+    expect(await within(keyDialog).findByText('密钥已保存')).toBeDefined();
+
+    fireEvent.click(within(keyDialog).getByRole('button', { name: '清除密钥' }));
+    fireEvent.click(await screen.findByRole('button', { name: '确认删除' }));
+
+    await waitFor(() => {
+      expect(window.septcats.ai.clearKey as unknown as Mock).toHaveBeenCalledWith({ providerId: 'plocal1' });
+    });
+    expect(await within(keyDialog).findByText('密钥已清除')).toBeDefined();
+  });
+
+  it('云端开关在 enabled:false 时 disabled（隐私默认）', async () => {
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    const cloud = screen.getByRole('switch', { name: '允许云端模型' }) as HTMLButtonElement;
+    expect(cloud.disabled).toBe(true);
   });
 });

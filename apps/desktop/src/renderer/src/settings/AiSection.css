@@ -1,0 +1,146 @@
+/*
+ * AiSection 样式（TASK-T18-02 §2.4）。只用 var(--sc-*) token（no-magic 门禁）。
+ * 照既有 settings-* 写法：数值/字体取 tokens.css 语义变量，禁字面 hex。
+ */
+
+.settings-ai-card {
+  margin-top: var(--sc-space-md);
+  padding: var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+}
+
+.settings-ai-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.settings-ai-name {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.settings-ai-active-hint {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-accent);
+}
+
+.settings-ai-baseurl {
+  margin-top: var(--sc-space-xxs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.settings-ai-mono {
+  font-family: var(--sc-font-mono);
+}
+
+.settings-ai-card-mid {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-sm);
+}
+
+.settings-ai-select {
+  max-width: 220px;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink);
+}
+
+.settings-ai-key-state {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.settings-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-xs);
+  margin-top: var(--sc-space-sm);
+}
+
+.settings-ai-badge {
+  display: inline-block;
+  padding: 0 var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  font: var(--sc-text-ui-xs);
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-accent);
+}
+
+.settings-ai-badge--lmstudio {
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-accent);
+}
+
+.settings-ai-badge--ollama {
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  color: var(--sc-color-ink-secondary);
+}
+
+.settings-ai-badge--custom {
+  background: var(--sc-color-danger-soft);
+  color: var(--sc-color-danger);
+}
+
+.settings-ai-badge--local {
+  background: transparent;
+  color: var(--sc-color-success);
+}
+
+.settings-ai-badge--cloud {
+  background: var(--sc-color-danger-soft);
+  color: var(--sc-color-danger);
+}
+
+.settings-ai-inline-ok {
+  margin: var(--sc-space-sm) 0 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-success);
+}
+
+.settings-ai-inline-error {
+  margin: var(--sc-space-sm) 0 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-danger);
+}
+
+.settings-ai-empty {
+  margin: var(--sc-space-md) 0 0;
+}
+
+.settings-ai-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+  margin-bottom: var(--sc-space-md);
+}
+
+.settings-ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  margin-top: var(--sc-space-sm);
+}
+
+.settings-ai-input {
+  width: 100%;
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink);
+}

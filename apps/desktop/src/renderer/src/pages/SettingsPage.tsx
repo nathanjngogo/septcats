@@ -9,6 +9,9 @@
  * T12-01B：关于块加「检查更新」行（四态文案 + 重启更新 confirm 弹窗，M10-B §0.6）。
  * T17-01 D5：「同步密钥」区块三件套（导出恢复码 / 导入恢复码 / 轮换密钥，
  * 各带确认弹窗；恢复码一次性明文，只在弹窗内存中存在，关窗即清）。
+ * T18-02：「同步密钥」之后插入「AI 助手」区块（fieldset 壳；内容/弹窗/i18n/busy
+ * 由 AiSection 自管，见 settings/AiSection.tsx）。区块列表：
+ *  - 外观 / 数据与隐私 / 同步密钥 / AI 助手（T18-02）/ 诊断 / 关于。
  */
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -17,6 +20,7 @@ import type { AppSettings, AppSettingsPatch, ThemeMode } from '../../../shared/s
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { t } from '../i18n';
+import { AiSection } from '../settings/AiSection';
 import './SettingsPage.css';
 
 /** i18n 模板替换：'{version}' / '{percent}' 槽位（t() 本身不做插值）。 */
@@ -397,6 +401,11 @@ export function SettingsPage() {
                 {recRotateMsg}
               </div>
             )}
+          </fieldset>
+
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.ai.title')}</legend>
+            <AiSection />
           </fieldset>
 
           <fieldset className="settings-section">
