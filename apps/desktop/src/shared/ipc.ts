@@ -219,11 +219,22 @@ export const CHANNEL_SYNC_NOW = 'sync:now';
 /** main → renderer：状态机跃迁推送（低频），载荷 SyncStatusSnapshot。 */
 export const CHANNEL_SYNC_STATE = 'sync:state';
 
+/* S10 三通道（T17-01 D4） */
+/** 导出恢复码：→ {code}（一次性明文；D1/D4）。 */
+export const CHANNEL_SYNC_EXPORT_RECOVERY = 'sync:exportRecovery';
+/** 导入恢复码：{code} → {ok, keyId}（校验→写入 keyring→触发追平；D1/D4）。 */
+export const CHANNEL_SYNC_IMPORT_RECOVERY = 'sync:importRecovery';
+/** 轮换钥匙：→ {startedAt}（异步启动后台重加密，进度走 sync:state；D3/D4）。 */
+export const CHANNEL_SYNC_ROTATE_KEY = 'sync:rotateKey';
+
 export const SYNC_CHANNELS = {
   status: CHANNEL_SYNC_STATUS,
   setEnabled: CHANNEL_SYNC_SET_ENABLED,
   now: CHANNEL_SYNC_NOW,
   state: CHANNEL_SYNC_STATE,
+  exportRecovery: CHANNEL_SYNC_EXPORT_RECOVERY,
+  importRecovery: CHANNEL_SYNC_IMPORT_RECOVERY,
+  rotateKey: CHANNEL_SYNC_ROTATE_KEY,
 } as const;
 
 export type SyncChannel = (typeof SYNC_CHANNELS)[keyof typeof SYNC_CHANNELS];

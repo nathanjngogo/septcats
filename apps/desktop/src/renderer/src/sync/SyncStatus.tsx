@@ -1,12 +1,13 @@
 /**
  * SyncStatus.tsx —— 顶栏同步状态钮 + 同步面板（TASK-T13-01 §3，视觉基准 = mockup 07）。
  *
- * 五态（07 屏顶栏状态钮逐态对应）：
+ * 六态（07 屏顶栏状态钮逐态对应）：
  *   idle     灰点「同步未开启」（setEnabled(false)）
  *   syncing  琥珀呼吸点「同步中」（转圈由呼吸动画承担）
  *   ok       绿点「已同步 · <相对时间>」
  *   degraded 橙点「同步文件夹不可访问」（S7：本地写入不受影响的红条入口）
  *   error    红点「同步错误」（含 E_SYNC_KEY_MISMATCH 换钥匙/丢钥场景）
+ *   key_mismatch 红点「密钥不匹配」（E_KEY_ID_MISMATCH；面板最近错误里带「用恢复码导入或重设」提示）
  * 点击弹面板：设备列表（actorId+水位）、待发段数、最近错误、手动「立即同步」、
  * 加密开关与同步开关（进 settings）。文案全 i18n；样式全 var(--sc-*)。
  */
@@ -54,6 +55,9 @@ function pillView(status: SyncStatusSnapshot | null, nowMs: number): PillView {
       return { key: 'degraded', label: t('sync.stateDegraded') };
     case 'error':
       return { key: 'error', label: t('sync.stateError') };
+    case 'key_mismatch':
+      // T17-01 D4：密钥不匹配——沿用 error 红条视觉，文案独立（修复指引在错误消息里）
+      return { key: 'error', label: t('sync.stateKeyMismatch') };
     case 'ok': {
       const rel =
         status.lastSyncAt === null ? t('sync.never') : relativeTime(status.lastSyncAt, nowMs);

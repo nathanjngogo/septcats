@@ -558,6 +558,24 @@ export class SyncRuntime {
   }
 
   /**
+   * 导出恢复码（D4 sync:exportRecovery）：ensureDek → base32 文本（5 字符一横杠）。
+   * 一次性明文由 UI 侧保证——本方法不落盘；调用方禁止把 code 写进日志。
+   */
+  async exportRecovery(): Promise<string> {
+    return await this.keyring.exportRecoveryCode();
+  }
+
+  /**
+   * 导入恢复码（D4 sync:importRecovery）：校验→keyring 覆盖写入→新 DEK 接管→
+   * 触发追平（await 完成，回包前状态已刷新）。非法码抛 SyncKeyError（ipc 层转 E_MALFORMED）。
+   */
+  async importRecovery(code: string): Promise<{ ok: true; keyId: string }> {
+    const dek = await this.keyring.importRecoveryCode(code);
+    await this.adoptRecoveredDek(dek);
+    return { ok: true, keyId: keyIdOf(dek) };
+  }
+
+  /**
    * 恢复码导入后的收口（D4 sync:importRecovery）：新 DEK 即刻接管本地加解密 →
    * 清 key_mismatch 红条 → 触发一轮追平（await 完成，回包前状态已刷新）。
    */

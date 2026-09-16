@@ -136,6 +136,12 @@ const api: SeptcatsApi = {
     setEnabled: (input) =>
       ipcRenderer.invoke(SYNC_CHANNELS.setEnabled, input) as ReturnType<SeptcatsApi['sync']['setEnabled']>,
     now: () => ipcRenderer.invoke(SYNC_CHANNELS.now) as ReturnType<SeptcatsApi['sync']['now']>,
+    exportRecovery: () =>
+      ipcRenderer.invoke(SYNC_CHANNELS.exportRecovery) as ReturnType<SeptcatsApi['sync']['exportRecovery']>,
+    importRecovery: (input) =>
+      ipcRenderer.invoke(SYNC_CHANNELS.importRecovery, input) as ReturnType<SeptcatsApi['sync']['importRecovery']>,
+    rotateKey: () =>
+      ipcRenderer.invoke(SYNC_CHANNELS.rotateKey) as ReturnType<SeptcatsApi['sync']['rotateKey']>,
     onState: (listener) => subscribe(SYNC_CHANNELS.state, listener),
   },
 };

@@ -7,10 +7,12 @@
  *  - 诊断：导出诊断包（预览 → 确认落盘）+ 关于块（版本/猫标/技术栈）。
  * 无异步加载需求 → 控件变更即时 patch（busy 态禁交互）；zod 拒绝 → ErrorPanel 内联。
  * T12-01B：关于块加「检查更新」行（四态文案 + 重启更新 confirm 弹窗，M10-B §0.6）。
+ * T17-01 D5：「同步密钥」区块三件套（导出恢复码 / 导入恢复码 / 轮换密钥，
+ * 各带确认弹窗；恢复码一次性明文，只在弹窗内存中存在，关窗即清）。
  */
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
+import { Button, Checkbox, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
 import type { AppSettings, AppSettingsPatch, ThemeMode } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
@@ -93,6 +95,22 @@ export function SettingsPage() {
   const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
   const [updateBusy, setUpdateBusy] = useState(false);
+
+  // T17-01 D5：同步密钥三件套（一次性明文不落任何持久态；关窗即清）
+  const [recExportOpen, setRecExportOpen] = useState(false);
+  const [recCode, setRecCode] = useState<string | null>(null);
+  const [recExportBusy, setRecExportBusy] = useState(false);
+  const [recExportError, setRecExportError] = useState<string | null>(null);
+  const [recSaved, setRecSaved] = useState(false);
+  const [recImportOpen, setRecImportOpen] = useState(false);
+  const [recImportText, setRecImportText] = useState('');
+  const [recImportBusy, setRecImportBusy] = useState(false);
+  const [recImportError, setRecImportError] = useState<string | null>(null);
+  const [recImportOk, setRecImportOk] = useState<string | null>(null);
+  const [recRotateOpen, setRecRotateOpen] = useState(false);
+  const [recRotateBusy, setRecRotateBusy] = useState(false);
+  const [recRotateError, setRecRotateError] = useState<string | null>(null);
+  const [recRotateMsg, setRecRotateMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,6 +221,72 @@ export function SettingsPage() {
     }
   };
 
+  const closeRecExport = (): void => {
+    setRecExportOpen(false);
+    setRecCode(null);
+    setRecSaved(false);
+    setRecExportError(null);
+  };
+
+  const openRecExport = (): void => {
+    setRecExportOpen(true);
+    setRecCode(null);
+    setRecSaved(false);
+    setRecExportError(null);
+    setRecExportBusy(true);
+    void (async () => {
+      try {
+        const result = await window.septcats.sync.exportRecovery();
+        setRecCode(result.code);
+      } catch (cause) {
+        setRecExportError(describeError(cause));
+      } finally {
+        setRecExportBusy(false);
+      }
+    })();
+  };
+
+  const closeRecImport = (): void => {
+    setRecImportOpen(false);
+    setRecImportText('');
+    setRecImportBusy(false);
+    setRecImportError(null);
+    setRecImportOk(null);
+  };
+
+  const submitRecImport = async (): Promise<void> => {
+    setRecImportBusy(true);
+    setRecImportError(null);
+    setRecImportOk(null);
+    try {
+      const result = await window.septcats.sync.importRecovery({ code: recImportText });
+      setRecImportOk(result.keyId);
+    } catch (cause) {
+      setRecImportError(describeError(cause));
+    } finally {
+      setRecImportBusy(false);
+    }
+  };
+
+  const closeRecRotate = (): void => {
+    setRecRotateOpen(false);
+    setRecRotateError(null);
+  };
+
+  const confirmRecRotate = async (): Promise<void> => {
+    setRecRotateBusy(true);
+    setRecRotateError(null);
+    try {
+      await window.septcats.sync.rotateKey();
+      setRecRotateMsg(t('settings.recovery.rotateStarted'));
+      setRecRotateOpen(false);
+    } catch (cause) {
+      setRecRotateError(describeError(cause));
+    } finally {
+      setRecRotateBusy(false);
+    }
+  };
+
   return (
     <div className="settings-page" data-testid="settings-page">
       <h2 className="settings-title">{t('settings.title')}</h2>
@@ -263,6 +347,56 @@ export function SettingsPage() {
                 />
               }
             />
+          </fieldset>
+
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.recovery.title')}</legend>
+            <SettingsRow
+              title={t('settings.recovery.export')}
+              desc={t('settings.recovery.exportDesc')}
+              control={
+                <Button variant="secondary" size="sm" disabled={saving} onClick={openRecExport}>
+                  {t('settings.recovery.export')}
+                </Button>
+              }
+            />
+            <SettingsRow
+              title={t('settings.recovery.import')}
+              desc={t('settings.recovery.importDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => {
+                    setRecImportOpen(true);
+                  }}
+                >
+                  {t('settings.recovery.import')}
+                </Button>
+              }
+            />
+            <SettingsRow
+              title={t('settings.recovery.rotate')}
+              desc={t('settings.recovery.rotateDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => {
+                    setRecRotateOpen(true);
+                  }}
+                >
+                  {t('settings.recovery.rotate')}
+                </Button>
+              }
+            />
+            {recRotateMsg === null ? null : (
+              <div className="settings-saved" data-testid="settings-rotate-note">
+                {recRotateMsg}
+              </div>
+            )}
           </fieldset>
 
           <fieldset className="settings-section">
@@ -398,6 +532,128 @@ export function SettingsPage() {
           })}
         </p>
         <p className="settings-update-rollback">{t('settings.about.rollback')}</p>
+      </Dialog>
+
+      <Dialog
+        open={recExportOpen}
+        onClose={closeRecExport}
+        title={t('settings.recovery.exportDialogTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button variant="secondary" size="sm" onClick={closeRecExport}>
+              {t('settings.recovery.cancel')}
+            </Button>
+            <Button size="sm" disabled={!recSaved || recCode === null} onClick={closeRecExport}>
+              {t('settings.recovery.exportDialogDone')}
+            </Button>
+          </div>
+        }
+      >
+        {recExportBusy ? <p className="settings-recovery-muted">{t('settings.recovery.busy')}</p> : null}
+        {recExportError === null ? null : (
+          <p className="settings-recovery-error" role="alert">
+            {recExportError}
+          </p>
+        )}
+        {recCode === null ? null : (
+          <>
+            <code className="settings-recovery-code" data-testid="recovery-code">
+              {recCode}
+            </code>
+            <p className="settings-recovery-warn">{t('settings.recovery.exportDialogBody')}</p>
+            <div className="settings-recovery-saved-row">
+              <Checkbox
+                checked={recSaved}
+                onChange={(event) => {
+                  setRecSaved(event.target.checked);
+                }}
+                label={t('settings.recovery.exportDialogSaved')}
+              />
+            </div>
+          </>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={recImportOpen}
+        onClose={closeRecImport}
+        title={t('settings.recovery.importDialogTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button variant="secondary" size="sm" onClick={closeRecImport}>
+              {t('settings.recovery.cancel')}
+            </Button>
+            {recImportOk === null ? (
+              <Button
+                size="sm"
+                loading={recImportBusy}
+                disabled={recImportText.trim().length === 0}
+                onClick={() => {
+                  void submitRecImport();
+                }}
+              >
+                {t('settings.recovery.importDialogSubmit')}
+              </Button>
+            ) : (
+              <Button size="sm" onClick={closeRecImport}>
+                {t('settings.recovery.exportDialogDone')}
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <p className="settings-recovery-warn">{t('settings.recovery.importDialogBody')}</p>
+        <textarea
+          className="settings-recovery-input"
+          rows={3}
+          value={recImportText}
+          placeholder={t('settings.recovery.importDialogPlaceholder')}
+          aria-label={t('settings.recovery.importDialogTitle')}
+          disabled={recImportOk !== null}
+          onChange={(event) => {
+            setRecImportText(event.target.value);
+          }}
+        />
+        {recImportError === null ? null : (
+          <p className="settings-recovery-error" role="alert">
+            {recImportError}
+          </p>
+        )}
+        {recImportOk === null ? null : (
+          <p className="settings-recovery-ok" data-testid="recovery-import-ok">
+            {fillTemplate(t('settings.recovery.importDialogSuccess'), { keyId: recImportOk })}
+          </p>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={recRotateOpen}
+        onClose={closeRecRotate}
+        title={t('settings.recovery.rotateDialogTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button variant="secondary" size="sm" onClick={closeRecRotate}>
+              {t('settings.recovery.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              loading={recRotateBusy}
+              onClick={() => {
+                void confirmRecRotate();
+              }}
+            >
+              {t('settings.recovery.rotateDialogConfirm')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="settings-recovery-warn">{t('settings.recovery.rotateDialogBody')}</p>
+        {recRotateError === null ? null : (
+          <p className="settings-recovery-error" role="alert">
+            {recRotateError}
+          </p>
+        )}
       </Dialog>
     </div>
   );

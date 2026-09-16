@@ -24,7 +24,8 @@ import type { SyncStatusSnapshot } from '../shared/sync';
 /**
  * 同步运行时 IPC（M8b · TASK-T13-01 §1/§3）。通道与 `src/shared/ipc.ts` 的
  * SYNC_CHANNELS 一对一；状态跃迁经 sync:state 推送（onState 订阅）。
- * 五态：idle（未启用）/ syncing / ok / degraded（同步文件夹不可访问）/ error。
+ * 六态：idle（未启用）/ syncing / ok / degraded（同步文件夹不可访问）/ error /
+ * key_mismatch（E_KEY_ID_MISMATCH 红条，提示用恢复码导入或重设）。
  * 错误经 Error.message 透传（E_INVARIANT / E_MALFORMED）。
  */
 export interface SeptcatsSyncApi {
@@ -34,6 +35,12 @@ export interface SeptcatsSyncApi {
   setEnabled(input: { on: boolean }): Promise<SyncStatusSnapshot>;
   /** 立即跑一轮（await 完成后回最新快照）。 */
   now(): Promise<SyncStatusSnapshot>;
+  /** 导出恢复码（一次性明文；D1/D4）。加解密全在本地，不经网络。 */
+  exportRecovery(): Promise<{ code: string }>;
+  /** 导入恢复码：校验→写入 keyring→新钥接管→追平；非法码经 E_MALFORMED 透传。 */
+  importRecovery(input: { code: string }): Promise<{ ok: true; keyId: string }>;
+  /** 轮换钥匙：立即回 {startedAt}；后台重加密进度经 onState（sync:state）推送。 */
+  rotateKey(): Promise<{ startedAt: number }>;
   /** 订阅状态机跃迁推送，返回退订函数。 */
   onState(listener: (status: SyncStatusSnapshot) => void): () => void;
 }

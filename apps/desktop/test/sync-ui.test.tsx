@@ -2,7 +2,8 @@
 /**
  * sync-ui.test.tsx —— 同步状态面板 UI smoke（TASK-T13-01 §4）。
  *
- * 五态渲染（vi.stubGlobal 假桥 + sync.onState 推流驱动）：idle/syncing/ok/degraded/error；
+ * 六态渲染（vi.stubGlobal 假桥 + sync.onState 推流驱动）：idle/syncing/ok/degraded/error
+ * + key_mismatch 红条（T17-01 六态新增）；
  * 面板：设备列表、待发段、最近错误、立即同步、加密/启用开关。
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -90,7 +91,7 @@ async function renderPill(initial: SyncStatusSnapshot = statusOf()) {
   return env;
 }
 
-describe('sync/UI 顶栏状态钮五态', () => {
+describe('sync/UI 顶栏状态钮六态', () => {
   it('ok 态：绿点 + 已同步 · 相对时间', async () => {
     await renderPill();
     const pill = screen.getByRole('button', { name: '同步状态' });
@@ -131,6 +132,25 @@ describe('sync/UI 顶栏状态钮五态', () => {
     const pill = screen.getByRole('button', { name: '同步状态' });
     expect(pill.className).toContain('sc-sync-status__pill--error');
     expect(pill.textContent).toContain('同步错误');
+  });
+
+  it('key_mismatch 态（T17-01 六态新增）：红点 + 密钥不匹配', async () => {
+    await renderPill(
+      statusOf({
+        state: 'key_mismatch',
+        errors: [
+          {
+            code: 'E_KEY_ID_MISMATCH',
+            message:
+              "'seg-0000000a-aaaa0001-000001.jsonl' key_id 不匹配（密文属于另一把钥匙；用恢复码导入或重设同步）",
+            at: 1,
+          },
+        ],
+      }),
+    );
+    const pill = screen.getByRole('button', { name: '同步状态' });
+    expect(pill.className).toContain('sc-sync-status__pill--error');
+    expect(pill.textContent).toContain('密钥不匹配');
   });
 });
 
