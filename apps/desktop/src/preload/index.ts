@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { SeptcatsApi, SeptcatsAppMeta } from '../types/window';
 import {
+  AI_CHANNELS,
   BLOCKS_CHANNELS,
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
@@ -143,6 +144,15 @@ const api: SeptcatsApi = {
     rotateKey: () =>
       ipcRenderer.invoke(SYNC_CHANNELS.rotateKey) as ReturnType<SeptcatsApi['sync']['rotateKey']>,
     onState: (listener) => subscribe(SYNC_CHANNELS.state, listener),
+  },
+  ai: {
+    state: () => ipcRenderer.invoke(AI_CHANNELS.state) as ReturnType<SeptcatsApi['ai']['state']>,
+    listModels: (input) =>
+      ipcRenderer.invoke(AI_CHANNELS.listModels, input) as ReturnType<SeptcatsApi['ai']['listModels']>,
+    chat: (input) => ipcRenderer.invoke(AI_CHANNELS.chat, input) as ReturnType<SeptcatsApi['ai']['chat']>,
+    setKey: (input) => ipcRenderer.invoke(AI_CHANNELS.setKey, input) as ReturnType<SeptcatsApi['ai']['setKey']>,
+    clearKey: (input) =>
+      ipcRenderer.invoke(AI_CHANNELS.clearKey, input) as ReturnType<SeptcatsApi['ai']['clearKey']>,
   },
 };
 

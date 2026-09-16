@@ -238,3 +238,28 @@ export const SYNC_CHANNELS = {
 } as const;
 
 export type SyncChannel = (typeof SYNC_CHANNELS)[keyof typeof SYNC_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// AI（M11 · TASK-T18-01 §2.9）
+// ---------------------------------------------------------------------------
+
+/** 渲染器视图：AiStateSnapshot（shared/ai.ts，hasKey 派生布尔，不泄露密钥）。 */
+export const CHANNEL_AI_STATE = 'ai:state';
+/** 拉模型列表：{providerId, refresh?} → AiListModelsResult（TTL 60s 缓存）。 */
+export const CHANNEL_AI_LIST_MODELS = 'ai:listModels';
+/** 非流式对话：{providerId, messages, maxTokens?, temperature?} → AiChatResult。 */
+export const CHANNEL_AI_CHAT = 'ai:chat';
+/** 设置密钥：{providerId, key} → {ok:true}（密钥只进 CredentialStore）。 */
+export const CHANNEL_AI_SET_KEY = 'ai:setKey';
+/** 清除密钥：{providerId} → {ok:true}。 */
+export const CHANNEL_AI_CLEAR_KEY = 'ai:clearKey';
+
+export const AI_CHANNELS = {
+  state: CHANNEL_AI_STATE,
+  listModels: CHANNEL_AI_LIST_MODELS,
+  chat: CHANNEL_AI_CHAT,
+  setKey: CHANNEL_AI_SET_KEY,
+  clearKey: CHANNEL_AI_CLEAR_KEY,
+} as const;
+
+export type AiChannel = (typeof AI_CHANNELS)[keyof typeof AI_CHANNELS];

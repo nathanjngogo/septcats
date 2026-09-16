@@ -20,6 +20,35 @@ import type {
 } from '../shared/importer';
 import type { UpdateInstallInput, UpdateRollbackHint, UpdateState } from '../shared/updater';
 import type { SyncStatusSnapshot } from '../shared/sync';
+import type {
+  AiChatResult,
+  AiListModelsResult,
+  AiMessage,
+  AiStateSnapshot,
+} from '../shared/ai';
+
+/**
+ * AI IPC（M11 · TASK-T18-01 §2.10）。通道与 `src/shared/ipc.ts` 的 AI_CHANNELS
+ * 一对一；非流式 MVP（chat 一次往返回全文，流式归后续任务）。
+ * 错误经 Error.message 透传（E_AI_* / E_CRED_UNAVAILABLE / E_INVARIANT / E_MALFORMED）。
+ */
+export interface SeptcatsAiApi {
+  /** 渲染器视图（isLocal/hasKey 为派生布尔，不泄露密钥）。 */
+  state(): Promise<AiStateSnapshot>;
+  /** 拉模型列表（TTL 60s 缓存；refresh:true 强制绕过）。 */
+  listModels(input: { providerId: string; refresh?: boolean }): Promise<AiListModelsResult>;
+  /** 非流式对话（一次往返回全文）。messages 1..64 条、总长 ≤ 200_000 字符。 */
+  chat(input: {
+    providerId: string;
+    messages: AiMessage[];
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<AiChatResult>;
+  /** 设置密钥（只进 CredentialStore，不落 settings/日志）。 */
+  setKey(input: { providerId: string; key: string }): Promise<{ ok: true }>;
+  /** 清除密钥。 */
+  clearKey(input: { providerId: string }): Promise<{ ok: true }>;
+}
 
 /**
  * 同步运行时 IPC（M8b · TASK-T13-01 §1/§3）。通道与 `src/shared/ipc.ts` 的
@@ -262,6 +291,8 @@ export interface SeptcatsApi {
   update: SeptcatsUpdateApi;
   /** 同步运行时（M8b）。 */
   sync: SeptcatsSyncApi;
+  /** AI 集成（M11）。 */
+  ai: SeptcatsAiApi;
 }
 
 declare global {

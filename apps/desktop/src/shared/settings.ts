@@ -7,6 +7,8 @@
  * `settings:get/patch` 的返回类型在编译期保证不漂移。
  */
 
+import type { AiProviderConfig } from './ai';
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type Locale = 'zh-CN' | 'en-US';
@@ -36,6 +38,19 @@ export interface AppSettings {
     encrypt: boolean;
     gc: boolean;
   };
+  /**
+   * AI（M11 · TASK-T18-01 §2.2）：enabled/cloudConsent 默认全关（云端调用需显式同意）；
+   * API key 不在此处（存 CredentialStore），providers 数组整体替换语义。
+   */
+  ai: {
+    /** 总开关（默认 false；关 = 所有 ai:* 通道拒绝）。 */
+    enabled: boolean;
+    /** 云端调用显式开关（默认 false；非本地端点无它一律拒绝且不发请求）。 */
+    cloudConsent: boolean;
+    /** 活动 provider（UI 选区；null = 未选）。 */
+    activeProviderId: string | null;
+    providers: AiProviderConfig[];
+  };
 }
 
 /**
@@ -49,6 +64,7 @@ export type AppSettingsPatch = {
   editor?: Partial<AppSettings['editor']>;
   data?: Partial<AppSettings['data']>;
   sync?: Partial<AppSettings['sync']>;
+  ai?: Partial<AppSettings['ai']>;
 };
 
 /** diag:export 的返回：最终落盘路径 + 脱敏预览文本（JSON 字符串）。 */

@@ -22,6 +22,7 @@ export function readAppSettings(userDataDir: string, syncDir: string): AppSettin
     editor: settings.editor,
     data: { note: syncDir },
     sync: settings.sync,
+    ai: settings.ai,
   };
 }
 
@@ -44,5 +45,6 @@ export function patchAppSettings(
     editor: merged.editor,
     data: { note: syncDir },
     sync: merged.sync,
+    ai: merged.ai,
   };
 }

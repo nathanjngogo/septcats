@@ -71,6 +71,8 @@ import { SyncRuntime } from './sync/runtime';
 import { SyncKeyring } from './sync/keyring';
 import { registerSyncIpc } from './sync/ipc';
 import { withSyncHook } from './sync/bridge';
+import { AiService } from './ai/service';
+import { registerAiIpc } from './ai/ipc';
 
 /**
  * 主进程入口。
@@ -542,6 +544,28 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       writeSettings(ctx.userDataDir, { ...current, sync: { ...current.sync, enabled: on } });
     },
   });
+
+  // AI（M11 · TASK-T18-01 §2.11）：五通道；net.fetch 包装注入（fetch 面最小化）。
+  // AiService 无常驻资源，无需生命周期清理；启动零外联（listModels 只在被调用时发请求）。
+  const aiLogger = ctx.logger.forModule('ai');
+  const aiService = new AiService({
+    credentials: ctx.credentials,
+    getSettings: () => readSettings(ctx.userDataDir),
+    fetchFn: async (url, init) => {
+      const requestOptions: Parameters<typeof net.fetch>[1] = {
+        method: init.method,
+        headers: init.headers,
+        signal: init.signal ?? null,
+      };
+      if (init.body !== undefined) {
+        requestOptions.body = init.body;
+      }
+      const response = await net.fetch(url, requestOptions);
+      return { ok: response.ok, status: response.status, text: () => response.text() };
+    },
+    log: (line) => aiLogger.info(line),
+  });
+  registerAiIpc({ registrar: dbViewRegistrar(), getService: () => aiService });
 
   // 自动更新（M10-B · TASK-T12-01B）：electron-updater 注入，五通道 + 启动 5s 后自动检查一次
   updaterService = registerUpdaterIpc({

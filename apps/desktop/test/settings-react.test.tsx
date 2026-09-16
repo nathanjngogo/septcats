@@ -20,6 +20,7 @@ function defaultSettings(): AppSettings {
     editor: { defaultEditMode: 'rich', spellcheck: true },
     data: { note: '~/.septcats' },
     sync: { enabled: true, encrypt: false, gc: false },
+    ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
   };
 }
 

@@ -101,6 +101,105 @@ describe('settings/mergeSettingsPatch', () => {
   });
 });
 
+describe('settings/ai 段（TASK-T18-01 §2.1）', () => {
+  it('默认含 ai 且全关/空（隐私不变量：云端默认关）', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const userData = tempDir('septcats-settings-ai-default-');
+    const s = readSettings(userData);
+    expect(s.ai).toEqual({
+      enabled: false,
+      cloudConsent: false,
+      activeProviderId: null,
+      providers: [],
+    });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('写读往返保留 providers（数组整体替换语义）', () => {
+    const userData = tempDir('septcats-settings-ai-write-');
+    const providers = [
+      {
+        id: 'local',
+        kind: 'lmstudio' as const,
+        name: 'LM Studio',
+        baseUrl: 'http://127.0.0.1:1234',
+        model: 'qwen2.5-7b',
+      },
+      {
+        id: 'cloud',
+        kind: 'openai-compatible' as const,
+        name: '云',
+        baseUrl: 'https://api.example.com',
+        model: null,
+      },
+    ];
+    writeSettings(userData, {
+      ai: { enabled: true, cloudConsent: false, activeProviderId: 'local', providers },
+    });
+    const s = readSettings(userData);
+    expect(s.ai.enabled).toBe(true);
+    expect(s.ai.activeProviderId).toBe('local');
+    expect(s.ai.providers).toEqual(providers);
+
+    // 整体替换：providers 以 patch 为准，其余字段需整段给出（patch 的 ai 为整段语义）
+    writeSettings(userData, {
+      ai: {
+        enabled: true,
+        cloudConsent: false,
+        activeProviderId: 'local',
+        providers: [providers[0]!],
+      },
+    });
+    const next = readSettings(userData);
+    expect(next.ai.enabled).toBe(true);
+    expect(next.ai.providers).toEqual([providers[0]]);
+  });
+
+  it('非法值（kind:claude / id:A!）抛 E_SETTINGS_INVALID', () => {
+    const base = DEFAULT_APP_SETTINGS;
+    expect(() =>
+      mergeSettingsPatch(base, {
+        ai: {
+          enabled: true,
+          cloudConsent: false,
+          activeProviderId: null,
+          providers: [
+            { id: 'x', kind: 'claude', name: 'X', baseUrl: 'http://127.0.0.1:1234', model: null },
+          ],
+        },
+      }),
+    ).toThrow(/E_SETTINGS_INVALID/);
+    expect(() =>
+      mergeSettingsPatch(base, {
+        ai: {
+          enabled: true,
+          cloudConsent: false,
+          activeProviderId: null,
+          providers: [
+            { id: 'A!', kind: 'lmstudio', name: 'X', baseUrl: 'http://127.0.0.1:1234', model: null },
+          ],
+        },
+      }),
+    ).toThrow(/E_SETTINGS_INVALID/);
+  });
+
+  it('缺 ai 段的旧文件读回不炸（补默认）', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const userData = tempDir('septcats-settings-ai-legacy-');
+    writeFileSync(
+      join(userData, 'septcats.settings.json'),
+      JSON.stringify({ schema: 1, theme: 'dark', locale: 'zh-CN' }),
+      'utf8',
+    );
+    const s = readSettings(userData);
+    expect(s.theme).toBe('dark');
+    expect(s.ai).toEqual({ ...DEFAULT_APP_SETTINGS.ai });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
 describe('settings/bootstrapPaths', () => {
   it('默认根为 <home>/.septcats 并建齐目录', async () => {
     const home = tempDir('septcats-bootstrap-home-');

@@ -48,4 +48,29 @@ describe('main/settings（settings:get / settings:patch）', () => {
       /E_SETTINGS_INVALID/,
     );
   });
+
+  it('patch roundtrip：ai 段 providers 持久化并可读回（TASK-T18-01 §3）', () => {
+    const userData = tempDir('septcats-main-settings-ai-');
+    const syncDir = join(tmpdir(), 'septcats-sync-dir');
+    const next = patchAppSettings(userData, syncDir, {
+      ai: {
+        enabled: true,
+        cloudConsent: false,
+        activeProviderId: 'local',
+        providers: [
+          {
+            id: 'local',
+            kind: 'lmstudio',
+            name: 'LM Studio',
+            baseUrl: 'http://127.0.0.1:1234',
+            model: null,
+          },
+        ],
+      },
+    });
+    expect(next.ai.enabled).toBe(true);
+    expect(next.ai.providers).toHaveLength(1);
+    const reread = readAppSettings(userData, syncDir);
+    expect(reread.ai).toEqual(next.ai);
+  });
 });

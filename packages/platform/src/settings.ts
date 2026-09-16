@@ -40,6 +40,10 @@ export type Locale = (typeof LOCALES)[number];
 export const EDIT_MODES = ['rich', 'markdown'] as const;
 export type EditMode = (typeof EDIT_MODES)[number];
 
+/** AI provider 形态（M11 · TASK-T18-01 §2.1：三者共用 OpenAI 兼容协议）。 */
+export const AI_PROVIDER_KINDS = ['lmstudio', 'ollama', 'openai-compatible'] as const;
+export type AiProviderKind = (typeof AI_PROVIDER_KINDS)[number];
+
 /**
  * 应用配置的严格校验 schema（desktop main 的 `settings:patch` 用它全量再校验，
  * 不信任 renderer）。theme/locale/defaultEditMode 用 enum 收口；`privacy.telemetry`
@@ -69,6 +73,30 @@ export const appSettingsSchema = z.object({
     /** gc 真删开关（false = dry-run 只计数）。 */
     gc: z.boolean(),
   }),
+  /**
+   * AI（M11 · TASK-T18-01 §2.1）：总开关与云端开关默认全关（隐私不变量：
+   * 非本地端点无 cloudConsent 一律拒绝且不发请求）；API key 存 CredentialStore，
+   * 绝不进本文件。providers 数组为整体替换语义。
+   */
+  ai: z.object({
+    /** 总开关（默认 false；关 = 所有 ai:* 通道拒绝）。 */
+    enabled: z.boolean(),
+    /** 云端调用显式开关（默认 false；非本地端点无它一律拒绝且不发请求）。 */
+    cloudConsent: z.boolean(),
+    /** 活动 provider（UI 选区；null = 未选）。 */
+    activeProviderId: z.string().nullable(),
+    providers: z.array(
+      z.object({
+        /** 凭据安全的短 id：^[a-z0-9][a-z0-9-]{1,27}$（account=ai-<id> ≤32 字符）。 */
+        id: z.string().regex(/^[a-z0-9][a-z0-9-]{1,27}$/),
+        kind: z.enum(AI_PROVIDER_KINDS),
+        name: z.string().min(1),
+        /** http(s)://host[:port][/prefix]；规范化为根（剥尾部 /v1）。 */
+        baseUrl: z.string().min(1),
+        model: z.string().nullable(),
+      }),
+    ),
+  }),
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
@@ -81,6 +109,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   editor: { defaultEditMode: 'rich', spellcheck: true },
   data: { note: '' },
   sync: { enabled: true, encrypt: false, gc: false },
+  ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
 };
 
 export interface SeptcatsSettings extends AppSettings {
@@ -104,6 +133,7 @@ function cloneDefaultAppSettings(): AppSettings {
     editor: { ...DEFAULT_APP_SETTINGS.editor },
     data: { ...DEFAULT_APP_SETTINGS.data },
     sync: { ...DEFAULT_APP_SETTINGS.sync },
+    ai: { ...DEFAULT_APP_SETTINGS.ai, providers: [...DEFAULT_APP_SETTINGS.ai.providers] },
   };
 }
 
@@ -130,6 +160,7 @@ export function mergeSettingsPatch(current: AppSettings, patch: unknown): AppSet
       : { ...current.editor },
     data: isPlainObject(src['data']) ? { ...current.data, ...src['data'] } : { ...current.data },
     sync: isPlainObject(src['sync']) ? { ...current.sync, ...src['sync'] } : { ...current.sync },
+    ai: isPlainObject(src['ai']) ? { ...current.ai, ...src['ai'] } : { ...current.ai },
   };
   const result = appSettingsSchema.safeParse(merged);
   if (!result.success) {
@@ -215,6 +246,9 @@ function parseAppSettings(raw: Record<string, unknown>): AppSettings | null {
     sync: isPlainObject(raw['sync'])
       ? { ...DEFAULT_APP_SETTINGS.sync, ...raw['sync'] }
       : { ...DEFAULT_APP_SETTINGS.sync },
+    ai: isPlainObject(raw['ai'])
+      ? { ...DEFAULT_APP_SETTINGS.ai, ...raw['ai'] }
+      : { ...DEFAULT_APP_SETTINGS.ai },
   };
   const result = appSettingsSchema.safeParse(merged);
   return result.success ? result.data : null;
