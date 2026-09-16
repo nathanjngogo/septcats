@@ -46,6 +46,6 @@ mac:
 # —— 自动更新 feed 占位（真地址待老板拍板；仓库无 remote，不许自建）。渠道结构 stable/ 与 beta/ 各一份 latest.yml(.sig)，应用内一期固定 stable（T12-01B §0.5）——
 publish:
   - provider: generic
-    url: file:///septcats-feed/stable
+    url: https://github.com/nathanjngogo/septcats-releases/releases/download/latest
   - provider: generic
     url: file:///septcats-feed/beta
