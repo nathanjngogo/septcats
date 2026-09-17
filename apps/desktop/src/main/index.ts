@@ -31,6 +31,7 @@ import {
   CHANNEL_SETTINGS_GET,
   CHANNEL_SETTINGS_PATCH,
   CHANNEL_SYNC_STATE,
+  CHANNEL_COLLAB_UPDATE,
   CHANNEL_WORKSPACE_CHANGED,
   CHANNEL_WORKSPACE_CREATE,
   CHANNEL_WORKSPACE_LIST,
@@ -53,6 +54,7 @@ import {
   toPagesError,
   type MovePageInput,
   type PagesService,
+  type StatementExecutor,
 } from './pages';
 import {
   createDbViewService,
@@ -71,6 +73,7 @@ import { SyncRuntime } from './sync/runtime';
 import { SyncKeyring } from './sync/keyring';
 import { registerSyncIpc } from './sync/ipc';
 import { withSyncHook } from './sync/bridge';
+import { CollabHub, registerCollabIpc } from './collab';
 import { AiService } from './ai/service';
 import { registerAiIpc } from './ai/ipc';
 
@@ -92,6 +95,7 @@ let mainWindow: BrowserWindow | null = null;
 let platformContext: PlatformContext | null = null;
 let dbHandle: DbHandle | null = null;
 let syncRuntime: SyncRuntime | null = null;
+let collabHub: CollabHub | null = null;
 let updaterService: { check(): Promise<UpdateState>; dispose(): void } | null = null;
 
 // --- 启动打点（TASK-T14-01 §2：--perf-trace 门，默认关 = 零开销） --------------
@@ -219,6 +223,9 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     // M8b：同步运行时（layout.root/sync 为同步文件夹；启动失败只降级，不阻断开窗）
     let pagesRef: PagesService | null = null;
     const syncLogger = ctx.logger.forModule('sync');
+    // 装饰执行面（T13-01 引入，T19-05 起协作枢纽共用）：页面/行内库/搜索/导入器的
+    // 写路径成功后进攒段器；sync 启动失败时回落裸 handle（普通路径照常）。
+    let executor: StatementExecutor = handle;
     try {
       const runtime = new SyncRuntime({
         rootDir: join(ctx.layout.root, 'sync'),
@@ -242,25 +249,41 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         gcEnabled: () => readSettings(ctx.userDataDir).sync.gc,
         log: (line) => syncLogger.info(line),
       });
-      await runtime.start();
       syncRuntime = runtime;
       runtime.onState((status) => {
         for (const window of BrowserWindow.getAllWindows()) {
           window.webContents.send(CHANNEL_SYNC_STATE, status);
         }
       });
+      executor = withSyncHook(handle, (ops) => {
+        syncRuntime?.onLocalCommit(ops);
+      });
+
+      // T19-05 协作枢纽（须在 runtime.start() 之前接好下行监听，首轮报告不丢）：
+      // 上行组 Op 走装饰后 executor（batch 里的 opLedger.insert 自动进攒段器）；
+      // 下行 = hub Y.Doc 应用 + renderer 广播；快照播种接 runtime 跨代聚合口。
+      const hub = new CollabHub({
+        executor,
+        actor,
+        log: (line) => ctx.logger.forModule('collab').info(line),
+        snapshotCrdtUpdates: async () => {
+          const active = syncRuntime;
+          return active !== null ? await active.getSnapshotCrdtUpdates() : [];
+        },
+      });
+      collabHub = hub;
+      runtime.onCrdtUpdates((entries) => {
+        hub.applyRemote(entries);
+        for (const window of BrowserWindow.getAllWindows()) {
+          window.webContents.send(CHANNEL_COLLAB_UPDATE, entries);
+        }
+      });
+      await runtime.start();
     } catch (error) {
       syncRuntime = null;
+      collabHub = null;
       syncLogger.error(`SyncRuntime 启动失败（同步停用）：${describeError(error)}`);
     }
-
-    // 装饰执行面：页面/行内库/搜索/导入器的写路径成功后进攒段器
-    const executor =
-      syncRuntime === null
-        ? handle
-        : withSyncHook(handle, (ops) => {
-            syncRuntime?.onLocalCommit(ops);
-          });
 
     const pages = createPagesService({ executor, actor });
     pagesRef = pages;
@@ -545,6 +568,13 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     },
   });
 
+  // 协作（T19-05）：collab:attach / detach / apply 三通道；下行经
+  // bootstrapDatabase 的 onCrdtUpdates 监听广播（collab:update）。hub 缺失回 E_INVARIANT。
+  registerCollabIpc({
+    registrar: dbViewRegistrar(),
+    getHub: () => collabHub,
+  });
+
   // AI（M11 · TASK-T18-01 §2.11）：五通道；net.fetch 包装注入（fetch 面最小化）。
   // AiService 无常驻资源，无需生命周期清理；启动零外联（listModels 只在被调用时发请求）。
   const aiLogger = ctx.logger.forModule('ai');
@@ -758,6 +788,8 @@ if (!gotSingleInstanceLock) {
     globalShortcut.unregister(PALETTE_SHORTCUT);
     updaterService?.dispose();
     updaterService = null;
+    collabHub?.dispose();
+    collabHub = null;
     syncRuntime?.stop();
     syncRuntime = null;
     void dbHandle?.dispose();

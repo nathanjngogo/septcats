@@ -30,6 +30,7 @@ import {
   decodeSegment,
   snapshotToOps,
   type ActorId,
+  type CrdtUpdateEntry,
   type Lamport,
   type Op,
   type Segment,
@@ -46,13 +47,15 @@ import {
   planSnapshot,
   publishSegment,
   publishSnapshot,
+  seedFromSnapshot,
   SegmentBuilder,
   type Manifest,
+  type SnapshotCrdtPage,
   type SyncReport,
   type WritePolicy,
 } from '@septcats/sync';
 import { NodeFs } from '@septcats/sync';
-import { commitOps } from '../commit';
+import { commitOps, ledgerStatement } from '../commit';
 import type { AllData, BatchData, DbBatchStatement, GetData } from '../../db/rpc';
 import type { SyncStatusSnapshot, SyncDeviceEntry, SyncErrorEntry, SyncRuntimeState } from '../../shared/sync';
 import {
@@ -186,6 +189,9 @@ export class SyncRuntime {
   private cycleQueued = false;
   private firstCycleDone = false;
 
+  // T19-05：crdt_update 下行路由监听（collab hub + renderer 广播接线）
+  private readonly crdtListeners = new Set<(entries: readonly CrdtUpdateEntry[]) => void>();
+
   // S10（T17-01 D3）：轮换重加密进行中标记与可重试的旧钥
   private reencrypting = false;
   private reencryptPromise: Promise<ReencryptReport> | null = null;
@@ -253,6 +259,26 @@ export class SyncRuntime {
     return () => {
       this.stateListeners.delete(listener);
     };
+  }
+
+  /**
+   * T19-05：订阅 crdt_update 下行（mergeRemote 报告到账、仅远端新 op，与 applied
+   * 同口径）。collab hub 据此路由到页级 Y.Doc，index.ts 据此广播 renderer。
+   */
+  onCrdtUpdates(listener: (entries: readonly CrdtUpdateEntry[]) => void): () => void {
+    this.crdtListeners.add(listener);
+    return () => {
+      this.crdtListeners.delete(listener);
+    };
+  }
+
+  private emitCrdtUpdates(entries: readonly CrdtUpdateEntry[]): void {
+    if (entries.length === 0) {
+      return;
+    }
+    for (const listener of this.crdtListeners) {
+      listener(entries);
+    }
   }
 
   private setState(next: SyncRuntimeState): void {
@@ -698,11 +724,24 @@ export class SyncRuntime {
     this.lastReport = report;
     this.conflictCount += report.conflicts.length;
 
-    // 新 op 落账本：对账本做 Lamport 幂等过滤（等值/落后跳过——修复 S5 播种后
-    // 旧段与本机等 lamport op 的 op_id 决胜漂移；超过本地水位的 op 才值得重放）
-    const applied = filterAgainstLedger(report.applied, ledger);
+    // 新 op 落账本，两类分开走（T19-05 下行接线）：
+    // - 实体 op：Lamport 幂等过滤（等值/落后跳过——修复 S5 播种后旧段与本机等 lamport
+    //   op 的 op_id 决胜漂移）→ commitOps（账本 + 物化同事务）；
+    // - crdt_update op：**绕开 filterAgainstLedger**——它按 (table,id) 水位过滤，会把
+    //   跨设备低水位的文本 op 误杀；幂等由 mergeRemote 的 op_id 去重保证（Yjs 应用亦
+    //   幂等）。只进真相层（ledgerStatement，不物化——commit.ts 对 crdt_update 显式拒
+    //   绝是契约），随后按报告口径路由到协作层（hub Y.Doc + renderer 广播）。
+    const crdtOps = report.applied.filter((op) => op.kind === 'crdt_update');
+    const applied = filterAgainstLedger(
+      report.applied.filter((op) => op.kind !== 'crdt_update'),
+      ledger,
+    );
     if (applied.length > 0) {
       await commitOps(this.db, applied, { workspaceId: await this.resolveWorkspaceId() });
+    }
+    if (crdtOps.length > 0) {
+      await this.db.batch(crdtOps.map((op) => ledgerStatement(op, null)));
+      this.emitCrdtUpdates(report.crdtUpdates);
     }
 
     // S2 自愈：坏段搬 quarantine/，下轮不再重试
@@ -714,7 +753,7 @@ export class SyncRuntime {
     // 首轮：ledger 计数一致性校验（不一致 → 以段重建，log E_PROJECTION_REBUILT）
     if (!this.firstCycleDone) {
       this.firstCycleDone = true;
-      await this.verifyLedgerIntegrity(ledger.length + applied.length);
+      await this.verifyLedgerIntegrity(ledger.length + applied.length + crdtOps.length);
     }
 
     // 快照折叠 + gc 计划（复用引擎；gc 真删需设置开启）
@@ -783,6 +822,53 @@ export class SyncRuntime {
     } catch (error) {
       this.recordError(SYNC_RUNTIME_ERRORS.CYCLE_FAILED, `快照播种失败：${describe(error)}`);
     }
+  }
+
+  /**
+   * 协作播种输入（T19-05 §0.3 跨代聚合）：聚合**全部**快照文件的 crdtUpdates 区段
+   * （seq 升序、按 pageId 合并、opId 去重取先到者）。
+   * 为什么跨代：DEVIATION-5（T19-04）——新快照只携带本轮折叠段的 update，更早的
+   * update 由更老快照文件承接；只读最新一代会在接力场景丢文本。单文件畸形
+   * （SnapshotValidationError）跳过不阻断其余快照（S5 播种路径对同一文件另有显式报错）。
+   */
+  async getSnapshotCrdtUpdates(): Promise<SnapshotCrdtPage[]> {
+    const provider = this.provider;
+    if (provider === null) {
+      return [];
+    }
+    const snapshots = [...(await provider.listSnapshots())].sort(
+      (a, b) => seqOf(a.file) - seqOf(b.file),
+    );
+    const seenOpIds = new Set<string>();
+    const pages = new Map<string, SnapshotCrdtPage>();
+    for (const snapshot of snapshots) {
+      const text = await provider.get(snapshot.file);
+      if (text === null) {
+        continue;
+      }
+      let section: SnapshotCrdtPage[];
+      try {
+        section = seedFromSnapshot(text, this.actor).crdtUpdates;
+      } catch (error) {
+        this.log(`协作播种：快照 ${snapshot.file} crdtUpdates 读取失败（跳过）：${describe(error)}`);
+        continue;
+      }
+      for (const page of section) {
+        let target = pages.get(page.pageId);
+        if (target === undefined) {
+          target = { pageId: page.pageId, updates: [] };
+          pages.set(page.pageId, target);
+        }
+        for (const update of page.updates) {
+          if (seenOpIds.has(update.opId)) {
+            continue;
+          }
+          seenOpIds.add(update.opId);
+          target.updates.push(update);
+        }
+      }
+    }
+    return [...pages.values()];
   }
 
   private async quarantine(report: SyncReport): Promise<void> {

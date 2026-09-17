@@ -263,3 +263,25 @@ export const AI_CHANNELS = {
 } as const;
 
 export type AiChannel = (typeof AI_CHANNELS)[keyof typeof AI_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 协作（CRDT · TASK-T19-05 §0.2）。载荷形状见 shared/collab.ts。
+// ---------------------------------------------------------------------------
+
+/** 打开页：{pageId} → main attach（播种 + LRU 缓存）→ CollabAttachResult。 */
+export const CHANNEL_COLLAB_ATTACH = 'collab:attach';
+/** 关闭页：{pageId} → main flush + 释放 → {ok:true}。 */
+export const CHANNEL_COLLAB_DETACH = 'collab:detach';
+/** 上行：CrdtUpdatePayload（renderer Y.Doc 防抖 flush）→ main 组 Op 入账 → {ok:true}。 */
+export const CHANNEL_COLLAB_APPLY = 'collab:apply';
+/** main → renderer 下行：mergeRemote 报告到账的 crdtUpdates（CollabUpdateEntry[]）。 */
+export const CHANNEL_COLLAB_UPDATE = 'collab:update';
+
+export const COLLAB_CHANNELS = {
+  attach: CHANNEL_COLLAB_ATTACH,
+  detach: CHANNEL_COLLAB_DETACH,
+  apply: CHANNEL_COLLAB_APPLY,
+  update: CHANNEL_COLLAB_UPDATE,
+} as const;
+
+export type CollabChannel = (typeof COLLAB_CHANNELS)[keyof typeof COLLAB_CHANNELS];

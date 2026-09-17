@@ -35,6 +35,7 @@ import { Button } from '@septcats/ui';
 import { AI_BLOCK_ACTIONS, buildAiMessages } from '../../../shared/aiPrompts';
 import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
+import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
 import { pushToast } from '../state/pages';
 import { DbPage } from '../db/DbPage';
@@ -209,6 +210,25 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
     },
     [session],
   );
+
+  /**
+   * 协作层接线（TASK-T19-05 §1 renderer 面）：编辑器就绪后接入（无可见控件，UI 零
+   * 视觉变化）；编辑器销毁/换页时释放。IPC 失败只记录，不阻断编辑（collabClient 内
+   * 已 catch，这里是 attach 往返本身的兜底）。
+   */
+  useEffect(() => {
+    if (editor === null) {
+      return;
+    }
+    let cancelled = false;
+    attachCollab(page.id, editor, () => cancelled).catch((error: unknown) => {
+      console.error('[PageView] 协作层接入失败（不阻断编辑）', error);
+    });
+    return () => {
+      cancelled = true;
+      detachCollab(page.id);
+    };
+  }, [editor, page.id]);
 
   useEffect(() => {
     if (editor === null) {

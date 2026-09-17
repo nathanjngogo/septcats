@@ -21,6 +21,11 @@ import type {
 import type { UpdateInstallInput, UpdateRollbackHint, UpdateState } from '../shared/updater';
 import type { SyncStatusSnapshot } from '../shared/sync';
 import type {
+  CollabAttachResult,
+  CollabUpdateEntry,
+  CollabUplinkInput,
+} from '../shared/collab';
+import type {
   AiChatResult,
   AiListModelsResult,
   AiMessage,
@@ -271,6 +276,22 @@ export interface SeptcatsDiagApi {
   confirm(): Promise<DiagConfirmResult>;
 }
 
+/**
+ * 协作（CRDT）IPC（TASK-T19-05 §0.2）。通道与 `src/shared/ipc.ts` 的 COLLAB_CHANNELS
+ * 一对一；载荷形状见 `src/shared/collab.ts`（base64 文本对上层不透明）。
+ * 错误经 Error.message 透传（E_INVARIANT / E_MALFORMED）。
+ */
+export interface SeptcatsCollabApi {
+  /** 打开页：main 播种 + LRU 缓存接入，回「快照区段聚合 + 账本 op」种子集。 */
+  attach(input: { pageId: string }): Promise<CollabAttachResult>;
+  /** 关闭页：main flush + 释放 hub 实例（页不存在幂等）。 */
+  detach(input: { pageId: string }): Promise<{ ok: true }>;
+  /** 上行：Y.Doc 防抖 flush 的 payload → main 组 crdt_update Op 入真相层。 */
+  apply(input: CollabUplinkInput): Promise<{ ok: true }>;
+  /** 订阅下行推流（mergeRemote 报告按 pageId 路由），返回退订函数。 */
+  onUpdate(listener: (entries: CollabUpdateEntry[]) => void): () => void;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -298,6 +319,8 @@ export interface SeptcatsApi {
   sync: SeptcatsSyncApi;
   /** AI 集成（M11）。 */
   ai: SeptcatsAiApi;
+  /** 协作（CRDT，T19-05）。 */
+  collab: SeptcatsCollabApi;
 }
 
 declare global {

@@ -7,6 +7,7 @@ import {
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
+  COLLAB_CHANNELS,
   DB_CHANNELS,
   DIAG_CHANNELS,
   FAVORITES_CHANNELS,
@@ -153,6 +154,15 @@ const api: SeptcatsApi = {
     setKey: (input) => ipcRenderer.invoke(AI_CHANNELS.setKey, input) as ReturnType<SeptcatsApi['ai']['setKey']>,
     clearKey: (input) =>
       ipcRenderer.invoke(AI_CHANNELS.clearKey, input) as ReturnType<SeptcatsApi['ai']['clearKey']>,
+  },
+  collab: {
+    attach: (input) =>
+      ipcRenderer.invoke(COLLAB_CHANNELS.attach, input) as ReturnType<SeptcatsApi['collab']['attach']>,
+    detach: (input) =>
+      ipcRenderer.invoke(COLLAB_CHANNELS.detach, input) as ReturnType<SeptcatsApi['collab']['detach']>,
+    apply: (input) =>
+      ipcRenderer.invoke(COLLAB_CHANNELS.apply, input) as ReturnType<SeptcatsApi['collab']['apply']>,
+    onUpdate: (listener) => subscribe(COLLAB_CHANNELS.update, listener),
   },
 };
 

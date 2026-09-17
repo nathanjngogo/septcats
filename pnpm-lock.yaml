@@ -111,6 +111,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.2)(jiti@2.7.0)(jsdom@25.0.1)(tsx@4.23.13)
+      yjs:
+        specifier: 13.6.32
+        version: 13.6.32
 
   packages/core:
     dependencies:
