@@ -3,7 +3,8 @@ import * as core from '../src/index';
 
 describe('core barrel', () => {
   it('导出关键符号', () => {
-    expect(core.SCHEMA_VERSION).toBe(1);
+    // T19-02：SCHEMA_VERSION 1→2（版本钉随任务书前进）
+    expect(core.SCHEMA_VERSION).toBe(2);
     expect(core.SORTKEY_INITIAL).toBe('A00000000');
     expect(typeof core.replay).toBe('function');
     expect(typeof core.sortBetween).toBe('function');

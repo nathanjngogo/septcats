@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  MIN_SUPPORTED_SCHEMA_VERSION,
   SCHEMA_VERSION,
   entitySchema,
   formatZodError,
@@ -71,8 +72,12 @@ export function snapshotToOps(snap: string, deviceId: ActorId, startC?: number):
     throw new SnapshotValidationError(formatZodError(parsed.error));
   }
   const { v, entities } = parsed.data;
-  if (v !== SCHEMA_VERSION) {
-    throw new SnapshotValidationError([`快照 v=${v} 与当前 SCHEMA_VERSION=${SCHEMA_VERSION} 不符`]);
+  // 与段校验同口径：schema v2 起向后兼容读 v1 快照（实体外形只增不改，v=1 的实体
+  // 都是合法的 v2 实体），高于当前版本的快照仍被拒绝。写入端始终写当前版本。
+  if (v < MIN_SUPPORTED_SCHEMA_VERSION || v > SCHEMA_VERSION) {
+    throw new SnapshotValidationError([
+      `快照 v=${v} 不在可读区间 [${MIN_SUPPORTED_SCHEMA_VERSION}, ${SCHEMA_VERSION}] 内`,
+    ]);
   }
 
   let maxC = 0;

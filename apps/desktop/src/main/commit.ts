@@ -363,6 +363,10 @@ function materializePageStatement(
       };
     }
 
+    // T19-02：crdt_update 不物化进 SQLite 投影，按既有未知 kind 语义显式拒绝（错误文案不变）
+    case 'crdt_update': {
+      throw new CommitError('E_MALFORMED_OP', '未知 page op.kind：crdt_update');
+    }
     default: {
       const exhaustive: never = op.kind;
       throw new CommitError('E_MALFORMED_OP', `未知 page op.kind：${String(exhaustive)}`);

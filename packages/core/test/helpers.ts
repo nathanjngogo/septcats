@@ -1,6 +1,7 @@
 import {
   ulid,
   type ActorId,
+  type MergePolicy,
   type Op,
   type OpKind,
   type TargetTable,
@@ -21,7 +22,7 @@ export interface MakeOpOptions {
   payload?: Record<string, unknown>;
   at?: number;
   base?: number;
-  mergePolicy?: 'lww';
+  mergePolicy?: MergePolicy;
 }
 
 let opCounter = 0;

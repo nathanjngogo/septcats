@@ -189,6 +189,10 @@ export class OpUndoStack {
         }
         return this.buildOp(op, 'patch', payload, entity.version);
       }
+      // T19-02：crdt_update 无实体投影可反转，按既有未知 kind 语义显式拒绝（错误文案不变）
+      case 'crdt_update': {
+        throw new Error('OpUndoStack：不支持的 op.kind crdt_update');
+      }
       default: {
         const exhaustive: never = op.kind;
         throw new Error(`OpUndoStack：不支持的 op.kind ${String(exhaustive)}`);

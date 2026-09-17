@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { compareLamport } from './clock';
 import {
   OpValidationError,
+  MIN_SUPPORTED_SCHEMA_VERSION,
   SCHEMA_VERSION,
   actorIdSchema,
   decodeOp,
@@ -84,7 +85,9 @@ function stripKnownSuffix(name: string): string {
 /**
  * 校验段的结构不变量。返回问题列表（空数组表示通过）。
  * 不变量：
- * 1. schema_ver == SCHEMA_VERSION
+ * 1. schema_ver ∈ [MIN_SUPPORTED_SCHEMA_VERSION, SCHEMA_VERSION]
+ *    （schema v2 起向后兼容读 v1 段：v1 段的每一行都是合法的 v2 op，读 v1 段语义
+ *    与 SCHEMA_VERSION=1 时代逐字节等价；高于当前版本的段仍被拒绝，走 quarantine）
  * 2. ops 非空，header.n == ops.length
  * 3. 所有 op 的 lamport.d == header.dev，且 c ∈ [c_from, c_to]
  * 4. c_from == min(c)，c_to == max(c)
@@ -95,8 +98,10 @@ function stripKnownSuffix(name: string): string {
 export function validateSegment(seg: Segment): string[] {
   const issues: string[] = [];
 
-  if (seg.schema_ver !== SCHEMA_VERSION) {
-    issues.push(`schema_ver=${seg.schema_ver} 与当前 SCHEMA_VERSION=${SCHEMA_VERSION} 不符`);
+  if (seg.schema_ver < MIN_SUPPORTED_SCHEMA_VERSION || seg.schema_ver > SCHEMA_VERSION) {
+    issues.push(
+      `schema_ver=${seg.schema_ver} 不在可读区间 [${MIN_SUPPORTED_SCHEMA_VERSION}, ${SCHEMA_VERSION}] 内`,
+    );
   }
   if (seg.ops.length === 0) {
     issues.push('段必须至少包含一个 op');

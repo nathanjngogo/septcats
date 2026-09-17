@@ -18,7 +18,9 @@ const DEVICE_COUNT = 200;
 const OPS_PER_DEVICE = 50;
 const ENTITY_COUNT = 40;
 
-const KINDS: readonly OpKind[] = ['upsert', 'patch', 'delete', 'move', 'reorder'];
+// T19-02：OpKind 扩入 'crdt_update' 后，fuzz 的 kind 集仍锁定既有五种（穷尽性分支不放松）
+type FuzzKind = Exclude<OpKind, 'crdt_update'>;
+const KINDS: readonly FuzzKind[] = ['upsert', 'patch', 'delete', 'move', 'reorder'];
 
 function deviceIdOf(index: number): string {
   return `device${String(index).padStart(3, '0')}`; // 9 位 [a-z0-9]
@@ -28,7 +30,7 @@ function entityIdOf(index: number): string {
   return `ent${String(index).padStart(4, '0')}`;
 }
 
-function buildPayload(rng: () => number, kind: OpKind): Record<string, unknown> {
+function buildPayload(rng: () => number, kind: FuzzKind): Record<string, unknown> {
   const n = Math.floor(rng() * 1000);
   switch (kind) {
     case 'upsert':

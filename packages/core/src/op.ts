@@ -3,8 +3,15 @@ import { z } from 'zod';
 /**
  * 事件账（真相层）的 schema 版本。段文件 header.schema_ver 与快照的 v 字段都引用它。
  * 任何破坏向后兼容的 Op/实体结构变更都必须递增此值。
+ *
+ * v2（T19-02）：新增 op kind `crdt_update` 与 merge_policy `lww-field`/`crdt`。
+ * 本次变更对既有格式只增不改——v1 段的每一行都是合法的 v2 op，读 v1 段语义
+ * 与 v1 时代逐字节等价（段校验按 [MIN_SUPPORTED_SCHEMA_VERSION, SCHEMA_VERSION] 放行）。
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+/** 仍可读取的最低 schema 版本（v1 段照常可读；高于 SCHEMA_VERSION 的段仍被拒绝）。 */
+export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
 
 // ---------------------------------------------------------------------------
 // 基础标量
@@ -30,8 +37,9 @@ export const lamportSchema = z.object({
 });
 export type Lamport = z.infer<typeof lamportSchema>;
 
-/** Op 语义类别。 */
-export const opKindSchema = z.enum(['upsert', 'delete', 'move', 'reorder', 'patch']);
+/** Op 语义类别全集（schema v2 起新增 'crdt_update'：承载 CRDT 增量，如 Yjs update）。 */
+export const OP_KINDS = ['upsert', 'delete', 'move', 'reorder', 'patch', 'crdt_update'] as const;
+export const opKindSchema = z.enum(OP_KINDS);
 export type OpKind = z.infer<typeof opKindSchema>;
 
 /** Op 作用的目标表。 */
@@ -49,9 +57,31 @@ export type TargetRef = z.infer<typeof targetRefSchema>;
 export const payloadSchema = z.record(z.string(), z.unknown());
 export type OpPayload = z.infer<typeof payloadSchema>;
 
-/** 合并策略。一期只允许 'lww'（Q5 预留 CRDT 扩展位）。 */
-export const mergePolicySchema = z.literal('lww');
+/**
+ * 合并策略全集（schema v2 起 = ['lww', 'lww-field', 'crdt']；v1 段只会出现 'lww'，照常可读）。
+ * op.merge_policy 缺省时按 'lww' 处理。各策略在 replay 中的语义：
+ * - 'lww'：实体级 LWW——op 整体按 (lamport, deviceId) 全序与现有实体决胜，胜者整体生效；
+ * - 'lww-field'：字段级（key 粒度）LWW——payload 是只携带变更 key 的 patch 对象
+ *   （不再整对象 upsert），replay 按键合并进现有投影：出现的 key 覆盖、未出现的 key
+ *   保留原值、`null` = 删除该 key；同 key 并发按既有全序（lamport, deviceId）决胜。
+ *   record 值写入固定使用本策略；
+ * - 'crdt'：CRDT 增量（crdt_update 的 base64 update）——不参与 LWW、不作用于实体投影，
+ *   replay 按全序去重收集到 ReplayReport.crdtUpdates，由上层（Y.Doc）幂等应用。
+ */
+export const MERGE_POLICIES = ['lww', 'lww-field', 'crdt'] as const;
+export const mergePolicySchema = z.enum(MERGE_POLICIES);
 export type MergePolicy = z.infer<typeof mergePolicySchema>;
+
+/**
+ * `crdt_update` 专用 payload：base64 文本对 core 完全不透明（不解码、不校验内容）。
+ * `pageId` 声明该 update 所属的页级 Y.Doc；`svFromB64` 是发送方的状态向量水位（可选）。
+ */
+export const crdtUpdatePayloadSchema = z.object({
+  pageId: entityIdSchema,
+  updateB64: z.string().min(1),
+  svFromB64: z.string().min(1).optional(),
+});
+export type CrdtUpdatePayload = z.infer<typeof crdtUpdatePayloadSchema>;
 
 // ---------------------------------------------------------------------------
 // Op
@@ -162,12 +192,27 @@ export function formatZodError(error: z.ZodError): string[] {
 
 /**
  * 契约中无法用纯 zod 表达的语义约束（zod 会保留给 JSON Schema 生成，故不写 refine）：
- * - base 仅用于 patch/move/reorder 的并发基版本检测；upsert/delete 必须为空。
+ * - base 仅用于 patch/move/reorder 的并发基版本检测；upsert/delete 必须为空；
+ * - crdt_update 的 payload 必须满足 crdtUpdatePayloadSchema，且 merge_policy 固定为
+ *   'crdt'（显式给出其他值或把 'crdt' 用在别的 kind 上都拒绝）。
  */
 export function validateOpSemantics(op: Op): string[] {
   const issues: string[] = [];
   if ((op.kind === 'upsert' || op.kind === 'delete') && op.base !== undefined) {
     issues.push(`kind=${op.kind} 不允许携带 base（并发基版本仅适用于 patch/move/reorder）`);
+  }
+  if (op.kind === 'crdt_update') {
+    const parsed = crdtUpdatePayloadSchema.safeParse(op.payload);
+    if (!parsed.success) {
+      for (const message of formatZodError(parsed.error)) {
+        issues.push(`crdt_update payload ${message}`);
+      }
+    }
+    if (op.merge_policy !== undefined && op.merge_policy !== 'crdt') {
+      issues.push(`kind=crdt_update 的 merge_policy 固定为 'crdt'，实际为 '${op.merge_policy}'`);
+    }
+  } else if (op.merge_policy === 'crdt') {
+    issues.push(`merge_policy='crdt' 仅允许 kind=crdt_update，实际 kind=${op.kind}`);
   }
   return issues;
 }
