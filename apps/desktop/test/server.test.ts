@@ -304,7 +304,7 @@ describeDb('DbServer core 派发（better-sqlite3 直连）', (ctor) => {
 
     const snapshot = await requestOk<ExportSnapshotData>(core, { id: nextId('snapshot'), t: 'exportSnapshot' });
     const parsed = JSON.parse(snapshot.json) as { v: number; entities: Array<{ id: string; table: string }> };
-    expect(parsed.v).toBe(1);
+    expect(parsed.v).toBe(2); // schema v2（T19-02）
     expect(parsed.entities).toHaveLength(1);
     expect(parsed.entities[0]!.id).toBe(PAGE);
     expect(parsed.entities[0]!.table).toBe('page');
