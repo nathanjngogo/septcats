@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildSegment,
+  encodeOp,
   encodeSegment,
   opsToSnapshot,
   replay,
   type ActorId,
+  type CrdtUpdateEntry,
   type Op,
 } from '@septcats/core';
 import { SyncErrorCodes } from '../src/errors';
 import { MemoryFs } from '../src/fs';
-import { mergeRemote } from '../src/merger';
+import { mergeCrdtUpdates, mergeRemote } from '../src/merger';
 import { InProcessProvider } from '../src/provider';
+import { buildSnapshotText, seedFromSnapshot } from '../src/snapshot';
 import { DEV_A, DEV_B, makeOp } from './helpers';
 
 const ROOT = 'sync';
@@ -217,5 +220,159 @@ describe('mergeRemote S4 时钟回拨', () => {
     expect(r1.conflicts).toEqual(r2.conflicts);
     expect(r1.highWatermark).toBe(r2.highWatermark);
     expect(opsToSnapshot(replay(r1.applied).projection)).toBe(opsToSnapshot(replay(r2.applied).projection));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T19-04：crdt_update 分流（§0.4/§0.1——字节不透明、字节保真、报告收集、跨报告合并）
+// ---------------------------------------------------------------------------
+
+interface CrdtOpOptions {
+  id: string;
+  c: number;
+  d: ActorId;
+  pageId: string;
+  updateB64: string;
+  svFromB64?: string;
+}
+
+/** 构造一条合法 crdt_update op（merge_policy='crdt'，target=page）。 */
+function makeCrdtOp(options: CrdtOpOptions): Op {
+  const payload: Record<string, unknown> = {
+    pageId: options.pageId,
+    updateB64: options.updateB64,
+  };
+  if (options.svFromB64 !== undefined) {
+    payload['svFromB64'] = options.svFromB64;
+  }
+  return {
+    ...makeOp({
+      id: options.id,
+      c: options.c,
+      d: options.d,
+      entityId: options.pageId,
+      kind: 'crdt_update',
+      payload,
+    }),
+    target: { table: 'page', id: options.pageId },
+  };
+}
+
+describe('mergeRemote T19-04 crdt_update 字节保真（§2.1）', () => {
+  it('含 crdt_update 的段合并后：payload 逐字节相等、opId 集合不变、报告收集有序', async () => {
+    const fs = new MemoryFs();
+    // updateB64 含 '+' '/' '=' 等真实 base64 字符；svFromB64 一带一缺。
+    const updA = 'AQIDBAUGB+wB+/==';
+    const updB = 'aGVsbG8gY3JkdA==';
+    const upsert = makeOp({ id: 't1-up', c: 1, d: DEV_A, entityId: 'ent1', payload: { title: 'x', alive: 1 } });
+    const u1 = makeCrdtOp({ id: 't1-u1', c: 2, d: DEV_A, pageId: 'page1', updateB64: updA, svFromB64: 'AAAA' });
+    const u2 = makeCrdtOp({ id: 't1-u2', c: 3, d: DEV_B, pageId: 'page2', updateB64: updB });
+
+    await writeSegment(fs, DEV_A, [upsert, u1]);
+    await writeSegment(fs, DEV_B, [u2]);
+
+    const report = await mergeRemote({ provider: providerOf(fs), localLedger: [], seenContentHashes: new Set(), now: 0 });
+
+    // applied 保留全部 3 条 op，且逐字节等于原编码（不得因未知 kind 丢弃或改写 payload）。
+    expect(report.applied).toHaveLength(3);
+    for (const original of [upsert, u1, u2]) {
+      const applied = report.applied.find((op) => op.op_id === original.op_id);
+      expect(applied).toBeDefined();
+      expect(encodeOp(applied as Op)).toBe(encodeOp(original));
+    }
+
+    // 报告收集：全序（c 升序）排列，updateB64 原样透传。
+    expect(report.crdtUpdates).toEqual([
+      { opId: 't1-u1', target: { table: 'page', id: 'page1' }, pageId: 'page1', updateB64: updA, svFromB64: 'AAAA' },
+      { opId: 't1-u2', target: { table: 'page', id: 'page2' }, pageId: 'page2', updateB64: updB },
+    ] satisfies CrdtUpdateEntry[]);
+    expect(report.highWatermark).toBe(3);
+  });
+
+  it('本地已有的 crdt_update 不重复透出（与 applied 幂等口径一致）', async () => {
+    const fs = new MemoryFs();
+    const u1 = makeCrdtOp({ id: 't2-u1', c: 1, d: DEV_A, pageId: 'page1', updateB64: 'AAA=' });
+    await writeSegment(fs, DEV_A, [u1]);
+
+    const localLedger = [u1];
+    const report = await mergeRemote({ provider: providerOf(fs), localLedger, seenContentHashes: new Set(), now: 0 });
+
+    expect(report.applied).toEqual([]); // already-applied
+    expect(report.crdtUpdates).toEqual([]);
+  });
+});
+
+describe('mergeCrdtUpdates 跨报告合并（§0.4/§2.2：opId 去重 + 既有全序稳定）', () => {
+  const e1: CrdtUpdateEntry = {
+    opId: 'op-1',
+    target: { table: 'page', id: 'page1' },
+    pageId: 'page1',
+    updateB64: 'AAA=',
+  };
+  const e2: CrdtUpdateEntry = { opId: 'op-2', target: { table: 'page', id: 'page1' }, pageId: 'page1', updateB64: 'AAB=' };
+  const e3: CrdtUpdateEntry = { opId: 'op-3', target: { table: 'page', id: 'page2' }, pageId: 'page2', updateB64: 'AAC=' };
+
+  it('并集按 opId 去重（先到者留），各自全序保持', () => {
+    const merged = mergeCrdtUpdates([e1, e2], [e2, e3]);
+    expect(merged.map((entry) => entry.opId)).toEqual(['op-1', 'op-2', 'op-3']);
+  });
+
+  it('确定性：同输入两次调用结果逐项一致（§2.2）', () => {
+    const a = [e1, e2];
+    const b = [e2, e3];
+    expect(JSON.stringify(mergeCrdtUpdates(a, b))).toBe(JSON.stringify(mergeCrdtUpdates(a, b)));
+  });
+
+  it('两份相同列表合并 → 等于自身（自并集幂等）', () => {
+    const list = [e1, e2, e3];
+    expect(mergeCrdtUpdates(list, list)).toEqual(list);
+  });
+});
+
+describe('轮换路径不漏目标（§2.6，sync 层不变量：枚举 + 重写往返字节保真）', () => {
+  it('含 crdt_update 的段与快照都在 provider 枚举内；读-重写-读逐字节相等；再合并结果不变', async () => {
+    const fs = new MemoryFs();
+    const upd = 'c3Bpa2UtY3JkdC11cGRhdGU=';
+    const ops = [
+      makeOp({ id: 'rot-up', c: 1, d: DEV_A, entityId: 'ent1', payload: { title: 'x', alive: 1 } }),
+      makeCrdtOp({ id: 'rot-u1', c: 2, d: DEV_A, pageId: 'page1', updateB64: upd, svFromB64: 'AAAA' }),
+    ];
+    const segName = await writeSegment(fs, DEV_A, ops);
+
+    const snapText = buildSnapshotText([buildSegment(DEV_A, ops)], 2, DEV_A);
+    await fs.write(`${ROOT}/snapshot-000001.json`, snapText);
+
+    // 轮换重加密的目标集 = provider 枚举全集；含 crdt_update 的段/快照不得漏。
+    const provider = providerOf(fs);
+    const segFiles = (await provider.listSegments()).map((s) => s.file);
+    const snapFiles = (await provider.listSnapshots()).map((s) => s.file);
+    expect(segFiles).toEqual([segName]);
+    expect(snapFiles).toEqual(['snapshot-000001.json']);
+
+    // 模拟重加密：逐文件读出 → 重写 → 读回，逐字节相等（加密层对内容零假设）。
+    const rewritten = new Map<string, string>();
+    for (const file of [...segFiles, ...snapFiles]) {
+      const before = await provider.get(file);
+      expect(before).not.toBeNull();
+      await fs.write(`${ROOT}/reenc-${file}`, before as string);
+      const after = await provider.get(`reenc-${file}`);
+      expect(after).toBe(before);
+      rewritten.set(file, after as string);
+    }
+
+    // 重写后的段再合并：applied/crdtUpdates 与原结果逐字节一致。
+    const fs2 = new MemoryFs();
+    await fs2.write(`${ROOT}/${segName}`, rewritten.get(segName) as string);
+    const roundtrip = await mergeRemote({ provider: providerOf(fs2), localLedger: [], seenContentHashes: new Set(), now: 0 });
+    const direct = await mergeRemote({ provider: providerOf(fs), localLedger: [], seenContentHashes: new Set(), now: 0 });
+    expect(roundtrip.applied.map((op) => encodeOp(op))).toEqual(direct.applied.map((op) => encodeOp(op)));
+    expect(roundtrip.crdtUpdates).toEqual(direct.crdtUpdates);
+
+    // 重写后的快照播种：seedOps + crdtUpdates 双双无损。
+    const seeded = seedFromSnapshot(rewritten.get('snapshot-000001.json') as string, DEV_A);
+    expect(seeded.crdtUpdates).toEqual([
+      { pageId: 'page1', updates: [{ opId: 'rot-u1', updateB64: upd, svFromB64: 'AAAA' }] },
+    ]);
+    expect(seeded.seedOps.length).toBeGreaterThan(0);
   });
 });

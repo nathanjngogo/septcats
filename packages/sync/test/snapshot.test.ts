@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SnapshotValidationError,
   buildSegment,
   opsToSnapshot,
   replay,
   snapshotToOps,
   type ActorId,
+  type Op,
   type Segment,
 } from '@septcats/core';
-import { buildSnapshotText, planSnapshot, publishSnapshot } from '../src/snapshot';
+import { buildSnapshotText, planSnapshot, publishSnapshot, seedFromSnapshot } from '../src/snapshot';
 import { MemoryFs } from '../src/fs';
 import { DEV_A, DEV_B, makeManifest, makeOp } from './helpers';
 
@@ -175,5 +177,131 @@ describe('publishSnapshot 幂等（S6）', () => {
     fs.injectFailure = null;
     expect(await publishSnapshot(fs, 'sync/yan', 18, text)).toBe('written');
     expect(await fs.read('sync/yan/snapshot-000018.json')).toBe(text);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T19-04：快照 crdtUpdates 区段（§0.2 不丢不折叠 / §0.3 播种带出 / §2.3 往返+v1 兼容）
+// ---------------------------------------------------------------------------
+
+/** 构造一条合法 crdt_update op。 */
+function makeCrdtOp(id: string, c: number, dev: ActorId, pageId: string, updateB64: string, svFromB64?: string): Op {
+  const payload: Record<string, unknown> = { pageId, updateB64 };
+  if (svFromB64 !== undefined) {
+    payload['svFromB64'] = svFromB64;
+  }
+  return {
+    ...makeOp({ id, c, d: dev, entityId: pageId, kind: 'crdt_update', payload }),
+    target: { table: 'page', id: pageId },
+  };
+}
+
+describe('快照 crdtUpdates 区段（T19-04）', () => {
+  it('折叠含 crdt_update 的段 → 区段按 pageId 分组原样保留；播种返回 seedOps+crdtUpdates（§2.3）', () => {
+    const updA = 'AQIDBAUGB+wB+/==';
+    const updB = 'aGVsbG8gY3JkdA==';
+    const updC = 'cGFnZTItZGlmZg==';
+    const seg = buildSegment(DEV_A, [
+      makeOp({ c: 1, d: DEV_A, entityId: 'ent1', payload: { title: 'x', alive: 1 } }),
+      makeCrdtOp('u1', 2, DEV_A, 'page1', updA, 'AAAA'),
+      makeCrdtOp('u2', 3, DEV_A, 'page1', updB),
+      makeCrdtOp('u3', 4, DEV_A, 'page2', updC),
+    ]);
+
+    const text = buildSnapshotText([seg], 4, DEV_A);
+
+    // 区段内容：按 pageId 分组（首次出现序），页内保持全序，字节原样。
+    const parsed = JSON.parse(text) as { v: number; entities: unknown[]; crdtUpdates: unknown };
+    expect(parsed.crdtUpdates).toEqual([
+      {
+        pageId: 'page1',
+        updates: [
+          { opId: 'u1', updateB64: updA, svFromB64: 'AAAA' },
+          { opId: 'u2', updateB64: updB },
+        ],
+      },
+      { pageId: 'page2', updates: [{ opId: 'u3', updateB64: updC }] },
+    ]);
+
+    // 播种：实体投影与 crdtUpdates 双双无损。
+    const seeded = seedFromSnapshot(text, DEV_A);
+    expect(seeded.crdtUpdates).toEqual(parsed.crdtUpdates);
+    const original = replay(seg.ops).projection;
+    expect(opsToSnapshot(replay(seeded.seedOps).projection)).toBe(opsToSnapshot(original));
+    expect(seeded.seedOps.length).toBe(1);
+  });
+
+  it('确定性：同输入两次 buildSnapshotText 输出逐字节一致', () => {
+    const now = 1_700_000_000_000;
+    const segs = [
+      buildSegment(DEV_A, [makeOp({ c: 1, d: DEV_A, entityId: 'ent1', payload: { alive: 1 } })], now),
+      buildSegment(DEV_B, [makeCrdtOp('u1', 2, DEV_B, 'page1', 'AAA=')], now),
+    ];
+    expect(buildSnapshotText(segs, 2, DEV_A)).toBe(buildSnapshotText(segs, 2, DEV_A));
+  });
+
+  it('无 crdt_update 的段 → 区段为空数组（新写快照恒含该键）', () => {
+    const now = 1_700_000_000_000;
+    const seg = buildSegment(DEV_A, [makeOp({ c: 1, d: DEV_A, entityId: 'ent1', payload: { alive: 1 } })], now);
+    const text = buildSnapshotText([seg], 1, DEV_A);
+    const parsed = JSON.parse(text) as { crdtUpdates: unknown };
+    expect(parsed.crdtUpdates).toEqual([]);
+  });
+
+  it('v1 旧快照（无该区段）→ 读成空数组不报错，seedOps 正常（§2.3）', () => {
+    const v1 = JSON.stringify({
+      v: 1,
+      entities: [{ table: 'block', id: 'ent1', version: 1, alive: 1, data: { title: 'x' }, lamport: { c: 1, d: DEV_A } }],
+    });
+    const seeded = seedFromSnapshot(v1, DEV_A);
+    expect(seeded.crdtUpdates).toEqual([]);
+    expect(seeded.seedOps).toHaveLength(1);
+    expect(seeded.seedOps[0]?.target).toEqual({ table: 'block', id: 'ent1' });
+  });
+
+  it('畸形 crdtUpdates 区段 → SnapshotValidationError（不静默吞坏行）', () => {
+    const base = { v: 2, entities: [] };
+    const cases: unknown[] = [
+      { ...base, crdtUpdates: 'nope' }, // 非数组
+      { ...base, crdtUpdates: [42] }, // 页非对象
+      { ...base, crdtUpdates: [{ updates: [] }] }, // 缺 pageId
+      { ...base, crdtUpdates: [{ pageId: 'p1', updates: 'nope' }] }, // updates 非数组
+      { ...base, crdtUpdates: [{ pageId: 'p1', updates: [{ opId: 'x' }] }] }, // 缺 updateB64
+      { ...base, crdtUpdates: [{ pageId: 'p1', updates: [{ opId: 'x', updateB64: '' }] }] }, // 空 updateB64
+    ];
+    for (const crdtUpdates of cases) {
+      expect(() => seedFromSnapshot(JSON.stringify(crdtUpdates), DEV_A)).toThrow(SnapshotValidationError);
+    }
+  });
+
+  it('S5 纯逻辑面：含 crdt 的快照播种 + 增量段重建 → 实体投影与 crdtUpdates 集合都追平', () => {
+    const now = 1_700_000_000_000;
+    // 老段：entA1 + page1 的 u1（折叠）；新段：entA2 + page1 的 u2（增量）。
+    const oldSeg = buildSegment(DEV_A, [
+      makeOp({ c: 1, d: DEV_A, entityId: 'entA1', payload: { alive: 1 } }),
+      makeCrdtOp('u1', 2, DEV_A, 'page1', 'AAA=', 'AAAA'),
+    ], now);
+    const newSeg = buildSegment(DEV_A, [
+      makeOp({ c: 3, d: DEV_A, entityId: 'entA2', payload: { alive: 1 } }),
+      makeCrdtOp('u2', 4, DEV_A, 'page1', 'AAB='),
+    ], now);
+
+    const snapText = buildSnapshotText([oldSeg], 2, DEV_A);
+    const seeded = seedFromSnapshot(snapText, DEV_A);
+
+    // 全量重放的 crdtUpdates 集合 = 播种带出 ∪ 增量段。
+    const full = replay([...oldSeg.ops, ...newSeg.ops]).report.crdtUpdates;
+    const rebuilt = replay([
+      ...seeded.seedOps,
+      ...newSeg.ops,
+    ]);
+    // 实体投影逐字节追平
+    expect(opsToSnapshot(rebuilt.projection)).toBe(
+      opsToSnapshot(replay([...oldSeg.ops, ...newSeg.ops]).projection),
+    );
+    // crdtUpdates：播种 u1 + 增量 u2 = 全量 {u1,u2}（opId 集合相等）
+    const seededIds = seeded.crdtUpdates.flatMap((page) => page.updates.map((update) => update.opId));
+    const rebuiltIds = rebuilt.report.crdtUpdates.map((entry) => entry.opId);
+    expect([...seededIds, ...rebuiltIds].sort()).toEqual(full.map((entry) => entry.opId).sort());
   });
 });

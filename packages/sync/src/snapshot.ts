@@ -1,8 +1,12 @@
 import {
+  SnapshotValidationError,
   opsToSnapshot,
   replay,
   snapshotToOps,
+  stableStringify,
   type ActorId,
+  type CrdtUpdateEntry,
+  type Op,
   type Segment,
 } from '@septcats/core';
 import { SkipError } from './errors';
@@ -16,6 +20,13 @@ import type { Manifest } from './manifest';
  * - `buildSnapshotText` 把折叠集重放成投影后压成稳定键序快照文本；
  * - `publishSnapshot` 幂等 ifAbsent 写盘（S6 崩溃后重跑 -> 'existed'）。
  * 段不可变（铁律 §0）：快照只读不写回旧段。
+ *
+ * crdtUpdates 区段（T19-04 §0.2/§0.3）：
+ * - 实体投影仍由 LWW/字段级 LWW 折叠；`crdt_update` 的 Yjs 增量**原样保留、不丢不折叠**
+ *   （Yjs update 本身幂等、可重复应用，无需在 sync 层合并）；
+ * - 快照顶层新增 `crdtUpdates`（按 pageId 分组的 `{opId, updateB64, svFromB64?}` 列表），
+ *   与实体投影并列；v1/v2 旧快照无该区段 → 读成空数组（向后兼容）；
+ * - `seedFromSnapshot` 返回结构带上 crdtUpdates，供 desktop 层建 Y.Doc（T19-05）。
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -24,6 +35,25 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export interface SnapshotPlan {
   through: number;
   foldSegIds: string[];
+}
+
+/** 快照 crdtUpdates 区段内的单条 update（对 sync 不透明，原样透传）。 */
+export interface SnapshotCrdtUpdate {
+  opId: string;
+  updateB64: string;
+  svFromB64?: string;
+}
+
+/** 快照 crdtUpdates 区段：按 pageId（页级 Y.Doc 键）分组。 */
+export interface SnapshotCrdtPage {
+  pageId: string;
+  updates: SnapshotCrdtUpdate[];
+}
+
+/** seedFromSnapshot 的产出：播种 upsert op + 快照携带的 crdtUpdates。 */
+export interface SeedFromSnapshotResult {
+  seedOps: Op[];
+  crdtUpdates: SnapshotCrdtPage[];
 }
 
 /** 段排序键：(c_from, dev, n)，升序。 */
@@ -38,6 +68,84 @@ function compareSegments(a: Segment, b: Segment): number {
     return a.header.n < b.header.n ? -1 : 1;
   }
   return 0;
+}
+
+/**
+ * 把 core.replay 收集的 crdtUpdates 按 pageId 分组（保序：页按首次出现序，
+ * 页内条目保持 replay 全序；opId 已由 replay 去重）。
+ */
+function groupCrdtUpdates(entries: readonly CrdtUpdateEntry[]): SnapshotCrdtPage[] {
+  const pages: SnapshotCrdtPage[] = [];
+  const byPageId = new Map<string, SnapshotCrdtPage>();
+  for (const entry of entries) {
+    let page = byPageId.get(entry.pageId);
+    if (page === undefined) {
+      page = { pageId: entry.pageId, updates: [] };
+      byPageId.set(entry.pageId, page);
+      pages.push(page);
+    }
+    const update: SnapshotCrdtUpdate = { opId: entry.opId, updateB64: entry.updateB64 };
+    if (entry.svFromB64 !== undefined) {
+      update.svFromB64 = entry.svFromB64;
+    }
+    page.updates.push(update);
+  }
+  return pages;
+}
+
+/** 读取并校验快照顶层 crdtUpdates 区段；缺失（v1 旧快照）→ 空数组；存在但畸形 → 校验错误。 */
+function readCrdtUpdatesSection(raw: unknown): SnapshotCrdtPage[] {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return []; // 非对象顶层由 snapshotToOps/snapshotSchema 报错，此处不重复判型
+  }
+  const section = (raw as Record<string, unknown>)['crdtUpdates'];
+  if (section === undefined) {
+    return []; // v1/v2 旧快照：无该区段 → 空数组（T19-04 §0.2 向后兼容）
+  }
+  if (!Array.isArray(section)) {
+    throw new SnapshotValidationError(['crdtUpdates 区段必须是数组']);
+  }
+  const pages: SnapshotCrdtPage[] = [];
+  section.forEach((pageRaw, pageIndex) => {
+    if (typeof pageRaw !== 'object' || pageRaw === null || Array.isArray(pageRaw)) {
+      throw new SnapshotValidationError([`crdtUpdates[${pageIndex}] 必须是对象`]);
+    }
+    const page = pageRaw as Record<string, unknown>;
+    if (typeof page['pageId'] !== 'string' || page['pageId'].length === 0) {
+      throw new SnapshotValidationError([`crdtUpdates[${pageIndex}].pageId 必须是非空字符串`]);
+    }
+    if (!Array.isArray(page['updates'])) {
+      throw new SnapshotValidationError([`crdtUpdates[${pageIndex}].updates 必须是数组`]);
+    }
+    const updates: SnapshotCrdtUpdate[] = [];
+    (page['updates'] as unknown[]).forEach((updateRaw, updateIndex) => {
+      const at = `crdtUpdates[${pageIndex}].updates[${updateIndex}]`;
+      if (typeof updateRaw !== 'object' || updateRaw === null || Array.isArray(updateRaw)) {
+        throw new SnapshotValidationError([`${at} 必须是对象`]);
+      }
+      const update = updateRaw as Record<string, unknown>;
+      if (typeof update['opId'] !== 'string' || update['opId'].length === 0) {
+        throw new SnapshotValidationError([`${at}.opId 必须是非空字符串`]);
+      }
+      if (typeof update['updateB64'] !== 'string' || update['updateB64'].length === 0) {
+        throw new SnapshotValidationError([`${at}.updateB64 必须是非空字符串`]);
+      }
+      const item: SnapshotCrdtUpdate = {
+        opId: update['opId'],
+        updateB64: update['updateB64'],
+      };
+      const sv = update['svFromB64'];
+      if (sv !== undefined) {
+        if (typeof sv !== 'string' || sv.length === 0) {
+          throw new SnapshotValidationError([`${at}.svFromB64 必须是非空字符串或缺省`]);
+        }
+        item.svFromB64 = sv;
+      }
+      updates.push(item);
+    });
+    pages.push({ pageId: page['pageId'], updates });
+  });
+  return pages;
 }
 
 /**
@@ -92,19 +200,46 @@ export function planSnapshot(
 }
 
 /**
- * 把覆盖到 through 的段折叠成快照文本（稳定键序，`{v, entities}`）。
+ * 把覆盖到 through 的段折叠成快照文本（稳定键序，`{v, entities, crdtUpdates}`）。
  *
- * 只折叠整段（c_to <= through），绝不切在段中间；重放后经 core.opsToSnapshot 压平，
- * 并自检「该快照可被 dev 播种回读」（snapshotToOps 往返不抛）——这是 S5 新设备追平的前置不变量。
+ * 只折叠整段（c_to <= through），绝不切在段中间；实体投影经 core.opsToSnapshot 压平
+ * （仍由 LWW/字段级 LWW 折叠），crdt_update 条目按 pageId 分组原样保留（不丢不折叠），
+ * 并自检「该快照可被 dev 播种回读」（seedFromSnapshot 往返不抛）——这是 S5 新设备
+ * 追平的前置不变量。
  */
 export function buildSnapshotText(segments: Segment[], through: number, dev: ActorId): string {
   const toFold = segments.filter((seg) => seg.header.c_to <= through);
   const ops = toFold.flatMap((seg) => seg.ops);
-  const { projection } = replay(ops);
-  const text = opsToSnapshot(projection);
-  // 自检：快照必须能经 snapshotToOps(snap, dev) 回转，供新设备播种（S5）。
-  snapshotToOps(text, dev);
+  const { projection, report } = replay(ops);
+  // core 文本只含 {v, entities}；在此之上并列 crdtUpdates 区段（sync 层职责，不改 core）。
+  const core = JSON.parse(opsToSnapshot(projection)) as { v: unknown; entities: unknown[] };
+  const text = stableStringify({
+    v: core.v,
+    entities: core.entities,
+    crdtUpdates: groupCrdtUpdates(report.crdtUpdates),
+  });
+  // 自检：快照必须能经 seedFromSnapshot(snap, dev) 回转，供新设备播种（S5）。
+  seedFromSnapshot(text, dev);
   return text;
+}
+
+/**
+ * 快照播种（S5，T19-04 §0.3）：快照文本 → 播种 upsert op + crdtUpdates。
+ *
+ * - seedOps 复用 core.snapshotToOps（校验 v 区间/entities 外形；v1 快照照常可读）；
+ * - crdtUpdates 读顶层区段：缺失（v1/v2 旧快照）→ 空数组；存在但畸形 → SnapshotValidationError；
+ * - desktop 层据 crdtUpdates 建各页 Y.Doc（否则新设备同步后文本层是空的）。
+ */
+export function seedFromSnapshot(snap: string, dev: ActorId): SeedFromSnapshotResult {
+  const seedOps = snapshotToOps(snap, dev);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(snap);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new SnapshotValidationError([`不是合法 JSON：${reason}`]);
+  }
+  return { seedOps, crdtUpdates: readCrdtUpdatesSection(raw) };
 }
 
 /** 快照文件名：`snapshot-<seq:6hex>.json`（与 provider.SNAPSHOT_NAME_RE 对齐）。 */

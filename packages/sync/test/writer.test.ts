@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeSegment, validateSegment, type Op, type Segment } from '@septcats/core';
+import { encodeOp, encodeSegment, validateSegment, type Op, type Segment } from '@septcats/core';
 import { SegmentBuilder, publishSegment, type WritePolicy } from '../src/writer';
 import { MemoryFs } from '../src/fs';
 import { DEV_A, makeOp } from './helpers';
@@ -119,5 +119,121 @@ describe('publishSegment', () => {
     const seg = buildSegmentWith(1);
     await publishSegment(fs, '', seg);
     expect(await fs.exists('seg-00000001-aaaa0001-000001.jsonl')).toBe(true);
+  });
+});
+
+describe('特大 update 攒段（T19-04 §0.5/§2.5：maxBytes 自然切段，不变量不破）', () => {
+  /** 确定性生成 len 字节伪随机 base64（模拟 Yjs update 的 ×4/3 膨胀载体）。 */
+  function bigBase64(len: number, salt: number): string {
+    let a = (salt * 0x9e3779b9) >>> 0;
+    const bytes: number[] = [];
+    for (let i = 0; i < len; i += 1) {
+      a = (Math.imul(a ^ (a >>> 15), 1 | a) + 0x6d2b79f5) | 0;
+      bytes.push((a >>> 24) & 0xff);
+    }
+    return Buffer.from(bytes).toString('base64');
+  }
+
+  function crdtOp(c: number, pageId: string, updateB64: string): Op {
+    return makeOp({
+      c,
+      d: DEV_A,
+      entityId: pageId,
+      kind: 'crdt_update',
+      payload: { pageId, updateB64 },
+    });
+  }
+
+  it('接近 maxBytes 的大条目：段切分正确、无超限（单条超限者独占段）、lamport 序不变量保持、字节保真', () => {
+    const maxBytes = 700;
+    const policy: WritePolicy = { maxOps: Infinity, maxBytes, maxLamportSpan: Infinity };
+    // 4 条大 base64 的 crdt_update + 3 条小 upsert，lamport 交错上升。
+    const big1 = crdtOp(1, 'page1', bigBase64(330, 1));
+    const up1 = makeOp({ c: 2, d: DEV_A, entityId: 'ent1', payload: { v: 1 } });
+    const big2 = crdtOp(3, 'page2', bigBase64(330, 2));
+    const up2 = makeOp({ c: 4, d: DEV_A, entityId: 'ent2', payload: { v: 2 } });
+    const big3 = crdtOp(5, 'page1', bigBase64(400, 3)); // 单条已超 maxBytes → 独占段
+    const big4 = crdtOp(6, 'page3', bigBase64(330, 4));
+    const up3 = makeOp({ c: 7, d: DEV_A, entityId: 'ent3', payload: { v: 3 } });
+    const input = [big1, up1, big2, up2, big3, big4, up3];
+
+    // 逐条喂入，按既有四触发器之一刷段（字节触发为主），复刻 runtime 攒段循环。
+    const b = new SegmentBuilder(DEV_A, policy);
+    const segs: Segment[] = [];
+    for (const op of input) {
+      b.add(op);
+      if (b.shouldFlush(0, Infinity)) {
+        const seg = b.flush();
+        if (seg !== null) {
+          segs.push(seg);
+        }
+      }
+    }
+    const tail = b.flush();
+    if (tail !== null) {
+      segs.push(tail);
+    }
+
+    // 全部 op 无丢失，且段内 lamport 严格升序（validateSegment 的核心不变量）。
+    const flushedOps = segs.flatMap((seg) => seg.ops);
+    expect(flushedOps.map((op) => op.op_id)).toEqual(input.map((op) => op.op_id));
+    for (const seg of segs) {
+      expect(validateSegment(seg)).toEqual([]);
+    }
+
+    // 段切分正确（既有 add→check→flush 模式的不变量）：多 op 段去掉末位 op 后
+    // 字节总和 < maxBytes——即边界恒切在「第一个越限 op」处；单条本身超限的
+    // 特大 update 不会让它前面的段被切破，也不会被截破。
+    for (const seg of segs) {
+      const opBytes = seg.ops.reduce((sum, op) => sum + Buffer.byteLength(encodeOp(op), 'utf8') + 1, 0);
+      if (seg.ops.length > 1) {
+        const withoutLast = seg.ops
+          .slice(0, -1)
+          .reduce((sum, op) => sum + Buffer.byteLength(encodeOp(op), 'utf8') + 1, 0);
+        expect(withoutLast).toBeLessThan(maxBytes);
+      } else if (opBytes > maxBytes) {
+        expect(seg.ops).toHaveLength(1); // 单条超限者独占段（此前缓冲已清空）
+      }
+    }
+
+    // 字节保真：base64 payload 与原值逐字节相等（×4/3 膨胀不得引发任何改写）。
+    const flushedBig = flushedOps.filter((op) => op.kind === 'crdt_update');
+    const inputBig = input.filter((op) => op.kind === 'crdt_update');
+    expect(flushedBig.map((op) => op.payload['updateB64'])).toEqual(
+      inputBig.map((op) => op.payload['updateB64']),
+    );
+  });
+
+  it('多条大 update 相邻：字节触发把段边界切在 op 之间，绝不切破单条 op', () => {
+    const maxBytes = 512;
+    const policy: WritePolicy = { maxOps: Infinity, maxBytes, maxLamportSpan: Infinity };
+    const b = new SegmentBuilder(DEV_A, policy);
+    const bigOps = [1, 2, 3, 4, 5, 6].map((c) => crdtOp(c, `page${c}`, bigBase64(300, c)));
+    const segs: Segment[] = [];
+    for (const op of bigOps) {
+      b.add(op);
+      if (b.shouldFlush(0, Infinity)) {
+        const seg = b.flush();
+        if (seg !== null) {
+          segs.push(seg);
+        }
+      }
+    }
+    const tail = b.flush();
+    if (tail !== null) {
+      segs.push(tail);
+    }
+
+    // 每个产出段仍是合法段（lamport 严格升序），且所有 op 编码行都是完整单行。
+    expect(segs.length).toBeGreaterThanOrEqual(2);
+    for (const seg of segs) {
+      expect(validateSegment(seg)).toEqual([]);
+      for (const line of encodeSegment(seg).trimEnd().split('\n')) {
+        expect(() => JSON.parse(line)).not.toThrow(); // 行完整性：op 未被截破
+      }
+    }
+    expect(segs.flatMap((seg) => seg.ops).map((op) => op.payload['updateB64'])).toEqual(
+      bigOps.map((op) => op.payload['updateB64']),
+    );
   });
 });

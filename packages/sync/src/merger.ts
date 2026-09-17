@@ -2,6 +2,7 @@ import {
   SCHEMA_VERSION,
   decodeSegment,
   replay,
+  type CrdtUpdateEntry,
   type Op,
   type Segment,
 } from '@septcats/core';
@@ -17,10 +18,39 @@ import type { SyncProvider } from './provider';
  *  b) 段解析失败 / schema_ver 过高 → quarantined（不 throw，不中断整轮，S2）；
  *  c) 命中 seenContentHashes → skipped.duplicate（S3 网盘副本）；
  *  d) 全部合法段 + localLedger 交 core.replay → 只回写「本地没有的 op_id」到 applied（幂等）；
- *  e) 顺序无关：内部统一 sort by (c_from, dev, n)，不依赖 list() 顺序。
+ *  e) 顺序无关：内部统一 sort by (c_from, dev, n)，不依赖 list() 顺序；
+ *  f) crdt_update 分流（T19-04 §0.4）：不进 LWW（core.replay 自行收集，不作用于实体
+ *     投影），报告以 crdtUpdates 透出，交上层 Y.Doc 幂等应用；applied 仍包含这些 op
+ *     （照常入 op_ledger 审计真相层），payload 字节保真——sync 对 updateB64 不透明、
+ *     不解码不改写。
  *
- * 快照播种（§4 规则 a 的 S5）与 needsSnapshot 由 C 阶段（snapshot.ts）负责，本阶段不碰。
+ * 快照播种（§4 规则 a 的 S5）与 needsSnapshot 由 C 阶段（snapshot.ts）负责。
  */
+
+/**
+ * 跨报告合并 crdtUpdates（T19-04 §0.4）：按 opId 去重取并集。
+ *
+ * 每份输入都假定已处于 core.replay 的全序（lamport, deviceId, op_id 升序）——
+ * 本函数不重排、只做保序并集（先到者留下），因此：
+ * - 同输入任意次调用结果逐项一致（确定性）；
+ * - 各报告内部的全序在结果中保持相对先后（稳定）。
+ * opId 是去重键（审计可回溯 op_ledger 的 op_id）。
+ */
+export function mergeCrdtUpdates(
+  existing: readonly CrdtUpdateEntry[],
+  incoming: readonly CrdtUpdateEntry[],
+): CrdtUpdateEntry[] {
+  const seen = new Set<string>();
+  const out: CrdtUpdateEntry[] = [];
+  for (const entry of [...existing, ...incoming]) {
+    if (seen.has(entry.opId)) {
+      continue;
+    }
+    seen.add(entry.opId);
+    out.push(entry);
+  }
+  return out;
+}
 
 export interface MergeInput {
   provider: SyncProvider;
@@ -93,6 +123,7 @@ export async function mergeRemote(input: MergeInput): Promise<SyncReport> {
     skipped: [],
     quarantined: [],
     conflicts: [],
+    crdtUpdates: [],
     highWatermark: 0,
     needsSnapshot: false,
   };
@@ -179,10 +210,15 @@ export async function mergeRemote(input: MergeInput): Promise<SyncReport> {
   }
 
   // 4) 交 core.replay 判定冲突（禁止在 sync 里另写冲突判定）。
+  //    crdt_update 由 replay 分派层收集（不进 LWW、不碰实体投影）；
+  //    本地已有的 crdt_update 一并参与 replay（保证去重键 seen 覆盖本地），但报告只
+  //    透出「对本地为新 op」的条目（与 applied 的幂等口径一致，避免上层重复应用）。
   const { report: replayReport } = replay([...localLedger, ...remoteOps]);
+  const remoteOpIds = new Set(remoteOps.map((op) => op.op_id));
 
   report.applied = remoteOps;
   report.conflicts = replayReport.conflicts;
+  report.crdtUpdates = replayReport.crdtUpdates.filter((entry) => remoteOpIds.has(entry.opId));
   report.highWatermark = highWatermark;
 
   return report;

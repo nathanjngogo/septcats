@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSegment, encodeSegment, opsToSnapshot, replay, type Op } from '@septcats/core';
+import * as Y from 'yjs';
 import { MemoryFs } from '../src/fs';
 import { mergeRemote } from '../src/merger';
 import { InProcessProvider } from '../src/provider';
@@ -142,4 +143,175 @@ describe('收敛性总测（4 设备 × 30 op × 4 种段切分）', () => {
       expect(results[i]).toBe(baseline);
     }
   });
+});
+
+// ---------------------------------------------------------------------------
+// T19-04 §2.4：4 设备并发文本场景（yjs 仅作 devDependency 生成/校验真实增量；
+// 被测对象仍是 sync 的段合并/分流/去重——运行时零 yjs 依赖，payload 对 sync 不透明）。
+// ---------------------------------------------------------------------------
+
+const TEXT_DEVICES = [DEV_A, DEV_B, DEV_C, DEV_D] as const;
+const TEXT_ROUNDS = 3;
+const PAGE_ID = 'page-shared';
+
+/** b64 <-> bytes（模拟 payload 载体）。 */
+function toB64(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString('base64');
+}
+function fromB64(b64: string): Uint8Array {
+  return new Uint8Array(Buffer.from(b64, 'base64'));
+}
+
+describe('4 设备并发文本收敛（T19-04 §2.4：crdt_update + 常规 op × 多次切分/乱序）', () => {
+  it('全部设备实体投影逐字节相等 + crdtUpdates 集合相等 + Yjs 文本逐字符一致', async () => {
+    const rng = mulberry32(0x51ec475);
+    const fs = new MemoryFs();
+
+    // 每设备：本地 Y.Doc + 状态向量水位 + 本地账 + 已应用的 update opId 集。
+    const docs = TEXT_DEVICES.map(() => new Y.Doc());
+    const prevSv = TEXT_DEVICES.map((_) => null as Uint8Array | null);
+    const ledgers: Op[][] = TEXT_DEVICES.map(() => []);
+    const seenHashes = TEXT_DEVICES.map(() => new Set<string>());
+    const appliedOpIds = TEXT_DEVICES.map(() => new Set<string>());
+    const allCrdtOpIds = new Set<string>();
+    const allUpdates: string[] = []; // 全部真实增量的 base64（收敛真值素材）
+
+    let opSeq = 0;
+    for (let round = 0; round < TEXT_ROUNDS; round += 1) {
+      const roundOps: Op[][] = TEXT_DEVICES.map(() => []);
+
+      // 1) 每设备本地编辑 Y.Text → 捕获增量 update → 1 条 crdt_update op + 2 条常规 op。
+      for (let di = 0; di < TEXT_DEVICES.length; di += 1) {
+        const dev = TEXT_DEVICES[di] as (typeof TEXT_DEVICES)[number];
+        const doc = docs[di];
+        if (doc === undefined) {
+          throw new Error('Y.Doc 缺失');
+        }
+        const text = doc.getText('body');
+        const sv = prevSv[di] ?? undefined;
+
+        // 保证每轮至少一次插入 → 增量必非空（updateB64 非空是 encodeOp 的硬约束）。
+        for (let k = 0; k < 3; k += 1) {
+          text.insert(text.length, `d${di}r${round}#${k} `);
+        }
+        if (text.length > 40) {
+          const pos = Math.floor(rng() * (text.length - 20));
+          text.delete(pos, 1 + Math.floor(rng() * 5));
+        }
+        const update = Y.encodeStateAsUpdate(doc, sv);
+        prevSv[di] = Y.encodeStateVector(doc);
+        allUpdates.push(toB64(update));
+
+        opSeq += 1;
+        const crdtOpId = `crdt-${String(opSeq).padStart(4, '0')}`;
+        allCrdtOpIds.add(crdtOpId);
+        appliedOpIds[di]?.add(crdtOpId); // 本设备自己的 update 当场已在其 Y.Doc 中
+        roundOps[di]?.push({
+          op_id: crdtOpId,
+          lamport: { c: di * 10000 + round * 100 + 1, d: dev },
+          at: 1_700_000_000_000 + opSeq,
+          actor: dev,
+          target: { table: 'page', id: PAGE_ID },
+          kind: 'crdt_update',
+          merge_policy: 'crdt',
+          payload: { pageId: PAGE_ID, updateB64: toB64(update) },
+        });
+        // 常规实体 op：交错写同块（LWW/冲突路径照旧运转）。
+        roundOps[di]?.push(
+          makeRegularOp(`reg-${String(opSeq).padStart(4, '0')}a`, di * 10000 + round * 100 + 2, dev, di),
+          makeRegularOp(`reg-${String(opSeq).padStart(4, '0')}b`, di * 10000 + round * 100 + 3, dev, di),
+        );
+      }
+
+      // 2) 每设备本轮 op 随机切成 1..3 段落盘；写入顺序打乱（乱序到达）。
+      const pending: Array<{ name: string; text: string }> = [];
+      for (let di = 0; di < TEXT_DEVICES.length; di += 1) {
+        const dev = TEXT_DEVICES[di] as (typeof TEXT_DEVICES)[number];
+        const ops = roundOps[di] ?? [];
+        let i = 0;
+        while (i < ops.length) {
+          const chunk = ops.slice(i, i + 1 + Math.floor(rng() * 3));
+          i += chunk.length;
+          const seg = buildSegment(dev, chunk);
+          pending.push({ name: `${seg.seg_id}.jsonl`, text: encodeSegment(seg) });
+        }
+      }
+      // 确定性洗牌
+      for (let w = pending.length - 1; w > 0; w -= 1) {
+        const swap = Math.floor(rng() * (w + 1));
+        const tmp = pending[w] as { name: string; text: string };
+        pending[w] = pending[swap] as { name: string; text: string };
+        pending[swap] = tmp;
+      }
+      for (const item of pending) {
+        await fs.write(`${ROOT}/${item.name}`, item.text);
+      }
+
+      // 3) 每设备各自 mergeRemote：applied 入账，crdtUpdates 逐条 applyUpdate（幂等）。
+      for (let di = 0; di < TEXT_DEVICES.length; di += 1) {
+        const report = await mergeRemote({
+          provider: new InProcessProvider(fs, ROOT),
+          localLedger: ledgers[di] ?? [],
+          seenContentHashes: seenHashes[di] ?? new Set<string>(),
+          now: round,
+        });
+        ledgers[di]?.push(...report.applied);
+        for (const entry of report.crdtUpdates) {
+          if (!appliedOpIds[di]?.has(entry.opId)) {
+            Y.applyUpdate(docs[di] as Y.Doc, fromB64(entry.updateB64));
+            appliedOpIds[di]?.add(entry.opId);
+          }
+        }
+      }
+    }
+
+    // 断言 1：Yjs 文本层——4 设备逐字符一致，且等于「全部增量灌入新 Doc」的真值。
+    const truth = new Y.Doc();
+    for (const updateB64 of allUpdates) {
+      Y.applyUpdate(truth, fromB64(updateB64));
+    }
+    const texts = docs.map((doc) => doc.getText('body').toString());
+    const truthText = truth.getText('body').toString();
+    expect(texts[0]?.length ?? 0).toBeGreaterThan(0);
+    for (let di = 1; di < texts.length; di += 1) {
+      expect(texts[di]).toBe(texts[0]);
+    }
+    expect(truthText).toBe(texts[0]);
+
+    // 断言 2：实体投影逐字节相等（crdt_update 不碰投影，常规 op 走既有 LWW 全序）。
+    const projections = ledgers.map((ledger) => opsToSnapshot(replay(ledger).projection));
+    for (let di = 1; di < projections.length; di += 1) {
+      expect(projections[di]).toBe(projections[0]);
+    }
+
+    // 断言 3：crdtUpdates 集合相等 = 全部生成的 update opId（一台不漏）。
+    for (let di = 0; di < TEXT_DEVICES.length; di += 1) {
+      expect(appliedOpIds[di]).toEqual(allCrdtOpIds);
+    }
+  });
+
+  /** 常规实体 op（upsert/patch 交错）。 */
+  function makeRegularOp(id: string, c: number, dev: (typeof TEXT_DEVICES)[number], di: number): Op {
+    const target = `ent${(di + c) % 4}`;
+    if (c % 2 === 0) {
+      return {
+        op_id: id,
+        lamport: { c, d: dev },
+        at: 1_700_000_000_000 + c,
+        actor: dev,
+        target: { table: 'block', id: target },
+        kind: 'upsert',
+        payload: { title: `t${c}`, alive: 1 },
+      };
+    }
+    return {
+      op_id: id,
+      lamport: { c, d: dev },
+      at: 1_700_000_000_000 + c,
+      actor: dev,
+      target: { table: 'block', id: target },
+      kind: 'patch',
+      payload: { v: c },
+    };
+  }
 });

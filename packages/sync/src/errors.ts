@@ -1,4 +1,4 @@
-import type { Op, ReplayConflict } from '@septcats/core';
+import type { CrdtUpdateEntry, Op, ReplayConflict } from '@septcats/core';
 
 /**
  * @septcats/sync 的稳定错误码与合并报告结构。
@@ -76,6 +76,8 @@ export interface SyncQuarantineEntry {
  * 一轮 mergeRemote 的产出（骨架，merger.ts 于 B 阶段填充）。
  * - applied 只含「本地账没有的 op_id」，幂等；
  * - conflicts 直接复用 core.replay 的 ReplayConflict（S1 素材）；
+ * - crdtUpdates（T19-04）：本轮对本地为新 op 的 `crdt_update` 收集结果
+ *   （core.replay 全序、按 opId 去重；交上层 Y.Doc 幂等应用）；
  * - 顺序无关：实现内部统一 sort by (c_from, dev, n)。
  */
 export interface SyncReport {
@@ -84,6 +86,7 @@ export interface SyncReport {
   skipped: SyncSkippedEntry[];
   quarantined: SyncQuarantineEntry[];
   conflicts: ReplayConflict[];
+  crdtUpdates: CrdtUpdateEntry[];
   highWatermark: number;
   needsSnapshot: boolean;
 }
