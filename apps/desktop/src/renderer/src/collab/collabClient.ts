@@ -3,9 +3,11 @@
  *
  * 一页一个 YjsEditor（复用 T19-03，Y.Doc ↔ Tiptap 双向绑定在此进程内成立）：
  * - attach：`collab:attach` 取回 main 的播种集（快照区段聚合 + 账本 op，opId 去重）
- *   → 构造注入重建 Y.Doc → attach 到 Tiptap（Y 非空时 Y→PM 投影，Y 空 + PM 有内容
- *   时 PM→Y 种子——种子客户端语义由 T19-03 attach 内建，双端不各自种子的约定由
- *   「先取 main 状态再 attach」的时序保证）；
+ *   → 构造注入重建 Y.Doc → attach 到 Tiptap（Y 非空时 Y→PM 投影；Y 空 + PM 有内容
+ *   时 PM→Y 种子——**种子门（T19-05-1）**：main 回包带 `ledgerHasCrdt`（该页账本
+ *   已有 crdt_update op 即 true），true 时关掉初始种子（YjsEditor.attach seed 选项），
+ *   用空 Y.Doc attach，内容随后续下行补齐 —— 防迟到种子端与远端各自种子导致文本重复；
+ *   账本为空时种子照旧，双端不各自种子的约定由「先取 main 状态再 attach」的时序保证）；
  * - 上行：YjsEditor 防抖 flush 的 payload → `collab:apply`（main 组 Op 入真相层）；
  * - 下行：`collab:update` 推流按 pageId 路由到本进程 YjsEditor（applyCrdtUpdate 幂等，
  *   REMOTE origin 不回灌）；
@@ -81,7 +83,9 @@ export async function attachCollab(
       });
     },
   });
-  yjs.attach(editor);
+  // 种子门（T19-05-1）：账本已有该页 crdt op → 绝不再 PM→Y 种子（用空 Y.Doc attach，
+  // 内容随后续下行增量补齐）；账本为空 → 种子照旧（首开设备的种子客户端语义不变）。
+  yjs.attach(editor, { seed: !result.ledgerHasCrdt });
   docs.set(pageId, yjs);
 }
 

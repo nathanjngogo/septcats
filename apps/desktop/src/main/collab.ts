@@ -14,7 +14,9 @@
  *   按页应用到 hub Y.Doc 并广播 renderer（index.ts 接线）；
  * - **快照播种（§0.3 跨代聚合）**：attach 返回「全部快照文件的 crdtUpdates 区段聚合 +
  *   账本 crdt_update op」（opId 覆盖去重，Yjs 幂等应用天然安全），renderer 据此重建
- *   Y.Doc —— 新设备/清缓存首次开页文本不丢；
+ *   Y.Doc —— 新设备/清缓存首次开页文本不丢；随附 `ledgerHasCrdt`（该页账本是否已有
+ *   crdt_update op），renderer 据此跳过 PM→Y 初始种子（T19-05-1 种子门，防迟到种子端
+ *   双方各种子导致文本重复）；
  * - **rotateKey（§0.4）**：crdt_update op 与实体 op 同走段/快照管线，重加密路径
  *   （runtime.reencryptAllSegments）按文件枚举天然覆盖，本模块零特殊处理。
  *
@@ -94,15 +96,15 @@ export class CollabHub {
   }
 
   private async attachBody(pageId: string): Promise<CollabAttachResult> {
-    const entries = await this.collectSeedEntries(pageId);
+    const seed = await this.collectSeed(pageId);
     const existing = this.pages.get(pageId);
     if (existing !== undefined) {
       this.touch(pageId);
-      return { entries };
+      return { entries: seed.entries, ledgerHasCrdt: seed.ledgerHasCrdt };
     }
     this.evictOldest(pageId);
     const editor = new YjsEditor(pageId, {
-      crdtUpdates: entries.map(toCrdtEntry),
+      crdtUpdates: seed.entries.map(toCrdtEntry),
       onOp: (payload) => {
         void this.applyUplink(payload).catch((error: unknown) => {
           this.log(`hub 上行组 Op 失败（pageId=${pageId}）：${describe(error)}`);
@@ -110,7 +112,7 @@ export class CollabHub {
       },
     });
     this.pages.set(pageId, editor);
-    return { entries };
+    return { entries: seed.entries, ledgerHasCrdt: seed.ledgerHasCrdt };
   }
 
   /**
@@ -212,15 +214,18 @@ export class CollabHub {
   // --- 播种（§0.3 跨代快照聚合） ----------------------------------------------
 
   /**
-   * 播种条目集 = 「全部快照文件的 crdtUpdates 区段聚合（跨代，opId 去重）」+
-   * 「op_ledger 的 crdt_update op（含快照之后到账的实时 op）」。
+   * 播种集 = 「全部快照文件的 crdtUpdates 区段聚合（跨代，opId 去重）」+
+   * 「op_ledger 的 crdt_update op（含快照之后到账的实时 op）」，随附
+   * `ledgerHasCrdt`（该页账本是否已有任何 crdt_update op —— 真相层口径，与
+   * 快照区段无关；payload 畸形的 op 仍计数：本页有协作历史这一事实不变）。
    * opId 覆盖判断：快照与账本可能含同一条（折叠前进账过），Yjs 幂等应用天然安全，
    * 这里仍按 opId 去重（先到者留）以保证同输入确定性。空账本（新设备/清缓存）时
    * 账本侧为空，纯快照重建 —— 不允许只取一边（会丢文本）。
    */
-  private async collectSeedEntries(pageId: string): Promise<CollabUpdateEntry[]> {
+  private async collectSeed(pageId: string): Promise<{ entries: CollabUpdateEntry[]; ledgerHasCrdt: boolean }> {
     const seen = new Set<string>();
     const entries: CollabUpdateEntry[] = [];
+    let ledgerHasCrdt = false;
     const push = (opId: string, pageIdOf: string, updateB64: string): void => {
       if (seen.has(opId) || opId.length === 0 || updateB64.length === 0) {
         return;
@@ -261,6 +266,7 @@ export class CollabHub {
       if (op.kind !== 'crdt_update' || op.target.table !== 'page' || op.target.id !== pageId) {
         continue;
       }
+      ledgerHasCrdt = true; // 本页已有协作历史（T19-05-1 种子门依据；payload 畸形也计数）
       const payloadPageId = op.payload['pageId'];
       const updateB64 = op.payload['updateB64'];
       if (typeof payloadPageId !== 'string' || typeof updateB64 !== 'string') {
@@ -272,7 +278,7 @@ export class CollabHub {
       }
       push(op.op_id, entryPageId, updateB64);
     }
-    return entries;
+    return { entries, ledgerHasCrdt };
   }
 
   // --- 诊断 -------------------------------------------------------------------

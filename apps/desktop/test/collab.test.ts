@@ -11,7 +11,9 @@
  *      （不物化）+ 实体 op 同段共存互不影响（§0.6 普通页面操作不受影响的单测代理）；
  *   F. S5 跨代播种：快照折叠 → 段被 gc 场景模拟 → 新设备（空账本）attach 纯快照还原；
  *   G. rotateKey 链路（T19-04 DEVIATION-4 消化）：加密段轮换重加密后，新会话（空账本）
- *      追平仍收到 crdt_update 且文本无损。
+ *      追平仍收到 crdt_update 且文本无损；
+ *   H. T19-05-1 种子门：attach 回 `ledgerHasCrdt`（账本已有该页 crdt op 即 true），
+ *      迟到种子端据此不再 PM→Y 上行种子（renderer 组合 seed:false，editor 面另钉）。
  *
  * 纯 Node 逻辑（jsdom 仅为 @septcats/editor 导入图兜底）；DB 用内存假账本
  * （sync-runtime.test.ts 同款）；真实增量由 yjs 生成（与 T19-04 收敛用例同思路）。
@@ -609,6 +611,69 @@ describe('rotateKey 全链（§0.4 加密段轮换 + 文本保真）', () => {
 });
 
 // ---------------------------------------------------------------------------
+// H. T19-05-1 种子门（DEVIATION-5 根治：账本已有 crdt op 的迟到端不再上行种子）
+// ---------------------------------------------------------------------------
+
+/** 账本直插一条 crdt_update op（种子门用例的「对端种子已同步入账」模拟）。 */
+function ledgerCrdtOp(opId: string, c: number, pageId: string, updateB64: string): DbBatchStatement {
+  return {
+    sqlId: 'opLedger.insert',
+    params: {
+      op_json: encodeOp({
+        op_id: opId,
+        lamport: { c, d: ACTOR },
+        at: c,
+        actor: ACTOR,
+        target: { table: 'page', id: pageId },
+        kind: 'crdt_update',
+        merge_policy: 'crdt',
+        payload: { pageId, updateB64 },
+      }),
+    },
+  };
+}
+
+describe('T19-05-1 种子门（attach 回 ledgerHasCrdt）', () => {
+  it('账本已有该页 crdt op（对端种子已入账）→ ledgerHasCrdt=true 且播种集完整；空账本 → false（首开种子语义不变）', async () => {
+    // ① 迟到种子端：空快照 + 账本已有一条本页 crdt op（对端种子同步入账后才 attach）
+    const ledger = new MemoryLedger();
+    const remoteSeed = makeUplink('p1', '远端种子文本');
+    await ledger.hooked(() => undefined).batch([ledgerCrdtOp('op-seed-remote', 1, 'p1', remoteSeed.updateB64)]);
+    const lateHub = new CollabHub({ executor: ledger.hooked(() => undefined), actor: ACTOR });
+    const late = await lateHub.attach('p1');
+    expect(late.ledgerHasCrdt).toBe(true);
+    expect(late.entries.map((entry) => entry.opId)).toEqual(['op-seed-remote']);
+
+    // 迟到端 renderer 侧组合语义：entries 重建 Y.Doc（Y 非空）+ seed:false（editor 面钉，
+    // 见 packages/editor yjs.test.ts「attach({seed:false})」用例）→ 本地初始内容绝不
+    // PM→Y 上行种子，文本唯一真相来自账本
+    const rebuilt = new YjsEditor('p1', { crdtUpdates: late.entries.map(crdtEntryOf) });
+    expect(textOf(rebuilt)).toContain('远端种子文本');
+    rebuilt.destroy();
+    lateHub.dispose();
+
+    // ② 首开端：空账本 + 空快照 → ledgerHasCrdt=false（PM→Y 种子照旧允许，语义不变）
+    const freshHub = new CollabHub({ executor: new MemoryLedger().hooked(() => undefined), actor: ACTOR });
+    const fresh = await freshHub.attach('p1');
+    expect(fresh.ledgerHasCrdt).toBe(false);
+    expect(fresh.entries).toEqual([]);
+    freshHub.dispose();
+  });
+
+  it('跨页 crdt op 不点亮本页种子门（只有 target=本页的 op 计数）', async () => {
+    const ledger = new MemoryLedger();
+    await ledger
+      .hooked(() => undefined)
+      .batch([ledgerCrdtOp('op-other', 1, 'p2', makeUplink('p2', '别页').updateB64)]);
+    const hub = new CollabHub({ executor: ledger.hooked(() => undefined), actor: ACTOR });
+    const result = await hub.attach('p1');
+    expect(result.ledgerHasCrdt).toBe(false);
+    expect(result.entries).toEqual([]);
+    hub.dispose();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // IPC 注册面
 // ---------------------------------------------------------------------------
 
@@ -626,8 +691,9 @@ describe('registerCollabIpc（三通道 + E_INVARIANT/E_MALFORMED）', () => {
     let currentHub: CollabHub | null = hub;
     registerCollabIpc({ registrar, getHub: () => currentHub });
 
-    const attachResult = (await routes.get('collab:attach')!({ pageId: 'p1' })) as { entries: unknown[] };
+    const attachResult = (await routes.get('collab:attach')!({ pageId: 'p1' })) as { entries: unknown[]; ledgerHasCrdt: boolean };
     expect(attachResult.entries).toEqual([]);
+    expect(attachResult.ledgerHasCrdt).toBe(false); // T19-05-1：空账本 → 种子门开（首开可种子）
     await routes.get('collab:apply')!({ pageId: 'p1', updateB64: makeUplink('p1', 'ipc文本').updateB64 });
     expect(await routes.get('collab:detach')!({ pageId: 'p1' })).toEqual({ ok: true });
 

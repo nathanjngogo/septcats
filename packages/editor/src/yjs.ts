@@ -39,6 +39,17 @@ export function fragmentNameOf(pageId: string): string {
   return `page:${pageId}`;
 }
 
+/** {@link YjsEditor.attach} 的选项。 */
+export interface YjsAttachOptions {
+  /**
+   * PM→Y 初始种子开关（默认 true）：Y 侧为空而编辑器带初始内容时，把编辑器内容
+   * 上行 Y（种子客户端语义）。协作场景下，账本已有该页 crdt 历史的「迟到种子端」
+   * 必须传 false —— 否则双端各自种子会因 Yjs client ID 不同把同一份文本变成两份
+   * （T19-05-1）。传 false 时 Y 保持空文档，内容随后续下行增量补齐。
+   */
+  seed?: boolean;
+}
+
 export interface YjsEditorOptions {
   /**
    * 注入 T19-02 `ReplayReport.crdtUpdates`（可整包注入，重放冷启动）。
@@ -118,8 +129,11 @@ export class YjsEditor {
   // 绑定：Y.Doc ↔ ProseMirror（ySyncPlugin 完成双向映射，这里只管注入与初始化同步）
   // -------------------------------------------------------------------------
 
-  /** 绑定 Tiptap 编辑器（一个实例只能绑一个编辑器）。 */
-  attach(editor: TiptapEditor): this {
+  /**
+   * 绑定 Tiptap 编辑器（一个实例只能绑一个编辑器）。
+   * @param options.seed PM→Y 初始种子开关（默认 true，见 {@link YjsAttachOptions.seed}）。
+   */
+  attach(editor: TiptapEditor, options: YjsAttachOptions = {}): this {
     if (this.destroyed) {
       throw new Error(`YjsEditor(pageId=${this.pageId}) 已 destroy，不能再 attach`);
     }
@@ -127,6 +141,7 @@ export class YjsEditor {
       throw new Error(`YjsEditor(pageId=${this.pageId}) 已绑定到另一个编辑器实例`);
     }
     this.attachedEditor = editor;
+    const seed = options.seed ?? true;
 
     if (this.fragment.length > 0) {
       // Y 侧已有内容（注入回放/远端先行）时，先把 PM 投影替换为 Y 内容，
@@ -142,7 +157,7 @@ export class YjsEditor {
         // Y 内容含 schema 外节点等异常：只记录，不阻断编辑器（任务书 §4 错误处理）
         console.error(`[YjsEditor] Y→PM 初始投影失败（pageId=${this.pageId}）`, error);
       }
-    } else if (editor.state.doc.content.size > 0) {
+    } else if (seed && editor.state.doc.content.size > 0) {
       // PM→Y 种子（种子客户端语义）：Y 侧为空而编辑器带初始内容时，先把编辑器
       // 内容上行 Y（走正常 handleDocUpdate → 防抖上行通道）。必须发生在注册
       // ySyncPlugin 之前——否则插件首渲染（Y 空 → 渲染空文档）会清掉 PM 初始内容，

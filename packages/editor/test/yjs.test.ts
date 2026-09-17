@@ -10,7 +10,7 @@ import {
 import * as Y from 'yjs';
 import { redoCommand, undoCommand } from 'y-prosemirror';
 import { editorExtensions } from '../src/types';
-import { YjsEditor, fragmentNameOf, type YjsEditorOptions } from '../src/yjs';
+import { YjsEditor, fragmentNameOf, type YjsAttachOptions, type YjsEditorOptions } from '../src/yjs';
 
 /**
  * T19-03：YjsEditor 单元 + 集成 + 回归。
@@ -18,6 +18,8 @@ import { YjsEditor, fragmentNameOf, type YjsEditorOptions } from '../src/yjs';
  * 冷启动约定（集成用例遵循）：种子客户端先 attach（本地内容上行 Y），其余客户端
  * 必须先经构造注入 crdtUpdates（core 回放）再 attach —— Y 侧已有内容时 attach
  * 只做 Y→PM 投影，不做本地种子，避免双端各自种子导致内容重复。
+ * T19-05-1 补充：无法预注入回放的「迟到种子端」（账本已有该页 crdt 历史但 attach
+ * 时才知道）用 attach({ seed:false }) 显式关种子（desktop collabClient 接线）。
  *
  * 撤销/重做走 y-prosemirror 的 undoCommand/redoCommand（Yjs UndoManager 承载，
  * 只撤本地）；Tiptap 未注册 History 命令，commands.undo/redo 不存在。
@@ -50,7 +52,7 @@ afterEach(() => {
   }
 });
 
-function makeClient(pageId: string, options: { crdtUpdates?: CrdtUpdateEntry[]; onOp?: (p: CrdtUpdatePayload) => void; content?: JSONContent } = {}): Client {
+function makeClient(pageId: string, options: { crdtUpdates?: CrdtUpdateEntry[]; onOp?: (p: CrdtUpdatePayload) => void; content?: JSONContent; attachOptions?: YjsAttachOptions } = {}): Client {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const editor = new TiptapEditor({
@@ -67,7 +69,7 @@ function makeClient(pageId: string, options: { crdtUpdates?: CrdtUpdateEntry[]; 
     yjsOptions.onOp = options.onOp;
   }
   const yjs = new YjsEditor(pageId, yjsOptions);
-  yjs.attach(editor);
+  yjs.attach(editor, options.attachOptions);
   teardowns.push(() => {
     yjs.destroy();
     editor.destroy();
@@ -306,6 +308,39 @@ describe('YjsEditor 集成：双客户端同 page 协作', () => {
     // 注入回放是远端语义，不应产生上行 op
     await sleep(FLUSH_WAIT_MS);
     expect(b.yjs.sync()).toBeNull();
+  });
+
+  it('attach({ seed:false })：迟到种子端不上行初始种子（T19-05-1）；下行增量照常应用投影', async () => {
+    // 对端种子（正常 PM 路径产出，含合法段落结构，可直接下行投影）
+    const seedClient = makeClient(PAGE, { content: par('远端文本') });
+    const remotePayload = seedClient.yjs.sync();
+    expect(remotePayload).not.toBeNull();
+    seedClient.yjs.destroy();
+    seedClient.editor.destroy();
+
+    // 迟到种子端：PM 带初始内容 + Y 侧为空 → 默认 attach 会种子（重复文本的根源），
+    // seed:false 关掉该分支
+    const ups: CrdtUpdatePayload[] = [];
+    const late = makeClient(PAGE, {
+      content: par('本地初始内容'),
+      onOp: (p) => ups.push(p),
+      attachOptions: { seed: false },
+    });
+
+    // Y 仍为空 → ySyncPlugin 首渲染把 PM 对齐为空文档（初始内容不进 Y、不产生 op）
+    expect(late.editor.state.doc.textContent).not.toContain('本地初始内容');
+    expect(late.yjs.fragment.length).toBe(0);
+    expect(late.yjs.sync()).toBeNull(); // 显式收集也无种子 payload（不重复上行种子的钉）
+    await sleep(FLUSH_WAIT_MS);
+    expect(ups).toHaveLength(0);
+
+    // seed 只关初始种子：本地编辑（PM 事务路径）照常走上行通道
+    late.editor.commands.setContent('本地增量');
+    expect(late.yjs.sync()).not.toBeNull();
+
+    // 下行增量照常：对端内容经 Y→PM 投影可见（空 Y.Doc attach 后由下行补齐）
+    late.yjs.applyCrdtUpdate(makeEntry(PAGE, remotePayload!, 'op-late-01'));
+    expect(late.editor.state.doc.textContent).toContain('远端文本');
   });
 
   it('B 端本地编辑不被 A 端远端增量回滚（优先本地）', async () => {
