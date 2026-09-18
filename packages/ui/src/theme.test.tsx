@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { THEME_STORAGE_KEY, ThemeProvider, useTheme } from './theme';
+import { THEME_STORAGE_KEY, hasStoredTheme, setGlobalThemeMode, ThemeProvider, useTheme } from './theme';
 
 function Probe() {
   const { mode, resolved, setMode } = useTheme();
@@ -98,5 +98,70 @@ describe('ThemeProvider', () => {
 
   it('未包裹 Provider 时 useTheme 抛错（避免静默用错主题）', () => {
     expect(() => render(<Probe />)).toThrowError(/ThemeProvider/);
+  });
+});
+
+describe('hasStoredTheme（TASK-T20-02 §0.C 主题双源：localStorage 为真相源）', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('localStorage 无 theme / 值非法 → false（应作 settings 种子）', () => {
+    expect(hasStoredTheme()).toBe(false);
+    window.localStorage.setItem(THEME_STORAGE_KEY, 'neon');
+    expect(hasStoredTheme()).toBe(false);
+  });
+
+  it('localStorage 已有合法 theme → true（settings 不再播种，以 localStorage 为准）', () => {
+    for (const mode of ['light', 'dark', 'system'] as const) {
+      window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+      expect(hasStoredTheme()).toBe(true);
+    }
+  });
+
+  it('ThemeProvider 挂载写入后即视为已有主题（启动方须在挂载前判定）', () => {
+    window.localStorage.removeItem(THEME_STORAGE_KEY);
+    expect(hasStoredTheme()).toBe(false);
+
+    installMatchMedia(false);
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(hasStoredTheme()).toBe(true);
+  });
+});
+
+describe('启动播种时序（TASK-T20-02 §0.C：settings 结算常早于 Provider 挂载）', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  it('挂载前 setGlobalThemeMode → Provider 挂载即采用该模式（事件丢失兜底）', () => {
+    installMatchMedia(false);
+    expect(hasStoredTheme()).toBe(false);
+    setGlobalThemeMode('dark'); // Provider 尚未挂载：事件无人接收
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(screen.getByTestId('mode').textContent).toBe('dark');
+  });
+
+  it('Provider 已挂载时 setGlobalThemeMode 仍走事件管道（默认行为不回归）', () => {
+    installMatchMedia(false);
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    act(() => {
+      setGlobalThemeMode('dark');
+    });
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 });

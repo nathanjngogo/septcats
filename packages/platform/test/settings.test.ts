@@ -60,15 +60,17 @@ describe('settings/读写', () => {
     warn.mockRestore();
   });
 
-  it('writeSettings 原子写且可读回（rootPath replace + app settings merge）', () => {
+  it('writeSettings 原子写且可读回（rootPath 显式非空覆盖 + app settings merge）', () => {
     const userData = tempDir('septcats-settings-write-');
     const root = tempDir('septcats-settings-root-');
 
     writeSettings(userData, { rootPath: root });
     expect(readSettings(userData)).toEqual({ schema: 1, rootPath: root, ...DEFAULT_APP_SETTINGS });
 
-    // rootPath 清空，app settings 保持
+    // patch 缺省 rootPath → 保留（TASK-T20-02 §0.A）；显式空串 → 清除（空 = 无自定义根）
     writeSettings(userData, {});
+    expect(readSettings(userData).rootPath).toBe(root);
+    writeSettings(userData, { rootPath: '' });
     expect(readSettings(userData)).toEqual({ schema: 1, ...DEFAULT_APP_SETTINGS });
   });
 
@@ -98,6 +100,41 @@ describe('settings/mergeSettingsPatch', () => {
     expect(() => mergeSettingsPatch(base, { privacy: { telemetry: true } })).toThrow(
       /E_SETTINGS_INVALID/,
     );
+  });
+});
+
+describe('settings/writeSettings rootPath 保留语义（TASK-T20-02 §0.A）', () => {
+  it('patch 只改无关字段（theme）→ rootPath 保留', () => {
+    const userData = tempDir('septcats-settings-keep-');
+    const root = tempDir('septcats-settings-keep-root-');
+    writeSettings(userData, { rootPath: root });
+
+    writeSettings(userData, { theme: 'dark' });
+
+    const s = readSettings(userData);
+    expect(s.rootPath).toBe(root);
+    expect(s.theme).toBe('dark');
+  });
+
+  it('patch 显式传 rootPath → 覆盖旧值', () => {
+    const userData = tempDir('septcats-settings-override-');
+    const oldRoot = tempDir('septcats-settings-override-old-');
+    const newRoot = tempDir('septcats-settings-override-new-');
+    writeSettings(userData, { rootPath: oldRoot });
+
+    writeSettings(userData, { rootPath: newRoot });
+
+    expect(readSettings(userData).rootPath).toBe(newRoot);
+  });
+
+  it('patch 显式传空串 → 清除（恢复默认根语义）', () => {
+    const userData = tempDir('septcats-settings-clear-');
+    const root = tempDir('septcats-settings-clear-root-');
+    writeSettings(userData, { rootPath: root });
+
+    writeSettings(userData, { rootPath: '' });
+
+    expect(readSettings(userData).rootPath).toBeUndefined();
   });
 });
 

@@ -108,6 +108,14 @@ export function App() {
   const openImport = useCallback(() => setView('import'), []);
   useCommandWiring(openSettings, openImport);
 
+  // T20-02 §0.B：挂载时初始化 pages store（workspaceId 就位后命令面板/搜索页才真正
+  // 发起检索——palette.runSearch 在 workspaceId=null 时静默早退）。
+  // load() 幂等：重复调用只是多一次 IPC 快照对账、以同一 activeId 覆盖同一状态切片，
+  // StrictMode 双挂载不会产生状态抖动。
+  useEffect(() => {
+    void pagesActions.load();
+  }, []);
+
   // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
   useEffect(() => {
     const onOpenSettings = (): void => {

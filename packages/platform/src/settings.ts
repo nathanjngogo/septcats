@@ -119,7 +119,7 @@ export interface SeptcatsSettings extends AppSettings {
   schema: 1;
 }
 
-/** 写入口接受的局部配置：rootPath 与 app settings 均可缺省（缺省 = 保持现状/清除 rootPath）。 */
+/** 写入口接受的局部配置：rootPath 与 app settings 均可缺省（rootPath 缺省 = 保留现状）。 */
 export type SeptcatsSettingsPatch = Partial<AppSettings> & { rootPath?: string };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -256,14 +256,21 @@ function parseAppSettings(raw: Record<string, unknown>): AppSettings | null {
 
 /**
  * 原子写设置：写 tmp → rename（同目录 rename 保证不出现半截文件）。
- * rootPath 为 replace 语义（undefined/'' = 清除）；app settings 为 merge 语义（缺省保持现状）。
+ * rootPath（TASK-T20-02 §0.A）：patch 显式非空字符串 → 覆盖；显式空串 → 清除
+ * （保持既有「空 = 无自定义根」语义）；**缺省 → 保留 current.rootPath**
+ * （修复：此前缺省即清除，settings:patch 改任意设置都会抹掉 rootPath，
+ * 重启后落到默认根，用户笔记「看似消失」）。app settings 为 merge 语义（缺省保持现状）。
  * 合并结果经严格 schema 校验，非法值抛 E_SETTINGS_INVALID。
  */
 export function writeSettings(userDataDir: string, patch: SeptcatsSettingsPatch): void {
   const current = readSettings(userDataDir);
 
   const rootPath =
-    patch.rootPath !== undefined && patch.rootPath.length > 0 ? patch.rootPath : undefined;
+    patch.rootPath !== undefined
+      ? patch.rootPath.length > 0
+        ? patch.rootPath
+        : undefined
+      : current.rootPath;
 
   const merged = mergeSettingsPatch(
     { ...current, privacy: current.privacy, editor: current.editor, data: current.data },

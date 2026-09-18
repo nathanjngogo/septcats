@@ -17,10 +17,26 @@ export interface ThemeModeEventData {
 }
 
 /**
- * setGlobalThemeMode —— 组件树外切换主题（命令面板「切换主题」命令用）。
- * 只派发事件；ThemeProvider 监听后走同一 setMode 管道（localStorage/淡化一致）。
+ * 挂载前到达的全局模式（TASK-T20-02 §0.C）：settings 播种发生在 renderer 模块顶层，
+ * 其 IPC 结算常早于 ThemeProvider 挂载——只派发事件会丢进空气里。故此处兜一个单槽
+ * 缓冲，Provider 初始化时消费（消费即清空；StrictMode 二次挂载回落到 localStorage）。
+ */
+let pendingMode: ThemeMode | null = null;
+
+/** 取走挂载前暂存的模式（仅 ThemeProvider 初始化调用一次）。 */
+function takePendingMode(): ThemeMode | null {
+  const mode = pendingMode;
+  pendingMode = null;
+  return mode;
+}
+
+/**
+ * setGlobalThemeMode —— 组件树外切换主题（命令面板「切换主题」命令 + 启动播种用）。
+ * Provider 已挂载 → 事件走同一 setMode 管道（localStorage/淡化一致）；
+ * 尚未挂载 → 事件无人接收，故同时暂存 pendingMode 供其初始化消费。
  */
 export function setGlobalThemeMode(mode: ThemeMode): void {
+  pendingMode = mode;
   if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
     return;
   }
@@ -64,6 +80,22 @@ function readStoredMode(storageKey: string): ThemeMode {
   return 'system';
 }
 
+/**
+ * 判定 localStorage 是否已存有合法主题（TASK-T20-02 §0.C：主题真相源 = localStorage）。
+ * 启动方（renderer main.tsx）必须在 ThemeProvider 挂载**前**调用——Provider 挂载即把
+ * 当前 mode（无存储时为 'system'）写回 localStorage，挂载后再判恒为 true。
+ * 返回 false 时启动方可用 settings.theme 作一次性种子（setGlobalThemeMode），
+ * 之后仍以 localStorage 为准，不做双向同步。
+ */
+export function hasStoredTheme(storageKey: string = THEME_STORAGE_KEY): boolean {
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    return raw === 'light' || raw === 'dark' || raw === 'system';
+  } catch {
+    return false;
+  }
+}
+
 export interface ThemeProviderProps {
   children: ReactNode;
   /** 缺省读 localStorage；测试可注入 */
@@ -78,7 +110,7 @@ export interface ThemeProviderProps {
  * 切换 120ms 交叉淡化（theme.css），reduced-motion 下直接切换。
  */
 export function ThemeProvider({ children, defaultMode, storageKey = THEME_STORAGE_KEY }: ThemeProviderProps) {
-  const [mode, setModeState] = useState<ThemeMode>(() => defaultMode ?? readStoredMode(storageKey));
+  const [mode, setModeState] = useState<ThemeMode>(() => defaultMode ?? takePendingMode() ?? readStoredMode(storageKey));
   const [systemDark, setSystemDark] = useState<boolean>(() => prefersDark());
   const resolved: ThemeName = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode;
 

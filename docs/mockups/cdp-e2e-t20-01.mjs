@@ -59,7 +59,7 @@ async function waitFor(fn, timeoutMs, stepMs = 300) {
   }
   return last;
 }
-/** 打开命令面板（真实快捷键）并输入查询，返回结果列表文本。 */
+/** 打开命令面板（真实快捷键）并输入查询，返回“真实命中行”文本数组（排除兜底行）。 */
 async function paletteQuery(page, text) {
   await page.keyboard.press('Escape').catch(() => {});
   await new Promise((r) => setTimeout(r, 200));
@@ -69,7 +69,9 @@ async function paletteQuery(page, text) {
   await input.fill('');
   await input.type(text, { delay: 25 });
   await new Promise((r) => setTimeout(r, 900)); // 等 IPC 往返 + 渲染
-  return (await page.locator('.palette-list').first().innerText().catch(() => '')) ?? '';
+  const rows = await page.locator('.palette-list [role="option"]').allInnerTexts().catch(() => []);
+  // 兜底行（去搜索结果页）不算命中 —— 此前它让「≥3 字」断言假阳性通过
+  return rows.filter((t) => !t.includes('在搜索结果页打开'));
 }
 /** 面板三处组件的实测对比度（用真实计算样式，WCAG 公式） */
 const measure = (page) => page.evaluate(() => {
@@ -122,16 +124,16 @@ check('靶页已建（量子实验记录 / 无关页面甲）', typeof made === 
 
 // ── ① 2 字中文（命令面板真实链路）────────────────────────────────────
 const r2 = await paletteQuery(page, '量子');
-check('命令面板输入 2 字「量子」→ 出结果（T20-01 兜底生效）', r2.includes('量子实验'), r2.replace(/\s+/g, ' ').slice(0, 120));
-check('2 字命中不含无关页（负样本）', !r2.includes('无关页面甲'), r2.replace(/\s+/g, ' ').slice(0, 120));
+check('命令面板输入 2 字「量子」→ 出结果（T20-01 兜底生效）', r2.some((t) => t.includes('量子实验')), r2.join(' | ').slice(0, 140));
+check('2 字命中不含无关页（负样本）', !r2.some((t) => t.includes('无关页面甲')), r2.join(' | ').slice(0, 140));
 
 // ── ② 1 字中文 ───────────────────────────────────────────────────────
 const r1 = await paletteQuery(page, '量');
-check('命令面板输入 1 字「量」→ 出结果', r1.includes('量子实验'), r1.replace(/\s+/g, ' ').slice(0, 100));
+check('命令面板输入 1 字「量」→ 出结果', r1.some((t) => t.includes('量子实验')), r1.join(' | ').slice(0, 120));
 
 // ── ③ ≥3 字回归（trigram 主路径）─────────────────────────────────────
 const r4 = await paletteQuery(page, '量子实验');
-check('≥3 字「量子实验」→ 仍命中（主路径无回归）', r4.includes('量子实验'), r4.replace(/\s+/g, ' ').slice(0, 100));
+check('≥3 字「量子实验」→ 仍命中（主路径无回归，且非兜底行假阳性）', r4.some((t) => t.includes('量子实验')), r4.join(' | ').slice(0, 120));
 
 // ── ④ 深色下三处组件实测对比度（面板开着时量 palette-esc/foot） ────────
 await paletteQuery(page, '量子');

@@ -41,7 +41,26 @@ const patched = await page.evaluate(async () => {
 }).catch((e) => 'ERR ' + String(e).slice(0, 120));
 console.log('settings.patch({theme:light}) →', typeof patched === 'object' ? 'ok' : String(patched).slice(0, 100));
 await new Promise((r) => setTimeout(r, 800));
-show('patch 后');
+const afterPatch = show('patch 后');
 console.log('patch 后 data-theme =', await page.evaluate(() => document.documentElement.getAttribute('data-theme')));
 await br.close().catch(() => {});
 killAll();
+// —— 断言（T20-02 §0.A 验收）：patch 后 rootPath 必须保留；二次启动仍指向自定义根 ——
+const failures = [];
+if (!(typeof afterPatch.rootPath === 'string' && afterPatch.rootPath.length > 0)) {
+  failures.push('patch 后 rootPath 丢失 ✗（T20-01-1 未修复）');
+}
+const p2 = spawn(EXE, [`--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { detached: true, stdio: 'ignore' });
+p2.unref();
+let br2 = null;
+for (let k = 0; k < 25 && br2 === null; k++) {
+  await new Promise((r) => setTimeout(r, 1000));
+  try { br2 = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); } catch { /* retry */ }
+}
+const boot2 = JSON.parse(readFileSync(F, 'utf8'));
+console.log('二次启动后:', `rootPath=${boot2.rootPath ?? '(丢失!)'}`, `theme=${boot2.theme}`);
+if (boot2.rootPath !== afterPatch.rootPath) failures.push('二次启动后 rootPath 变化/丢失 ✗');
+await br2?.close().catch(() => {});
+killAll();
+console.log(failures.length === 0 ? '\n== T20-02 §0.A 真机 ASSERT PASS（rootPath 全程保留）==' : '\n== T20-02 §0.A 真机 ASSERT FAILED: ' + failures.join('; ') + ' ==');
+process.exit(failures.length === 0 ? 0 : 1);

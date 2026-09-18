@@ -8,6 +8,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { readSettings, writeSettings } from '@septcats/platform';
 import { patchAppSettings, readAppSettings } from '../src/main/settings';
 
 const created: string[] = [];
@@ -72,5 +73,19 @@ describe('main/settings（settings:get / settings:patch）', () => {
     expect(next.ai.providers).toHaveLength(1);
     const reread = readAppSettings(userData, syncDir);
     expect(reread.ai).toEqual(next.ai);
+  });
+
+  it('patch 后 rootPath 不被抹掉（TASK-T20-02 §0.A 端到端：patch → 读回仍在）', () => {
+    const userData = tempDir('septcats-main-settings-root-');
+    const syncDir = join(tmpdir(), 'septcats-sync-dir');
+    const customRoot = join(tmpdir(), 'septcats-main-settings-custom-root');
+    writeSettings(userData, { rootPath: customRoot });
+
+    // 用户改任意无关设置（theme），patch 不带 rootPath
+    const next = patchAppSettings(userData, syncDir, { theme: 'dark' });
+
+    expect(next.theme).toBe('dark');
+    // 读回：rootPath 仍在（修复前：每次 patch 都把它抹掉 → 重启落默认根）
+    expect(readSettings(userData).rootPath).toBe(customRoot);
   });
 });
