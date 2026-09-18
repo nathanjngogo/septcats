@@ -147,10 +147,30 @@ blocks 通道 handler（invoke 必 reject）+ PageView commit 只 console.info�
 隔离复跑与本轮全量收尾均绿——属机器负载噪声，本单 diff 未触碰 upsert 批量路径
 （deferFts 逻辑零改动），提请 PM 收口复跑时留意。
 
-## §5 PM 复跑（PM 补）
+## §5 PM 复跑（2026-09-18）
 
-- （PM 补）全仓：`pnpm -r test` + `pnpm -r typecheck` + `node packages/ui/tokens/no-magic.mjs`
-- （PM 补）selftest + 重打包
+```
+node apps/desktop/scripts/ensure-abi.mjs node
+pnpm -r typecheck                     → 9/9 Done，0 错
+pnpm -r test                          → 全仓 916 无红（desktop 326→334 = +8，逐包对账一致）
+node packages/ui/tokens/no-magic.mjs  → ✓
+pnpm -C apps/desktop selftest         → SELFTEST OK
+重打包 + asar 实证                     → grep "blocks:commit" ×2（新代码进包）
+```
+
+**真机持久化验收（`docs/mockups/probe-t21-persist.mjs`，独立夹具根）→ ALL-PASS 5/5**
+
+| 项 | 证据 |
+|---|---|
+| 建页 + `blocks:commit` | PASS（pageId=`01M2TJXJ0XNGHEFB7XTR2JXYPT`，count=1） |
+| `blocks:list` 读回内容 | PASS（内容含提交文本） |
+| **重启进程后再读** | PASS（**内容仍在 = 真落库**，非内存态） |
+| 搜索/FTS 链 | PASS（命中「T21 持久化靶页」，端到端一致） |
+| pageerror | PASS（0） |
+
+**DEVIATIONS 追认（三处全部接受）**：①`main/commit.ts` 补 block 的 patch/reorder/delete 物化 —— **本单成立的必需项**（原实现只支持 upsert，EditSession 第二次编辑必产 patch → 撞 `E_MALFORMED_OP`；CB 发现正确且必要，PM 任务书前提与代码事实不符）；②`statements.ts` 只增 `block.patch`/`block.setSort`（未改旧语句）；③demo 兜底页 commit 保留内存路径（demo id 不在库中，走 IPC 会写脏 ledger —— 判断正确）。
+**渲染层说明**：本单 renderer 接线（PageView 四态 + 按 `selectedId` 加载/提交）由代码审查确认；**UI 级端到端（选页 → 输入 → 重载仍显示）归 T21-02**（侧栏真树落地后全链路真机验证）。
+
 - （PM 补）真机 CDP：建页 → 编辑器输入中文 → 重载 app → 文本仍在（跨进程真落库）；
   断言 `blocks:list` 返回内容与输入一致；再输入一轮（验证 patch/reorder/delete 物化路径）
 - （PM 补）无选中页时 DEMO_PAGE 兜底显示不被回归
