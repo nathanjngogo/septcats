@@ -19,7 +19,7 @@ import type {
   ReactNode,
 } from 'react';
 import type { PageNode } from '@septcats/editor';
-import { CaretDown, CaretRight, Clock, FileText, FolderSimple, Icon, Plus, Star, Trash } from '@septcats/ui';
+import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Plus, Star, Trash } from '@septcats/ui';
 import { aliveNodes, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
 import { templatesActions, useTemplates } from '../state/templates';
 import { TemplateIcon } from '../templates/TemplateIcon';
@@ -142,6 +142,8 @@ export function SidebarTree() {
   const view = usePages((state) => state.view);
   // T23-02 §C.1：「新建页面 ▾」模板子菜单展开态（本地视图态；列表订阅 templates slice）
   const [tplOpen, setTplOpen] = useState(false);
+  // T24-01 §0.A：页面行「⋯」菜单展开态（本地视图态；每树同时至多一个）
+  const [rowMenuId, setRowMenuId] = useState<string | null>(null);
   const templates = useTemplates((state) => state.templates);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false });
 
@@ -308,6 +310,47 @@ export function SidebarTree() {
                 pagesActions.toggleExpand(node.id);
               }}
               onDoubleClick={() => pagesActions.beginRename(node.id)}
+              suffix={
+                // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
+                // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）
+                <span
+                  className={
+                    rowMenuId === node.id
+                      ? 'app-nav-more-wrap app-nav-more-wrap--open'
+                      : 'app-nav-more-wrap'
+                  }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                >
+                  <IconButton
+                    icon={DotsThree}
+                    label="页面操作"
+                    data-testid={`side-more-${node.id}`}
+                    aria-expanded={rowMenuId === node.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setRowMenuId((current) => (current === node.id ? null : node.id));
+                    }}
+                  />
+                  {rowMenuId === node.id ? (
+                    <Menu
+                      className="app-nav-menu"
+                      label="页面操作"
+                      items={[{ id: 'delete', label: '删除', danger: true }]}
+                      onSelect={(action) => {
+                        setRowMenuId(null);
+                        if (action === 'delete') {
+                          pagesActions.requestDeletePage(node.id);
+                        }
+                      }}
+                      onDismiss={() => {
+                        setRowMenuId(null);
+                      }}
+                    />
+                  ) : null}
+                </span>
+              }
             />
           );
         })}

@@ -252,6 +252,7 @@ export const zhCN = {
     page: {
       new: '新建页面',
       saveAsTemplate: '另存为模板',
+      delete: '删除页面',
     },
     workspace: {
       switch: '切换工作区',
@@ -279,6 +280,7 @@ export const zhCN = {
     page: {
       new: '在根层创建空白页',
       saveAsTemplate: '把当前页面结构存为模板，之后可从模板新建',
+      delete: '把当前页面移入回收站（可在回收站恢复）',
     },
     workspace: {
       switch: '切换到下一个工作区',

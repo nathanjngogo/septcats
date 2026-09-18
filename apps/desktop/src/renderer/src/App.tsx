@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { setGlobalThemeMode } from '@septcats/ui';
+import { setGlobalThemeMode, ToastViewport } from '@septcats/ui';
 import {
   AppShell,
   Breadcrumb,
@@ -10,6 +10,7 @@ import {
   SyncPill,
 } from '@septcats/ui';
 import { PageView } from './pages/PageView';
+import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
@@ -61,6 +62,13 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
             },
             saveAsTemplate: (): void => {
               templatesActions.beginSaveFromPage();
+            },
+            // T24-01 §0.A：「删除页面」条件命令 → 既有二次确认弹层（PageDeleteDialog）
+            deletePage: (): void => {
+              const id = pagesStore.getState().selectedId;
+              if (id !== null) {
+                pagesActions.requestDeletePage(id);
+              }
             },
             notify: (message): void => {
               pushToast(message, 'info');
@@ -182,6 +190,16 @@ export function App() {
       </AppShell>
       <CommandPalette />
       <TemplateSaveDialog />
+      {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
+      <PageDeleteDialog />
+      {/* T24-01 §0.C：全局 Toast 视口（pushToast 队列渲染；根层挂载，底部居中、
+          不遮挡居中 Dialog；样式全部走 @septcats/ui 既有 token） */}
+      <ToastViewport
+        toasts={pagesState.toasts}
+        onDismiss={(id) => {
+          pagesActions.dismissToast(id);
+        }}
+      />
     </>
   );
 }

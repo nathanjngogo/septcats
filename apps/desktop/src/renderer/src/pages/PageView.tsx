@@ -40,7 +40,7 @@ import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
-import { pushToast, usePages } from '../state/pages';
+import { pushToast, pagesActions, usePages } from '../state/pages';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
@@ -185,7 +185,7 @@ export function PageView({ page }: PageViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const ledgerRef = useRef<Op[]>([]);
   const dragIdRef = useRef<string | null>(null);
-  /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载）。 */
+  /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载；T24-01 起选中同步到 pagesStore，见 convertToDatabase）。 */
   const [dbPageId, setDbPageId] = useState<string | null>(null);
 
   // T21-01 数据源：pagesStore.selectedId 驱动真实页；显式 page 入口与无选中页走兜底
@@ -591,6 +591,11 @@ export function PageView({ page }: PageViewProps) {
       }
       const created = await window.septcats.db.create({ workspaceId, title: activePage.title });
       setDbPageId(created.pageId);
+      // T24-01 §0.B（判别①结论）：转换跳转只落在本地 dbPageId，pagesStore.selectedId
+      // 仍指原页 → 面板「另存为模板」按 selectedId 取页会存错页（kind=page）。
+      // 这里先对账树（侧栏立即出现新库页），再 selectPage 同步选中（含 touchRecent）。
+      await pagesActions.refresh();
+      pagesActions.selectPage(created.pageId);
     })().catch((error: unknown) => {
       console.error('[PageView] 转为数据库失败（不吞）', error);
     });

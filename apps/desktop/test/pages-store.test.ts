@@ -75,6 +75,7 @@ function resetStore(): void {
     favoriteIds: [],
     recentIds: [],
     toasts: [],
+    deleteConfirmId: null,
   };
   pagesStore.setState(() => base);
 }

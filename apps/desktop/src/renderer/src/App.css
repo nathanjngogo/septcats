@@ -125,6 +125,28 @@
   color: var(--sc-color-ink);
 }
 
+/* T24-01 §0.A：页面行「⋯」菜单（hover/选中/展开时露出；定位壳同 .tpl-menu-wrap） */
+.app-nav-more-wrap {
+  margin-left: auto;
+  position: relative;
+  display: grid;
+  place-items: center;
+  visibility: hidden;
+}
+
+.app-nav-row:hover .app-nav-more-wrap,
+.app-nav-row--active .app-nav-more-wrap,
+.app-nav-more-wrap--open {
+  visibility: visible;
+}
+
+.app-nav-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: var(--sc-z-dropdown);
+}
+
 .app-side-foot {
   display: flex;
   align-items: center;

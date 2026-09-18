@@ -62,6 +62,11 @@ export interface CommandDeps {
    * 未提供（= 当前无选中页，装配侧经 configurePaletteCommands 摘除）则命令不出现。
    */
   saveAsTemplate?(): void;
+  /**
+   * T24-01 §0.A：删除页面（开二次确认弹层，确认后软删进回收站）。条件命令，
+   * 口径同 saveAsTemplate：无选中页经 configurePaletteCommands 摘除（不出现、不抛错）。
+   */
+  deletePage?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -75,6 +80,17 @@ export const SAVE_AS_TEMPLATE_DEF: PaletteCommandDef = {
   label: t('commands.page.saveAsTemplate'),
   hint: t('commandHints.page.saveAsTemplate'),
   aliases: ['lingscunweimoban', 'lingcunmoban', 'lingcun', 'scmb', 'save as template', 'savetemplate', 'template'],
+};
+
+/**
+ * T24-01 §0.A：「删除页面」命令定义。**不在静态 COMMAND_DEFS 里**——与「另存为模板」
+ * 同为条件命令（仅有选中页时出现），palette.test.ts 的静态清单/别名基线因此不受影响。
+ */
+export const DELETE_PAGE_DEF: PaletteCommandDef = {
+  id: 'page.delete',
+  label: t('commands.page.delete'),
+  hint: t('commandHints.page.delete'),
+  aliases: ['shanchuyemian', 'shanchu', 'scym', 'sc', 'delete page', 'delete'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -133,12 +149,15 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
   if (deps.saveAsTemplate !== undefined) {
     commands.push({ ...SAVE_AS_TEMPLATE_DEF, run: deps.saveAsTemplate });
   }
+  if (deps.deletePage !== undefined) {
+    commands.push({ ...DELETE_PAGE_DEF, run: deps.deletePage });
+  }
   return commands;
 }
 
 /**
  * T23-02 §B 装配口径：无选中页 → 「另存为模板」**不出现**（不是置灰），
- * 其余命令不受影响。App 在 selectedId 变化时重装配。
+ * T24-01 §0.A 起「删除页面」同口径；其余命令不受影响。App 在 selectedId 变化时重装配。
  */
 export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolean): PaletteCommand[] {
   if (hasSelection) {
@@ -146,5 +165,6 @@ export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolea
   }
   const scoped = { ...deps };
   delete scoped.saveAsTemplate; // exactOptionalPropertyTypes：不能显式传 undefined，改整键删除
+  delete scoped.deletePage;
   return bindPaletteCommands(scoped);
 }

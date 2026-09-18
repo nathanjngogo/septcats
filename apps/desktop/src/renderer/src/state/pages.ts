@@ -43,6 +43,8 @@ export interface PagesState {
   favoriteIds: string[];
   recentIds: string[];
   toasts: ToastMessage[];
+  /** 「删除页面」二次确认弹层的目标页 id（null = 关闭；T24-01 §0.A）。 */
+  deleteConfirmId: string | null;
 }
 
 const initialState: PagesState = {
@@ -59,6 +61,7 @@ const initialState: PagesState = {
   favoriteIds: [],
   recentIds: [],
   toasts: [],
+  deleteConfirmId: null,
 };
 
 export const pagesStore = createStore<PagesState>(initialState);
@@ -349,6 +352,34 @@ export const pagesActions = {
 
   cancelRename(): void {
     pagesStore.setState((state) => ({ ...state, editingId: null }));
+  },
+
+  /** T24-01 §0.A：请求删除页面（开二次确认弹层；命令面板与侧栏行菜单共用入口）。 */
+  requestDeletePage(id: string): void {
+    if (id.length === 0) {
+      return;
+    }
+    pagesStore.setState((state) => ({ ...state, deleteConfirmId: id }));
+  },
+
+  cancelDeletePage(): void {
+    pagesStore.setState((state) => ({ ...state, deleteConfirmId: null }));
+  },
+
+  /**
+   * T24-01 §0.A：确认删除（PageDeleteDialog 的确认回调）→ 软删（store 既有 deletePage，
+   * 乐观更新 + 失败回滚 + 对账，侧栏树/收藏/最近/回收站角标随 refresh 同步）→
+   * 回到 pages 视图 → 选中回落（无选中时 ensureSelection 选首个可达页）。
+   */
+  async confirmDeletePage(): Promise<void> {
+    const id = pagesStore.getState().deleteConfirmId;
+    if (id === null) {
+      return;
+    }
+    pagesStore.setState((state) => ({ ...state, deleteConfirmId: null }));
+    await pagesActions.deletePage(id);
+    pagesActions.showPages();
+    pagesActions.ensureSelection();
   },
 
   dismissToast(id: string): void {
