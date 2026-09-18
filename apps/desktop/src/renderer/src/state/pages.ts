@@ -16,6 +16,7 @@ import {
 } from '@septcats/editor';
 import type { ToastTone } from '@septcats/ui';
 import type { SeptcatsApi, WorkspaceSummary } from '../../../types/window';
+import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
 
 export type PagesStatus = 'loading' | 'ready' | 'error';
@@ -117,8 +118,10 @@ export function breadcrumbOf(id: string | null, byId: ReadonlyMap<string, PageNo
   return [...ancestorsOf(id, byId).map((node) => node.title), self.title];
 }
 
-/** 面包屑空标题的回退文案（与 main 侧 createPage 默认标题一致）。 */
-export const BREADCRUMB_UNTITLED = '未命名';
+/** 面包屑空标题的回退文案（与 main 侧 createPage 默认标题一致；T25-01 起走 i18n）。 */
+function untitledLabel(): string {
+  return t('common.untitled');
+}
 
 /**
  * 面包屑 item 链（T22-01 §0.A）：祖先链（根 → 当前页）逐段成 {label}；
@@ -129,7 +132,7 @@ export function breadcrumbItemsOf(
   byId: ReadonlyMap<string, PageNode>,
 ): Array<{ label: string }> {
   return breadcrumbOf(id, byId).map((title) => ({
-    label: title.length > 0 ? title : BREADCRUMB_UNTITLED,
+    label: title.length > 0 ? title : untitledLabel(),
   }));
 }
 
@@ -141,13 +144,13 @@ export function breadcrumbItemsOf(
  */
 export function pagesBreadcrumbItems(state: PagesState): Array<{ label: string }> {
   if (state.view === 'trash') {
-    return [{ label: '回收站' }];
+    return [{ label: t('sidebar.trash') }];
   }
   if (state.selectedId !== null) {
     return breadcrumbItemsOf(state.selectedId, nodeMap(state.nodes));
   }
   const name = state.workspaces.find((item) => item.id === state.workspaceId)?.name;
-  return [{ label: name ?? '当前工作区' }];
+  return [{ label: name ?? t('common.currentWorkspace') }];
 }
 
 // ---------------------------------------------------------------------------
@@ -157,34 +160,17 @@ export function pagesBreadcrumbItems(state: PagesState): Array<{ label: string }
 function bridge(): SeptcatsApi {
   const value = (globalThis as { septcats?: SeptcatsApi }).septcats;
   if (value === undefined) {
-    throw new Error('preload 未注入 window.septcats（渲染器无法访问数据层）');
+    throw new Error('preload did not inject window.septcats');
   }
   return value;
 }
 
-const ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  E_CYCLE: '不能把页面移动到它自己的子页面下',
-  E_PARENT_GONE: '目标父页面不存在，或仍在回收站',
-  E_NOT_FOUND: '页面不存在或已被删除',
-  E_NO_WORKSPACE: '没有可用的工作区',
-  E_MALFORMED: '请求参数不合法',
-};
-
-function errorCode(error: unknown): string | null {
-  const message = error instanceof Error ? error.message : String(error);
-  const match = /\bE_[A-Z_]+\b/.exec(message);
-  return match === null ? null : match[0];
-}
-
+/**
+ * 用户可见错误统一走 errorText（T25-01 §0.B：错误码 → t() 键映射表，见 i18n/index.ts；
+ * 未知码回落原始消息）。
+ */
 function describeError(error: unknown): string {
-  const code = errorCode(error);
-  if (code !== null) {
-    const mapped = ERROR_MESSAGES[code];
-    if (mapped !== undefined) {
-      return mapped;
-    }
-  }
-  return error instanceof Error ? error.message : String(error);
+  return errorText(error);
 }
 
 let toastSeq = 0;
@@ -272,7 +258,7 @@ export const pagesActions = {
       const listed = await bridge().workspaces.list();
       const activeId = listed.activeId;
       if (activeId === null) {
-        throw new Error('E_NO_WORKSPACE: 没有可用的工作区');
+        throw new Error('E_NO_WORKSPACE');
       }
       const data = await fetchAll(activeId);
       pagesStore.setState((state) => ({
@@ -447,7 +433,7 @@ export const pagesActions = {
       run: async () => {
         await bridge().pages.remove({ id });
       },
-      success: '已移入回收站',
+      success: t('pages.toastTrashed'),
     });
     if (ok) {
       pagesStore.setState((state) =>
@@ -471,7 +457,7 @@ export const pagesActions = {
       run: async () => {
         await bridge().pages.restore({ id });
       },
-      success: '已恢复',
+      success: t('pages.toastRestored'),
     });
   },
 
@@ -485,7 +471,7 @@ export const pagesActions = {
       run: async () => {
         await bridge().pages.purge({ id });
       },
-      success: '已彻底删除',
+      success: t('pages.toastPurged'),
     });
   },
 
@@ -509,7 +495,7 @@ export const pagesActions = {
           await api.pages.purge({ id: root.id });
         }
       },
-      success: '回收站已清空',
+      success: t('pages.toastTrashEmptied'),
     });
   },
 
@@ -522,7 +508,7 @@ export const pagesActions = {
       run: async () => {
         await bridge().favorites.set({ pageId: id, on });
       },
-      success: on ? '已移入收藏' : '已移出收藏',
+      success: on ? t('pages.toastFavorited') : t('pages.toastUnfavorited'),
     });
   },
 
@@ -539,7 +525,7 @@ export const pagesActions = {
     try {
       await bridge().workspaces.create({ name });
       await pagesActions.load();
-      pushToast('已创建工作区', 'success');
+      pushToast(t('pages.toastWorkspaceCreated'), 'success');
     } catch (error) {
       pushToast(describeError(error), 'danger');
     }
@@ -560,7 +546,7 @@ export const pagesActions = {
     try {
       await bridge().workspaces.switch({ id });
       await pagesActions.load();
-      pushToast('已切换工作区', 'success');
+      pushToast(t('pages.toastWorkspaceSwitched'), 'success');
     } catch (error) {
       pushToast(describeError(error), 'danger');
     }

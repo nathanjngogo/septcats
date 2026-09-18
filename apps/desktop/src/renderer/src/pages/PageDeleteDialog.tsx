@@ -10,7 +10,8 @@
 import { useMemo } from 'react';
 import { childrenIndex, collectDescendants } from '@septcats/editor';
 import { Button, Dialog } from '@septcats/ui';
-import { BREADCRUMB_UNTITLED, nodeMap, pagesActions, usePages } from '../state/pages';
+import { nodeMap, pagesActions, usePages } from '../state/pages';
+import { t } from '../i18n';
 
 export function PageDeleteDialog() {
   const deleteConfirmId = usePages((state) => state.deleteConfirmId);
@@ -37,7 +38,7 @@ export function PageDeleteDialog() {
       onClose={() => {
         pagesActions.cancelDeletePage();
       }}
-      title="删除页面"
+      title={t('pageDelete.title')}
       footer={
         <>
           <Button
@@ -47,7 +48,7 @@ export function PageDeleteDialog() {
               pagesActions.cancelDeletePage();
             }}
           >
-            取消
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -56,14 +57,19 @@ export function PageDeleteDialog() {
               void pagesActions.confirmDeletePage();
             }}
           >
-            删除
+            {t('common.delete')}
           </Button>
         </>
       }
     >
-      「{target !== null && target.title.length > 0 ? target.title : BREADCRUMB_UNTITLED}
-      {target !== null && target.childCount > 0 ? `」及其 ${String(target.childCount)} 个子页面` : '」'}
-      将移入回收站，可随时在回收站中恢复。
+      {target === null
+        ? null
+        : t(target.childCount > 0 ? 'pageDelete.bodyWithChildren' : 'pageDelete.body')
+            .replace(
+              '{name}',
+              target.title.length > 0 ? target.title : t('common.untitled'),
+            )
+            .replace('{n}', String(target.childCount))}
     </Dialog>
   );
 }

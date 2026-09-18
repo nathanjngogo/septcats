@@ -505,7 +505,10 @@ export function AiSection(): JSX.Element {
                 {p.isLocal ? t('settings.ai.localBadge') : t('settings.ai.cloudBadge')}
               </span>
               <span className="settings-ai-key-state">
-                {t('settings.ai.keyLabel')}：{p.hasKey ? t('settings.ai.keySet') : t('settings.ai.keyUnset')}
+                {t('settings.ai.keyState').replace(
+                  '{state}',
+                  p.hasKey ? t('settings.ai.keySet') : t('settings.ai.keyUnset'),
+                )}
               </span>
             </div>
             {state?.status === 'error' ? (
@@ -644,7 +647,7 @@ export function AiSection(): JSX.Element {
           (() => {
             const editing = aiState.providers.find((p) => p.id === editId);
             return editing === null || editing === undefined ? null : (
-              <p className="settings-lab-d">{`${t('settings.ai.providerBaseUrl')}：${kindLabel(editing.kind)}`}</p>
+              <p className="settings-lab-d">{t('settings.ai.editKindLine').replace('{kind}', kindLabel(editing.kind))}</p>
             );
           })()
         ) : null}
@@ -684,8 +687,10 @@ export function AiSection(): JSX.Element {
       >
         <p className="settings-lab-d">{t('settings.ai.keyDialogBody')}</p>
         <p className="settings-ai-key-state">
-          {t('settings.ai.keyLabel')}：
-          {keyDialogProvider?.hasKey === true ? t('settings.ai.keySet') : t('settings.ai.keyUnset')}
+          {t('settings.ai.keyState').replace(
+            '{state}',
+            keyDialogProvider?.hasKey === true ? t('settings.ai.keySet') : t('settings.ai.keyUnset'),
+          )}
         </p>
         <input
           className="settings-ai-input"

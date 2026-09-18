@@ -22,6 +22,7 @@ import type { PageNode } from '@septcats/editor';
 import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Plus, Star, Trash } from '@septcats/ui';
 import { aliveNodes, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
 import { templatesActions, useTemplates } from '../state/templates';
+import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
 
 /** 行缩进：与既有假树 TreeRow 同式（app-nav-row 的 paddingLeft）。 */
@@ -71,7 +72,7 @@ function RenameInput({ id, title }: { id: string; title: string }) {
       onClick={(event) => event.stopPropagation()}
       onKeyDown={handleKeyDown}
       onBlur={() => pagesActions.cancelRename()}
-      aria-label="重命名页面"
+      aria-label={t('sidebar.renameAria')}
     />
   );
 }
@@ -233,13 +234,13 @@ export function SidebarTree() {
     <div className="app-side">
       <div className="app-side-head">
         <Icon icon={FolderSimple} size="sm" />
-        个人工作区
+        {t('sidebar.workspace')}
       </div>
       <div className="app-side-scroll">
         {/* T23-02 §C.1：主体点击仍 = 新建空白页；右侧箭头展开模板子菜单 */}
         <NavRow
           testId="side-new-page"
-          label="新建页面"
+          label={t('commands.page.new')}
           icon={Plus}
           onClick={() => {
             void pagesActions.createPage(null);
@@ -250,7 +251,7 @@ export function SidebarTree() {
               data-testid="side-new-page-arrow"
               role="button"
               aria-expanded={tplOpen}
-              aria-label="从模板新建"
+              aria-label={t('sidebar.createFromAria')}
               onClick={(event) => {
                 event.stopPropagation();
                 const next = !tplOpen;
@@ -268,7 +269,7 @@ export function SidebarTree() {
           ? templates.length === 0
             ? (
               <div className="app-nav-empty" style={indentStyle(1)} data-testid="side-tpl-empty">
-                暂无模板
+                {t('templates.empty')}
               </div>
             )
             : templates.map((template, index) => (
@@ -286,8 +287,8 @@ export function SidebarTree() {
               />
             ))
           : null}
-        {renderGroupRows('favorites', '收藏', Star, favoriteNodes, '暂无收藏')}
-        {renderGroupRows('recent', '最近', Clock, recentNodes, '暂无最近')}
+        {renderGroupRows('favorites', t('sidebar.favorites'), Star, favoriteNodes, t('sidebar.emptyFavorites'))}
+        {renderGroupRows('recent', t('sidebar.recent'), Clock, recentNodes, t('sidebar.emptyRecent'))}
         {visibleTree.map((node) => {
           const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
           const isEditing = editingId === node.id;
@@ -325,7 +326,7 @@ export function SidebarTree() {
                 >
                   <IconButton
                     icon={DotsThree}
-                    label="页面操作"
+                    label={t('sidebar.pageActions')}
                     data-testid={`side-more-${node.id}`}
                     aria-expanded={rowMenuId === node.id}
                     onClick={(event) => {
@@ -336,8 +337,8 @@ export function SidebarTree() {
                   {rowMenuId === node.id ? (
                     <Menu
                       className="app-nav-menu"
-                      label="页面操作"
-                      items={[{ id: 'delete', label: '删除', danger: true }]}
+                      label={t('sidebar.pageActions')}
+                      items={[{ id: 'delete', label: t('common.delete'), danger: true }]}
                       onSelect={(action) => {
                         setRowMenuId(null);
                         if (action === 'delete') {
@@ -367,7 +368,7 @@ export function SidebarTree() {
         }}
       >
         <Icon icon={Trash} size="sm" />
-        回收站
+        {t('sidebar.trash')}
         {trashCount > 0 ? <span className="app-nav-count">{trashCount}</span> : null}
       </div>
     </div>

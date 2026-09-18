@@ -28,7 +28,6 @@ import { useDbPage } from './useDbPage';
 import './DbPage.css';
 
 const DEFAULT_RECORD_TITLE = '未命名';
-
 export interface DbPageProps {
   pageId: string;
 }
@@ -119,7 +118,7 @@ export function DbPage({ pageId }: DbPageProps) {
       });
       const text = res.text.trim();
       if (text.length === 0) {
-        throw new Error(t('db.ai.failed').replace('{msg}', '模型返回为空'));
+        throw new Error(t('db.ai.failed').replace('{msg}', t('db.emptyResponse')));
       }
       await db.updateRecord(record.id, { [pid]: text });
       return true;
@@ -251,7 +250,7 @@ export function DbPage({ pageId }: DbPageProps) {
   if (status === 'error') {
     return (
       <div className="dbpage">
-        <ErrorPanel description={error ?? '数据库加载失败'} onRetry={db.reload} />
+        <ErrorPanel description={error ?? t('db.loadFailed')} onRetry={db.reload} />
       </div>
     );
   }
@@ -260,7 +259,7 @@ export function DbPage({ pageId }: DbPageProps) {
     // ready/empty 必有 collection；此分支为兜底（理论不可达）
     return (
       <div className="dbpage">
-        <ErrorPanel description="数据库加载失败" onRetry={db.reload} />
+        <ErrorPanel description={t('db.loadFailed')} onRetry={db.reload} />
       </div>
     );
   }
@@ -269,9 +268,9 @@ export function DbPage({ pageId }: DbPageProps) {
     return (
       <div className="dbpage">
         <EmptyState
-          title="还没有记录"
-          description="新建第一条记录开始填写这个数据库。"
-          actionLabel="新建记录"
+          title={t('db.empty.title')}
+          description={t('db.empty.desc')}
+          actionLabel={t('db.empty.action')}
           onAction={() => {
             handleCreateRecord();
           }}

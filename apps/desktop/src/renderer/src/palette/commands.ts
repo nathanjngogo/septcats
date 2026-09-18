@@ -95,7 +95,14 @@ export const DELETE_PAGE_DEF: PaletteCommandDef = {
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
 export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
+  // T25-01：label/hint 在绑定时经 t() 现取（COMMAND_DEFS 的静态值只作模块加载期
+  // 快照；locale 切换后 App 重装配命令即可拿到新语言文案）
   const commands = COMMAND_DEFS.map((def) => {
+    const localized: PaletteCommandDef = {
+      ...def,
+      label: t(`commands.${def.id}`),
+      hint: t(`commandHints.${def.id}`),
+    };
     const run = (): void => {
       switch (def.id) {
         case 'page.new':
@@ -117,19 +124,19 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
           deps.setThemeMode('system');
           return;
         case 'app.export':
-          deps.notify('导出将在后续里程碑提供');
+          deps.notify(t('commands.app.exportLater'));
           return;
         case 'app.trash':
           deps.openTrash();
           return;
         case 'app.sync':
-          deps.notify('同步面板将在后续里程碑提供');
+          deps.notify(t('commands.app.syncLater'));
           return;
         case 'app.import':
           if (deps.openImport !== undefined) {
             deps.openImport();
           } else {
-            deps.notify('导入将在后续里程碑提供');
+            deps.notify(t('commands.app.importLater'));
           }
           return;
         case 'ai.continue':
@@ -144,13 +151,23 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
         }
       }
     };
-    return { ...def, run };
+    return { ...localized, run };
   });
   if (deps.saveAsTemplate !== undefined) {
-    commands.push({ ...SAVE_AS_TEMPLATE_DEF, run: deps.saveAsTemplate });
+    commands.push({
+      ...SAVE_AS_TEMPLATE_DEF,
+      label: t('commands.page.saveAsTemplate'),
+      hint: t('commandHints.page.saveAsTemplate'),
+      run: deps.saveAsTemplate,
+    });
   }
   if (deps.deletePage !== undefined) {
-    commands.push({ ...DELETE_PAGE_DEF, run: deps.deletePage });
+    commands.push({
+      ...DELETE_PAGE_DEF,
+      label: t('commands.page.delete'),
+      hint: t('commandHints.page.delete'),
+      run: deps.deletePage,
+    });
   }
   return commands;
 }

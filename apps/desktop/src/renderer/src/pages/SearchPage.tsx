@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { FileText, Icon, MagnifyingGlass, Note, X } from '@septcats/ui';
 import type { SearchHit } from '../../../shared/search';
+import { t } from '../i18n';
 import { paletteActions, usePalette } from '../state/palette';
 import { pagesStore, usePages, type PagesState } from '../state/pages';
 import './SearchPage.css';
@@ -20,17 +21,22 @@ const selectWorkspaces = (state: PagesState) => state.workspaces;
 
 type TypeFilter = 'all' | 'page' | 'db';
 
-const TYPE_FILTER_LABEL: Readonly<Record<TypeFilter, string>> = {
-  all: '全部',
-  page: '页面',
-  db: '数据库',
-};
-
 const NEXT_TYPE_FILTER: Readonly<Record<TypeFilter, TypeFilter>> = {
   all: 'page',
   page: 'db',
   db: 'all',
 };
+
+function typeFilterLabel(filter: TypeFilter): string {
+  switch (filter) {
+    case 'all':
+      return t('search.filterAll');
+    case 'page':
+      return t('search.filterPages');
+    case 'db':
+      return t('search.filterDatabases');
+  }
+}
 
 function matchFilter(kind: SearchHit['kind'], filter: TypeFilter): boolean {
   if (filter === 'all') {
@@ -62,9 +68,15 @@ function ResultRow({ hit }: { hit: SearchHit }): ReactNode {
       ) : null}
       {hit.snippet.length > 0 ? <Snippet text={hit.snippet} /> : null}
       <div className="search-res-meta">
-        {hit.kind === 'block' ? '块' : hit.kind === 'collection' ? '数据库' : hit.kind === 'record' ? '记录' : '页面'}
+        {hit.kind === 'block'
+          ? t('search.kindBlock')
+          : hit.kind === 'collection'
+            ? t('search.kindCollection')
+            : hit.kind === 'record'
+              ? t('search.kindRecord')
+              : t('search.kindPage')}
         {' · '}
-        {hit.via === 'fts' ? '全文索引' : '兜底匹配'}
+        {hit.via === 'fts' ? t('search.viaFts') : t('search.viaFallback')}
       </div>
     </button>
   );
@@ -115,7 +127,7 @@ export function SearchPage() {
   const filtered = useMemo(() => hits.filter((hit) => matchFilter(hit.kind, typeFilter)), [hits, typeFilter]);
   const pageGroup = useMemo(() => filtered.filter((hit) => hit.kind === 'page'), [filtered]);
   const dbGroup = useMemo(() => filtered.filter((hit) => hit.kind !== 'page'), [filtered]);
-  const workspaceName = workspaces.find((item) => item.id === workspaceId)?.name ?? '当前工作区';
+  const workspaceName = workspaces.find((item) => item.id === workspaceId)?.name ?? t('common.currentWorkspace');
 
   return (
     <div className="search-page">
@@ -128,23 +140,25 @@ export function SearchPage() {
           </button>
         ) : null}
         <button type="button" className="search-chip">
-          范围：{workspaceName}
+          {t('search.scope').replace('{name}', workspaceName)}
         </button>
         <button
           type="button"
           className="search-chip"
           onClick={() => setTypeFilter((current) => NEXT_TYPE_FILTER[current])}
         >
-          类型：{TYPE_FILTER_LABEL[typeFilter]}
+          {t('search.type').replace('{type}', typeFilterLabel(typeFilter))}
         </button>
         <span className="search-count">
-          {searching ? '搜索中…' : `${String(filtered.length)} 条结果 · ${String(tookMs)} ms`}
+          {searching
+            ? t('search.searching')
+            : t('search.resultsCount').replace('{n}', String(filtered.length)).replace('{ms}', String(tookMs))}
         </span>
       </div>
 
       {query.trim().length === 0 && recents.length > 0 ? (
         <div className="search-recents">
-          <div className="search-res-h">最近查询</div>
+          <div className="search-res-h">{t('search.recents')}</div>
           <div className="search-recent-chips">
             {recents.map((recent) => (
               <button
@@ -162,7 +176,7 @@ export function SearchPage() {
 
       {pageGroup.length > 0 ? (
         <>
-          <div className="search-res-h">页面 · {String(pageGroup.length)}</div>
+          <div className="search-res-h">{t('search.groupPages').replace('{n}', String(pageGroup.length))}</div>
           {pageGroup.map((hit) => (
             <ResultRow key={`${hit.kind}-${hit.id}`} hit={hit} />
           ))}
@@ -171,7 +185,7 @@ export function SearchPage() {
 
       {dbGroup.length > 0 ? (
         <>
-          <div className="search-res-h">数据库 · {String(dbGroup.length)}</div>
+          <div className="search-res-h">{t('search.groupDatabases').replace('{n}', String(dbGroup.length))}</div>
           {dbGroup.map((hit) => (
             <ResultRow key={`${hit.kind}-${hit.id}`} hit={hit} />
           ))}
@@ -181,8 +195,8 @@ export function SearchPage() {
       {query.trim().length > 0 && !searching && filtered.length === 0 ? (
         <div className="search-empty">
           {pagesStore.getState().workspaceId === null
-            ? '还没有可用的工作区，无法检索'
-            : '没有匹配的内容，试试更短的关键词'}
+            ? t('search.emptyNoWorkspace')
+            : t('search.emptyNoMatch')}
         </div>
       ) : null}
     </div>

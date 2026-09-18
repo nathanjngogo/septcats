@@ -11,6 +11,7 @@
  */
 import type { SeptcatsApi } from '../../../types/window';
 import type { TemplateKind, TemplateMeta } from '../../../main/templates';
+import { errorText, t } from '../i18n';
 import { pagesActions, pagesStore, pushToast } from './pages';
 import { createStore, useStore } from './store';
 
@@ -48,29 +49,16 @@ export function useTemplates<T>(selector: (state: TemplatesState) => T): T {
 function bridge(): SeptcatsApi {
   const value = (globalThis as { septcats?: SeptcatsApi }).septcats;
   if (value === undefined) {
-    throw new Error('preload 未注入 window.septcats（渲染器无法访问模板通道）');
+    throw new Error('preload did not inject window.septcats');
   }
   return value;
 }
 
-const ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  E_MALFORMED: '请求参数不合法',
-  E_NO_WORKSPACE: '没有可用的工作区',
-  E_NOT_FOUND: '页面不存在或已被删除',
-  E_PARENT_GONE: '目标父页面不存在，或仍在回收站',
-  E_TEMPLATE_NOT_FOUND: '模板不存在或已被删除',
-};
-
+/**
+ * 用户可见错误统一走 errorText（T25-01 §0.B：错误码 → t() 键映射表，见 i18n/index.ts）。
+ */
 export function describeTemplateError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  const match = /\bE_[A-Z_]+\b/.exec(message);
-  if (match !== null) {
-    const mapped = ERROR_MESSAGES[match[0]];
-    if (mapped !== undefined) {
-      return mapped;
-    }
-  }
-  return message;
+  return errorText(error);
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +103,7 @@ export const templatesActions = {
   async saveFromPage(pageId: string, title: string): Promise<boolean> {
     try {
       await bridge().templates.saveFromPage({ pageId, title });
-      pushToast('已另存为模板', 'success');
+      pushToast(t('templates.toastSaved'), 'success');
       await templatesActions.loadTemplates();
       return true;
     } catch (error) {
@@ -141,7 +129,7 @@ export const templatesActions = {
   async renameTemplate(id: string, title: string): Promise<boolean> {
     try {
       await bridge().templates.rename({ id, title });
-      pushToast('已重命名模板', 'success');
+      pushToast(t('templates.toastRenamed'), 'success');
       await templatesActions.loadTemplates();
       return true;
     } catch (error) {
@@ -154,7 +142,7 @@ export const templatesActions = {
   async deleteTemplate(id: string): Promise<boolean> {
     try {
       await bridge().templates.remove({ id });
-      pushToast('已删除模板', 'success');
+      pushToast(t('templates.toastDeleted'), 'success');
       await templatesActions.loadTemplates();
       return true;
     } catch (error) {

@@ -19,7 +19,7 @@ import { Button, Checkbox, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThem
 import type { AppSettings, AppSettingsPatch, ThemeMode } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
-import { t } from '../i18n';
+import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
 import { AiSection } from '../settings/AiSection';
 import { TemplatesSection } from '../templates/TemplatesSection';
 import './SettingsPage.css';
@@ -49,7 +49,9 @@ function describeUpdateState(state: UpdateState | null, currentVersion: string):
     case 'downloaded':
       return fillTemplate(t('settings.about.statusDownloaded'), { version: state.version ?? '' });
     case 'error':
-      return `${t('settings.about.statusError')}（${state.errorCode ?? 'E_UPDATE_FAILED'}）`;
+      return fillTemplate(t('settings.about.statusErrorFmt'), {
+        code: state.errorCode ?? 'E_UPDATE_FAILED',
+      });
   }
 }
 
@@ -61,12 +63,19 @@ function themeOptions(): Array<{ value: ThemeMode; label: string }> {
   ];
 }
 
+/** 语言三选（T25-01 §0.A）：跟随系统 / 简体中文 / English。 */
+type LocalePref = 'system' | 'zh-CN' | 'en-US';
+
+function languageOptions(): Array<{ value: LocalePref; label: string }> {
+  return [
+    { value: 'system', label: t('settings.appearance.langSystem') },
+    { value: 'zh-CN', label: t('settings.appearance.langZh') },
+    { value: 'en-US', label: t('settings.appearance.langEn') },
+  ];
+}
+
 function describeError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  if (message.includes('E_SETTINGS_INVALID')) {
-    return t('settings.error.saveFailed');
-  }
-  return message;
+  return errorText(error);
 }
 
 interface SettingsRowProps {
@@ -167,6 +176,19 @@ export function SettingsPage() {
   const handleTheme = (mode: ThemeMode): void => {
     setGlobalThemeMode(mode);
     void patch({ theme: mode });
+  };
+
+  // T25-01 §0.A：语言三选。「跟随系统」无法以 'system' 落 settings（platform schema
+  // 的 locale enum 只收 zh-CN/en-US）——标记存 renderer localStorage（setLocalePref），
+  // settings.locale 写入最近一次解析值；显式选择则清标记并 patch settings.locale。
+  const handleLanguage = (pref: LocalePref): void => {
+    setLocalePref(pref);
+    if (pref !== 'system') {
+      void patch({ locale: pref });
+      return;
+    }
+    // 跟随系统：settings.locale 写入最近一次解析值（真相源在 localStorage 标记）
+    void patch({ locale: systemLocale() });
   };
 
   const handleLinkPreview = (on: boolean): void => {
@@ -318,6 +340,20 @@ export function SettingsPage() {
                   options={themeOptions()}
                   value={settings.theme}
                   onChange={handleTheme}
+                  disabled={saving}
+                />
+              }
+            />
+            <SettingsRow
+              title={t('settings.appearance.language')}
+              desc={t('settings.appearance.languageDesc')}
+              control={
+                <RadioGroup<LocalePref>
+                  label={t('settings.appearance.language')}
+                  name="settings-locale"
+                  options={languageOptions()}
+                  value={getLocalePref() === 'system' ? 'system' : settings.locale}
+                  onChange={handleLanguage}
                   disabled={saving}
                 />
               }

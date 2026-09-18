@@ -63,10 +63,12 @@ export function wizardNext(step: WizardStep, event: WizardEvent): WizardStep {
   }
 }
 
-/** 确认按钮文案：warnings 非空（degraded/skipped）→「继续导入（N 项降级）」，否则「开始导入」。 */
+/** 确认按钮文案：warnings 非空（degraded/skipped）→「继续导入（N 项降级）」，否则「开始导入」（T25-01 起文案走 i18n）。 */
 export function confirmLabel(warnings: ReadonlyArray<Pick<ImportWarning, 'action'>>): string {
   const degraded = warnings.filter((warning) => warning.action === 'degraded').length;
-  return degraded > 0 ? `继续导入（${String(degraded)} 项降级）` : '开始导入';
+  return degraded > 0
+    ? t('importWizard.continueWithWarnings').replace('{n}', String(degraded))
+    : t('importWizard.startImport');
 }
 
 /** E_TOO_LARGE 的 IPC 错误消息 → 条目数（提取不到回 null，调用方用通用文案）。 */
@@ -148,14 +150,18 @@ export function ImportWizard({ onOpenHome }: ImportWizardProps) {
     } catch (cause) {
       const message = describeError(cause);
       const count = tooLargeCount(message);
-      setError(count === null ? `${t('importWizard.errorPlan')}：${message}` : tooLargeText(count));
+      setError(
+        count === null
+          ? t('importWizard.errorPlanFmt').replace('{msg}', message)
+          : tooLargeText(count),
+      );
     } finally {
       setBusy(false);
     }
   };
 
   const tooLargeText = (count: number): string =>
-    `共 ${String(count)} ${t('importWizard.errorTooLarge')}`;
+    t('importWizard.errorTooLargeFmt').replace('{n}', String(count));
 
   const handleConfirm = async (): Promise<void> => {
     if (preview === null) {
@@ -271,7 +277,7 @@ export function ImportWizard({ onOpenHome }: ImportWizardProps) {
             <div className="wiz-rpt-meta">
               <b>{preview.source.rootName}</b>
               <span>
-                {preview.source.kind} · {String(preview.totalItems)} 项
+                {preview.source.kind} · {String(preview.totalItems)} {t('importWizard.itemsUnit')}
               </span>
             </div>
             <Button

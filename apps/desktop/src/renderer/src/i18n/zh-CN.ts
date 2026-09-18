@@ -1,11 +1,108 @@
 /**
- * zh-CN.ts —— 中文文案单一来源（TASK-T10-01 §2）。
+ * zh-CN.ts —— 中文文案单一来源（TASK-T10-01 §2；T25-01 全量键完备）。
  *
  * 嵌套字典，key 用 `.` 路径（`settings.appearance.theme`）。
  * 命令表 label/hint 用命令 id 的自然嵌套（`commands.page.new` / `commandHints.page.new`）。
  * 别名（拼音/英文搜索词）不属于展示文案，仍在 palette/commands.ts 里维护。
+ * T25-01：新增 common/app/sidebar/editor/pageDelete/trash/search/palette/pages/errors
+ * 各域；与 en-US.ts 键集合逐一同构（apps/desktop/test/i18n.test.ts 门禁）。
  */
 export const zhCN = {
+  common: {
+    untitled: '未命名',
+    cancel: '取消',
+    delete: '删除',
+    currentWorkspace: '当前工作区',
+  },
+  app: {
+    searchLabel: '搜索（Ctrl+K）',
+    settingsLabel: '设置',
+    noWorkspaceToSwitch: '没有可切换的工作区',
+  },
+  errors: {
+    E_CYCLE: '不能把页面移动到它自己的子页面下',
+    E_PARENT_GONE: '目标父页面不存在，或仍在回收站',
+    E_NOT_FOUND: '页面不存在或已被删除',
+    E_NO_WORKSPACE: '没有可用的工作区',
+    E_MALFORMED: '请求参数不合法',
+    E_TEMPLATE_NOT_FOUND: '模板不存在或已被删除',
+    E_SETTINGS_INVALID: '设置保存失败',
+  },
+  sidebar: {
+    workspace: '个人工作区',
+    createFromAria: '从模板新建',
+    favorites: '收藏',
+    recent: '最近',
+    emptyFavorites: '暂无收藏',
+    emptyRecent: '暂无最近',
+    renameAria: '重命名页面',
+    pageActions: '页面操作',
+    trash: '回收站',
+  },
+  editor: {
+    convertToDatabase: '转为数据库',
+    linkPrompt: '链接地址（https:// / notion:// / page: / #锚点）',
+  },
+  pageDelete: {
+    title: '删除页面',
+    body: '「{name}」将移入回收站，可随时在回收站中恢复。',
+    bodyWithChildren: '「{name}」及其 {n} 个子页面将移入回收站，可随时在回收站中恢复。',
+  },
+  trash: {
+    back: '返回页面',
+    empty: '回收站是空的，删除的页面会先存放在这里',
+    restore: '恢复',
+    purge: '彻底删除',
+    purgeTitle: '彻底删除页面',
+    purgeBody: '「{name}」及其子页面将从回收站永久清除，此操作不可撤销。',
+  },
+  search: {
+    filterAll: '全部',
+    filterPages: '页面',
+    filterDatabases: '数据库',
+    kindPage: '页面',
+    kindBlock: '块',
+    kindCollection: '数据库',
+    kindRecord: '记录',
+    viaFts: '全文索引',
+    viaFallback: '兜底匹配',
+    scope: '范围：{name}',
+    type: '类型：{type}',
+    searching: '搜索中…',
+    resultsCount: '{n} 条结果 · {ms} ms',
+    recents: '最近查询',
+    groupPages: '页面 · {n}',
+    groupDatabases: '数据库 · {n}',
+    emptyNoWorkspace: '还没有可用的工作区，无法检索',
+    emptyNoMatch: '没有匹配的内容，试试更短的关键词',
+  },
+  palette: {
+    title: '命令面板',
+    inputAria: '搜索或输入命令',
+    placeholder: '搜索页面、数据库，或输入 > 命令',
+    escToClose: 'Esc 关闭',
+    groupCommands: '命令',
+    groupPages: '页面与跳转',
+    groupDatabases: '数据库',
+    metaPage: '页面',
+    metaDatabase: '数据库',
+    empty: '没有匹配的命令或内容',
+    openInSearch: '在搜索结果页打开「{query}」',
+    pick: '选择',
+    run: '执行',
+    onlyCommands: '仅命令',
+    onlyPages: '仅页面',
+  },
+  pages: {
+    toastTrashed: '已移入回收站',
+    toastRestored: '已恢复',
+    toastPurged: '已彻底删除',
+    toastTrashEmptied: '回收站已清空',
+    toastFavorited: '已移入收藏',
+    toastUnfavorited: '已移出收藏',
+    toastWorkspaceCreated: '已创建工作区',
+    toastWorkspaceSwitched: '已切换工作区',
+  },
   importWizard: {
     title: '导入',
     stepPick: '选择文件',
@@ -37,9 +134,11 @@ export const zhCN = {
     reportTitle: '执行报告',
     openHome: '打开首页',
     again: '再导入一份',
-    errorPlan: '导入计划失败',
-    errorTooLarge: '个条目超过 5000 上限，请分批导入',
-    errorTooLargeGeneric: '源包条目超过 5000 上限，请分批导入',
+    errorPlanFmt: '导入计划失败：{msg}',
+    errorTooLargeFmt: '共 {n} 个条目超过 5000 上限，请分批导入',
+    startImport: '开始导入',
+    continueWithWarnings: '继续导入（{n} 项降级）',
+    itemsUnit: '项',
   },
   settings: {
     title: '设置',
@@ -50,6 +149,11 @@ export const zhCN = {
       themeLight: '浅色',
       themeDark: '深色',
       themeSystem: '跟随系统',
+      language: '语言',
+      languageDesc: '界面显示语言；跟随系统时按操作系统语言自动选择',
+      langSystem: '跟随系统',
+      langZh: '简体中文',
+      langEn: 'English',
     },
     privacy: {
       title: '数据与隐私',
@@ -117,6 +221,8 @@ export const zhCN = {
       keyLabel: '密钥',
       keySet: '已设置',
       keyUnset: '未设置',
+      keyState: '密钥：{state}',
+      editKindLine: '端点地址：{kind}',
       keyDialogTitle: 'API 密钥',
       keyDialogBody: '密钥只存入系统凭据存储（DPAPI），不写入设置文件或日志。',
       keyPlaceholder: '输入 API 密钥',
@@ -158,7 +264,7 @@ export const zhCN = {
       statusAvailable: '发现新版本 {version}，准备下载…',
       statusDownloading: '下载新版本 {version}：{percent}%',
       statusDownloaded: '新版本 {version} 已就绪，重启后生效',
-      statusError: '更新失败',
+      statusErrorFmt: '更新失败（{code}）',
       restartToUpdate: '重启更新',
       confirmTitle: '重启并安装更新',
       confirmBody: '将退出 Septcats 并安装新版本 {version}。未保存的内容可能丢失，确定继续吗？',
@@ -173,7 +279,8 @@ export const zhCN = {
   },
   sync: {
     openPanel: '同步状态',
-    panelTitle: '同步状态',    stateLabel: '状态',
+    panelTitle: '同步状态',
+    stateLabel: '状态',
     lastSync: '上次同步成功',
     stateLoading: '同步状态加载中…',
     stateIdle: '同步未开启',
@@ -212,6 +319,13 @@ export const zhCN = {
     applied: '已应用到编辑器',
   },
   db: {
+    loadFailed: '数据库加载失败',
+    empty: {
+      title: '还没有记录',
+      desc: '新建第一条记录开始填写这个数据库。',
+      action: '新建记录',
+    },
+    emptyResponse: '模型返回为空',
     ai: {
       typeLabel: 'AI',
       generate: 'AI 生成',
@@ -247,6 +361,9 @@ export const zhCN = {
     saveAsConfirm: '保存',
     cancel: '取消',
     empty: '暂无模板',
+    toastSaved: '已另存为模板',
+    toastRenamed: '已重命名模板',
+    toastDeleted: '已删除模板',
   },
   commands: {
     page: {
@@ -263,6 +380,9 @@ export const zhCN = {
       trash: '回收站',
       sync: '同步面板',
       import: '导入',
+      exportLater: '导出将在后续里程碑提供',
+      syncLater: '同步面板将在后续里程碑提供',
+      importLater: '导入将在后续里程碑提供',
     },
     theme: {
       light: '切换主题：浅色',

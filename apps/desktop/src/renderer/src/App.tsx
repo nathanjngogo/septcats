@@ -17,7 +17,7 @@ import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
-import { t } from './i18n';
+import { t, useLocale } from './i18n';
 import { CommandPalette } from './palette/CommandPalette';
 import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
@@ -30,6 +30,8 @@ import './App.css';
  * T23-02 §B：「另存为模板」是条件命令——选中页变化时重装配，无选中页则命令不出现（不置灰、不抛错）。
  */
 function useCommandWiring(openSettings: () => void, openImport: () => void): void {
+  // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
+  const locale = useLocale();
   useEffect(() => {
     const configure = (): void => {
       paletteActions.configureCommands(
@@ -42,7 +44,7 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
               const state = pagesStore.getState();
               const ids = state.workspaces.map((item) => item.id);
               if (state.workspaceId === null || ids.length < 2) {
-                pushToast('没有可切换的工作区', 'info');
+                pushToast(t('app.noWorkspaceToSwitch'), 'info');
                 return;
               }
               const nextIndex = (ids.indexOf(state.workspaceId) + 1) % ids.length;
@@ -84,7 +86,7 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
     configure();
     const unsubscribe = pagesStore.subscribe(configure);
     return unsubscribe;
-  }, [openSettings, openImport]);
+  }, [openSettings, openImport, locale]);
 }
 
 /**
@@ -97,6 +99,8 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
 export function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [view, setView] = useState<'editor' | 'settings' | 'import'>('editor');
+  // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
+  useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);
   const openSettings = useCallback(() => setView('settings'), []);
   const openImport = useCallback(() => setView('import'), []);
@@ -150,7 +154,7 @@ export function App() {
           <>
             <IconButton
               icon={MagnifyingGlass}
-              label="搜索（Ctrl+K）"
+              label={t('app.searchLabel')}
               onClick={() => {
                 paletteActions.open();
               }}
@@ -166,7 +170,7 @@ export function App() {
             />
             <IconButton
               icon={GearSix}
-              label="设置"
+              label={t('app.settingsLabel')}
               aria-pressed={inSettings}
               onClick={() => {
                 setView((current) => (current === 'settings' ? 'editor' : 'settings'));

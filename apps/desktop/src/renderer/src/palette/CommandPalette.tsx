@@ -83,7 +83,7 @@ function buildRows(
   const rows: PaletteRow[] = [];
   let selectableIndex = 0;
   if (view.commands.length > 0) {
-    rows.push({ key: 'h-cmd', header: '命令' });
+    rows.push({ key: 'h-cmd', header: t('palette.groupCommands') });
     for (const command of view.commands) {
       const index = selectableIndex;
       selectableIndex += 1;
@@ -101,7 +101,7 @@ function buildRows(
     }
   }
   if (view.pageHits.length > 0) {
-    rows.push({ key: 'h-page', header: '页面与跳转' });
+    rows.push({ key: 'h-page', header: t('palette.groupPages') });
     for (const hit of view.pageHits) {
       const index = selectableIndex;
       selectableIndex += 1;
@@ -111,7 +111,7 @@ function buildRows(
           selectableIndex: index,
           iconNode: glyphNode(FileText, 'palette-row-ic'),
           title: hitTitle(hit),
-          meta: <span className="palette-hint">页面</span>,
+          meta: <span className="palette-hint">{t('palette.metaPage')}</span>,
           onHover: (): void => paletteActions.setActive(index),
           onPick: (): void => paletteActions.executeActive(),
         },
@@ -119,7 +119,7 @@ function buildRows(
     }
   }
   if (view.dbHits.length > 0) {
-    rows.push({ key: 'h-db', header: '数据库' });
+    rows.push({ key: 'h-db', header: t('palette.groupDatabases') });
     for (const hit of view.dbHits) {
       const index = selectableIndex;
       selectableIndex += 1;
@@ -129,7 +129,7 @@ function buildRows(
           selectableIndex: index,
           iconNode: glyphNode(Note, 'palette-row-ic'),
           title: hitTitle(hit),
-          meta: <span className="palette-hint">数据库</span>,
+          meta: <span className="palette-hint">{t('palette.metaDatabase')}</span>,
           onHover: (): void => paletteActions.setActive(index),
           onPick: (): void => paletteActions.executeActive(),
         },
@@ -240,7 +240,7 @@ export function CommandPalette() {
         }
       }}
     >
-      <div className="palette" role="dialog" aria-label="命令面板" data-testid="palette-panel">
+      <div className="palette" role="dialog" aria-label={t('palette.title')} data-testid="palette-panel">
         <div className="palette-input">
           <Icon icon={MagnifyingGlass} size="sm" className="palette-input-ic" />
           <input
@@ -250,14 +250,14 @@ export function CommandPalette() {
             aria-controls="septcats-palette-list"
             aria-activedescendant={activeId}
             aria-autocomplete="list"
-            aria-label="搜索或输入命令"
-            placeholder="搜索页面、数据库，或输入 > 命令"
+            aria-label={t('palette.inputAria')}
+            placeholder={t('palette.placeholder')}
             value={query}
             onChange={(event) => paletteActions.setQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
             spellCheck={false}
           />
-          <span className="palette-esc">Esc 关闭</span>
+          <span className="palette-esc">{t('palette.escToClose')}</span>
         </div>
         <div className="palette-list" role="listbox" id="septcats-palette-list">
           {hasResults ? (
@@ -295,7 +295,7 @@ export function CommandPalette() {
             )
           ) : (
             <div className="palette-empty" role="presentation">
-              {searching ? '搜索中…' : '没有匹配的命令或内容'}
+              {searching ? t('search.searching') : t('palette.empty')}
             </div>
           )}
           {query.trim().length > 0 && !query.startsWith('>') ? (
@@ -304,22 +304,22 @@ export function CommandPalette() {
               className="palette-opensearch"
               onClick={() => paletteActions.openSearchPage()}
             >
-              在搜索结果页打开「{query.trim()}」
+              {t('palette.openInSearch').replace('{query}', query.trim())}
             </button>
           ) : null}
         </div>
         <div className="palette-foot">
           <span>
-            <Kbd>↑</Kbd> <Kbd>↓</Kbd> 选择
+            <Kbd>↑</Kbd> <Kbd>↓</Kbd> {t('palette.pick')}
           </span>
           <span>
-            <Kbd>Enter</Kbd> 执行
+            <Kbd>Enter</Kbd> {t('palette.run')}
           </span>
           <span>
-            <Kbd>&gt;</Kbd> 仅命令
+            <Kbd>&gt;</Kbd> {t('palette.onlyCommands')}
           </span>
           <span>
-            <Kbd>@</Kbd> 仅页面
+            <Kbd>@</Kbd> {t('palette.onlyPages')}
           </span>
         </div>
       </div>

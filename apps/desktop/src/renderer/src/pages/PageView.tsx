@@ -482,7 +482,7 @@ export function PageView({ page }: PageViewProps) {
   );
 
   const requestLink = useCallback((target: EditorHandle) => {
-    const href = window.prompt('链接地址（https:// / notion:// / page: / #锚点）', 'https://');
+    const href = window.prompt(t('editor.linkPrompt'), 'https://');
     if (href === null) {
       return;
     }
@@ -757,7 +757,7 @@ export function PageView({ page }: PageViewProps) {
         </span>
         <h1 className="pv-page-title">{activePage.title}</h1>
         <Button variant="secondary" size="sm" onClick={convertToDatabase}>
-          转为数据库
+          {t('editor.convertToDatabase')}
         </Button>
       </div>
       <div

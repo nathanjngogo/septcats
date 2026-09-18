@@ -14,7 +14,8 @@ import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { PageNode } from '@septcats/editor';
 import { ArrowClockwise, Button, Dialog, Icon, Trash } from '@septcats/ui';
-import { BREADCRUMB_UNTITLED, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { t } from '../i18n';
 import './TrashList.css';
 
 /** sortKey 升序、id 决胜（与 SidebarTree/main 侧派生序同式）。 */
@@ -80,7 +81,7 @@ export function TrashList() {
   return (
     <div className="trash-page">
       <div className="trash-head">
-        <h2 className="trash-title">回收站</h2>
+        <h2 className="trash-title">{t('sidebar.trash')}</h2>
         <Button
           variant="ghost"
           size="sm"
@@ -89,12 +90,12 @@ export function TrashList() {
             pagesActions.showPages();
           }}
         >
-          返回页面
+          {t('trash.back')}
         </Button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="trash-empty">回收站是空的，删除的页面会先存放在这里</div>
+        <div className="trash-empty">{t('trash.empty')}</div>
       ) : (
         <div className="trash-list" role="list">
           {rows.map((row) => (
@@ -107,7 +108,7 @@ export function TrashList() {
             >
               <Icon icon={Trash} size="sm" className="trash-row-ic" />
               <span className="trash-row-tx">
-                {row.node.title.length > 0 ? row.node.title : BREADCRUMB_UNTITLED}
+                {row.node.title.length > 0 ? row.node.title : t('common.untitled')}
               </span>
               <span className="trash-row-actions">
                 <Button
@@ -119,7 +120,7 @@ export function TrashList() {
                     void pagesActions.restorePage(row.node.id);
                   }}
                 >
-                  恢复
+                  {t('trash.restore')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -130,7 +131,7 @@ export function TrashList() {
                     setConfirmId(row.node.id);
                   }}
                 >
-                  彻底删除
+                  {t('trash.purge')}
                 </Button>
               </span>
             </div>
@@ -143,7 +144,7 @@ export function TrashList() {
         onClose={() => {
           setConfirmId(null);
         }}
-        title="彻底删除页面"
+        title={t('trash.purgeTitle')}
         footer={
           <>
             <Button
@@ -153,7 +154,7 @@ export function TrashList() {
                 setConfirmId(null);
               }}
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -165,13 +166,17 @@ export function TrashList() {
                 setConfirmId(null);
               }}
             >
-              彻底删除
+              {t('trash.purge')}
             </Button>
           </>
         }
       >
-        「{confirmNode !== undefined && confirmNode.title.length > 0 ? confirmNode.title : BREADCRUMB_UNTITLED}
-        」及其子页面将从回收站永久清除，此操作不可撤销。
+        {t('trash.purgeBody').replace(
+          '{name}',
+          confirmNode !== undefined && confirmNode.title.length > 0
+            ? confirmNode.title
+            : t('common.untitled'),
+        )}
       </Dialog>
     </div>
   );
