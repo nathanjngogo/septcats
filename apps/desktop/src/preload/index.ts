@@ -26,7 +26,8 @@ import { UPDATE_CHANNELS } from '../shared/ipc';
  *
  * T6 变更：page / fav / recent / workspace 四域接线（`window.septcats.pages.*` 与 main
  * 侧 `createPagesService` 一一对应）；通道名一律取 `src/shared/ipc.ts`（单一来源）。
- * blocks 通道仍是 T5 定名的透传壳（main 侧 handler 归后续任务）。
+ * T21-01：blocks 三通道接真实实现——commit 载荷 `{ ops }`、list 载荷 `{ pageId }`；
+ * changed 仍是 main → renderer 推送订阅（main 本期不推送）。
  */
 
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -44,8 +45,12 @@ const api: SeptcatsApi = {
   appMeta: (): Promise<SeptcatsAppMeta> =>
     ipcRenderer.invoke(CHANNEL_META) as Promise<SeptcatsAppMeta>,
   blocks: {
-    commit: (ops) => ipcRenderer.invoke(BLOCKS_CHANNELS.commit, ops) as Promise<number>,
-    list: (pageId) => ipcRenderer.invoke(BLOCKS_CHANNELS.list, pageId) as Promise<unknown[]>,
+    commit: (input) =>
+      ipcRenderer.invoke(BLOCKS_CHANNELS.commit, input) as ReturnType<
+        SeptcatsApi['blocks']['commit']
+      >,
+    list: (input) =>
+      ipcRenderer.invoke(BLOCKS_CHANNELS.list, input) as ReturnType<SeptcatsApi['blocks']['list']>,
     onChanged: (listener) => subscribe(BLOCKS_CHANNELS.changed, listener),
   },
   pages: {

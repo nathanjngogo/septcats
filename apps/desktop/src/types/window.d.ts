@@ -3,7 +3,7 @@
  * 渲染器只能通过 window.septcats 访问主进程能力（contextIsolation:true）。
  */
 import type { Op } from '@septcats/core';
-import type { PageNode } from '@septcats/editor';
+import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 import type { SearchInput, SearchResponse } from '../shared/search';
 import type {
@@ -130,15 +130,16 @@ export interface SeptcatsAppMeta {
 }
 
 /**
- * blocks IPC（T5 定名，main 侧实现归后续任务）。
+ * blocks IPC（T21-01 起接真实实现；通道与 `src/shared/ipc.ts` 的 BLOCKS_CHANNELS 一对一）。
  * 一次编辑轮次 = 一批 Op（op_ledger + 物化 + FTS 同事务，计划书 §8.1）。
+ * 错误经 Error.message 透传（E_MALFORMED / E_NO_WORKSPACE / E_INVARIANT）。
  */
 export interface SeptcatsBlocksApi {
-  /** 提交一批 Op，返回写入条数（同事务语义由 main 侧保证）。 */
-  commit(ops: Op[]): Promise<number>;
-  /** 读一页的块实体（未过滤 tombstone 由查询层决定）。 */
-  list(pageId: string): Promise<unknown[]>;
-  /** 订阅块变更推送，返回退订函数。 */
+  /** 提交一批 Op（renderer EditSession 产出，原样透传），返回写入条数（同事务语义由 main 侧保证）。 */
+  commit(input: { ops: Op[] }): Promise<number>;
+  /** 读一页的存活块（编辑器 Block 形状，按 sort_key 升序）。 */
+  list(input: { pageId: string }): Promise<Block[]>;
+  /** 订阅块变更推送，返回退订函数（main 本期只保留通道名，不推送）。 */
   onChanged(listener: (payload: unknown) => void): () => void;
 }
 
@@ -297,7 +298,7 @@ export interface SeptcatsApi {
   ping(): Promise<string>;
   /** 应用元信息（名称/版本/schema 版本）。 */
   appMeta(): Promise<SeptcatsAppMeta>;
-  /** 块数据通道（main 侧尚未注册 handler；调用会 reject）。 */
+  /** 块数据通道（T21-01：main 侧已实现 list/commit；changed 本期不推送）。 */
   blocks: SeptcatsBlocksApi;
   pages: SeptcatsPagesApi;
   favorites: SeptcatsFavoritesApi;

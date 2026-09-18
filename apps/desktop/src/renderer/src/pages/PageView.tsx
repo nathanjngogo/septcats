@@ -2,7 +2,10 @@
  * PageView.tsx —— 页面阅读/编辑视图（T5 §4 接线，薄壳）。
  *
  * 组装：Editor + BlockControls + SlashMenu + SelectionToolbar。
- * 数据：**memorySession**（commit = console + 内存数组），不接 db IPC —— T6 接线。
+ * 数据（T21-01）：按 pagesStore.selectedId 经 `blocks:list` 加载真实 blocks 喂编辑器；
+ * EditSession 的 commit 经 `blocks:commit` 原样透传 Op 落库（失败走 onError 不吞）。
+ * 无选中页/显式 demo 入口仍走 DEMO_PAGE 兜底（T21-02 前的浏览器兜底显示）。
+ * 打开真实页调一次 touchRecent（失败只记录）。
  * 编辑器只吐 BlockDoc，外发由 EditSession debounce 成一批 Op（计划书 §8.1）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -31,13 +34,13 @@ import {
   type BlockAction,
   type SelectionRect,
 } from '@septcats/editor/react';
-import { Button } from '@septcats/ui';
+import { Button, ErrorPanel, Skeleton } from '@septcats/ui';
 import { AI_BLOCK_ACTIONS, buildAiMessages } from '../../../shared/aiPrompts';
 import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
-import { pushToast } from '../state/pages';
+import { pushToast, usePages } from '../state/pages';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
@@ -166,7 +169,17 @@ interface AiApplyTarget {
   insertAt: number;
 }
 
-export function PageView({ page = DEMO_PAGE }: PageViewProps) {
+/**
+ * 内容数据态（T21-01，对齐 DbPage 的 loading/error/ready 四态口径）：
+ * demo = 无选中页的兜底演示文档；ready 含「空页」（blocks=[] → 空文档，可直接输入）。
+ */
+type PageDocState =
+  | { status: 'demo' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; doc: BlockDoc };
+
+export function PageView({ page }: PageViewProps) {
   const [initialDoc] = useState(buildDemoDoc);
   const docRef = useRef<BlockDoc>(initialDoc);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -174,6 +187,21 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
   const dragIdRef = useRef<string | null>(null);
   /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载）。 */
   const [dbPageId, setDbPageId] = useState<string | null>(null);
+
+  // T21-01 数据源：pagesStore.selectedId 驱动真实页；显式 page 入口与无选中页走兜底
+  const selectedId = usePages((state) => state.selectedId);
+  const pageNodes = usePages((state) => state.nodes);
+  const selectedNode =
+    page === undefined && selectedId !== null
+      ? (pageNodes.find((node) => node.id === selectedId) ?? null)
+      : null;
+  const activePage: PageViewPage =
+    page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : DEMO_PAGE);
+  const isDemoPage = activePage.id === PAGE_ID;
+
+  const [docState, setDocState] = useState<PageDocState>({ status: 'demo' });
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadBlocks = useCallback(() => setReloadNonce((nonce) => nonce + 1), []);
 
   const [editor, setEditor] = useState<EditorHandle | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -186,27 +214,104 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
   const aiTargetRef = useRef<AiApplyTarget | null>(null);
   const aiRunIdRef = useRef(0);
 
-  const [session] = useState(
-    () =>
-      new EditSession({
-        actor: PAGE_ACTOR,
-        commit: (ops) => {
-          // memorySession：不接 db IPC（T6），只留痕 + 内存账本。
+  const [session, setSession] = useState<EditSession | null>(null);
+  const sessionRef = useRef<EditSession | null>(null);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  /**
+   * EditSession 工厂（T21-01）：demo 页维持既有内存账本（demo 页不在库中，不写脏数据）；
+   * 真实页把 EditSession 产出的 ops 原样透传 `blocks:commit`（renderer 不组 Op）。
+   * commit 返回的 Promise 失败时 reject → EditSession 先调 onError 再向 flush() 冒泡（不吞）。
+   */
+  const createSession = useCallback((initial: BlockDoc): EditSession => {
+    const isDemo = initial.pageId === PAGE_ID;
+    return new EditSession({
+      actor: PAGE_ACTOR,
+      commit: async (ops) => {
+        if (isDemo) {
           ledgerRef.current.push(...ops);
           console.info(`[PageView] commit batch · ${String(ops.length)} ops`, ops);
-        },
-        now: () => Date.now(),
-        initial: initialDoc,
-        onError: (error) => {
-          console.error('[PageView] commit 失败（不吞）', error);
-        },
-      }),
-  );
+          return;
+        }
+        await window.septcats.blocks.commit({ ops });
+      },
+      now: () => Date.now(),
+      initial,
+      onError: (error) => {
+        console.error('[PageView] commit 失败（不吞）', error);
+      },
+    });
+  }, []);
+
+  // 按选中页加载 blocks（T21-01 §0.4）；换页/卸载前冲掉旧页在途编辑轮次（commit
+  // 闭包捕获的是旧页 pageId，落库目标正确）
+  useEffect(() => {
+    if (isDemoPage) {
+      docRef.current = initialDoc;
+      setDocState({ status: 'demo' });
+      return;
+    }
+    let cancelled = false;
+    setDocState({ status: 'loading' });
+    window.septcats.blocks
+      .list({ pageId: activePage.id })
+      .then((blocks) => {
+        if (cancelled) {
+          return;
+        }
+        const doc: BlockDoc = { pageId: activePage.id, blocks };
+        docRef.current = doc;
+        setDocState({ status: 'ready', doc });
+      })
+      .catch((error: unknown) => {
+        console.error('[PageView] blocks:list 失败', error);
+        if (cancelled) {
+          return;
+        }
+        setDocState({
+          status: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+    return () => {
+      cancelled = true;
+      const current = sessionRef.current;
+      if (current !== null) {
+        void current.flush().catch(() => undefined);
+      }
+    };
+  }, [isDemoPage, activePage.id, initialDoc, reloadNonce]);
+
+  // session 跟随内容态重建（EditSession 的 baseline 只能在构造时给定）
+  useEffect(() => {
+    if (docState.status === 'demo') {
+      setSession(createSession(initialDoc));
+      return;
+    }
+    if (docState.status !== 'ready') {
+      setSession(null);
+      return;
+    }
+    setSession(createSession(docState.doc));
+  }, [docState, createSession, initialDoc]);
+
+  // 打开真实页调一次 touchRecent（既有 API；失败只记录，§0.6）
+  useEffect(() => {
+    if (isDemoPage) {
+      return;
+    }
+    window.septcats.recent.touch({ pageId: activePage.id }).catch((error: unknown) => {
+      console.error('[PageView] touchRecent 失败（只记录）', error);
+    });
+  }, [isDemoPage, activePage.id]);
 
   const handleChange = useCallback(
     (next: BlockDoc) => {
       docRef.current = next;
-      session.onDocChange(next);
+      session?.onDocChange(next);
     },
     [session],
   );
@@ -221,14 +326,14 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
       return;
     }
     let cancelled = false;
-    attachCollab(page.id, editor, () => cancelled).catch((error: unknown) => {
+    attachCollab(activePage.id, editor, () => cancelled).catch((error: unknown) => {
       console.error('[PageView] 协作层接入失败（不阻断编辑）', error);
     });
     return () => {
       cancelled = true;
-      detachCollab(page.id);
+      detachCollab(activePage.id);
     };
-  }, [editor, page.id]);
+  }, [editor, activePage.id]);
 
   useEffect(() => {
     if (editor === null) {
@@ -263,6 +368,9 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
       }
     };
     const flush = () => {
+      if (session === null) {
+        return;
+      }
       void session.flush();
     };
     editor.on('selectionUpdate', syncSelection);
@@ -468,7 +576,7 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
       }
       const next = applySortKeyAssignments(docRef.current, plan.assignments);
       docRef.current = next;
-      session.onDocChange(next);
+      session?.onDocChange(next);
     },
     [editor, session],
   );
@@ -481,12 +589,12 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
         console.error('[PageView] 转为数据库失败：无活动工作区');
         return;
       }
-      const created = await window.septcats.db.create({ workspaceId, title: page.title });
+      const created = await window.septcats.db.create({ workspaceId, title: activePage.title });
       setDbPageId(created.pageId);
     })().catch((error: unknown) => {
       console.error('[PageView] 转为数据库失败（不吞）', error);
     });
-  }, [page.title]);
+  }, [activePage.title]);
 
   /**
    * 块级 AI 动作（TASK-T18-03 §2.4）：取文本（选中优先/块文本回退）→ ai.state() 三态门控
@@ -624,12 +732,17 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
     window.dispatchEvent(new CustomEvent('septcats:open-settings'));
   }, []);
 
-  if (page.kind === 'database') {
-    return <DbPage pageId={page.id} />;
+  if (activePage.kind === 'database') {
+    return <DbPage pageId={activePage.id} />;
   }
   if (dbPageId !== null) {
     return <DbPage pageId={dbPageId} />;
   }
+
+  // T21-01：demo / ready（含空页）喂编辑器；loading / error 走既有四态外壳
+  // （Skeleton / ErrorPanel，均为 @septcats/ui 既有组件，无新增组件与 token）。
+  const editorDoc: BlockDoc | null =
+    docState.status === 'demo' ? initialDoc : docState.status === 'ready' ? docState.doc : null;
 
   return (
     <div className="pv-root" ref={containerRef}>
@@ -637,7 +750,7 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
         <span className="pv-page-icon" aria-hidden="true">
           🔭
         </span>
-        <h1 className="pv-page-title">{page.title}</h1>
+        <h1 className="pv-page-title">{activePage.title}</h1>
         <Button variant="secondary" size="sm" onClick={convertToDatabase}>
           转为数据库
         </Button>
@@ -662,7 +775,14 @@ export function PageView({ page = DEMO_PAGE }: PageViewProps) {
             <BlockControls blockId={activeBlockId} onAction={handleBlockAction} visible />
           </div>
         ) : null}
-        <Editor doc={initialDoc} onChange={handleChange} onReady={setEditor} />
+        {docState.status === 'loading' ? (
+          <Skeleton lines={8} />
+        ) : docState.status === 'error' ? (
+          <ErrorPanel description={docState.message} onRetry={reloadBlocks} />
+        ) : editorDoc !== null ? (
+          // doc 挂载时读一次（packages/editor/react/Editor.tsx），key=pageId 保证换页重建
+          <Editor key={editorDoc.pageId} doc={editorDoc} onChange={handleChange} onReady={setEditor} />
+        ) : null}
         {dropTarget === null ? null : <div className="pv-dropline" data-target={dropTarget} />}
         <SlashMenu
           open={slashOpen}

@@ -272,6 +272,49 @@ ON CONFLICT(id) DO UPDATE SET
     sql: `UPDATE block SET alive = 0, version = @version, updated_at = @updated_at WHERE id = @id`,
     params: z.object({ id: idText, version: versionInt, updated_at: nullableTimestamp }),
   },
+  // T21-01（TASK-T21-01）：编辑器 diff 的 block patch / reorder 物化语句（只增不改）。
+  // patch 用 COALESCE(@x, col) 表示「缺席字段不触碰」——diff 产出的 patch payload
+  // 只含变化字段（packages/editor/src/diff.ts）；content 的显式 null 与「缺席」无法
+  // 在此区分，但 diff 语义下 patch 不会携带它（type 变更走 upsert 整块写）。
+  // 注意：block 表无 parent_id 列（block.upsert 同样不落它），patch 亦不触碰。
+  'block.patch': {
+    kind: 'run',
+    sql: `UPDATE block SET
+  type = COALESCE(@type, type),
+  props_json = COALESCE(@props_json, props_json),
+  content_json = COALESCE(@content_json, content_json),
+  sort_key = COALESCE(@sort_key, sort_key),
+  alive = COALESCE(@alive, alive),
+  version = @version,
+  lamport_c = @lamport_c,
+  lamport_d = @lamport_d,
+  updated_at = @updated_at
+WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      type: z.string().min(1).nullable(),
+      props_json: z.string().nullable(),
+      content_json: z.string().nullable(),
+      sort_key: z.string().min(1).nullable(),
+      alive: z.number().int().min(0).max(1).nullable(),
+      version: versionInt,
+      lamport_c: lamportCount,
+      lamport_d: actorId,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'block.setSort': {
+    kind: 'run',
+    sql: `UPDATE block SET sort_key = @sort_key, version = @version, lamport_c = @lamport_c, lamport_d = @lamport_d, updated_at = @updated_at WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      sort_key: z.string().min(1),
+      version: versionInt,
+      lamport_c: lamportCount,
+      lamport_d: actorId,
+      updated_at: nullableTimestamp,
+    }),
+  },
 
   // ---- collection ---------------------------------------------------------
   'collection.upsert': {

@@ -64,6 +64,11 @@ import {
 } from './dbview';
 import { createSearchService, registerSearchIpc, type SearchService } from './search';
 import {
+  createBlocksService,
+  registerBlocksIpc,
+  type BlocksService,
+} from './blocks';
+import {
   createImporterService,
   toImporterError,
   type ImporterService,
@@ -196,12 +201,13 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
-/** 起库后造出的四套服务（页面树 / 行内数据库 / 搜索 / 导入器），共用同一 DbHandle 与 actor。 */
+/** 起库后造出的五套服务（页面树 / 行内数据库 / 搜索 / 导入器 / 块），共用同一 DbHandle 与 actor。 */
 interface DatabaseServices {
   pages: PagesService;
   db: DbViewService;
   search: SearchService;
   importer: ImporterService;
+  blocks: BlocksService;
 }
 
 /**
@@ -299,6 +305,17 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           const workspaces = await pages.listWorkspaces();
           if (workspaces.activeId === null) {
             throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，无法导入');
+          }
+          return workspaces.activeId;
+        },
+      }),
+      // T21-01：块服务——写路径复用同一装饰后 executor（commitOps 成功即进攒段器）
+      blocks: createBlocksService({
+        executor,
+        activeWorkspaceId: async () => {
+          const workspaces = await pages.listWorkspaces();
+          if (workspaces.activeId === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，块 Op 无法物化');
           }
           return workspaces.activeId;
         },
@@ -555,6 +572,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
   registerImporterIpc(services?.importer ?? null);
+  // 块读写（T21-01）：blocks:list / blocks:commit；blocks:changed 只保留通道名不推送
+  registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());
 
   // 同步运行时（M8b）：status / setEnabled / now 三通道 + 状态推流（sync:state 在
   // bootstrapDatabase 的 onState 里广播）。runtime 缺失时统一回 E_INVARIANT。

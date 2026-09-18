@@ -404,11 +404,86 @@ function materializeBlockStatement(op: Op, workspaceId: string): DbBatchStatemen
   switch (op.kind) {
     case 'upsert':
       return blockUpsertStatement(op, workspaceId);
+    case 'patch':
+      return blockPatchStatement(op);
+    case 'reorder':
+      return blockSetSortStatement(op);
+    case 'delete': {
+      if (Object.keys(op.payload).length > 0) {
+        throw malformed(op, 'delete 的 payload 必须为空对象（schema-v1 §1）');
+      }
+      // T21-01：编辑器删除块（alive=0）。FTS 同步由 v4 触发器（trg_block_fts_au/ad）
+      // 维护（单条常规路径 flag=0，触发器即时生效）；block delete 拿不到 page_id，
+      // 无法在此追加 fts.syncPage（与既有 block delete 注释口径一致）。
+      return {
+        sqlId: 'block.softDelete',
+        params: {
+          id: op.target.id,
+          version: op.lamport.c,
+          updated_at: op.at,
+        },
+      };
+    }
     default:
-      // block delete 的 payload 恒为 {}（schema-v1 §1），拿不到 page_id 无法在此
-      // 追加 FTS 同步；删除路径的 FTS 由 v4 触发器（trg_block_fts_au/ad）维护。
+      // block delete/patch/reorder 的物化自 T21-01 起支持（编辑器 diff 的三种 kind）；
+      // 其余 kind 显式拒绝（绝不静默跳过，避免真相层与物化层分叉）。
       throw new CommitError('E_MALFORMED_OP', `block 暂不支持 op.kind=${op.kind}`);
   }
+}
+
+/**
+ * block patch（T21-01）：编辑器 diff 的字段级局部更新（`block.patch` 白名单语句，
+ * T21-01 新增）。payload 缺席的字段传 null → 语句里 COALESCE 保持旧列不触碰。
+ * 注意：block 表无 parent_id 列（upsert 同样不落它），patch 里的 parent_id 忽略；
+ * diff 语义下 patch 不会携带 content:null（type 变更走 upsert），
+ * 故「显式 null」与「缺席」在物化层等价（缺席 = 不触碰）。
+ */
+function blockPatchStatement(op: Op): DbBatchStatement {
+  const payload = op.payload as Record<string, unknown>;
+  const present = (key: string): boolean =>
+    payload[key] !== undefined && payload[key] !== null;
+  let contentJson: string | null = null;
+  const content = payload['content'];
+  if (typeof content === 'string') {
+    contentJson = content;
+  } else if (content !== undefined && content !== null && typeof content === 'object') {
+    contentJson = JSON.stringify(content);
+  }
+  const props = payload['props'];
+  const alive = payload['alive'];
+  return {
+    sqlId: 'block.patch',
+    params: {
+      id: op.target.id,
+      type: present('type') && typeof payload['type'] === 'string' ? payload['type'] : null,
+      props_json:
+        present('props') && props !== null && typeof props === 'object'
+          ? JSON.stringify(props)
+          : null,
+      content_json: contentJson,
+      sort_key: present('sort_key') && typeof payload['sort_key'] === 'string' ? payload['sort_key'] : null,
+      alive: typeof alive === 'number' && (alive === 0 || alive === 1) ? alive : null,
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
+}
+
+/** block reorder（T21-01）：只改 sort_key（`block.setSort` 白名单语句，T21-01 新增）。 */
+function blockSetSortStatement(op: Op): DbBatchStatement {
+  return {
+    sqlId: 'block.setSort',
+    params: {
+      id: op.target.id,
+      sort_key: readRequiredString(op, 'sort_key'),
+      version: op.lamport.c,
+      lamport_c: op.lamport.c,
+      lamport_d: op.lamport.d,
+      updated_at: readNumber(op, 'updated_at', op.at),
+    },
+  };
 }
 
 /** 一个 op → op_ledger.insert 参数（真相层；`op_json` 为 core.encodeOp 的稳定键序单行 JSON）。 */
