@@ -13,6 +13,7 @@ import { SEARCH_LIMIT_MAX } from '../../../shared/search';
 import type { PaletteCommand } from '../palette/commands';
 import { rankPalette, selectableRowCount } from '../palette/rank';
 import { pagesActions, pagesStore } from './pages';
+import { templatesActions, templatesStore } from './templates';
 import { createStore, useStore } from './store';
 
 export interface PaletteState {
@@ -181,7 +182,7 @@ export const paletteActions = {
 
   moveActive(delta: number): void {
     paletteStore.setState((state) => {
-      const view = rankPalette(state.query, state.commands, state.hits);
+      const view = rankPalette(state.query, state.commands, state.hits, templatesStore.getState().templates);
       const size = selectableRowCount(view);
       if (size === 0) {
         return { ...state, activeIndex: 0 };
@@ -195,12 +196,13 @@ export const paletteActions = {
     paletteStore.setState((state) => ({ ...state, activeIndex: Math.max(0, index) }));
   },
 
-  /** Enter：命令执行 / 页面打开；成功后关面板并记录最近查询。 */
+  /** Enter：命令执行 / 页面打开 / 模板建页；成功后关面板并记录最近查询。 */
   executeActive(): void {
     const state = paletteStore.getState();
-    const view = rankPalette(state.query, state.commands, state.hits);
+    const view = rankPalette(state.query, state.commands, state.hits, templatesStore.getState().templates);
     const commandCount = view.commands.length;
     const pageCount = view.pageHits.length;
+    const dbCount = view.dbHits.length;
     const index = state.activeIndex;
     recordRecent(state.query);
     if (index < commandCount) {
@@ -209,9 +211,26 @@ export const paletteActions = {
       paletteStore.setState((current) => ({ ...current, open: false }));
       return;
     }
-    const hit = index - commandCount < pageCount ? view.pageHits[index - commandCount] : view.dbHits[index - commandCount - pageCount];
-    if (hit !== undefined && hit.pageId !== null) {
-      pagesActions.selectPage(hit.pageId);
+    if (index - commandCount < pageCount) {
+      const hit = view.pageHits[index - commandCount];
+      if (hit !== undefined && hit.pageId !== null) {
+        pagesActions.selectPage(hit.pageId);
+        paletteStore.setState((current) => ({ ...current, open: false, searchOpen: false }));
+      }
+      return;
+    }
+    if (index - commandCount - pageCount < dbCount) {
+      const hit = view.dbHits[index - commandCount - pageCount];
+      if (hit !== undefined && hit.pageId !== null) {
+        pagesActions.selectPage(hit.pageId);
+        paletteStore.setState((current) => ({ ...current, open: false, searchOpen: false }));
+      }
+      return;
+    }
+    // T23-02 §C.2：模板行（独立分组，排最后）→ 从模板新建页
+    const template = view.templates[index - commandCount - pageCount - dbCount];
+    if (template !== undefined) {
+      void templatesActions.createFromTemplate(template.id);
       paletteStore.setState((current) => ({ ...current, open: false, searchOpen: false }));
     }
   },

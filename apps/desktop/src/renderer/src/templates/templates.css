@@ -1,0 +1,69 @@
+/*
+ * 模板 UI 面共用样式（TASK-T23-02）。只用 var(--sc-*) token（no-magic 门禁）。
+ * 消费方：命令面板「模板」分组、侧栏「新建页面 ▾」子菜单、设置页「模板」区块。
+ */
+
+/* 模板数据自带 icon（继承源页，常见 emoji）→ 文本槽；空则回落 @septcats/ui 图标 */
+.tpl-emoji {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sc-space-lg);
+  flex: none;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+/* 设置区块行：图标 + 名称 + 右侧「⋯」 */
+.tpl-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  min-height: var(--sc-space-xxl);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.tpl-row-ic {
+  color: var(--sc-color-ink-secondary);
+  flex: none;
+}
+
+.tpl-row-tx {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 「⋯」与行内菜单的定位壳 */
+.tpl-menu-wrap {
+  margin-left: auto;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.tpl-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: var(--sc-z-dropdown);
+}
+
+/* 设置区块空态行（与 .app-nav-empty / .search-empty 同 token 组合） */
+.tpl-empty {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* 弹窗（另存为/重命名/删除确认） */
+.tpl-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-sm);
+}
+
+.tpl-dialog-text {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}

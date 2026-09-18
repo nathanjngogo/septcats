@@ -19,8 +19,10 @@ import type {
   ReactNode,
 } from 'react';
 import type { PageNode } from '@septcats/editor';
-import { CaretRight, Clock, FileText, FolderSimple, Icon, Plus, Star, Trash } from '@septcats/ui';
+import { CaretDown, CaretRight, Clock, FileText, FolderSimple, Icon, Plus, Star, Trash } from '@septcats/ui';
 import { aliveNodes, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { templatesActions, useTemplates } from '../state/templates';
+import { TemplateIcon } from '../templates/TemplateIcon';
 
 /** 行缩进：与既有假树 TreeRow 同式（app-nav-row 的 paddingLeft）。 */
 function indentStyle(depth: number): CSSProperties {
@@ -86,6 +88,10 @@ interface NavRowProps {
   count?: number;
   /** 提供时替换标题文本槽（行内重命名的输入框走这里）。 */
   labelNode?: ReactNode;
+  /** 提供时替换图标槽（T23-02：模板行携带数据 icon）。 */
+  iconNode?: ReactNode;
+  /** 提供时追加在行尾（margin-left:auto；T23-02「新建页面 ▾」的右侧箭头）。 */
+  suffix?: ReactNode;
   onClick?: (event: ReactMouseEvent<HTMLDivElement>) => void;
   onCaretClick?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
   onDoubleClick?: (event: ReactMouseEvent<HTMLDivElement>) => void;
@@ -101,6 +107,8 @@ function NavRow({
   open = false,
   count,
   labelNode,
+  iconNode,
+  suffix,
   onClick,
   onCaretClick,
   onDoubleClick,
@@ -116,9 +124,10 @@ function NavRow({
       <span className={open ? 'app-nav-tw app-nav-tw--open' : 'app-nav-tw'} onClick={onCaretClick}>
         {branch ? <Icon icon={CaretRight} size="sm" /> : null}
       </span>
-      <Icon icon={icon} size="sm" className="app-nav-ic" />
+      {iconNode ?? <Icon icon={icon} size="sm" className="app-nav-ic" />}
       {labelNode ?? <span className="app-nav-tx">{label}</span>}
       {count === undefined ? null : <span className="app-nav-count">{count}</span>}
+      {suffix ?? null}
     </div>
   );
 }
@@ -131,6 +140,9 @@ export function SidebarTree() {
   const favoriteIds = usePages((state) => state.favoriteIds);
   const recentIds = usePages((state) => state.recentIds);
   const view = usePages((state) => state.view);
+  // T23-02 §C.1：「新建页面 ▾」模板子菜单展开态（本地视图态；列表订阅 templates slice）
+  const [tplOpen, setTplOpen] = useState(false);
+  const templates = useTemplates((state) => state.templates);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false });
 
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
@@ -222,6 +234,7 @@ export function SidebarTree() {
         个人工作区
       </div>
       <div className="app-side-scroll">
+        {/* T23-02 §C.1：主体点击仍 = 新建空白页；右侧箭头展开模板子菜单 */}
         <NavRow
           testId="side-new-page"
           label="新建页面"
@@ -229,7 +242,48 @@ export function SidebarTree() {
           onClick={() => {
             void pagesActions.createPage(null);
           }}
+          suffix={
+            <span
+              className="app-nav-suffix"
+              data-testid="side-new-page-arrow"
+              role="button"
+              aria-expanded={tplOpen}
+              aria-label="从模板新建"
+              onClick={(event) => {
+                event.stopPropagation();
+                const next = !tplOpen;
+                setTplOpen(next);
+                if (next) {
+                  void templatesActions.loadTemplates();
+                }
+              }}
+            >
+              <Icon icon={CaretDown} size="sm" />
+            </span>
+          }
         />
+        {tplOpen
+          ? templates.length === 0
+            ? (
+              <div className="app-nav-empty" style={indentStyle(1)} data-testid="side-tpl-empty">
+                暂无模板
+              </div>
+            )
+            : templates.map((template, index) => (
+              <NavRow
+                key={template.id}
+                testId={`side-tpl-item-${String(index)}`}
+                label={template.title}
+                icon={FileText}
+                iconNode={<TemplateIcon template={template} className="app-nav-ic" />}
+                depth={1}
+                onClick={() => {
+                  setTplOpen(false);
+                  void templatesActions.createFromTemplate(template.id);
+                }}
+              />
+            ))
+          : null}
         {renderGroupRows('favorites', '收藏', Star, favoriteNodes, '暂无收藏')}
         {renderGroupRows('recent', '最近', Clock, recentNodes, '暂无最近')}
         {visibleTree.map((node) => {

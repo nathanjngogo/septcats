@@ -15,51 +15,67 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
+import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { t } from './i18n';
 import { CommandPalette } from './palette/CommandPalette';
-import { bindPaletteCommands } from './palette/commands';
+import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
+import { templatesActions } from './state/templates';
 import { pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
 import './App.css';
 
-/** 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。 */
+/**
+ * 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。
+ * T23-02 §B：「另存为模板」是条件命令——选中页变化时重装配，无选中页则命令不出现（不置灰、不抛错）。
+ */
 function useCommandWiring(openSettings: () => void, openImport: () => void): void {
   useEffect(() => {
-    paletteActions.configureCommands(
-      bindPaletteCommands({
-        createPage: (): void => {
-          void pagesActions.createPage(null);
-        },
-        switchToNextWorkspace: (): void => {
-          const state = pagesStore.getState();
-          const ids = state.workspaces.map((item) => item.id);
-          if (state.workspaceId === null || ids.length < 2) {
-            pushToast('没有可切换的工作区', 'info');
-            return;
-          }
-          const nextIndex = (ids.indexOf(state.workspaceId) + 1) % ids.length;
-          const nextId = ids[nextIndex];
-          if (nextId !== undefined) {
-            void pagesActions.switchWorkspace(nextId);
-          }
-        },
-        openTrash: (): void => {
-          pagesActions.showTrash();
-        },
-        openSettings,
-        openImport,
-        runAiAction: (action): void => {
-          // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
-          window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
-        },
-        notify: (message): void => {
-          pushToast(message, 'info');
-        },
-        setThemeMode: (mode): void => {
-          setGlobalThemeMode(mode);
-        },
-      }),
-    );
+    const configure = (): void => {
+      paletteActions.configureCommands(
+        configurePaletteCommands(
+          {
+            createPage: (): void => {
+              void pagesActions.createPage(null);
+            },
+            switchToNextWorkspace: (): void => {
+              const state = pagesStore.getState();
+              const ids = state.workspaces.map((item) => item.id);
+              if (state.workspaceId === null || ids.length < 2) {
+                pushToast('没有可切换的工作区', 'info');
+                return;
+              }
+              const nextIndex = (ids.indexOf(state.workspaceId) + 1) % ids.length;
+              const nextId = ids[nextIndex];
+              if (nextId !== undefined) {
+                void pagesActions.switchWorkspace(nextId);
+              }
+            },
+            openTrash: (): void => {
+              pagesActions.showTrash();
+            },
+            openSettings,
+            openImport,
+            runAiAction: (action): void => {
+              // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
+              window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
+            },
+            saveAsTemplate: (): void => {
+              templatesActions.beginSaveFromPage();
+            },
+            notify: (message): void => {
+              pushToast(message, 'info');
+            },
+            setThemeMode: (mode): void => {
+              setGlobalThemeMode(mode);
+            },
+          },
+          pagesStore.getState().selectedId !== null,
+        ),
+      );
+    };
+    configure();
+    const unsubscribe = pagesStore.subscribe(configure);
+    return unsubscribe;
   }, [openSettings, openImport]);
 }
 
@@ -165,6 +181,7 @@ export function App() {
         )}
       </AppShell>
       <CommandPalette />
+      <TemplateSaveDialog />
     </>
   );
 }

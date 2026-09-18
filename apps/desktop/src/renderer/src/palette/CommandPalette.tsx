@@ -12,9 +12,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { FileText, GearSix, Icon, Kbd, MagnifyingGlass, Note, Plus } from '@septcats/ui';
 import type { IconGlyph } from '@septcats/ui';
+import { t } from '../i18n';
 import { paletteActions, usePalette } from '../state/palette';
+import { templatesActions, useTemplates } from '../state/templates';
+import type { TemplateMeta } from '../../../main/templates';
+import { TemplateIcon } from '../templates/TemplateIcon';
 import { rankPalette } from './rank';
-import type { CommandLike, HitLike } from './rank';
+import type { CommandLike, HitLike, PaletteView } from './rank';
 import './CommandPalette.css';
 
 interface PaletteRow {
@@ -24,7 +28,8 @@ interface PaletteRow {
   /** 可选行内容。 */
   option?: {
     selectableIndex: number;
-    icon: IconGlyph;
+    /** 图标槽（T23-02：模板行可携带数据 icon → 节点而非字形）。 */
+    iconNode: ReactNode;
     title: ReactNode;
     meta?: ReactNode;
     onHover: () => void;
@@ -55,6 +60,14 @@ function commandIcon(command: CommandLike): IconGlyph {
   return command.id === 'page.new' ? Plus : GearSix;
 }
 
+function glyphNode(icon: IconGlyph, className: string): ReactNode {
+  return <Icon icon={icon} size="sm" className={className} />;
+}
+
+function templateIconNode(template: TemplateMeta): ReactNode {
+  return <TemplateIcon template={template} className="palette-row-ic" />;
+}
+
 function hitTitle(hit: HitLike): ReactNode {
   return (
     <>
@@ -64,7 +77,9 @@ function hitTitle(hit: HitLike): ReactNode {
   );
 }
 
-function buildRows(view: ReturnType<typeof rankPalette>): PaletteRow[] {
+function buildRows(
+  view: PaletteView<CommandLike, HitLike, TemplateMeta>,
+): PaletteRow[] {
   const rows: PaletteRow[] = [];
   let selectableIndex = 0;
   if (view.commands.length > 0) {
@@ -76,7 +91,7 @@ function buildRows(view: ReturnType<typeof rankPalette>): PaletteRow[] {
         key: `cmd-${command.id}`,
         option: {
           selectableIndex: index,
-          icon: commandIcon(command),
+          iconNode: glyphNode(commandIcon(command), 'palette-row-ic'),
           title: highlightMatch(command.label, view.raw),
           meta: <span className="palette-hint">{command.hint}</span>,
           onHover: (): void => paletteActions.setActive(index),
@@ -94,7 +109,7 @@ function buildRows(view: ReturnType<typeof rankPalette>): PaletteRow[] {
         key: `hit-${hit.kind}-${hit.id}`,
         option: {
           selectableIndex: index,
-          icon: FileText,
+          iconNode: glyphNode(FileText, 'palette-row-ic'),
           title: hitTitle(hit),
           meta: <span className="palette-hint">页面</span>,
           onHover: (): void => paletteActions.setActive(index),
@@ -112,9 +127,28 @@ function buildRows(view: ReturnType<typeof rankPalette>): PaletteRow[] {
         key: `hit-${hit.kind}-${hit.id}`,
         option: {
           selectableIndex: index,
-          icon: Note,
+          iconNode: glyphNode(Note, 'palette-row-ic'),
           title: hitTitle(hit),
           meta: <span className="palette-hint">数据库</span>,
+          onHover: (): void => paletteActions.setActive(index),
+          onPick: (): void => paletteActions.executeActive(),
+        },
+      });
+    }
+  }
+  // T23-02 §C.2：模板独立分组（排最后），行文案「从模板新建：<名称>」；检索已按模板标题过滤
+  if (view.templates.length > 0) {
+    rows.push({ key: 'h-tpl', header: t('templates.group') });
+    for (const template of view.templates) {
+      const index = selectableIndex;
+      selectableIndex += 1;
+      rows.push({
+        key: `tpl-${template.id}`,
+        option: {
+          selectableIndex: index,
+          iconNode: templateIconNode(template),
+          title: highlightMatch(`${t('templates.createFromPrefix')}${template.title}`, view.raw),
+          meta: <span className="palette-hint">{t('templates.rowMeta')}</span>,
           onHover: (): void => paletteActions.setActive(index),
           onPick: (): void => paletteActions.executeActive(),
         },
@@ -131,17 +165,20 @@ export function CommandPalette() {
   const hits = usePalette((state) => state.hits);
   const commands = usePalette((state) => state.commands);
   const searching = usePalette((state) => state.searching);
+  // T23-02 §E：模板分组订阅同一 slice（新建/重命名/删除后随 store 刷新）
+  const templates = useTemplates((state) => state.templates);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const view = useMemo(() => rankPalette(query, commands, hits), [query, commands, hits]);
+  const view = useMemo(() => rankPalette(query, commands, hits, templates), [query, commands, hits, templates]);
   const rows = useMemo(() => buildRows(view), [view]);
 
-  // 打开：焦点进输入框并全选（§3）
+  // 打开：焦点进输入框并全选（§3）；并行拉模板列表（§C.2，失败回落空分组）
   useEffect(() => {
     if (open) {
       inputRef.current?.focus();
       inputRef.current?.select();
+      void templatesActions.loadTemplates();
     }
   }, [open]);
 
@@ -246,7 +283,7 @@ export function CommandPalette() {
                       onMouseEnter={option.onHover}
                       onClick={option.onPick}
                     >
-                      <Icon icon={option.icon} size="sm" className="palette-row-ic" />
+                      {option.iconNode}
                       <span className="palette-row-tx">{option.title}</span>
                       {option.meta === undefined ? null : (
                         <span className="palette-row-meta">{option.meta}</span>

@@ -57,13 +57,29 @@ export interface CommandDeps {
    * 测试注入里可缺省（缺省 = no-op，notify 基线计数断言不受影响）。
    */
   runAiAction?(action: AiBlockAction): void;
+  /**
+   * T23-02 §B：另存为模板（打开命名弹窗）。提供时命令面板**追加**该命令；
+   * 未提供（= 当前无选中页，装配侧经 configurePaletteCommands 摘除）则命令不出现。
+   */
+  saveAsTemplate?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
 
+/**
+ * T23-02 §B：「另存为模板」命令定义。**不在静态 COMMAND_DEFS 里**——它是
+ * 条件命令（仅有选中页时出现），palette.test.ts 的静态清单/别名基线因此不受影响。
+ */
+export const SAVE_AS_TEMPLATE_DEF: PaletteCommandDef = {
+  id: 'page.saveAsTemplate',
+  label: t('commands.page.saveAsTemplate'),
+  hint: t('commandHints.page.saveAsTemplate'),
+  aliases: ['lingscunweimoban', 'lingcunmoban', 'lingcun', 'scmb', 'save as template', 'savetemplate', 'template'],
+};
+
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
 export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
-  return COMMAND_DEFS.map((def) => {
+  const commands = COMMAND_DEFS.map((def) => {
     const run = (): void => {
       switch (def.id) {
         case 'page.new':
@@ -114,4 +130,21 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
     };
     return { ...def, run };
   });
+  if (deps.saveAsTemplate !== undefined) {
+    commands.push({ ...SAVE_AS_TEMPLATE_DEF, run: deps.saveAsTemplate });
+  }
+  return commands;
+}
+
+/**
+ * T23-02 §B 装配口径：无选中页 → 「另存为模板」**不出现**（不是置灰），
+ * 其余命令不受影响。App 在 selectedId 变化时重装配。
+ */
+export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolean): PaletteCommand[] {
+  if (hasSelection) {
+    return bindPaletteCommands(deps);
+  }
+  const scoped = { ...deps };
+  delete scoped.saveAsTemplate; // exactOptionalPropertyTypes：不能显式传 undefined，改整键删除
+  return bindPaletteCommands(scoped);
 }

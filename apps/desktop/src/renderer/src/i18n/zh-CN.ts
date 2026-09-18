@@ -143,6 +143,9 @@ export const zhCN = {
       editButton: '编辑',
       removeButton: '删除',
     },
+    templates: {
+      title: '模板',
+    },
     about: {
       title: '关于',
       version: '版本',
@@ -227,9 +230,28 @@ export const zhCN = {
       failed: '生成失败：{msg}',
     },
   },
+  templates: {
+    group: '模板',
+    rowMeta: '模板',
+    rowMenu: '模板操作',
+    createFromPrefix: '从模板新建：',
+    rename: '重命名',
+    delete: '删除',
+    renameTitle: '重命名模板',
+    nameLabel: '模板名称',
+    deleteTitle: '删除模板',
+    deleteBody: '将删除模板「{name}」。已用该模板创建的页面不受影响。确定删除？',
+    deleteConfirm: '确认删除',
+    saveAsTitle: '另存为模板',
+    saveAsNameLabel: '模板名称',
+    saveAsConfirm: '保存',
+    cancel: '取消',
+    empty: '暂无模板',
+  },
   commands: {
     page: {
       new: '新建页面',
+      saveAsTemplate: '另存为模板',
     },
     workspace: {
       switch: '切换工作区',
@@ -256,6 +278,7 @@ export const zhCN = {
   commandHints: {
     page: {
       new: '在根层创建空白页',
+      saveAsTemplate: '把当前页面结构存为模板，之后可从模板新建',
     },
     workspace: {
       switch: '切换到下一个工作区',

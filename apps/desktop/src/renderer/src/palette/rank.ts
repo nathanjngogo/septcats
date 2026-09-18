@@ -24,6 +24,15 @@ export type HitLike = Pick<
   'kind' | 'id' | 'pageId' | 'title' | 'path' | 'snippet' | 'via'
 >;
 
+/**
+ * 模板行（TemplateMeta 的展示子集；纯数据——rank.ts 不 import store / main 类型，
+ * T23-02 §C.2：模板是**独立分组**，不进 pages 命中结果，检索只按模板标题）。
+ */
+export interface TemplateLike {
+  readonly id: string;
+  readonly title: string;
+}
+
 /** 解析前缀模式：`>` 仅命令、`@` 仅页面，其余 auto。raw 是去掉前缀后的输入。 */
 export function parsePaletteMode(query: string): { mode: PaletteMode; raw: string } {
   if (query.startsWith('>')) {
@@ -77,7 +86,11 @@ export function rankCommands<TCommand extends CommandLike>(
   return scored.map((entry) => entry.item);
 }
 
-export interface PaletteView<TCommand extends CommandLike = CommandLike, THit extends HitLike = HitLike> {
+export interface PaletteView<
+  TCommand extends CommandLike = CommandLike,
+  THit extends HitLike = HitLike,
+  TTemplate extends TemplateLike = TemplateLike,
+> {
   mode: PaletteMode;
   /** 去掉前缀后的输入。 */
   raw: string;
@@ -86,24 +99,27 @@ export interface PaletteView<TCommand extends CommandLike = CommandLike, THit ex
   pageHits: THit[];
   /** kind ∈ block/collection/record 的命中（数据库组）。 */
   dbHits: THit[];
+  /** 模板候选（T23-02 §C.2 独立分组；`>`/`@` 模式为空，auto 按标题过滤）。 */
+  templates: TTemplate[];
 }
 
 /**
  * 面板总打分（§4 纯函数 `rank(query, cmds+hits)`）：
- * - auto：命令 + 页面 + 数据库三组全展示（服务端序）；
+ * - auto：命令 + 页面 + 数据库 + 模板四组全展示（模板独立分组，检索按模板标题）；
  * - `>`：仅命令；
  * - `@`：仅页面。
  * 泛型保形：state 里传 PaletteCommand[] / SearchHit[] 进来，取出来仍带 run()/via 等字段。
  */
-export function rankPalette<TCommand extends CommandLike, THit extends HitLike>(
+export function rankPalette<TCommand extends CommandLike, THit extends HitLike, TTemplate extends TemplateLike = TemplateLike>(
   query: string,
   commands: readonly TCommand[],
   hits: readonly THit[],
-): PaletteView<TCommand, THit> {
+  templates: readonly TTemplate[] = [],
+): PaletteView<TCommand, THit, TTemplate> {
   const { mode, raw } = parsePaletteMode(query);
 
   if (mode === 'command') {
-    return { mode, raw, commands: rankCommands(raw, commands), pageHits: [], dbHits: [] };
+    return { mode, raw, commands: rankCommands(raw, commands), pageHits: [], dbHits: [], templates: [] };
   }
   if (mode === 'page') {
     return {
@@ -112,18 +128,24 @@ export function rankPalette<TCommand extends CommandLike, THit extends HitLike>(
       commands: [],
       pageHits: hits.filter((hit) => hit.kind === 'page'),
       dbHits: [],
+      templates: [],
     };
   }
+  const normalized = raw.trim().toLowerCase();
   return {
     mode,
     raw,
     commands: rankCommands(raw, commands),
     pageHits: hits.filter((hit) => hit.kind === 'page'),
     dbHits: hits.filter((hit) => hit.kind !== 'page'),
+    templates:
+      normalized.length === 0
+        ? [...templates]
+        : templates.filter((template) => template.title.toLowerCase().includes(normalized)),
   };
 }
 
 /** 可选中行总数（供键盘循环取模；分组标题不可选）。 */
 export function selectableRowCount(view: PaletteView<CommandLike, HitLike>): number {
-  return view.commands.length + view.pageHits.length + view.dbHits.length;
+  return view.commands.length + view.pageHits.length + view.dbHits.length + view.templates.length;
 }

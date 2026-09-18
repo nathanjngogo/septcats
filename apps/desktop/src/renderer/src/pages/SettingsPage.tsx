@@ -21,6 +21,7 @@ import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { t } from '../i18n';
 import { AiSection } from '../settings/AiSection';
+import { TemplatesSection } from '../templates/TemplatesSection';
 import './SettingsPage.css';
 
 /** i18n 模板替换：'{version}' / '{percent}' 槽位（t() 本身不做插值）。 */
@@ -406,6 +407,12 @@ export function SettingsPage() {
           <fieldset className="settings-section">
             <legend className="settings-legend">{t('settings.ai.title')}</legend>
             <AiSection />
+          </fieldset>
+
+          {/* T23-02 §D：模板管理（区块壳在 SettingsPage；列表/弹窗自管，照 AiSection 范式） */}
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.templates.title')}</legend>
+            <TemplatesSection />
           </fieldset>
 
           <fieldset className="settings-section">

@@ -107,6 +107,24 @@
   text-overflow: ellipsis;
 }
 
+/* T23-02 §C.1：新建页面行的右侧箭头（模板子菜单开关；主体点击仍是新建空白页） */
+.app-nav-suffix {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: var(--sc-space-lg);
+  height: var(--sc-space-lg);
+  flex: none;
+  border-radius: var(--sc-radius-sm);
+  color: var(--sc-color-ink-faint);
+  cursor: pointer;
+  transition: color var(--sc-motion-fast) ease-out;
+}
+
+.app-nav-suffix:hover {
+  color: var(--sc-color-ink);
+}
+
 .app-side-foot {
   display: flex;
   align-items: center;
