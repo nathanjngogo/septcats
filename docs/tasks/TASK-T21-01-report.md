@@ -171,6 +171,4 @@ pnpm -C apps/desktop selftest         → SELFTEST OK
 **DEVIATIONS 追认（三处全部接受）**：①`main/commit.ts` 补 block 的 patch/reorder/delete 物化 —— **本单成立的必需项**（原实现只支持 upsert，EditSession 第二次编辑必产 patch → 撞 `E_MALFORMED_OP`；CB 发现正确且必要，PM 任务书前提与代码事实不符）；②`statements.ts` 只增 `block.patch`/`block.setSort`（未改旧语句）；③demo 兜底页 commit 保留内存路径（demo id 不在库中，走 IPC 会写脏 ledger —— 判断正确）。
 **渲染层说明**：本单 renderer 接线（PageView 四态 + 按 `selectedId` 加载/提交）由代码审查确认；**UI 级端到端（选页 → 输入 → 重载仍显示）归 T21-02**（侧栏真树落地后全链路真机验证）。
 
-- （PM 补）真机 CDP：建页 → 编辑器输入中文 → 重载 app → 文本仍在（跨进程真落库）；
   断言 `blocks:list` 返回内容与输入一致；再输入一轮（验证 patch/reorder/delete 物化路径）
-- （PM 补）无选中页时 DEMO_PAGE 兜底显示不被回归
