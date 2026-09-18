@@ -1,0 +1,85 @@
+/*
+ * TrashList 样式（TASK-T22-01 §0.B）。只用 var(--sc-*) token（no-magic 门禁）。
+ * 空态 .trash-empty 与 SearchPage 的 .search-empty 同一 token 组合（§0.C 空态统一）。
+ */
+
+.trash-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sc-space-xxl) var(--sc-space-gutter) 120px;
+}
+
+.trash-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sc-space-lg);
+}
+
+.trash-title {
+  margin: 0;
+  font: var(--sc-text-h2);
+  color: var(--sc-color-ink);
+}
+
+.trash-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+.trash-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  min-height: 36px;
+  padding-right: var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  white-space: nowrap;
+  /* §0.C 微交互：token 化短过渡（hover/active 反馈；focus 环由全局 focus-visible 负责） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
+}
+
+.trash-row:hover {
+  background: var(--sc-color-surface);
+}
+
+.trash-row:active {
+  background: var(--sc-color-accent-soft);
+}
+
+.trash-row-ic {
+  color: var(--sc-color-ink-faint);
+  flex: none;
+}
+
+.trash-row-tx {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trash-row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--sc-space-xs);
+  flex: none;
+}
+
+/* 空态：与 .search-empty 同 token 组合（字号/色/留白），双主题成立 */
+.trash-empty {
+  margin-top: var(--sc-space-xxl);
+  text-align: center;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* §0.C：reduced-motion 兜底（关掉本文件引入的过渡） */
+@media (prefers-reduced-motion: reduce) {
+  .trash-row {
+    transition: none;
+  }
+}

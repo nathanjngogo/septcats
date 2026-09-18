@@ -114,6 +114,39 @@ export function breadcrumbOf(id: string | null, byId: ReadonlyMap<string, PageNo
   return [...ancestorsOf(id, byId).map((node) => node.title), self.title];
 }
 
+/** 面包屑空标题的回退文案（与 main 侧 createPage 默认标题一致）。 */
+export const BREADCRUMB_UNTITLED = '未命名';
+
+/**
+ * 面包屑 item 链（T22-01 §0.A）：祖先链（根 → 当前页）逐段成 {label}；
+ * 空标题回退「未命名」；id 为空/查不到 → 空数组（调用方自行回落工作区名）。
+ */
+export function breadcrumbItemsOf(
+  id: string | null,
+  byId: ReadonlyMap<string, PageNode>,
+): Array<{ label: string }> {
+  return breadcrumbOf(id, byId).map((title) => ({
+    label: title.length > 0 ? title : BREADCRUMB_UNTITLED,
+  }));
+}
+
+/**
+ * pages 视图顶栏面包屑（T22-01 §0.A，纯函数便于测试）：
+ * view='trash' → 「回收站」；有 selectedId → 祖先链（根→当前页，空标题回退）；
+ * 无选中 → 工作区名（查不到活动工作区时回落「当前工作区」，与 SearchPage 同口径）。
+ * settings/importWizard 视图不经过这里（App 侧保持既有文案）。
+ */
+export function pagesBreadcrumbItems(state: PagesState): Array<{ label: string }> {
+  if (state.view === 'trash') {
+    return [{ label: '回收站' }];
+  }
+  if (state.selectedId !== null) {
+    return breadcrumbItemsOf(state.selectedId, nodeMap(state.nodes));
+  }
+  const name = state.workspaces.find((item) => item.id === state.workspaceId)?.name;
+  return [{ label: name ?? '当前工作区' }];
+}
+
 // ---------------------------------------------------------------------------
 // 桥 / 错误
 // ---------------------------------------------------------------------------

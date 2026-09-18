@@ -98,10 +98,18 @@
   background: transparent;
   color: var(--sc-color-ink);
   cursor: pointer;
+  /* T22-01 §0.C 微交互：token 化短过渡（hover/active 背景反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 .search-res:hover {
   background: var(--sc-color-surface);
+}
+
+.search-res:active {
+  background: var(--sc-color-accent-soft);
 }
 
 .search-res h3 {
@@ -147,4 +155,11 @@
   text-align: center;
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink-faint);
+}
+
+/* T22-01 §0.C：reduced-motion 兜底（关掉本文件引入的过渡） */
+@media (prefers-reduced-motion: reduce) {
+  .search-res {
+    transition: none;
+  }
 }

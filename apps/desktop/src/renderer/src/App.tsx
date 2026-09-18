@@ -14,11 +14,12 @@ import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
+import { TrashList } from './pages/TrashList';
 import { t } from './i18n';
 import { CommandPalette } from './palette/CommandPalette';
 import { bindPaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
-import { pagesActions, pagesStore, pushToast } from './state/pages';
+import { pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
 import './App.css';
 
 /** 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。 */
@@ -99,13 +100,18 @@ export function App() {
   const inSettings = view === 'settings';
   const inImport = view === 'import';
 
+  // T22-01 §0.A：pages 视图面包屑真路径（trash → 「回收站」；选中页 → 祖先链；
+  // 无选中 → 工作区名）。settings/importWizard 保持既有文案；整份 state 订阅
+  // （引用稳定，见 store.ts 选择器约束）。
+  const pagesState = usePages((state) => state);
+
   const breadcrumb =
     inSettings ? (
       <Breadcrumb items={[{ label: t('settings.title') }]} />
     ) : inImport ? (
       <Breadcrumb items={[{ label: t('importWizard.title') }]} />
     ) : (
-      <Breadcrumb items={[{ label: '研究' }, { label: '暗物质探测实验笔记' }]} />
+      <Breadcrumb items={pagesBreadcrumbItems(pagesState)} />
     );
 
   return (
@@ -150,6 +156,8 @@ export function App() {
           <SettingsPage />
         ) : inImport ? (
           <ImportWizard onOpenHome={() => setView('editor')} />
+        ) : pagesState.view === 'trash' ? (
+          <TrashList />
         ) : searchOpen ? (
           <SearchPage />
         ) : (

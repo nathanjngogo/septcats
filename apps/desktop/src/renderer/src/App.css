@@ -35,6 +35,10 @@
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   white-space: nowrap;
+  /* T22-01 §0.C 微交互：token 化短过渡（hover/active 背景反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 .app-nav-row:hover {
@@ -94,9 +98,9 @@
   padding: 0 var(--sc-space-xxs);
 }
 
-/* 收藏/最近为空时的空态行（弱化文本，复用 head 的弱化口径） */
+/* 收藏/最近为空时的空态行（T22-01 §0.C：与 .search-empty/.trash-empty 同 token 组合） */
 .app-nav-empty {
-  font: var(--sc-text-ui-xs);
+  font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink-faint);
   white-space: nowrap;
   overflow: hidden;
@@ -111,10 +115,22 @@
   border-top: 1px solid var(--sc-color-hairline);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-secondary);
+  /* §0.C 微交互：与行同款 token 化过渡 */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 /* 回收站视图激活态（复用行的 accent 口径） */
 .app-side-foot--active {
   background: var(--sc-color-accent-soft);
   color: var(--sc-color-accent);
+}
+
+/* T22-01 §0.C：reduced-motion 兜底（关掉本文件引入的过渡） */
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-row,
+  .app-side-foot {
+    transition: none;
+  }
 }
