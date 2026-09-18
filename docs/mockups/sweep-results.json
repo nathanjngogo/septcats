@@ -1,0 +1,210 @@
+[
+ {
+  "phase": "A",
+  "id": "A1",
+  "name": "空库显示空态（.pv-empty）且无示例假内容",
+  "ok": true,
+  "severity": null,
+  "detail": "个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+ },
+ {
+  "phase": "A",
+  "id": "A2",
+  "name": "English 整页零 CJK（剔除工作区名）",
+  "ok": true,
+  "severity": null,
+  "detail": "cjk=0 \" Synced · Just now Personal Workspace New Page Favorites 0 Recent 0 Trash No pages yet. Use \"New Page\" in the sidebar, or start from a templ\""
+ },
+ {
+  "phase": "A",
+  "id": "A3",
+  "name": "English 空态文案已英化",
+  "ok": true,
+  "severity": null,
+  "detail": " Synced · Just now Personal Workspace New Page Favorites 0 Recent 0 Trash No pages yet. Use \"New Page\" in the sidebar, o"
+ },
+ {
+  "phase": "A",
+  "id": "A4",
+  "name": "空标题新建 → 回退为「未命名」且不崩",
+  "ok": true,
+  "severity": null,
+  "detail": "未命名 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 1 未命名 回收站 🔭 未命名 转为数据库 "
+ },
+ {
+  "phase": "A",
+  "id": "A5a",
+  "name": "编辑器可输入（输入已落 UI）",
+  "ok": true,
+  "severity": null,
+  "detail": "editor=\"巡检正文甲-A\""
+ },
+ {
+  "phase": "A",
+  "id": "A5",
+  "name": "新建→输入→重载→打开该页：内容仍在（真落库）",
+  "ok": true,
+  "severity": null,
+  "detail": "reload 后选中=\"未命名\" / 打开后 editor=\"巡检正文甲-A\""
+ },
+ {
+  "phase": "A",
+  "id": "A5b",
+  "name": "（UX）重载后自动恢复上次打开的页",
+  "ok": false,
+  "severity": "Low",
+  "detail": "reload 后选中=\"未命名\"（未恢复则登记 UX 缺口）"
+ },
+ {
+  "phase": "A",
+  "id": "A6",
+  "name": "同名页可共存（不互相覆盖）",
+  "ok": true,
+  "severity": null,
+  "detail": "出现 4 次"
+ },
+ {
+  "phase": "A",
+  "id": "A7",
+  "name": "超长标题不崩、侧栏仍可交互（截图留证）",
+  "ok": true,
+  "severity": null,
+  "detail": "超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题超长标题"
+ },
+ {
+  "phase": "A",
+  "id": "A8",
+  "name": "超长标题后页面布局未破（侧栏宽度正常）",
+  "ok": true,
+  "severity": null,
+  "detail": "{\"x\":0,\"y\":40,\"width\":239,\"height\":1099.453125}"
+ },
+ {
+  "phase": "A",
+  "id": "A9",
+  "name": "三层嵌套面包屑正确（父/子/孙）",
+  "ok": true,
+  "severity": null,
+  "detail": "crumb=\"巡检父 / 巡检子 / 巡检孙\""
+ },
+ {
+  "phase": "A",
+  "id": "A10a",
+  "name": "第二页编辑器可输入",
+  "ok": true,
+  "severity": null,
+  "detail": "editor=\"审计线索乙\""
+ },
+ {
+  "phase": "A",
+  "id": "A10",
+  "name": "2 字中文按内容命中该页（含命中行）",
+  "ok": true,
+  "severity": null,
+  "detail": "hits=1 巡检页甲\n页面"
+ },
+ {
+  "phase": "A",
+  "id": "A11",
+  "name": "特殊字符查询不崩（面板可开、无 pageerror）",
+  "ok": true,
+  "severity": null,
+  "detail": "\"%\":0 \"_\":0 \"\\\"\":0 \"(\":0 \"*\":0 \"\\\\\":0 \"巡检 AND\":0 \"巡检 OR 巡检\":0"
+ },
+ {
+  "phase": "A",
+  "id": "A12",
+  "name": "通配符 % 不误命中全部页面（LIKE 转义）",
+  "ok": true,
+  "severity": null,
+  "detail": "hits=0 "
+ },
+ {
+  "phase": "A",
+  "id": "A13",
+  "name": "超长查询不崩",
+  "ok": true,
+  "severity": null,
+  "detail": "rows=0"
+ },
+ {
+  "phase": "A",
+  "id": "A14",
+  "name": "A 段全程零 pageerror / console error",
+  "ok": true,
+  "severity": null,
+  "detail": "pageErrors=0 console=0 :: "
+ },
+ {
+  "phase": "B",
+  "id": "B1",
+  "name": "另存为页模板成功（kind=page）",
+  "ok": true,
+  "severity": null,
+  "detail": "[\"巡检模板甲:page\"]"
+ },
+ {
+  "phase": "B",
+  "id": "B2",
+  "name": "空模板名被拦截或回退（不得落库空名）",
+  "ok": true,
+  "severity": null,
+  "detail": "空名模板=0 list=巡检模板甲"
+ },
+ {
+  "phase": "B",
+  "id": "B3",
+  "name": "从模板建页：内容继承",
+  "ok": true,
+  "severity": null,
+  "detail": "模板结构正文"
+ },
+ {
+  "phase": "B",
+  "id": "B4",
+  "name": "库页另存 → kind=database",
+  "ok": false,
+  "severity": "High",
+  "detail": "[\"巡检模板库:page\",\"巡检模板甲:page\"]"
+ },
+ {
+  "phase": "B",
+  "id": "B5",
+  "name": "数据库记录创建后重载不崩且仍为库视图",
+  "ok": false,
+  "severity": "High",
+  "detail": "before=巡检模板源 同步错误 个人工作区 新建页面 收藏 0 最近 1 巡检模板源 回收站 🔭 巡检模板源 转为数据库 模板结 after=巡检模板源 同步错误 个人工作区 新建页面 收藏 0 最近 1 巡检模板源 回收站 🔭 巡检模板源 转为数据库 模板结"
+ },
+ {
+  "phase": "B",
+  "id": "B6",
+  "name": "设置页四区块齐备（外观/数据与隐私/AI/模板）",
+  "ok": true,
+  "severity": null,
+  "detail": "have=外观,数据与隐私,AI,模板 :: 设置 同步错误 个人工作区 新建页面 收藏 0 最近 1 巡检模板源 回收站 设置 外观 主题 跟随系统时随 Windows/macOS 深浅色自动切换 浅色 深色 跟随系统 语言 界面显示语言；跟随系统时按操作系统语言自动选择 跟随系统 简体中文 English 数据与隐私 同"
+ },
+ {
+  "phase": "B",
+  "id": "B7",
+  "name": "模板删除生效（含确认弹层）",
+  "ok": true,
+  "severity": null,
+  "detail": "dOk=true before=2 after=1"
+ },
+ {
+  "phase": "B",
+  "id": "B8",
+  "name": "压力：连建 10 页再全删 → 刷新不崩且回收站角标一致",
+  "ok": true,
+  "severity": null,
+  "detail": "created=10 巡检模板源 同步错误 个人工作区 新建页面 收藏 0 最近 1 巡检模板源 回收站 10 🔭 巡检模板源 转为数据库 模板结构正文"
+ },
+ {
+  "phase": "B",
+  "id": "B9",
+  "name": "B 段全程零 pageerror / console error",
+  "ok": true,
+  "severity": null,
+  "detail": "pageErrors=0 console=0 :: "
+ }
+]
