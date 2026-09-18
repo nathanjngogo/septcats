@@ -647,6 +647,38 @@ LIMIT @limit`,
       limit: z.number().int().min(1).max(200),
     }),
   },
+  // <3 字兜底（TASK-T20-01）：trigram tokenizer 最小 MATCH 单元是 3 字，1–2 字
+  //（典型中文短词）在 search.ftsPage 下恒 0 条。改扫 page_block_fts 底表 LIKE：
+  // join page alive=1；@like 由调用方做 \ % _ ESCAPE 转义；标题命中（title_rank=0）
+  // 优先，同级按 updated_at desc 稳定序。score 给正的基准分 1（与 shared/search.ts
+  // 的 SEARCH_LIKE_BASE_SCORE 同口径：FTS bm25 ≤ 0 在前，LIKE 在后）。
+  'search.likeFtsPage': {
+    kind: 'all',
+    sql: `SELECT
+  f.page_id AS page_id,
+  p.title AS title,
+  CASE WHEN p.title LIKE @like ESCAPE '\\' THEN 0 ELSE 1 END AS title_rank,
+  1.0 AS score,
+  CASE
+    WHEN instr(lower(f.body), @needle) > 0
+      THEN substr(f.body, max(1, instr(lower(f.body), @needle) - 24), 88)
+    ELSE f.title
+  END AS snippet,
+  p.updated_at AS updated_at
+FROM page_block_fts f
+JOIN page p ON p.id = f.page_id
+WHERE f.workspace_id = @workspaceId
+  AND p.alive = 1
+  AND (f.title LIKE @like ESCAPE '\\' OR f.body LIKE @like ESCAPE '\\')
+ORDER BY title_rank ASC, p.updated_at DESC, f.page_id
+LIMIT @limit`,
+    params: z.object({
+      like: z.string().min(1),
+      needle: z.string().min(1),
+      workspaceId: z.string().min(1),
+      limit: z.number().int().min(1).max(200),
+    }),
+  },
   // LIKE 兜底（§1 步骤 4 / §2.3）：code 块正文不进 FTS，靠 props_json/content_json
   // 的 %q% 扫描补查；上限 50（RELATION 同款预算），ESCAPE 收口用户输入的通配符。
   'search.likeBlock': {

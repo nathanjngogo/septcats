@@ -9,7 +9,7 @@ colors:
   surface-raised: "#FFFFFF"
   ink: "#1C1E21"
   ink-secondary: "#5B6068"
-  ink-faint: "#8A8F98"
+  ink-faint: "#666C75"
   hairline: "#E6E6E2"
   hairline-strong: "#D2D2CC"
   accent: "#A16207"
@@ -113,7 +113,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 | surface-raised | #FFFFFF | #26292D | 弹层/输入底 |
 | ink | #1C1E21 | #E9E9E6 | |
 | ink-secondary | #5B6068 | #A3A8AF | ≥AA |
-| ink-faint | #8A8F98 | #6E737B | 仅装饰性文字 |
+| ink-faint | #666C75 | #8E94A0 | ≥AA（4.5+） |
 | hairline | #E6E6E2 | #2C2F34 | |
 | hairline-strong | #D2D2CC | #3B3F45 | |
 | accent | #A16207 | #D9A441 | 深色提亮，同色相 |
@@ -125,7 +125,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 | selection | #E8DDBC | #42381C | |
 | shadow 族 | 墨色 12–28% | 提深至 40–60%，加 1px hairline-strong 上缘高光 | |
 
-对比度红线（CI lint 验证，全部 ≥ WCAG AA）：ink/canvas 16.1 · secondary/canvas 6.1 · on-accent/accent 4.9 · accent/canvas 4.75 · danger/danger-soft 7.6；深色组 text/canvas 14.6 · muted/canvas 7.4 · ink/accent-dark 7.4。
+对比度红线（门禁：packages/ui/test/contrast.test.ts，WCAG AA 全部 ≥4.5）：浅色 ink-faint 最差对 4.81（/surface，原 #8A8F98 时 2.95 不达标）· 深色 ink-faint 最差对 4.80（/surface-raised，原 #6E737B 时 3.06 不达标）；其余文字对（ink、ink-secondary、on-accent/accent、accent/canvas、danger、success）两主题均 ≥4.75。
 
 ## Colors
 

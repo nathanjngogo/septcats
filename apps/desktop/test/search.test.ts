@@ -7,8 +7,9 @@
  */
 import { expect, it } from 'vitest';
 import { createSearchService } from '../src/main/search';
+import type { FtsSearchData } from '../src/db/rpc';
 import type { SearchHit } from '../src/shared/search';
-import { coreExecutor, makeSearchFixtureDb, makeTempDb, describeDb } from './helpers';
+import { coreExecutor, makeSearchFixtureDb, makeTempDb, describeDb, requestOk } from './helpers';
 import type { SqliteConstructor } from '../src/db/migrations';
 
 const WORKSPACE = 'ws-search';
@@ -182,6 +183,142 @@ describeDb('search:query（真 SQLite 夹具）', (ctor) => {
       temp.cleanup();
     }
   }, 240_000);
+});
+
+describeDb('1–2 字中文搜索兜底（TASK-T20-01）', (ctor) => {
+  /** 独立小库（60 页 fixture 噪声太大）：3 个受控页 + 1 个转义探针页。 */
+  async function makeShortQueryDb(ctor: SqliteConstructor) {
+    const temp = makeTempDb('septcats-short-query');
+    const core = await makeSearchFixtureDb(ctor, temp.path, 5, { workspaceId: WORKSPACE });
+    const db = core.activeDatabase();
+    insPage(db, 'pg-short-2', WORKSPACE, '量子干涉研究页');
+    insBlock(db, 'bk-short-2', 'pg-short-2', WORKSPACE, '量子干涉是宏观可观测现象。');
+    insPage(db, 'pg-short-1', WORKSPACE, '干涉条纹备忘页');
+    insBlock(db, 'bk-short-1', 'pg-short-1', WORKSPACE, '干涉条纹清晰可见。');
+    insPage(db, 'pg-clean', WORKSPACE, '台账文献统计页');
+    insBlock(db, 'bk-clean', 'pg-clean', WORKSPACE, '完全无关的占位内容，用于负样本断言。');
+    insPage(db, 'pg-esc', WORKSPACE, '路径备忘页');
+    insBlock(db, 'bk-esc', 'pg-esc', WORKSPACE, 'a_b%c\\d 是字面通配符样本。');
+    return { core, temp, db };
+  }
+
+  function pageIds(hits: readonly SearchHit[]): string[] {
+    return hits.map((hit) => hit.pageId ?? hit.id);
+  }
+
+  it('palette 链路（search:query → search.ftsPage 白名单）：2 字中文应命中', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      const { hits } = await service.query({ workspaceId: WORKSPACE, query: '量子' });
+      expect(pageIds(hits)).toContain('pg-short-2');
+      const pageHit = hits.find((hit) => (hit.pageId ?? hit.id) === 'pg-short-2');
+      expect(pageHit?.kind).toBe('page');
+      expect(pageHit?.snippet).toContain('量子');
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('palette 链路：1 字中文应命中', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      const { hits } = await service.query({ workspaceId: WORKSPACE, query: '干' });
+      expect(pageIds(hits)).toContain('pg-short-1');
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('2 字命中不返回无关页', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      const { hits } = await service.query({ workspaceId: WORKSPACE, query: '量子' });
+      expect(pageIds(hits)).not.toContain('pg-clean');
+      // 夹具词表与受控页都不含「干扰」二字连串
+      const none = await service.query({ workspaceId: WORKSPACE, query: '干扰' });
+      expect(none.hits).toEqual([]);
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('% / _ / \\ 字面查询不误当通配符（LIKE ESCAPE 收口）', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      // '_' 未转义会通配任意单字 → 全库命中；转义后只命中字面含 _ 的页
+      const underscore = await service.query({ workspaceId: WORKSPACE, query: '_' });
+      expect(pageIds(underscore.hits)).toContain('pg-esc');
+      expect(pageIds(underscore.hits)).not.toContain('pg-clean');
+      expect(pageIds(underscore.hits).length).toBeLessThanOrEqual(2);
+      const percent = await service.query({ workspaceId: WORKSPACE, query: '%' });
+      expect(pageIds(percent.hits)).toContain('pg-esc');
+      expect(pageIds(percent.hits)).not.toContain('pg-clean');
+      const backslash = await service.query({ workspaceId: WORKSPACE, query: '\\' });
+      expect(pageIds(backslash.hits)).toContain('pg-esc');
+      expect(pageIds(backslash.hits)).not.toContain('pg-short-2');
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('≥3 字路径回归：仍走 FTS（via=fts），与修复前行为一致', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      const { hits } = await service.query({ workspaceId: WORKSPACE, query: '量子干涉' });
+      expect(pageIds(hits)).toContain('pg-short-2');
+      const hit = hits.find((hit) => (hit.pageId ?? hit.id) === 'pg-short-2');
+      expect(hit?.via).toBe('fts');
+      expect(hit?.score).toBeLessThan(1);
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('空串 / 纯空白：不报错、0 条', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const service = createSearchService({ executor: coreExecutor(core) });
+      for (const empty of ['', '   ']) {
+        const result = await service.query({ workspaceId: WORKSPACE, query: empty });
+        expect(result.hits).toEqual([]);
+      }
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('ftsSearch RPC：<3 字走底表 LIKE 兜底，返回行形状与 FTS 一致', async () => {
+    const { core, temp } = await makeShortQueryDb(ctor);
+    try {
+      const data = await requestOk<FtsSearchData>(core, {
+        id: 'fts-short-2',
+        t: 'ftsSearch',
+        workspaceId: WORKSPACE,
+        query: '量子',
+        limit: 10,
+      });
+      const ids = data.rows.map((row) => row.page_id);
+      expect(ids).toContain('pg-short-2');
+      const row = data.rows.find((row) => row.page_id === 'pg-short-2');
+      expect(typeof row?.title).toBe('string');
+      expect(typeof row?.score).toBe('number');
+      expect(row?.snippet).toContain('量子');
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

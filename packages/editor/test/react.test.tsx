@@ -7,7 +7,7 @@ import { BlockControls } from '../src/react/BlockControls';
 import { SlashMenu } from '../src/react/SlashMenu';
 import { SelectionToolbar, selectionRect } from '../src/react/SelectionToolbar';
 import { SLASH_ITEMS } from '../src/rules/slashMenu';
-import { demoBlockDoc } from './fixtures/blocks';
+import { demoBlockDoc, BLOCK_FIXTURES } from './fixtures/blocks';
 
 describe('Editor（React 视图）', () => {
   it('渲染冒烟：挂载 ProseMirror、初始 9 块型内容都在', () => {
@@ -17,6 +17,40 @@ describe('Editor（React 视图）', () => {
     expect(container.textContent).toContain('本页汇总 LZ 类稀有事件探测的实验现状与文献线索。');
     expect(container.textContent).toContain('一、探测器矩阵');
     expect(container.querySelectorAll('.sc-block').length).toBeGreaterThanOrEqual(9);
+  });
+
+  it('class 卫生：demo doc 全元素 class 无重复 token（joinClass 纪律）', () => {
+    const { container } = render(<Editor doc={demoBlockDoc()} onChange={() => {}} />);
+    const offenders: string[] = [];
+    for (const element of container.querySelectorAll('[class]')) {
+      const cls = element.getAttribute('class') ?? '';
+      const tokens = cls.split(/\s+/).filter((token) => token.length > 0);
+      if (new Set(tokens).size !== tokens.length) {
+        offenders.push(`${element.tagName.toLowerCase()}.${cls.replace(/\s+/g, '.')}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('code wrap:true：pre 带 sc-block--code--wrap 且 class 无重复（model.ts 透传 props.wrap）', () => {
+    const codeFixture = BLOCK_FIXTURES.find((fixture) => fixture.name === 'code');
+    expect(codeFixture).toBeDefined();
+    const doc = {
+      pageId: codeFixture!.block.page_id,
+      blocks: [
+        {
+          ...codeFixture!.block,
+          props: { ...codeFixture!.block.props, wrap: true },
+        },
+      ],
+    };
+    const { container } = render(<Editor doc={doc} onChange={() => {}} />);
+    const pre = container.querySelector('pre');
+    expect(pre).not.toBeNull();
+    const cls = pre!.getAttribute('class') ?? '';
+    expect(cls).toContain('sc-block--code--wrap');
+    const tokens = cls.split(/\s+/).filter((token) => token.length > 0);
+    expect(new Set(tokens).size).toBe(tokens.length);
   });
 
   it('onChange 桥：PM 事务 → 反投影 BlockDoc 回调', () => {

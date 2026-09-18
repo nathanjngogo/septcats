@@ -74,6 +74,34 @@ ORDER BY score ASC
 LIMIT @limit`;
 
 /**
+ * <3 字兜底（TASK-T20-01）：trigram tokenizer 最小 MATCH 单元是 3 字，1–2 字
+ * 短词在 MATCH 下恒 0 条。扫 page_block_fts 底表 LIKE：join page alive=1；
+ * @like 由分派层做 \ % _ ESCAPE 转义；标题命中优先，同级 updated_at desc 稳定序。
+ * 行形状与 FTS_SEARCH_SQL 一致（page_id/title/score/snippet）。
+ */
+const FTS_LIKE_SEARCH_SQL = `SELECT
+  f.page_id AS page_id,
+  p.title AS title,
+  1.0 AS score,
+  CASE
+    WHEN instr(lower(f.body), @needle) > 0
+      THEN substr(f.body, max(1, instr(lower(f.body), @needle) - 24), 88)
+    ELSE f.title
+  END AS snippet
+FROM page_block_fts f
+JOIN page p ON p.id = f.page_id
+WHERE f.workspace_id = @workspaceId
+  AND p.alive = 1
+  AND (f.title LIKE @like ESCAPE '\\' OR f.body LIKE @like ESCAPE '\\')
+ORDER BY CASE WHEN p.title LIKE @like ESCAPE '\\' THEN 0 ELSE 1 END ASC, p.updated_at DESC, f.page_id
+LIMIT @limit`;
+
+/** LIKE 通配符收口：\ % _ 前加转义符（配合语句里的 ESCAPE '\'；与 main/search.ts 同源）。 */
+function toLikePattern(query: string): string {
+  return `%${query.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+}
+
+/**
  * 全量重算 FTS 索引（TASK-T8-01 §2.2 重写）：body 聚合该页全部 text-ish 块的
  * props.title + content 深层 `text` 串（json_tree，与 v4 触发器 / fts.syncBlock
  * 共用 ftsPageBodyExpr，见 schema.v4.ts）。rebuild/物化写入后调用，保证结果与
@@ -497,11 +525,23 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
         if (query.length === 0) {
           return dbOk(id, { rows: [] });
         }
+        const limit = clampLimit(request.limit);
+        // <3 字（1–2 字中文短词）：trigram MATCH 拿不到结果，走底表 LIKE 兜底
+        if ([...query].length < 3) {
+          const likeStatement = current.prepare(FTS_LIKE_SEARCH_SQL);
+          const likeRows = likeStatement.all({
+            like: toLikePattern(query),
+            needle: query.toLowerCase(),
+            workspaceId: request.workspaceId,
+            limit,
+          }) as FtsSearchRow[];
+          return dbOk(id, { rows: likeRows });
+        }
         const statement = current.prepare(FTS_SEARCH_SQL);
         const rows = statement.all({
           query: toFtsPhrase(query),
           workspaceId: request.workspaceId,
-          limit: clampLimit(request.limit),
+          limit,
         }) as FtsSearchRow[];
         return dbOk(id, { rows });
       }

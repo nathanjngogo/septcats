@@ -1,5 +1,5 @@
 import { Node } from '@tiptap/core';
-import { blockClass, blockIdAttribute } from './shared';
+import { blockClass, blockIdAttribute, joinClass } from './shared';
 
 /**
  * 7 · code —— content 是**纯文本 string**（schema-v1 §3/§7 裁决：不转 PM doc）。
@@ -47,7 +47,11 @@ export const CodeNode = Node.create({
       'pre',
       {
         ...HTMLAttributes,
-        class: wrap ? `${blockClass('code')} ${blockClass('code')}--wrap` : blockClass('code'),
+        // joinClass 去重：blockClass('code') 自带 'sc-block'，直接拼 `${blockClass}--wrap`
+        // 会重复 sc-block（TASK-T20-01 修复的真残留点）
+        class: wrap
+          ? joinClass(blockClass('code'), `${blockClass('code')}--wrap`)
+          : blockClass('code'),
         'data-lang': lang,
       },
       ['code', { class: 'sc-code-body' }, 0],

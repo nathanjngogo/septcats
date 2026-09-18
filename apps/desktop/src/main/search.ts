@@ -219,12 +219,20 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
     return byId;
   }
 
+  /** trigram tokenizer 的最小 MATCH 单元长度：字数 < 3 走底表 LIKE 兜底（TASK-T20-01）。 */
+  const FTS_TRIGRAM_MIN_CHARS = 3;
+
   async function ftsPageHits(
     query: string,
     workspaceId: string,
     limit: number,
     byId: ReadonlyMap<string, PageEntry>,
   ): Promise<SearchHit[]> {
+    // <3 字（1–2 字中文短词）在 trigram MATCH 下恒 0 条 → 底表 LIKE 兜底；
+    // ≥3 字路径逐字节不变（bm25 语义/排序零回归）。
+    if ([...query].length < FTS_TRIGRAM_MIN_CHARS) {
+      return likeFtsPageHits(query, workspaceId, limit, byId);
+    }
     const data = await executor.all('search.ftsPage', {
       query: toFtsPhrase(query),
       workspaceId,
@@ -251,6 +259,50 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         // §1 排序：title 命中加权 ×0.6（bm25 越小越好，加权后更小、排更前）
         score: titleHit ? rawScore * 0.6 : rawScore,
         via: 'fts',
+        updatedAt: entry?.updatedAt ?? rowNumber(row, 'updated_at'),
+      });
+    }
+    return hits;
+  }
+
+  /**
+   * <3 字兜底（TASK-T20-01）：`search.likeFtsPage` 白名单语句扫 page_block_fts
+   * 底表（\ % _ 已由 likePattern 转义；标题命中优先由语句内 title_rank 排序）。
+   * 行形状与 search.ftsPage 对齐（page_id/title/score/snippet/updated_at），
+   * score 为正基准分（标题命中再 ×0.6 加权，排序语义与 FTS 主路径一致）。
+   */
+  async function likeFtsPageHits(
+    query: string,
+    workspaceId: string,
+    limit: number,
+    byId: ReadonlyMap<string, PageEntry>,
+  ): Promise<SearchHit[]> {
+    const data = await executor.all('search.likeFtsPage', {
+      like: likePattern(query),
+      needle: query.toLowerCase(),
+      workspaceId,
+      limit,
+    });
+    const lower = query.toLowerCase();
+    const hits: SearchHit[] = [];
+    for (const row of data.rows) {
+      const pageId = rowString(row, 'page_id');
+      if (pageId.length === 0) {
+        continue;
+      }
+      const entry = byId.get(pageId);
+      const title = entry?.title ?? rowString(row, 'title');
+      const rawScore = rowNumber(row, 'score', SEARCH_LIKE_BASE_SCORE);
+      const titleHit = title.toLowerCase().includes(lower);
+      hits.push({
+        kind: 'page',
+        id: pageId,
+        pageId,
+        title,
+        path: ancestorsOf(pageId, byId),
+        snippet: rowString(row, 'snippet'),
+        score: titleHit ? rawScore * 0.6 : rawScore,
+        via: 'like',
         updatedAt: entry?.updatedAt ?? rowNumber(row, 'updated_at'),
       });
     }

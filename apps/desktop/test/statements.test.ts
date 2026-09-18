@@ -240,13 +240,13 @@ const IMPORT_SOURCE_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 };
 
 describe('v5 白名单（import_source）', () => {
-  it('三条语句齐全，预算同步（56 条含 v6 defer 开关，仍 < 60）', () => {
+  it('三条语句齐全，预算同步（57 条含 v6 defer 开关与 T20-01 <3 字兜底语句，仍 < 60）', () => {
     for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(56);
+    expect(SQL_IDS.length).toBe(57);
     expect(SQL_IDS.length).toBeLessThan(60);
   });
 

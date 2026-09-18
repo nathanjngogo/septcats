@@ -34,6 +34,7 @@
 | ├ T19-04 sync：crdt_update 分流 / 快照折叠与播种 / 收敛总测扩展（协作 3/4） | 09-17 | ✅ 已审验+提交 `df68d57` | `SyncReport.crdtUpdates` 透出（core.replay 收集，不进 LWW）；`mergeCrdtUpdates` opId 去重保序（确定性）；快照顶层 `crdtUpdates` 区段（按 pageId 分组、不丢不折叠、稳定键序）+ `seedFromSnapshot→{seedOps,crdtUpdates}`（v1 旧快照→空数组、畸形→校验错）；攒段自然切分钉不变量；**4 设备并发文本总测**（yjs devDep 真增量 ×3 轮乱序切分 → 文本逐字符一致 + 投影逐字节相等 + crdtUpdates 全集合）；15 新用例（sync 83→98）；DEVIATIONS 1–5 追认；PM 复跑 sync 98/98、typecheck 9/9、no-magic ✓ |
 | └ T19-05 desktop：CollabHub 接线 + 真机双实例冒烟（协作 4/4 收官） | 09-18 | ✅ **真机 CDP ALL-PASS 10/10 + vision 目检** | `main/collab.ts` CollabHub（pageId→YjsEditor LRU 32、crdt_update 组 Op 入真相层不物化、下行路由、跨代播种=快照区段∪账本 op 去重）+ `runtime.ts` 下行分流（crdt op 绕水位过滤）+ `getSnapshotCrdtUpdates` 跨代聚合 + `collab:*` 四通道 + PageView attach/detach（UI 零变化）；12 新用例（desktop 301→313、全仓 837）；**真机双实例**（twin 夹具错峰启动）实证：上行发布→B 追平→无重复种子→双向→**并发四段文本两端逐字符收敛**→A 关页重开账本播种还原→零 pageerror；重打包 asar `collab:attach`×2 实证；DEVIATIONS 1-4 追认（含 crdt 绕水位=正确必要），DEVIATION-5（双空同开重复种子）登记已知限制（根治=账本非空则跳种子）；报告 `docs/tasks/TASK-T19-05-report.md` §7 |
 | └ T19-05-1 缺陷修复：attach 种子门（双空同开去重） | 09-18 | ✅ 真机冒烟复跑 ALL-PASS 10/10 | 根因=两台新设备同开同页各自 PM→Y 种子（Yjs client ID 不同→文本×2）；方案=attach 回 `ledgerHasCrdt`（该页账本有 crdt_update op 即 true，payload 畸形也计数）+ renderer `seed:!ledgerHasCrdt` + editor `YjsAttachOptions.seed` 一处最小面（预授权）；§H×2 + editor 用例（desktop 315、editor 158、全仓 878 无红）；perf 16.7 红→静置 13.3 绿（环境敏感性）；重打包 asar `ledgerHasCrdt`×7 实证后 cdp 复跑；残留边界「attach 时刻真同时双空」登记已知限制（二期 SV 协商根治）；**CB 会话中途被回收但实现测试已完整落盘，PM 补报告收口 `b2c6396`** |
+| └ T20-01 S4 视觉打磨 1/2：对比度+真门禁 / 1–2 字中文搜索兜底 / class 去重 | 09-18 | ✅ 服务层真机实测通过（UI 层受既有缺陷阻断） | `ink-faint` 深浅双修（#666C75/#8E94A0，13 对全 ≥4.5，**PM 独立解析 tokens.css 复算**）；**新增对比度真门禁** `packages/ui/test/contrast.test.ts`（DESIGN.md 自称的 CI lint 此前不存在，9 用例）；搜索 `<3` 字 LIKE 兜底打通两条链路（`server.ts:495` 分派 + `statements.ts` `search.likeFtsPage` 白名单 + `main/search.ts` 长度分派），≥3 字路径逐字节不变，**真机 IPC 实测 2 字「量子」命中**（DB 直查同证）；`joinClass` 修 `code.ts:50` wrap 真残留；896 全仓无红（878+18 ✓ 对账）、typecheck 9/9、no-magic ✓、SELFTEST OK、asar 实证；**PM 复核期间挖出 3 个既有缺陷 T20-01-1/2/3（rootPath 丢失最高优先级）**；报告 §5/§6 |
 |  T12 更新器（M10-B） | 09-15 | ✅ | 负向+正面四连真机 ALL-PASS（含 #29 修复的 0.1.3 实例：篡改 yml→E_FEED_SIGNATURE/缺 sig→拒/无门→fail-closed/干净 feed→not-available）；主链路 0.1.1→0.1.2 升级 ALL-PASS；公钥轮换（旧私钥遗失去不可恢复，新 keygen 同步 updater.ts+重打 0.1.3） |
 | └ T10 设置+i18n+诊断（M9） | 09-13 | ✅ | **真机 CDP ALL-PASS 11 项**（路由四区块/开关 role=switch/live 主题切换/diag export→confirm 两段式/落盘无主目录路径/非法 theme main 拒/pageerror 0）+ 主题持久链专项 3 连 PASS + 双主题截图 PIL 差分证实；platform 34/desktop 117 tests；诊断脱敏正则与任务书逐字一致 |
 | └ T9 sync 核心（M8a） | 09-13 | ✅ | **A+B+C 三阶段派发**（glm 网关连烧两次「Empty stream」后换 deepseek-v4-pro 成功）；83 tests：S1-S6/S8/S9 逐景内存复现 + **收敛性总测（4 设备×30 op×4 切分→投影逐字节相等）**通过；纯逻辑零 IO 铁律守住（grep 断言仅 fs.ts 触 node:fs）；复用 core.segment/replay 零重写 |
@@ -92,8 +93,11 @@
 - **D2/D3**：工程师纠正任务书正确（NSIS 卸载器 `/S`；Electron 无裸 en locale），不改。
 
 ## 待修清单（低优先级，不阻塞）
-- [ ] **FTS trigram 对 2 字中文查询零命中**（真机视觉审计抓出：「审计」不中、3 字以上正常）——设计使然非缺陷，但中文双字词高频；二期与 unicode61+分词器一并解，或短期给 <3 字查询加 LIKE 兜底
-- [ ] 面板/次级文字（空态、键帽说明、Esc）深色主题对比度未达 WCAG AA 舒适阈（vision 审计），G4 UI 打磨统一提亮一级灰阶
-- [ ] editor 渲染 callout 时 `sc-block` class 重复拼接（cosmetic）
-- [ ] mac 分支 credentials/keychain 需在 macOS CI runner 上真跑（本机 Windows）
+- [x] ~~FTS trigram 对 1–2 字中文零命中~~ → **服务层已修**（T20-01：`<3` 字走底表 LIKE 兜底，`\ % _` ESCAPE，≥3 字路径逐字节不变；真机 IPC 实测「量子」命中）。**⚠ UI 层仍不可用 = T20-01-2**
+- [x] ~~面板/次级文字深色对比度未达 AA~~ → **已修**（T20-01：`ink-faint` 深浅双修 #666C75/#8E94A0，13 对全 ≥4.5，PM 独立复算；新增真门禁 `packages/ui/test/contrast.test.ts`——DESIGN.md 自称的「CI lint」此前不存在，现已落地）
+- [x] ~~callout `sc-block` class 重复~~ → **已修**（T20-01：真残留是 `code.ts:50` wrap 路径而非 callout；`joinClass` 去重 + 2 用例）
+- [ ] **T20-01-1（最高优先级·数据级）**：`settings.patch` 丢弃 `rootPath`——夹具 patch 前 `keys=[schema,rootPath,theme]` → patch 后 rootPath 消失。后果：改过任意设置后重启落到默认根，用户笔记「看似消失」且可能写入分叉。铁证在 `docs/mockups/probe-t20-settings.mjs`（可复跑）
+- [ ] **T20-01-2**：命令面板/搜索页检索**不发请求**——`pagesStore.workspaceId` 无初始化调用点（`palette.ts:89` 静默早退）；真机拦截 `search.query` 得 `calls: []`。UI 内搜索不可用（后端正常）
+- [ ] **T20-01-3**：开机不应用 settings 的 `theme`（夹具 dark → 真机 light；实时切换正常）
+- [ ] mac 分支 credentials/keychain 需在 macOS CI runner 上真跑（本机 Windows + 发布清单 §0 的 worktree 构建法）
 - [x] ~~T19-05-1 双空同开重复种子~~ → **已修**（attach 回 `ledgerHasCrdt` 种子门，editor `attach({seed})` 最小面；单测 §H×2 + editor 158 钉住；真机冒烟复跑 ALL-PASS 10/10。残留边界：attach 时刻双方账本**真同时**为空仍各自种子——网盘轮询天然错峰、概率极低，二期状态向量协商根治）
