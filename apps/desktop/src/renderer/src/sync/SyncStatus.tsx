@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Switch } from '@septcats/ui';
 import type { SyncStatusSnapshot, SyncRuntimeState } from '../../../shared/sync';
 import type { AppSettings } from '../../../shared/settings';
-import { t } from '../i18n';
+import { t, useLocale } from '../i18n';
 import './SyncStatus.css';
 
 /** 五态 → 视觉键（ok 含相对时间文案）。 */
@@ -69,6 +69,9 @@ function pillView(status: SyncStatusSnapshot | null, nowMs: number): PillView {
 }
 
 export function SyncStatusButton() {
+  // T26-01 §0.B：订阅 locale——文案全走 t() 但组件此前不在订阅面，切 English 后
+  // label 停留在切换前的快照（真机顶栏「已同步」残留根因），订阅后即时重取。
+  useLocale();
   const [status, setStatus] = useState<SyncStatusSnapshot | null>(null);
   const [open, setOpen] = useState(false);
   const [encrypt, setEncrypt] = useState(false);
@@ -182,7 +185,7 @@ export function SyncStatusButton() {
         className={`sc-sync-status__pill sc-sync-status__pill--${view.key}`}
         aria-label={ariaLabel}
         aria-expanded={open}
-        title={`${ariaLabel}（${view.label}）`}
+        title={`${ariaLabel} (${view.label})`}
         onClick={() => {
           setOpen((current) => !current);
         }}

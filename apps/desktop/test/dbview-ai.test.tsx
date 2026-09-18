@@ -197,10 +197,10 @@ describe('AI 属性列 · 单行生成', () => {
     expect(call.providerId).toBe('prov-1');
     expect(call.messages).toHaveLength(2);
     expect(call.messages[0]).toEqual({ role: 'system', content: '用一句话概括本行' });
-    // 逐列「列名：值」、跳过 AI 列自身与空值
+    // 逐列「列名: 值」、跳过 AI 列自身与空值（T26-01：分隔符改半角，语义不变）
     expect(call.messages[1]).toEqual({
       role: 'user',
-      content: '书名：哥德尔、艾舍尔、巴赫\n备注：认知科学经典',
+      content: '书名: 哥德尔、艾舍尔、巴赫\n备注: 认知科学经典',
     });
   });
 

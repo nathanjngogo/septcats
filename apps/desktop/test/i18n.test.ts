@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 /**
- * i18n.test.ts —— i18n 键完备性门禁（TASK-T25-01 §0.D）。
+ * i18n.test.ts —— i18n 键完备性门禁（TASK-T25-01 §0.D；T26-01 §0.B 门禁硬化）。
  *
  * 1) 键集合等价：zh-CN 与 en-US 递归拍平后完全相等（多/少各报错）；
  * 2) 无空值：两字典任意键的值非空字符串；en-US 值不含 CJK 字符（防「忘了翻译」）；
  * 3) 无残留硬编码：renderer/src/** 源码扫描——JSX 文本与 aria-label/placeholder/
- *    title/alt/label 属性字面量中不得出现 CJK（注释、i18n 字典豁免；console 日志、
- *    内部错误消息、演示文档内容、协议正则不属于本门禁扫描面）；
+ *    title/alt/label 属性字面量中不得出现 CJK（注释、i18n 字典豁免）；
  * 4) 切换 locale 后关键文案断言（主界面/侧栏/面板/设置/对话框各一处）+ useLocale
- *    订阅重渲染（setLocale → 组件文案即时切换，切回中文复原）。
+ *    订阅重渲染（setLocale → 组件文案即时切换，切回中文复原）；
+ * 5) 门禁硬化（T26-01）：扫描面从「JSX 文本/属性」扩展到 renderer/src/**（.ts+.tsx）
+ *    的**字符串字面量**（单引号/双引号/模板串）——覆盖非 JSX 来源的用户可见文案
+ *    （.ts 常量/映射产出、tooltip 模板串等）。豁免口径：注释（行/块/JSX 注释，经
+ *    stripComments）、console.* 日志行（非用户文案）、i18n/ 字典目录（文案本源，
+ *    errorText() 键引用表同目录同豁免——按其值是否 CJK 判定，值在字典里受②约束）、
+ *    *.test.*（测试断言文本）。修法史：demo 演示内容常量（DEMO_PAGE/buildDemoDoc）
+ *    曾列白名单，T26-01 §0.A 已整体移除，白名单不再需要；正则字面量（如 ImportWizard
+ *    的 /单计划 N 个条目/，匹配 main 侧固定消息格式）非字符串字面量，不在扫描面。
  */
 import { cleanup, render, screen } from '@testing-library/react';
 import { act, createElement } from 'react';
@@ -60,7 +67,7 @@ function walkSources(dir: string): string[] {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
       if (entry === 'i18n') {
-        continue; // 字典豁免
+        continue; // 字典豁免（含 errorText() 键引用表，见文件头）
       }
       out.push(...walkSources(full));
     } else if (entry.endsWith('.ts') || entry.endsWith('.tsx')) {
@@ -130,6 +137,33 @@ function findAttrCjk(source: string): Array<{ snippet: string; char: string }> {
   return hits;
 }
 
+/** console.* 日志行（门禁⑤豁免：日志不是用户可见文案）。 */
+const CONSOLE_LINE = /^\s*(?:[\w$.]+\.)?console\.\w+/;
+
+/**
+ * 字符串字面量（单引号/双引号/模板串）。逐行提取，转义字符不跨界；
+ * 语料内无跨行模板字面量（门禁注释已声明该口径）。
+ */
+const STRING_LITERAL = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`([^`]*)`/g;
+
+/** 门禁⑤：字符串字面量中的 CJK（返回行号供 文件:行 定位）。 */
+function findStringLiteralCjk(source: string): Array<{ line: number; snippet: string; char: string }> {
+  const hits: Array<{ line: number; snippet: string; char: string }> = [];
+  source.split('\n').forEach((line, index) => {
+    if (CONSOLE_LINE.test(line)) {
+      return;
+    }
+    for (const match of line.matchAll(STRING_LITERAL)) {
+      const value = match[1] ?? match[2] ?? match[3] ?? '';
+      const found = CJK.exec(value);
+      if (found !== null) {
+        hits.push({ line: index + 1, snippet: value.trim().slice(0, 80), char: found[0] });
+      }
+    }
+  });
+  return hits;
+}
+
 // ---------------------------------------------------------------------------
 // ① 键集合等价
 // ---------------------------------------------------------------------------
@@ -184,6 +218,28 @@ describe('门禁③ renderer 源码 JSX 文本/属性字面量无 CJK', () => {
       const source = stripComments(readFileSync(file, 'utf8'));
       for (const hit of [...findJsxTextCjk(source), ...findAttrCjk(source)]) {
         offenders.push(`${file} → ${hit.snippet}（含「${hit.char}」）`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ⑤ 字符串字面量无 CJK（T26-01 §0.B 门禁硬化）
+// ---------------------------------------------------------------------------
+
+describe('门禁⑤ renderer 源码字符串字面量无 CJK（T26-01 硬化）', () => {
+  const rendererRoot = join(import.meta.dirname, '..', 'src', 'renderer', 'src');
+
+  it('非注释/非日志/非字典的字符串字面量（.ts+.tsx，含模板串）不含 CJK', () => {
+    const offenders: string[] = [];
+    for (const file of walkSources(rendererRoot)) {
+      if (/\.test\.(ts|tsx)$/.test(file)) {
+        continue; // 测试文件豁免（断言文本非产品文案）
+      }
+      const source = stripComments(readFileSync(file, 'utf8'));
+      for (const hit of findStringLiteralCjk(source)) {
+        offenders.push(`${file}:${hit.line} → ${hit.snippet}（含「${hit.char}」）`);
       }
     }
     expect(offenders).toEqual([]);

@@ -30,7 +30,7 @@ const INITIAL_SNAPSHOT: DbPageSnapshot = {
 function dbApi(): SeptcatsDbApi {
   const api = (window as unknown as { septcats?: SeptcatsApi | undefined }).septcats?.db;
   if (api === undefined) {
-    throw new Error('preload 未注入 window.septcats.db（渲染器无法访问数据层）');
+    throw new Error('preload did not inject window.septcats.db (renderer cannot access the data layer)');
   }
   return api;
 }

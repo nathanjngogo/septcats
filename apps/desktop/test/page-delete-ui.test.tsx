@@ -300,6 +300,14 @@ function installConvertBridge(): void {
     recent: { list: async () => ({ pageIds: [] }), touch: vi.fn(async () => ({ pageIds: [] })) },
     db: { create: impl.dbCreate, load: impl.dbLoad },
     blocks: { list: impl.blocksList, commit: vi.fn() },
+    // T26-01 §0.B：App 顶栏换 SyncStatusButton（真态真钮）——假桥补 sync 通道
+    // （status 回 null = 加载态，不点开面板即无进一步交互）
+    sync: {
+      status: vi.fn(async () => null),
+      onState: vi.fn(() => () => {}),
+      now: vi.fn(async () => null),
+      setEnabled: vi.fn(),
+    },
     collab: {
       attach: vi.fn(async () => ({ entries: [], ledgerHasCrdt: false })),
       detach: vi.fn(async () => ({})),

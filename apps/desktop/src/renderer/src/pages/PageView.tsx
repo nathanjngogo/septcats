@@ -4,20 +4,17 @@
  * 组装：Editor + BlockControls + SlashMenu + SelectionToolbar。
  * 数据（T21-01）：按 pagesStore.selectedId 经 `blocks:list` 加载真实 blocks 喂编辑器；
  * EditSession 的 commit 经 `blocks:commit` 原样透传 Op 落库（失败走 onError 不吞）。
- * 无选中页/显式 demo 入口仍走 DEMO_PAGE 兜底（T21-02 前的浏览器兜底显示）。
+ * 无选中页（空库/删掉唯一页/初始加载）走既有空态（T26-01 §0.A：demo 假内容兜底
+ * 已整体移除，不再回落 DEMO_PAGE）。
  * 打开真实页调一次 touchRecent（失败只记录）。
  * 编辑器只吐 BlockDoc，外发由 EditSession debounce 成一批 Op（计划书 §8.1）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentProps, DragEvent, KeyboardEvent } from 'react';
-import { sortSequence, ulid } from '@septcats/core';
-import type { Op } from '@septcats/core';
+import { ulid } from '@septcats/core';
 import {
   EditSession,
-  inlineDoc,
   pmNodeNameOf,
-  text,
-  type Block,
   type BlockDoc,
 } from '@septcats/editor';
 import type { SlashItem } from '@septcats/editor';
@@ -44,11 +41,8 @@ import { pushToast, pagesActions, usePages } from '../state/pages';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
-const PAGE_ID = 'pg00000000000000000000demo';
 /** ActorId 规则：8-32 位 [a-z0-9]。T6 换成真实设备 ID。 */
 const PAGE_ACTOR = 'desktop0001';
-/** 演示用图片 sha（内容寻址 file_id 的形状，不是真文件）。 */
-const DEMO_IMAGE_SHA = 'a'.repeat(64);
 
 /** PageView 的内容分发输入（T7b：database 页走 DbPage，其余走编辑器）。 */
 export interface PageViewPage {
@@ -62,74 +56,10 @@ export interface PageViewProps {
   page?: PageViewPage | undefined;
 }
 
-const DEMO_PAGE: PageViewPage = { id: PAGE_ID, title: '暗物质探测实验笔记', kind: 'page' };
-
 type EditorHandle = Exclude<
   Parameters<NonNullable<ComponentProps<typeof Editor>['onReady']>>[0],
   null
 >;
-
-interface DemoBlockSpec {
-  type: string;
-  props?: Record<string, unknown>;
-  content?: Block['content'];
-}
-
-/** 「一页假文档，含 9 块型各一」（§4）。 */
-function buildDemoDoc(): BlockDoc {
-  const specs: DemoBlockSpec[] = [
-    {
-      type: 'paragraph',
-      content: inlineDoc([text('本页汇总 LZ 类稀有事件探测的实验现状与文献线索。')]),
-    },
-    { type: 'heading', props: { level: 2 }, content: inlineDoc([text('一、探测器矩阵')]) },
-    {
-      type: 'to_do',
-      props: { checked: true },
-      content: inlineDoc([text('整理 XENONnT 2025 SR 的 WIMP 上限图，录入阅读清单')]),
-    },
-    {
-      type: 'to_do',
-      props: { checked: false },
-      content: inlineDoc([text('复核 LZ 核反冲效率曲线的统计误差来源')]),
-    },
-    {
-      type: 'quote',
-      props: { icon: 'ℹ' },
-      content: inlineDoc([text('口径提醒：各家实验的曝光量单位不同，制表前统一换算为 ton·yr。')]),
-    },
-    {
-      type: 'quote',
-      content: inlineDoc([text('「稀有事件率本底是暗物质直接探测的终极限制。」')]),
-    },
-    {
-      type: 'code',
-      props: { lang: 'python' },
-      content: 'er = np.interp(energy_kev, breakpoints, values)',
-    },
-    { type: 'bulleted_list', content: inlineDoc([text('低本底计数与屏蔽方案')]) },
-    { type: 'numbered_list', content: inlineDoc([text('先统一单位，再制表')]) },
-    { type: 'divider' },
-    {
-      type: 'image',
-      props: { file_id: DEMO_IMAGE_SHA, caption: '图 1：排除曲线（待插入）', width: 480 },
-    },
-  ];
-  const keys = sortSequence(specs.length);
-  const blocks: Block[] = specs.map((spec, index) => ({
-    id: ulid(1_700_000_000_000 + index),
-    page_id: PAGE_ID,
-    type: spec.type,
-    props: spec.props ?? {},
-    content: spec.content ?? (spec.type === 'divider' || spec.type === 'image' ? null : inlineDoc([])),
-    parent_id: null,
-    sort_key: keys[index] ?? 'A00000000',
-    alive: 1,
-    version: 1,
-    last_edited: 1_700_000_000_000,
-  }));
-  return { pageId: PAGE_ID, blocks };
-}
 
 function blockIdentityOf(target: EventTarget | null): string | null {
   if (!(target instanceof HTMLElement)) {
@@ -171,35 +101,33 @@ interface AiApplyTarget {
 
 /**
  * 内容数据态（T21-01，对齐 DbPage 的 loading/error/ready 四态口径）：
- * demo = 无选中页的兜底演示文档；ready 含「空页」（blocks=[] → 空文档，可直接输入）。
+ * ready 含「空页」（blocks=[] → 空文档，可直接输入）。T26-01 §0.A：demo 态已移除。
  */
 type PageDocState =
-  | { status: 'demo' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ready'; doc: BlockDoc };
 
 export function PageView({ page }: PageViewProps) {
-  const [initialDoc] = useState(buildDemoDoc);
-  const docRef = useRef<BlockDoc>(initialDoc);
+  const docRef = useRef<BlockDoc | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const ledgerRef = useRef<Op[]>([]);
   const dragIdRef = useRef<string | null>(null);
   /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载；T24-01 起选中同步到 pagesStore，见 convertToDatabase）。 */
   const [dbPageId, setDbPageId] = useState<string | null>(null);
 
-  // T21-01 数据源：pagesStore.selectedId 驱动真实页；显式 page 入口与无选中页走兜底
+  // T21-01 数据源：pagesStore.selectedId 驱动真实页；T26-01 §0.A：无选中页不再回落
+  // DEMO_PAGE——走空态（activePage = null）
   const selectedId = usePages((state) => state.selectedId);
   const pageNodes = usePages((state) => state.nodes);
   const selectedNode =
     page === undefined && selectedId !== null
       ? (pageNodes.find((node) => node.id === selectedId) ?? null)
       : null;
-  const activePage: PageViewPage =
-    page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : DEMO_PAGE);
-  const isDemoPage = activePage.id === PAGE_ID;
+  const activePage: PageViewPage | null =
+    page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : null);
+  const activePageId = activePage?.id ?? null;
 
-  const [docState, setDocState] = useState<PageDocState>({ status: 'demo' });
+  const [docState, setDocState] = useState<PageDocState>({ status: 'loading' });
   const [reloadNonce, setReloadNonce] = useState(0);
   const reloadBlocks = useCallback(() => setReloadNonce((nonce) => nonce + 1), []);
 
@@ -222,20 +150,14 @@ export function PageView({ page }: PageViewProps) {
   }, [session]);
 
   /**
-   * EditSession 工厂（T21-01）：demo 页维持既有内存账本（demo 页不在库中，不写脏数据）；
-   * 真实页把 EditSession 产出的 ops 原样透传 `blocks:commit`（renderer 不组 Op）。
-   * commit 返回的 Promise 失败时 reject → EditSession 先调 onError 再向 flush() 冒泡（不吞）。
+   * EditSession 工厂（T21-01）：EditSession 产出的 ops 原样透传 `blocks:commit`
+   * （renderer 不组 Op）。commit 返回的 Promise 失败时 reject → EditSession 先调
+   * onError 再向 flush() 冒泡（不吞）。
    */
   const createSession = useCallback((initial: BlockDoc): EditSession => {
-    const isDemo = initial.pageId === PAGE_ID;
     return new EditSession({
       actor: PAGE_ACTOR,
       commit: async (ops) => {
-        if (isDemo) {
-          ledgerRef.current.push(...ops);
-          console.info(`[PageView] commit batch · ${String(ops.length)} ops`, ops);
-          return;
-        }
         await window.septcats.blocks.commit({ ops });
       },
       now: () => Date.now(),
@@ -249,20 +171,18 @@ export function PageView({ page }: PageViewProps) {
   // 按选中页加载 blocks（T21-01 §0.4）；换页/卸载前冲掉旧页在途编辑轮次（commit
   // 闭包捕获的是旧页 pageId，落库目标正确）
   useEffect(() => {
-    if (isDemoPage) {
-      docRef.current = initialDoc;
-      setDocState({ status: 'demo' });
+    if (activePageId === null) {
       return;
     }
     let cancelled = false;
     setDocState({ status: 'loading' });
     window.septcats.blocks
-      .list({ pageId: activePage.id })
+      .list({ pageId: activePageId })
       .then((blocks) => {
         if (cancelled) {
           return;
         }
-        const doc: BlockDoc = { pageId: activePage.id, blocks };
+        const doc: BlockDoc = { pageId: activePageId, blocks };
         docRef.current = doc;
         setDocState({ status: 'ready', doc });
       })
@@ -283,30 +203,26 @@ export function PageView({ page }: PageViewProps) {
         void current.flush().catch(() => undefined);
       }
     };
-  }, [isDemoPage, activePage.id, initialDoc, reloadNonce]);
+  }, [activePageId, reloadNonce]);
 
   // session 跟随内容态重建（EditSession 的 baseline 只能在构造时给定）
   useEffect(() => {
-    if (docState.status === 'demo') {
-      setSession(createSession(initialDoc));
-      return;
-    }
     if (docState.status !== 'ready') {
       setSession(null);
       return;
     }
     setSession(createSession(docState.doc));
-  }, [docState, createSession, initialDoc]);
+  }, [docState, createSession]);
 
   // 打开真实页调一次 touchRecent（既有 API；失败只记录，§0.6）
   useEffect(() => {
-    if (isDemoPage) {
+    if (activePageId === null) {
       return;
     }
-    window.septcats.recent.touch({ pageId: activePage.id }).catch((error: unknown) => {
+    window.septcats.recent.touch({ pageId: activePageId }).catch((error: unknown) => {
       console.error('[PageView] touchRecent 失败（只记录）', error);
     });
-  }, [isDemoPage, activePage.id]);
+  }, [activePageId]);
 
   const handleChange = useCallback(
     (next: BlockDoc) => {
@@ -322,18 +238,18 @@ export function PageView({ page }: PageViewProps) {
    * 已 catch，这里是 attach 往返本身的兜底）。
    */
   useEffect(() => {
-    if (editor === null) {
+    if (editor === null || activePageId === null) {
       return;
     }
     let cancelled = false;
-    attachCollab(activePage.id, editor, () => cancelled).catch((error: unknown) => {
+    attachCollab(activePageId, editor, () => cancelled).catch((error: unknown) => {
       console.error('[PageView] 协作层接入失败（不阻断编辑）', error);
     });
     return () => {
       cancelled = true;
-      detachCollab(activePage.id);
+      detachCollab(activePageId);
     };
-  }, [editor, activePage.id]);
+  }, [editor, activePageId]);
 
   useEffect(() => {
     if (editor === null) {
@@ -465,7 +381,7 @@ export function PageView({ page }: PageViewProps) {
         }
         default: {
           const exhaustive: never = action;
-          throw new Error(`PageView：未知块操作 ${String(exhaustive)}`);
+          throw new Error(`PageView: unknown block action ${String(exhaustive)}`);
         }
       }
     },
@@ -539,7 +455,11 @@ export function PageView({ page }: PageViewProps) {
       }
 
       const targetId = blockIdentityOf(event.target);
-      const order = docRef.current.blocks.filter((entry) => entry.alive === 1).map((entry) => entry.id);
+      const currentDoc = docRef.current;
+      if (currentDoc === null) {
+        return;
+      }
+      const order = currentDoc.blocks.filter((entry) => entry.alive === 1).map((entry) => entry.id);
       let beforeId: string | null = null;
       if (targetId !== null && targetId !== draggedId) {
         const element = event.target instanceof HTMLElement ? event.target.closest('[data-id]') : null;
@@ -566,7 +486,7 @@ export function PageView({ page }: PageViewProps) {
 
       // ② sort_key：dnd.ts 的纯函数给最小 reorder（放不下则整层重平衡）
       const plan = planBlockDrop(
-        docRef.current,
+        currentDoc,
         { actor: PAGE_ACTOR, now: Date.now() },
         draggedId,
         beforeId,
@@ -574,7 +494,7 @@ export function PageView({ page }: PageViewProps) {
       if (plan.kind === 'noop') {
         return;
       }
-      const next = applySortKeyAssignments(docRef.current, plan.assignments);
+      const next = applySortKeyAssignments(currentDoc, plan.assignments);
       docRef.current = next;
       session?.onDocChange(next);
     },
@@ -582,6 +502,9 @@ export function PageView({ page }: PageViewProps) {
   );
 
   const convertToDatabase = useCallback((): void => {
+    if (activePage === null) {
+      return;
+    }
     void (async () => {
       const workspaces = await window.septcats.workspaces.list();
       const workspaceId = workspaces.activeId;
@@ -599,7 +522,7 @@ export function PageView({ page }: PageViewProps) {
     })().catch((error: unknown) => {
       console.error('[PageView] 转为数据库失败（不吞）', error);
     });
-  }, [activePage.title]);
+  }, [activePage]);
 
   /**
    * 块级 AI 动作（TASK-T18-03 §2.4）：取文本（选中优先/块文本回退）→ ai.state() 三态门控
@@ -737,6 +660,16 @@ export function PageView({ page }: PageViewProps) {
     window.dispatchEvent(new CustomEvent('septcats:open-settings'));
   }, []);
 
+  // T26-01 §0.A：无选中页（空库/删掉唯一页/树未就绪）→ 既有空态，不再回落 demo 假内容。
+  // 空态复用回收站/搜索空态同款 token 组合（.pv-empty 与 .trash-empty 同口径），文案走 t()。
+  if (activePage === null) {
+    return (
+      <div className="pv-root" ref={containerRef}>
+        <div className="pv-empty">{t('editor.emptyPage')}</div>
+      </div>
+    );
+  }
+
   if (activePage.kind === 'database') {
     return <DbPage pageId={activePage.id} />;
   }
@@ -744,10 +677,9 @@ export function PageView({ page }: PageViewProps) {
     return <DbPage pageId={dbPageId} />;
   }
 
-  // T21-01：demo / ready（含空页）喂编辑器；loading / error 走既有四态外壳
+  // T21-01：ready（含空页）喂编辑器；loading / error 走既有四态外壳
   // （Skeleton / ErrorPanel，均为 @septcats/ui 既有组件，无新增组件与 token）。
-  const editorDoc: BlockDoc | null =
-    docState.status === 'demo' ? initialDoc : docState.status === 'ready' ? docState.doc : null;
+  const editorDoc: BlockDoc | null = docState.status === 'ready' ? docState.doc : null;
 
   return (
     <div className="pv-root" ref={containerRef}>

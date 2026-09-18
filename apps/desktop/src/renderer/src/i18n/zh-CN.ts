@@ -42,6 +42,7 @@ export const zhCN = {
   editor: {
     convertToDatabase: '转为数据库',
     linkPrompt: '链接地址（https:// / notion:// / page: / #锚点）',
+    emptyPage: '还没有页面。在左侧栏「新建页面」，或从模板开始。',
   },
   pageDelete: {
     title: '删除页面',

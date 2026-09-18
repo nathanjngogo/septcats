@@ -33,6 +33,15 @@
   margin: 0 auto;
 }
 
+/* 空库空态（T26-01 §0.A）：与 .trash-empty/.search-empty 同 token 组合（字号/色/留白），
+   无选中页时替代 demo 假内容；双主题成立（颜色走 ink-faint token）。 */
+.pv-empty {
+  margin-top: var(--sc-space-xxl);
+  text-align: center;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
 .pv-handle {
   position: absolute;
   left: calc(var(--sc-space-gutter) * -1);

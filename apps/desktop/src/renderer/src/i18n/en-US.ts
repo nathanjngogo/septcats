@@ -41,6 +41,7 @@ export const enUS = {
   editor: {
     convertToDatabase: 'Convert to Database',
     linkPrompt: 'Link URL (https:// / notion:// / page: / #anchor)',
+    emptyPage: 'No pages yet. Use "New Page" in the sidebar, or start from a template.',
   },
   pageDelete: {
     title: 'Delete Page',

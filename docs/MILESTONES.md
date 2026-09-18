@@ -48,7 +48,8 @@
 | └ T24-01 UI 收口三小项（删除入口 / 转为库另存口径 / Toast 挂载） | 09-19 | ✅ **真机 ALL-PASS 11/11** | ①命令面板「删除页面」+ Dialog 二次确认 + 侧栏行「⋯」→ **回收站鼠标可达闭环**（T22-01-2 清）；②**T23-02-1 根因判别**：`dbPageId` 为 PageView 本地态、转换未同步 store → `collection.getByPage(原页)=null` → kind=page；数据面**零改动**，修法=转换后 `refresh()`+`selectPage(新页)` → 真机 `kind=database` ✓；③`ToastViewport` 挂载 → 提示可见（真机 `.sc-toast__item` 落地）；全仓 983 无红（desktop 401）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**新登记 T24-01-1**（空库回落 demo 假内容应改空态） || └ T8 搜索+命令面板（M7） | 09-13 | ✅ | **真机 CDP 验收 ALL-PASS 13 项**（Ctrl+K/拼音sz→设置/键盘 active+唯一 aria-selected/Esc/`>`仅命令/FTS 标题命中/LIKE 库名/空串与特殊字符不崩/pageerror 0）+ 双主题 4 截图视觉审；1 万页 P95=11.9ms（红线 150ms）；v4 FTS 正文管道；desktop 104 tests |
 
 | └ T25-01 en i18n（二期 Q9） | 09-19 | ✅ 交付（真机 6 PASS + 1 登记） | `setLocale`/`initLocale`（settings.locale → navigator.language → zh-CN）+ 设置页语言三选（跟随系统/中文/English，偏好走 localStorage `septcats.localePref`）+ 15 文件文案抽取（398 既有用例零改动、渲染 byte-identical）+ `en-US.ts` 与 zh-CN **键集合同构** + 门禁 9 例（键等价/值非空且 en 无 CJK/JSX 扫描/切 locale 断言）；**真机**：切 English 后侧栏/面板/设置全英文、切回中文恢复、零 pageerror；全仓 989 无红（desktop 407）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**登记 T25-01-1**（顶栏「已同步」残留 + 门禁非 JSX 字面量盲区） || └ T11 导入器（M12） | 09-14 | ✅ **真包真机 CDP ALL-PASS 8 项**（脏库 E2 案发现场：全量去重 skipped=421/漏 0、重执行 done、436 页树 dangling=0、FTS 命中、无重复页、pageerror=0） | A-D+E/E2 五阶段：`_all.csv` 双胞胎归并（34→17）+ 附件 %编码两级查找（0→123）；importer 58、desktop 137、五条 DoD 全绿 |
-| └ T12 打包（M10-A） | 09-14 | ✅ PM 复验通过 | electron-builder 26.15.3；`Septcats Setup 0.1.0.exe` 88.15MB（R7≤150 达标）；/S 静默装→启动 5s 树存活→卸载零残留；latest.yml sha512 与产物字节级一致；asar+locales 裁剪生效（仅 zh-CN.pak）；零新增依赖除 builder；mac 配置就位待 CI；CI package job 已加（无 remote 未跑） |
+
+| └ T26-01 收尾：空库空态 + 同步状态英化 + i18n 门禁硬化 | 09-19 | ✅ **真机 ALL-PASS 7/7** | ①`DEMO_PAGE`/`buildDemoDoc` 整体移除（死代码）→ 无选中页走 `.pv-empty` 空态（真机：删唯一页出空态、无「暗物质探测」假内容）；②顶栏真凶=T13-01 的 `SyncStatusButton` **从未接线**、显示的是 `@septcats/ui` SyncPill 静态假态 → 换接真实组件（真机 `Synced · Just now`）；③**门禁硬化**：CJK 扫描扩到非注释/非日志字符串字面量，**修前复现 17 处红 → 修后绿**；全仓 990 无红（desktop 408）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**登记 T26-01-1**（默认工作区名是建库时种下的中文数据，宜按创建时 locale 生成） || └ T12 打包（M10-A） | 09-14 | ✅ PM 复验通过 | electron-builder 26.15.3；`Septcats Setup 0.1.0.exe` 88.15MB（R7≤150 达标）；/S 静默装→启动 5s 树存活→卸载零残留；latest.yml sha512 与产物字节级一致；asar+locales 裁剪生效（仅 zh-CN.pak）；零新增依赖除 builder；mac 配置就位待 CI；CI package job 已加（无 remote 未跑） |
 
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
@@ -109,7 +110,10 @@
 - [x] ~~T20-01-3 主题双源~~ → **已修**（T20-02 §0.C + PM 亲修 `theme.tsx` 挂载前事件兜底：真机开机 `data-theme=dark`）（夹具 dark → 真机 light；实时切换正常）
 - [x] ~~T23-02-1~~：已由 T24-01 修（真机 kind=database ✓）
 - [ ] **T25-01-1**：顶栏同步状态「已同步」未走 t()（真机 CJK=7 抓出）；**门禁盲区**=只扫 JSX 文本/属性，需扩展到非注释/非日志的 TS 字符串字面量
-- [ ] **T24-01-1**：唯一页删除后正文回落**demo 假内容**（「暗物质探测实验笔记」）——空库应走空态，demo 兜底限演示/夹具场景
+- [ ] **T26-01-1**：默认工作区名「个人工作区」为建库时中文种子（真机 English 模式残留 5 字）——宜按创建时 locale 生成；用户可改名，非 UI 文案缺陷
+- [x] ~~T24-01-1~~：已由 T26-01 修（真机空态 ✓）
+- [x] ~~T25-01-1~~：已由 T26-01 修（真机 `Synced · Just now` ✓ + 门禁硬化）
+- [ ] ~~原 T24-01-1 登记~~：唯一页删除后正文回落**demo 假内容**（「暗物质探测实验笔记」）——空库应走空态，demo 兜底限演示/夹具场景
 - [ ] ~~T23-02-1 原始登记~~：`转为数据库` 后经面板「另存为模板」仍得 `kind=page`（应 database）——判别：转换跳转是否只改 PageView 本地状态（selectedId 未跟）/ collection 是否按 page_id 关联
 - [x] ~~T23-02-2~~：已由 T24-01 挂载 ToastViewport（真机提示可见 ✓）
 - [ ] ~~原 T23-02-2 登记~~：`ToastViewport` 未挂载 → 所有 `pushToast` 反馈不可见（App 挂载即可）

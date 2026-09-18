@@ -62,7 +62,7 @@ export function usePalette<T>(selector: (state: PaletteState) => T): T {
 function apiBridge(): SeptcatsApi {
   const value = (globalThis as { septcats?: SeptcatsApi }).septcats;
   if (value === undefined) {
-    throw new Error('preload 未注入 window.septcats（渲染器无法访问搜索通道）');
+    throw new Error('preload did not inject window.septcats (renderer cannot access the search channel)');
   }
   return value;
 }

@@ -7,7 +7,6 @@ import {
   IconButton,
   MagnifyingGlass,
   Plus,
-  SyncPill,
 } from '@septcats/ui';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
@@ -18,6 +17,7 @@ import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { t, useLocale } from './i18n';
+import { SyncStatusButton } from './sync/SyncStatus';
 import { CommandPalette } from './palette/CommandPalette';
 import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
@@ -159,7 +159,11 @@ export function App() {
                 paletteActions.open();
               }}
             />
-            <SyncPill state="idle" lastSyncedAt="09:41" />
+            {/* T26-01 §0.B：顶栏同步状态走 SyncStatusButton（T13-01 六态、全 i18n）。
+                原 SyncPill 的 STATE_LABEL 硬编码在 @septcats/ui（packages/** 红线禁碰）
+                且 state="idle" 是静态假态，切 English 后仍显示「已同步」——换真钮后
+                文案走 sync.* 双语键（键已存在，无需新增）。 */}
+            <SyncStatusButton />
             <IconButton
               icon={Plus}
               label={t('importWizard.title')}

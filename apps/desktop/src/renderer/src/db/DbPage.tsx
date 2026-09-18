@@ -27,7 +27,6 @@ import type { SeptcatsApi, SeptcatsAiApi } from '../../../types/window';
 import { useDbPage } from './useDbPage';
 import './DbPage.css';
 
-const DEFAULT_RECORD_TITLE = '未命名';
 export interface DbPageProps {
   pageId: string;
 }
@@ -35,7 +34,7 @@ export interface DbPageProps {
 function dbAiApi(): SeptcatsAiApi {
   const api = (window as unknown as { septcats?: SeptcatsApi | undefined }).septcats?.ai;
   if (api === undefined) {
-    throw new Error('preload 未注入 window.septcats.ai（渲染器无法调用模型）');
+    throw new Error('preload did not inject window.septcats.ai (renderer cannot call the model)');
   }
   return api;
 }
@@ -62,7 +61,7 @@ function buildUserContent(collection: CollectionEntity, record: RecordEntity, ai
     if (text === EMPTY_DISPLAY || text.trim().length === 0) {
       continue;
     }
-    lines.push(`${property.name}：${text}`);
+    lines.push(`${property.name}: ${text}`);
   }
   return lines.join('\n');
 }
@@ -210,7 +209,8 @@ export function DbPage({ pageId }: DbPageProps) {
         void db.createRecord({ [initial.pid]: initial.value });
         return;
       }
-      void db.createRecord(titlePid.length > 0 ? { [titlePid]: DEFAULT_RECORD_TITLE } : undefined);
+      // T26-01 §0.B：默认记录标题走 t()（调用点现取，locale 切换即时生效）
+      void db.createRecord(titlePid.length > 0 ? { [titlePid]: t('common.untitled') } : undefined);
     },
     [db, titlePid],
   );
