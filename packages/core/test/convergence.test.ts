@@ -18,8 +18,9 @@ const DEVICE_COUNT = 200;
 const OPS_PER_DEVICE = 50;
 const ENTITY_COUNT = 40;
 
-// T19-02：OpKind 扩入 'crdt_update' 后，fuzz 的 kind 集仍锁定既有五种（穷尽性分支不放松）
-type FuzzKind = Exclude<OpKind, 'crdt_update'>;
+// T19-02：OpKind 扩入 'crdt_update' 后，fuzz 的 kind 集仍锁定既有五种（穷尽性分支不放松）；
+// T23-01：OpKind 再扩入 'template'，同样排除（fuzz 集不变）
+type FuzzKind = Exclude<OpKind, 'crdt_update' | 'template'>;
 const KINDS: readonly FuzzKind[] = ['upsert', 'patch', 'delete', 'move', 'reorder'];
 
 function deviceIdOf(index: number): string {

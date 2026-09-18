@@ -26,6 +26,11 @@ import type {
   CollabUplinkInput,
 } from '../shared/collab';
 import type {
+  TemplateFull,
+  TemplateKind,
+  TemplateMeta,
+} from '../main/templates';
+import type {
   AiChatResult,
   AiListModelsResult,
   AiMessage,
@@ -293,6 +298,27 @@ export interface SeptcatsCollabApi {
   onUpdate(listener: (entries: CollabUpdateEntry[]) => void): () => void;
 }
 
+/**
+ * 模板 IPC（M13 · TASK-T23-01 §0.B，数据面；UI 归 T23-02）。通道与
+ * `src/shared/ipc.ts` 的 TEMPLATES_CHANNELS 一对一。
+ * 错误经 Error.message 透传（E_MALFORMED / E_NO_WORKSPACE / E_NOT_FOUND /
+ * E_PARENT_GONE / E_TEMPLATE_NOT_FOUND / E_INVARIANT）。
+ */
+export interface SeptcatsTemplatesApi {
+  /** 模板列表（不含 payload；updated_at 倒序；kind 缺省 = 全部）。 */
+  list(input: { kind?: TemplateKind }): Promise<{ templates: TemplateMeta[] }>;
+  /** 单个模板（meta + payload，预览/编辑用）。不存在或已删 → E_TEMPLATE_NOT_FOUND。 */
+  get(input: { id: string }): Promise<{ template: TemplateFull }>;
+  /** 另存为模板（kind 自动判：页面有 collection → 'database'，否则 'page'）。 */
+  saveFromPage(input: { pageId: string; title: string; icon?: string }): Promise<{ id: string }>;
+  /** 重命名（icon 缺省 = 保持不变）。 */
+  rename(input: { id: string; title: string; icon?: string }): Promise<Record<string, never>>;
+  /** 软删（进回收站语义）。 */
+  remove(input: { id: string }): Promise<Record<string, never>>;
+  /** 从模板新建页（深拷贝：新 page/block/collection id；records 不复制）。 */
+  createPage(input: { templateId: string; parentId: string | null }): Promise<{ pageId: string }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -322,6 +348,8 @@ export interface SeptcatsApi {
   ai: SeptcatsAiApi;
   /** 协作（CRDT，T19-05）。 */
   collab: SeptcatsCollabApi;
+  /** 模板（M13 · T23-01 数据面）。 */
+  templates: SeptcatsTemplatesApi;
 }
 
 declare global {

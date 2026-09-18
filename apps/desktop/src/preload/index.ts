@@ -16,6 +16,7 @@ import {
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
   SYNC_CHANNELS,
+  TEMPLATES_CHANNELS,
   WORKSPACES_CHANNELS,
 } from '../shared/ipc';
 import { UPDATE_CHANNELS } from '../shared/ipc';
@@ -168,6 +169,24 @@ const api: SeptcatsApi = {
     apply: (input) =>
       ipcRenderer.invoke(COLLAB_CHANNELS.apply, input) as ReturnType<SeptcatsApi['collab']['apply']>,
     onUpdate: (listener) => subscribe(COLLAB_CHANNELS.update, listener),
+  },
+  templates: {
+    list: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.list, input) as ReturnType<SeptcatsApi['templates']['list']>,
+    get: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.get, input) as ReturnType<SeptcatsApi['templates']['get']>,
+    saveFromPage: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.saveFromPage, input) as ReturnType<
+        SeptcatsApi['templates']['saveFromPage']
+      >,
+    rename: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.rename, input) as ReturnType<SeptcatsApi['templates']['rename']>,
+    remove: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.delete, input) as ReturnType<SeptcatsApi['templates']['remove']>,
+    createPage: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.createPage, input) as ReturnType<
+        SeptcatsApi['templates']['createPage']
+      >,
   },
 };
 

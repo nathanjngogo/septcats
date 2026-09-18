@@ -7,8 +7,12 @@ import { z } from 'zod';
  * v2（T19-02）：新增 op kind `crdt_update` 与 merge_policy `lww-field`/`crdt`。
  * 本次变更对既有格式只增不改——v1 段的每一行都是合法的 v2 op，读 v1 段语义
  * 与 v1 时代逐字节等价（段校验按 [MIN_SUPPORTED_SCHEMA_VERSION, SCHEMA_VERSION] 放行）。
+ *
+ * v3（T23-01）：新增 op kind `template` 与目标表 `template`（模板子系统数据面）。
+ * 仍只增不改——v1/v2 段的每一行都是合法的 v3 op，读旧段语义逐字节等价；
+ * template op 走默认 LWW 整对象（MERGE_POLICIES 不变），replay 按整对象生效。
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** 仍可读取的最低 schema 版本（v1 段照常可读；高于 SCHEMA_VERSION 的段仍被拒绝）。 */
 export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
@@ -37,13 +41,14 @@ export const lamportSchema = z.object({
 });
 export type Lamport = z.infer<typeof lamportSchema>;
 
-/** Op 语义类别全集（schema v2 起新增 'crdt_update'：承载 CRDT 增量，如 Yjs update）。 */
-export const OP_KINDS = ['upsert', 'delete', 'move', 'reorder', 'patch', 'crdt_update'] as const;
+/** Op 语义类别全集（schema v2 起新增 'crdt_update'：承载 CRDT 增量，如 Yjs update；
+ * schema v3 起新增 'template'：模板整对象写（upsert 语义，走默认 LWW），T23-01）。 */
+export const OP_KINDS = ['upsert', 'delete', 'move', 'reorder', 'patch', 'crdt_update', 'template'] as const;
 export const opKindSchema = z.enum(OP_KINDS);
 export type OpKind = z.infer<typeof opKindSchema>;
 
-/** Op 作用的目标表。 */
-export const targetTableSchema = z.enum(['page', 'block', 'collection', 'record', 'schema']);
+/** Op 作用的目标表（schema v3 起新增 'template'：模板表，T23-01）。 */
+export const targetTableSchema = z.enum(['page', 'block', 'collection', 'record', 'schema', 'template']);
 export type TargetTable = z.infer<typeof targetTableSchema>;
 
 /** Op 目标引用：表 + 实体 ID。 */

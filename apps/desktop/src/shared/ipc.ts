@@ -285,3 +285,32 @@ export const COLLAB_CHANNELS = {
 } as const;
 
 export type CollabChannel = (typeof COLLAB_CHANNELS)[keyof typeof COLLAB_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 模板（M13 · TASK-T23-01 §0.B，数据面；UI 归 T23-02）。契约用对象形载荷。
+// 出参形状见 main/templates.ts 的 TemplateMeta / TemplateFull。
+// ---------------------------------------------------------------------------
+
+/** 模板列表：{kind?} → {templates: TemplateMeta[]}（不含 payload，updated_at 倒序）。 */
+export const CHANNEL_TEMPLATES_LIST = 'templates:list';
+/** 单个模板：{id} → {template: TemplateMeta + payload}。 */
+export const CHANNEL_TEMPLATES_GET = 'templates:get';
+/** 另存为模板：{pageId, title, icon?} → {id}（kind 自动判：有 collection → 'database'）。 */
+export const CHANNEL_TEMPLATES_SAVE_FROM_PAGE = 'templates:saveFromPage';
+/** 重命名：{id, title, icon?} → {}。 */
+export const CHANNEL_TEMPLATES_RENAME = 'templates:rename';
+/** 软删：{id} → {}（照既有回收站风格）。 */
+export const CHANNEL_TEMPLATES_DELETE = 'templates:delete';
+/** 从模板新建页：{templateId, parentId} → {pageId}（深拷贝；records 不复制）。 */
+export const CHANNEL_TEMPLATES_CREATE_PAGE = 'templates:createPage';
+
+export const TEMPLATES_CHANNELS = {
+  list: CHANNEL_TEMPLATES_LIST,
+  get: CHANNEL_TEMPLATES_GET,
+  saveFromPage: CHANNEL_TEMPLATES_SAVE_FROM_PAGE,
+  rename: CHANNEL_TEMPLATES_RENAME,
+  delete: CHANNEL_TEMPLATES_DELETE,
+  createPage: CHANNEL_TEMPLATES_CREATE_PAGE,
+} as const;
+
+export type TemplatesChannel = (typeof TEMPLATES_CHANNELS)[keyof typeof TEMPLATES_CHANNELS];

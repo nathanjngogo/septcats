@@ -46,7 +46,7 @@ const OP_FIELDS = [
 
 describe('schema', () => {
   it('SCHEMA_VERSION 导出', () => {
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
     expect(blockTypes.length).toBeGreaterThan(0);
     expect(blockTypes).toContain('paragraph');
     expect(blockTypes).toContain('code');

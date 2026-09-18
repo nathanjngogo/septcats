@@ -193,6 +193,11 @@ export class OpUndoStack {
       case 'crdt_update': {
         throw new Error('OpUndoStack：不支持的 op.kind crdt_update');
       }
+      // T23-01：'template' 不进编辑器撤销栈（模板写路径在 main/templates.ts），
+      // 分支仅为 op.kind 穷尽性（语义：显式拒绝，同 crdt_update 口径）。
+      case 'template': {
+        throw new Error('OpUndoStack：不支持的 op.kind template');
+      }
       default: {
         const exhaustive: never = op.kind;
         throw new Error(`OpUndoStack：不支持的 op.kind ${String(exhaustive)}`);

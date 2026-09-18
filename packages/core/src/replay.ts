@@ -64,7 +64,10 @@ function materialize(op: Op, existing: Entity | null): Entity {
   const payload = deepCloneData(op.payload);
 
   switch (op.kind) {
-    case 'upsert': {
+    case 'upsert':
+    case 'template': {
+      // 'template'（T23-01，schema v3）：模板整对象写，语义同 upsert（PM 裁决：
+      // 模板走默认 LWW 整对象；payload 即模板对象全量，键序由 stableStringify 收敛）。
       return makeEntity(op, payload, aliveOf(payload, 1));
     }
     case 'delete': {

@@ -367,6 +367,11 @@ function materializePageStatement(
     case 'crdt_update': {
       throw new CommitError('E_MALFORMED_OP', '未知 page op.kind：crdt_update');
     }
+    // T23-01：'template' 有专属物化路径（templates.ts 的 template.upsert/softDelete），
+    // 不会以 page 为目标表走到这里；分支仅为 op.kind 穷尽性（语义：显式拒绝）。
+    case 'template': {
+      throw new CommitError('E_MALFORMED_OP', '未知 page op.kind：template');
+    }
     default: {
       const exhaustive: never = op.kind;
       throw new CommitError('E_MALFORMED_OP', `未知 page op.kind：${String(exhaustive)}`);

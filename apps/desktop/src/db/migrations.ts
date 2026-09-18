@@ -24,6 +24,7 @@ import {
 import { SCHEMA_V4_STATEMENTS } from './schema.v4';
 import { SCHEMA_V5_STATEMENTS } from './schema.v5';
 import { SCHEMA_V6_STATEMENTS } from './schema.v6';
+import { SCHEMA_V7_STATEMENTS } from './schema.v7';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -196,6 +197,19 @@ function applySchemaV6(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #7：模板表 `template`（TASK-T23-01 §0.A，模板子系统数据面）。
+ *
+ * 幂等性：建表/建索引全走 `IF NOT EXISTS`（无加列，语句自含主键）。语句见 `schema.v7.ts`。
+ * 模板是账本内实体（op kind='template'，core schema v3），物化走 template.* 白名单语句。
+ */
+function applySchemaV7(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V7_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '7');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -206,6 +220,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 4, name: 'v4-block-body-fts', up: applySchemaV4 },
   { id: 5, name: 'v5-import-source', up: applySchemaV5 },
   { id: 6, name: 'v6-fts-defer', up: applySchemaV6 },
+  { id: 7, name: 'v7-template', up: applySchemaV7 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

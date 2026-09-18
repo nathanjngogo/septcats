@@ -772,6 +772,76 @@ LIMIT @limit`,
       limit: z.number().int().min(1).max(50),
     }),
   },
+  // ---- template（v7 · TASK-T23-01：模板子系统数据面）-----------------------
+  // 账本内实体（op kind='template'，target.table='template'，core schema v3）；
+  // upsert 整对象写（LWW 全量），patch 只动 title/icon（templates:rename 的局部路径，
+  // 服务层 rename 实际走 upsert 整对象以保持 op 与投影一致——见 main/templates.ts）。
+  // 表无 workspace_id 列（模板设备级共享，口径同 import_source，见其 §C-2 说明）。
+  'template.upsert': {
+    kind: 'run',
+    sql: `INSERT INTO template (id, kind, title, icon, payload, alive, version, created_at, updated_at, deleted_at)
+VALUES (@id, @kind, @title, @icon, @payload, @alive, @version, @created_at, @updated_at, @deleted_at)
+ON CONFLICT(id) DO UPDATE SET
+  kind = excluded.kind,
+  title = excluded.title,
+  icon = excluded.icon,
+  payload = excluded.payload,
+  alive = excluded.alive,
+  version = excluded.version,
+  updated_at = excluded.updated_at,
+  deleted_at = excluded.deleted_at`,
+    params: z.object({
+      id: idText,
+      kind: z.enum(['page', 'database']),
+      title: z.string().default(''),
+      icon: nullableText,
+      payload: z.string().min(1).default('{}'),
+      alive: aliveFlag,
+      version: versionInt,
+      created_at: nullableTimestamp,
+      updated_at: nullableTimestamp,
+      deleted_at: nullableTimestamp,
+    }),
+  },
+  'template.patch': {
+    kind: 'run',
+    sql: `UPDATE template SET
+  title = COALESCE(@title, title),
+  icon = COALESCE(@icon, icon),
+  version = @version,
+  updated_at = @updated_at
+WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      title: z.string().nullable(),
+      icon: z.string().nullable(),
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
+  'template.get': {
+    kind: 'get',
+    sql: `SELECT * FROM template WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
+  'template.list': {
+    kind: 'all',
+    sql: `SELECT id, kind, title, icon, updated_at FROM template
+WHERE alive = 1 AND (@kind IS NULL OR kind = @kind)
+ORDER BY updated_at DESC, id`,
+    params: z.object({ kind: z.enum(['page', 'database']).nullable().default(null) }),
+  },
+  'template.softDelete': {
+    kind: 'run',
+    sql: `UPDATE template SET alive = 0, deleted_at = @deleted_at, version = @version, updated_at = @updated_at
+WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      deleted_at: nullableTimestamp,
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
 } satisfies Record<string, StatementDefinition>;
 
 export type SqlId = keyof typeof STATEMENTS;

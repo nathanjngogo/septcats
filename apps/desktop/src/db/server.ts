@@ -131,6 +131,7 @@ const TABLE_INSERT_ORDER: Readonly<Record<TargetTable, number>> = {
   record: 2,
   block: 3,
   schema: 4,
+  template: 5,
 };
 
 /** 实体表 → 白名单 upsert 语句。'schema' 无物化表（M3 定稿前不落地）。 */
@@ -139,6 +140,8 @@ const STATEMENT_FOR_TABLE: Readonly<Partial<Record<TargetTable, string>>> = {
   block: 'block.upsert',
   collection: 'collection.upsert',
   record: 'record.upsert',
+  // T23-01：模板实体从快照/分段重建时经 template.upsert 重物化
+  template: 'template.upsert',
 };
 
 // ---------------------------------------------------------------------------
@@ -353,6 +356,20 @@ function entityToParams(entity: Entity): Record<string, unknown> {
       };
     case 'schema':
       return {};
+    case 'template':
+      // T23-01：模板实体（op payload = 模板对象全量，replay 后 data 即其键）
+      return {
+        id: entity.id,
+        kind: readString(data, 'kind', 'page'),
+        title: readString(data, 'title', ''),
+        icon: readString(data, 'icon', null),
+        payload: readJsonText(data, 'payload', '{}'),
+        alive: entity.alive,
+        version: entity.version,
+        created_at: readNullableNumber(data, 'created_at'),
+        updated_at: readNumber(data, 'updated_at', 0),
+        deleted_at: readNullableNumber(data, 'deleted_at'),
+      };
   }
   return {};
 }

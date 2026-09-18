@@ -69,6 +69,11 @@ import {
   type BlocksService,
 } from './blocks';
 import {
+  createTemplatesService,
+  registerTemplatesIpc,
+  type TemplatesService,
+} from './templates';
+import {
   createImporterService,
   toImporterError,
   type ImporterService,
@@ -201,13 +206,14 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
-/** 起库后造出的五套服务（页面树 / 行内数据库 / 搜索 / 导入器 / 块），共用同一 DbHandle 与 actor。 */
+/** 起库后造出的六套服务（页面树 / 行内数据库 / 搜索 / 导入器 / 块 / 模板），共用同一 DbHandle 与 actor。 */
 interface DatabaseServices {
   pages: PagesService;
   db: DbViewService;
   search: SearchService;
   importer: ImporterService;
   blocks: BlocksService;
+  templates: TemplatesService;
 }
 
 /**
@@ -316,6 +322,18 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           const workspaces = await pages.listWorkspaces();
           if (workspaces.activeId === null) {
             throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，块 Op 无法物化');
+          }
+          return workspaces.activeId;
+        },
+      }),
+      // T23-01：模板服务——写路径同样复用装饰后 executor（batch 成功即进攒段器）
+      templates: createTemplatesService({
+        executor,
+        actor,
+        activeWorkspaceId: async () => {
+          const workspaces = await pages.listWorkspaces();
+          if (workspaces.activeId === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，模板 Op 无法物化');
           }
           return workspaces.activeId;
         },
@@ -574,6 +592,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerImporterIpc(services?.importer ?? null);
   // 块读写（T21-01）：blocks:list / blocks:commit；blocks:changed 只保留通道名不推送
   registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());
+  // 模板（T23-01）：templates:* 六通道
+  registerTemplatesIpc(services?.templates ?? null, dbViewRegistrar());
 
   // 同步运行时（M8b）：status / setEnabled / now 三通道 + 状态推流（sync:state 在
   // bootstrapDatabase 的 onState 里广播）。runtime 缺失时统一回 E_INVARIANT。

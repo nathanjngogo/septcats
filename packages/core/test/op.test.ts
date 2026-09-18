@@ -71,8 +71,8 @@ describe('op', () => {
     expect(validateOpSemantics(patch)).toEqual([]);
     expect(decodeOp(encodeOp(patch))).toEqual(patch);
 
-    // T19-02：SCHEMA_VERSION 1→2（版本钉随任务书前进；v1 段/快照照旧可读，见 merge-policy.test.ts）
-    expect(SCHEMA_VERSION).toBe(2);
+    // T23-01：SCHEMA_VERSION 2→3（版本钉随任务书前进；v1/v2 段/快照照旧可读，见 merge-policy.test.ts）
+    expect(SCHEMA_VERSION).toBe(3);
   });
 
   it('compareOpLamport 在 lamport 相同时按 op_id 决胜', () => {

@@ -147,8 +147,8 @@ describe('replay', () => {
     const { projection, report } = replay([]);
     expect(projection.size).toBe(0);
     expect(report.conflicts).toEqual([]);
-    // T19-02：快照 v 随 SCHEMA_VERSION 1→2（字节钉随版本前进）
-    expect(opsToSnapshot(projection)).toBe('{"entities":[],"v":2}');
+    // T23-01：快照 v 随 SCHEMA_VERSION 2→3（字节钉随版本前进）
+    expect(opsToSnapshot(projection)).toBe('{"entities":[],"v":3}');
   });
 
   it('快照非法输入被拒绝', () => {
