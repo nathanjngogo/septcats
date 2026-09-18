@@ -258,3 +258,22 @@ describe('SearchPage（mockup 05 对齐）', () => {
     selectSpy.mockRestore();
   });
 });
+
+describe('CommandPalette 页面命中跳转（TASK-T21-02 §0.3）', () => {
+  it('面板内页面命中点击 → selectPage + 关面板 + 关搜索页（视图由 selectPage 切回 pages）', () => {
+    const selectSpy = vi.spyOn(pagesActions, 'selectPage').mockImplementation(() => undefined);
+    paletteStore.setState((state) => ({
+      ...state,
+      open: true,
+      query: '暗物质',
+      hits: HITS,
+      tookMs: 1,
+    }));
+    render(<CommandPalette />);
+    fireEvent.click(screen.getByRole('option', { name: /暗物质探测实验笔记/ }));
+    expect(selectSpy).toHaveBeenCalledWith('pg-1');
+    expect(paletteStore.getState().open).toBe(false);
+    expect(paletteStore.getState().searchOpen).toBe(false);
+    selectSpy.mockRestore();
+  });
+});

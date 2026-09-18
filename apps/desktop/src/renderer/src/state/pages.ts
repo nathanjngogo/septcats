@@ -247,6 +247,8 @@ export const pagesActions = {
         workspaceId: activeId,
         ...data,
       }));
+      // T21-02 §0.2：load 后仍无选中页则选中首个可达页（空树保持 null，走 PageView demo 兜底）
+      pagesActions.ensureSelection();
     } catch (error) {
       pagesStore.setState((state) => ({ ...state, status: 'error', error: describeError(error) }));
     }
