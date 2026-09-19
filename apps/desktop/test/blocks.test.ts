@@ -127,6 +127,7 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
     expect(listed.activeId).not.toBeNull();
     service = createBlocksService({
       executor: coreExecutor(core),
+      actor: ACTOR,
       activeWorkspaceId: async () => {
         const workspaces = await pages.listWorkspaces();
         if (workspaces.activeId === null) {
@@ -288,6 +289,7 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
 
     const failing = createBlocksService({
       executor: coreExecutor(core),
+      actor: ACTOR,
       activeWorkspaceId: async () => {
         throw new BlocksApiError('E_NO_WORKSPACE', '无活动工作区，块 Op 无法物化');
       },
@@ -311,6 +313,7 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
     };
     const fake = createBlocksService({
       executor: fakeExecutor,
+      actor: ACTOR,
       activeWorkspaceId: async () => WORKSPACE_ID,
     });
 
@@ -402,6 +405,7 @@ describe('registerBlocksIpc（IPC 边界）', () => {
         all: async () => ({ rows: [] }) as AllData,
         batch: async () => ({ results: [] }) as BatchData,
       },
+      actor: ACTOR,
       activeWorkspaceId: async () => WORKSPACE_ID,
     });
     registerBlocksIpc(service, registrar);

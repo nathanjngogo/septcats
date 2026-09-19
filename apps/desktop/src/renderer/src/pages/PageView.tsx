@@ -3,7 +3,9 @@
  *
  * 组装：Editor + BlockControls + SlashMenu + SelectionToolbar。
  * 数据（T21-01）：按 pagesStore.selectedId 经 `blocks:list` 加载真实 blocks 喂编辑器；
- * EditSession 的 commit 经 `blocks:commit` 原样透传 Op 落库（失败走 onError 不吞）。
+ * EditSession 的 commit 经 `blocks:commit` 透传 Op 落库（失败走 onError 不吞）；
+ * 设备身份真源在 main——op 的 actor 由 main 写入前权威改写（TASK-T28-01），
+ * 渲染层只传契约要求的占位值。
  * 无选中页（空库/删掉唯一页/初始加载）走既有空态（T26-01 §0.A：demo 假内容兜底
  * 已整体移除，不再回落 DEMO_PAGE）。
  * 打开真实页调一次 touchRecent（失败只记录）。
@@ -12,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentProps, DragEvent, KeyboardEvent } from 'react';
 import { ulid } from '@septcats/core';
+import type { ActorId } from '@septcats/core';
 import {
   EditSession,
   pmNodeNameOf,
@@ -28,6 +31,7 @@ import {
   blockIdAtPos,
   blockPosById,
   planBlockDrop,
+  EDITOR_ACTOR,
   type BlockAction,
   type SelectionRect,
 } from '@septcats/editor/react';
@@ -41,8 +45,13 @@ import { pushToast, pagesActions, usePages } from '../state/pages';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
-/** ActorId 规则：8-32 位 [a-z0-9]。T6 换成真实设备 ID。 */
-const PAGE_ACTOR = 'desktop0001';
+/**
+ * TASK-T28-01：设备身份的唯一真源在 main——`blocks:commit` 写入前会把每个 op 的
+ * actor/lamport.d 权威改写为本机真实 actor（main/blocks.ts 的 rebindOpActor）。
+ * 渲染层不携带、也不得决定设备身份：下面只是 EditSession / DropContext 契约要求的
+ * 占位值（借编辑器包自用的本地 actor 常量），一律会被 main 覆盖。
+ */
+const PAGE_ACTOR_PLACEHOLDER: ActorId = EDITOR_ACTOR;
 
 /** PageView 的内容分发输入（T7b：database 页走 DbPage，其余走编辑器）。 */
 export interface PageViewPage {
@@ -156,7 +165,7 @@ export function PageView({ page }: PageViewProps) {
    */
   const createSession = useCallback((initial: BlockDoc): EditSession => {
     return new EditSession({
-      actor: PAGE_ACTOR,
+      actor: PAGE_ACTOR_PLACEHOLDER,
       commit: async (ops) => {
         await window.septcats.blocks.commit({ ops });
       },
@@ -487,7 +496,8 @@ export function PageView({ page }: PageViewProps) {
       // ② sort_key：dnd.ts 的纯函数给最小 reorder（放不下则整层重平衡）
       const plan = planBlockDrop(
         currentDoc,
-        { actor: PAGE_ACTOR, now: Date.now() },
+        // 占位 actor（会被 main 覆盖）：plan.ops 不外发，提交仍走 EditSession 差分
+        { actor: PAGE_ACTOR_PLACEHOLDER, now: Date.now() },
         draggedId,
         beforeId,
       );

@@ -5,9 +5,11 @@
  * - 读：`block.listByPage`（statements.ts 既有语句，ORDER BY sort_key, id），
  *   行 → 编辑器 Block 形状（id/page_id/type/props/content/parent_id/sort_key/
  *   alive/version/last_edited，照 PageView 的 DEMO_PAGE 构造字段）；
- * - 写：renderer 的 EditSession 产出的 Op[] **原样透传**给既有 `commitOps`
+ * - 写：renderer 的 EditSession 产出的 Op[] 透传给既有 `commitOps`
  *   （op_ledger + 物化 + FTS 同事务；执行面经 withSyncHook 装饰 → 进攒段器）。
- *   renderer 不组 Op、main 不改写 Op —— 两侧都不越权。
+ *   renderer 不组 Op；main 唯一改写的是**设备身份**（TASK-T28-01）：设备身份的
+ *   唯一真源在 main，写入前把每个 op 的 actor/lamport.d 权威改写为本机真实 actor
+ *   （rebindOpActor），其余字段原样保留——渲染层携带的 actor 一律不可信。
  *
  * 与 pages/search 同一纪律：
  * - **本文件不 import electron**（IPC 注册走 DI 的 `registerBlocksIpc(service, registrar)`），
@@ -17,7 +19,7 @@
  * `blocks:changed`（main → renderer 推送通道）本期只保留通道名（preload 已订阅），
  * main 侧不注册 handler、不推送 —— 协作/多窗口推送归后续任务（§0.3）。
  */
-import type { Op } from '@septcats/core';
+import type { ActorId, Op } from '@septcats/core';
 import type { Block } from '@septcats/editor';
 import { CHANNEL_BLOCKS_COMMIT, CHANNEL_BLOCKS_LIST } from '../shared/ipc';
 import { CommitError, commitOps } from './commit';
@@ -148,18 +150,43 @@ function blockRowToBlock(row: unknown): Block {
 export interface BlocksService {
   /** 读一页的存活块（`block.listByPage`：alive=1，按 sort_key, id 升序）。 */
   list(input: { pageId: string }): Promise<Block[]>;
-  /** 提交一批 Op（renderer EditSession 产出，原样透传 commitOps）。回提交条数。 */
+  /** 提交一批 Op（renderer EditSession 产出；写入前 actor 权威改写为本机真实值）。回提交条数。 */
   commit(input: { ops: Op[] }): Promise<number>;
+}
+
+/**
+ * TASK-T28-01（P0）：把一个 op 的设备身份权威改写为本机真实 actor。
+ *
+ * 背景：渲染层（EditSession/DropContext 契约）必须携带某个 actor 才能组 Op，但那
+ * 只是占位值；段校验（core/segment.ts 不变量 3）要求段内每个 op 的 `lamport.d` 等
+ * 于段头 `dev`（本机真实 actor），`actor` 是账本里的写入者字段——两者都来自渲染层
+ * 时会与本机真源不一致 → 攒段 flush 自校验抛 SegmentValidationError → 同步轮失败
+ * 并保持错误态（Q-1）。
+ *
+ * 只改 `actor` 与 `lamport.d` 两个字段；`op_id`/`lamport.c`/`at`/`target`/`kind`/
+ * `payload`/`base`/`merge_policy` 原样保留 → op_id 去重与幂等行为不变（op_id 是
+ * ULID，不内嵌 actor）。已是本机 actor 的 op 原引用返回（幂等）。
+ */
+export function rebindOpActor(op: Op, actor: ActorId): Op {
+  if (op.actor === actor && op.lamport.d === actor) {
+    return op;
+  }
+  return { ...op, actor, lamport: { ...op.lamport, d: actor } };
 }
 
 export interface BlocksServiceOptions {
   readonly executor: StatementExecutor;
+  /**
+   * 本机真实 actor（设备身份唯一真源，index.ts 从 meta.device_id 派生）：
+   * commit 写入前对每个 op 执行 rebindOpActor。
+   */
+  readonly actor: ActorId;
   /** 活动工作区解析（Q4 单库分片：物化语句的 workspace_id 取它）。缺工作区时抛 E_NO_WORKSPACE。 */
   readonly activeWorkspaceId: () => Promise<string>;
 }
 
 export function createBlocksService(options: BlocksServiceOptions): BlocksService {
-  const { executor, activeWorkspaceId } = options;
+  const { executor, actor, activeWorkspaceId } = options;
 
   return {
     async list(input: { pageId: string }): Promise<Block[]> {
@@ -183,8 +210,13 @@ export function createBlocksService(options: BlocksServiceOptions): BlocksServic
       }
       // 深度校验（op_id/lamport/payload 形状）由 commitOps → encodeOp 负责：
       // 非法 op → CommitError(E_MALFORMED_OP)，经 toBlocksError 收敛为 E_MALFORMED。
+      // 写入前权威改写设备身份（TASK-T28-01）：只动 actor/lamport.d，其余字段不变。
       const workspaceId = await activeWorkspaceId();
-      return commitOps(executor, ops, { workspaceId });
+      return commitOps(
+        executor,
+        ops.map((op) => rebindOpActor(op, actor)),
+        { workspaceId },
+      );
     },
   };
 }

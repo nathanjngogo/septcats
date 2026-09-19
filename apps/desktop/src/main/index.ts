@@ -322,9 +322,11 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           return workspaces.activeId;
         },
       }),
-      // T21-01：块服务——写路径复用同一装饰后 executor（commitOps 成功即进攒段器）
+      // T21-01：块服务——写路径复用同一装饰后 executor（commitOps 成功即进攒段器）；
+      // T28-01：actor 是设备身份唯一真源，blocks:commit 写入前按它权威改写 op
       blocks: createBlocksService({
         executor,
+        actor,
         activeWorkspaceId: async () => {
           const workspaces = await pages.listWorkspaces();
           if (workspaces.activeId === null) {

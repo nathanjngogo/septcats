@@ -52,7 +52,8 @@
 | └ T26-01 收尾：空库空态 + 同步状态英化 + i18n 门禁硬化 | 09-19 | ✅ **真机 ALL-PASS 7/7** | ①`DEMO_PAGE`/`buildDemoDoc` 整体移除（死代码）→ 无选中页走 `.pv-empty` 空态（真机：删唯一页出空态、无「暗物质探测」假内容）；②顶栏真凶=T13-01 的 `SyncStatusButton` **从未接线**、显示的是 `@septcats/ui` SyncPill 静态假态 → 换接真实组件（真机 `Synced · Just now`）；③**门禁硬化**：CJK 扫描扩到非注释/非日志字符串字面量，**修前复现 17 处红 → 修后绿**；全仓 990 无红（desktop 408）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**登记 T26-01-1**（默认工作区名是建库时种下的中文数据，宜按创建时 locale 生成） || └ T12 打包（M10-A） | 09-14 | ✅ PM 复验通过 | electron-builder 26.15.3；`Septcats Setup 0.1.0.exe` 88.15MB（R7≤150 达标）；/S 静默装→启动 5s 树存活→卸载零残留；latest.yml sha512 与产物字节级一致；asar+locales 裁剪生效（仅 zh-CN.pak）；零新增依赖除 builder；mac 配置就位待 CI；CI package job 已加（无 remote 未跑） |
 
 | └ T27-01 收尾：工作区名按 locale 种子 + S4 批次 3 巡检 | 09-19 | ✅ 交付（层测 1004 无红；真机复核随 T28 重建） | 默认工作区名按创建时 locale 种子（main 侧最小注入 `defaultWorkspaceNameForLocale`，i18n 双词典 `workspace.defaultName` 互锁）+ 交互态巡检补缺（侧栏底行/nav-row/suffix/palette 行/wiz-drop/同步 pill 与按钮 active、chips 过渡 token 化 + reduced-motion 兜底）+ 空态六类 token 一致；新增 14 用例（desktop 422）；typecheck 9/9、双门禁 ✓、红线零越界；**§发现 7 条**（含「工作区改名入口缺失」仅登记未做） |
-## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
+
+| └ T28-01 🔴 P0 修复：编辑触发同步错误 | 09-19 | ✅ **真机闭环（rc.4）** | 根因=渲染层硬编码设备 id（`PageView.tsx` `PAGE_ACTOR`）+ **段校验实际比对 `op.lamport.d`**（工程师纠正 PM 初判）；修=`main/blocks.ts` `rebindOpActor` 权威改写 actor+lamport.d（幂等）+ 渲染层去硬编码；真机 rc.4：输入后 `state:ok`/`errors:[]`/**`pendingOps:0`**/状态栏「已同步 · 刚刚」；全仓 1009 无红（desktop 427）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**新发现 T29-01（P0-2 静默丢 op）已立单**；PM 记录构建 ABI 坑（dist 前必须 electron ABI） |## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
 |---|---|---|---|
 | 1 | sortkey：相邻数字取 b 首字符→前缀死区 | 高（拖拽排序无解崩溃） | digitA=-1 哨兵 + 沿 b 递归 |
@@ -111,7 +112,9 @@
 - [x] ~~T20-01-3 主题双源~~ → **已修**（T20-02 §0.C + PM 亲修 `theme.tsx` 挂载前事件兜底：真机开机 `data-theme=dark`）（夹具 dark → 真机 light；实时切换正常）
 - [x] ~~T23-02-1~~：已由 T24-01 修（真机 kind=database ✓）
 - [ ] **T25-01-1**：顶栏同步状态「已同步」未走 t()（真机 CJK=7 抓出）；**门禁盲区**=只扫 JSX 文本/属性，需扩展到非注释/非日志的 TS 字符串字面量
-- [ ] **Q-1（🔴 P0）**：编辑器输入触发 `E_SYNC_CYCLE_FAILED`（`PageView.tsx:45 PAGE_ACTOR='desktop0001'` 硬编码设备 id → 段头 dev 不符 → 同步永久错误）→ **阻断 0.3.0**，T28-01 修
+- [x] ~~Q-1（🔴 P0）~~：已由 T28-01 修复并真机闭环（rc.4 `sync.state=ok`、`pendingOps:0`）
+- [ ] **Q-3（🔴 P0-2）**：`packages/sync` 段名碰撞 → `publishSegment` 把「同名不同内容」当成功 → **静默丢 op**（账本 4/盘上 2、watermark=3）→ T29-01 修，**阻断 0.3.0**
+- [ ] ~~原 Q-1 登记~~：编辑器输入触发 `E_SYNC_CYCLE_FAILED`（`PageView.tsx:45 PAGE_ACTOR='desktop0001'` 硬编码设备 id → 段头 dev 不符 → 同步永久错误）→ **阻断 0.3.0**，T28-01 修
 - [ ] **Q-2（UX）**：重载不恢复上次打开的页（落到「未命名」）
 - [ ] **T26-01-1**：默认工作区名「个人工作区」为建库时中文种子（真机 English 模式残留 5 字）——宜按创建时 locale 生成；用户可改名，非 UI 文案缺陷
 - [x] ~~T24-01-1~~：已由 T26-01 修（真机空态 ✓）
