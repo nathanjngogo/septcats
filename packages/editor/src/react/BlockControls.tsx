@@ -3,12 +3,16 @@
  * hover 显形（`--visible`），键盘可达（↑↓ 移动、Enter 执行、Esc 关闭，aria-menu 语义）。
  * 组件只发**意图**（onAction），真正的 Op 生成与提交由宿主（PageView → EditSession）负责。
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { BlockType } from '../model';
 import { SLASH_ITEMS } from '../rules/slashMenu';
-import { CopyIcon, DotsHandleIcon, TrashIcon } from './icons';
+import { overflowsBottom } from './viewport';
+import { CopyIcon, DotsHandleIcon, PlusIcon, TrashIcon } from './icons';
 import './editor.css';
+
+/** 浮层与视口边缘的最小余量（结构值，非设计 token 语义）。 */
+const MENU_VIEWPORT_MARGIN = 8;
 
 export type BlockColorToken = 'default' | 'accent' | 'danger' | 'success' | 'faint';
 
@@ -30,6 +34,10 @@ export interface BlockControlsProps {
   /** 当前块 id；null = 无选区（手柄禁用）。 */
   blockId: string | null;
   onAction: (action: BlockAction) => void;
+  /** 点击 ＋ 在当前块后插入新块（宿主实现；未传则不渲染 ＋）。 */
+  onInsert?: () => void;
+  /** 菜单开裔回调（宿主用于「菜单开着时钉住手柄」）。 */
+  onOpenChange?: (open: boolean) => void;
   /** hover 显形；缺省 false（测试可直接展开）。 */
   visible?: boolean;
 }
@@ -73,11 +81,22 @@ function buildMenuEntries(): MenuEntry[] {
 
 const MENU_ENTRIES: readonly MenuEntry[] = buildMenuEntries();
 
-export function BlockControls({ blockId, onAction, visible = false }: BlockControlsProps) {
+export function BlockControls({ blockId, onAction, onInsert, onOpenChange, visible = false }: BlockControlsProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  /** 菜单放不下视口底边时向上翻转（T32-01 §1.1）。 */
+  const [flipAbove, setFlipAbove] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
   const disabled = blockId === null;
+
+  /** 开合统一入口：状态与宿主回调同步走（外部点击/Esc 关闭也要通知）。 */
+  const applyOpen = (next: boolean) => {
+    setOpen(next);
+    onOpenChangeRef.current?.(next);
+  };
 
   useEffect(() => {
     if (!open) {
@@ -86,7 +105,7 @@ export function BlockControls({ blockId, onAction, visible = false }: BlockContr
     const onPointerDown = (event: MouseEvent) => {
       const root = rootRef.current;
       if (root !== null && event.target instanceof Node && !root.contains(event.target)) {
-        setOpen(false);
+        applyOpen(false);
       }
     };
     document.addEventListener('mousedown', onPointerDown);
@@ -95,15 +114,36 @@ export function BlockControls({ blockId, onAction, visible = false }: BlockContr
     };
   }, [open]);
 
+  // 菜单渲染后实测一次：底边放不下且上方有正空间 → 翻转到手柄上方
+  useLayoutEffect(() => {
+    if (!open) {
+      setFlipAbove(false);
+      return;
+    }
+    const menu = menuRef.current;
+    const root = rootRef.current;
+    if (menu === null || root === null) {
+      return;
+    }
+    const rect = menu.getBoundingClientRect();
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    if (!overflowsBottom(rect, viewport, MENU_VIEWPORT_MARGIN)) {
+      setFlipAbove(false);
+      return;
+    }
+    const rootRect = root.getBoundingClientRect();
+    setFlipAbove(rootRect.top - rect.height - MENU_VIEWPORT_MARGIN >= 0);
+  }, [open, blockId]);
+
   const run = (entry: MenuEntry) => {
-    setOpen(false);
+    applyOpen(false);
     onAction(entry.action);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const size = MENU_ENTRIES.length;
     if (event.key === 'Escape') {
-      setOpen(false);
+      applyOpen(false);
       return;
     }
     if (event.key === 'ArrowDown') {
@@ -126,9 +166,26 @@ export function BlockControls({ blockId, onAction, visible = false }: BlockContr
   };
 
   const rootClass = visible || open ? 'sc-blockcontrol sc-blockcontrol--visible' : 'sc-blockcontrol';
+  const menuClass = flipAbove
+    ? 'sc-blockcontrol__menu sc-blockcontrol__menu--above'
+    : 'sc-blockcontrol__menu';
 
   return (
     <div ref={rootRef} className={rootClass} data-block-id={blockId ?? ''}>
+      {onInsert !== undefined ? (
+        <button
+          type="button"
+          className="sc-blockcontrol__add"
+          aria-label="新增块"
+          disabled={disabled}
+          onClick={(event) => {
+            event.preventDefault();
+            onInsert();
+          }}
+        >
+          <PlusIcon />
+        </button>
+      ) : null}
       <button
         type="button"
         className="sc-blockcontrol__handle"
@@ -138,14 +195,15 @@ export function BlockControls({ blockId, onAction, visible = false }: BlockContr
         disabled={disabled}
         onClick={(event) => {
           event.preventDefault();
-          setOpen((value) => !value);
+          applyOpen(!open);
         }}
       >
         <DotsHandleIcon />
       </button>
       {open && !disabled ? (
         <div
-          className="sc-blockcontrol__menu"
+          ref={menuRef}
+          className={menuClass}
           role="menu"
           tabIndex={-1}
           aria-label="块操作菜单"

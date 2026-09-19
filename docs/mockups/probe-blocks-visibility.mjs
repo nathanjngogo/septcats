@@ -53,7 +53,27 @@ const hov = await page.evaluate(() => {
   return out;
 });
 log('HOVER:', JSON.stringify(hov));
-await page.screenshot({ path: SHOTS + '/hover-block.png' });
+// 二次取证：换 hover 目标（块包裹层 data-block-id）+ JS 派发 mousemove，排除探针误报
+const diag = await page.evaluate(() => {
+  const blocks = [...document.querySelectorAll('[data-id]')];
+  return { blockCount: blocks.length, blockCls: blocks.slice(0, 3).map((b) => b.className.toString().slice(0, 60)), bcAny: document.querySelectorAll('[class*="blockcontrol"]').length };
+});
+log('DOM-DIAG:', JSON.stringify(diag));
+const wrap = page.locator('[data-id]').first();
+const wOk = await wrap.hover({ timeout: 5000 }).then(() => true).catch(() => false);
+await page.evaluate(() => {
+  const b = document.querySelector('[data-id]');
+  if (b) { for (const t of ['mouseover', 'mouseenter', 'mousemove']) b.dispatchEvent(new MouseEvent(t, { bubbles: true, clientX: 200, clientY: (b.getBoundingClientRect().top + 5) })); }
+});
+await wait(1800);
+const hov2 = await page.evaluate(() => {
+  const h = document.querySelector('.sc-blockcontrol__handle');
+  const all = document.querySelectorAll('[class*="blockcontrol"]').length;
+  if (!h) return { handle: null, bcAny: all };
+  const b = h.getBoundingClientRect(); const s = getComputedStyle(h);
+  return { handle: { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height), display: s.display, visibility: s.visibility, opacity: s.opacity }, bcAny: all, inViewport: b.width > 0 && b.top >= 0 && b.bottom <= window.innerHeight && b.left >= 0, aria: h.getAttribute('aria-label') };
+});
+log('HOVER#2 (块包裹层 + 派发事件):', JSON.stringify(hov2), 'wrapHoverOk=', wOk);
 
 // 点手柄 → 菜单
 const handle = page.locator('.sc-blockcontrol__handle').first();

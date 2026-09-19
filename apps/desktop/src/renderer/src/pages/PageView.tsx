@@ -12,7 +12,7 @@
  * 编辑器只吐 BlockDoc，外发由 EditSession debounce 成一批 Op（计划书 §8.1）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ComponentProps, DragEvent, KeyboardEvent } from 'react';
+import type { ComponentProps, DragEvent, KeyboardEvent, MouseEvent } from 'react';
 import { ulid } from '@septcats/core';
 import type { ActorId } from '@septcats/core';
 import {
@@ -120,6 +120,8 @@ type PageDocState =
 export function PageView({ page }: PageViewProps) {
   const docRef = useRef<BlockDoc | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  /** 手柄/浮层的定位基准（.pv-body，position:relative = 浮层 offsetParent）。 */
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const dragIdRef = useRef<string | null>(null);
   /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载；T24-01 起选中同步到 pagesStore，见 convertToDatabase）。 */
   const [dbPageId, setDbPageId] = useState<string | null>(null);
@@ -142,10 +144,21 @@ export function PageView({ page }: PageViewProps) {
 
   const [editor, setEditor] = useState<EditorHandle | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  /**
+   * 块手柄归属（T32-01 §1.1）：hover 即出现（不要求先选中）。
+   * - hoverBlockId：鼠标悬停命中的块（pv-root 内只前进不清零，离开 pv-root 才清）；
+   * - pinnedBlockId：块操作菜单打开期间钉住的块（防止移向菜单时手柄漂移/消失）；
+   * - 兜底 activeBlockId：纯键盘用户（光标所在块）也能 Tab 到手柄。
+   */
+  const [hoverBlockId, setHoverBlockId] = useState<string | null>(null);
+  const [pinnedBlockId, setPinnedBlockId] = useState<string | null>(null);
+  const handleBlockId = pinnedBlockId ?? hoverBlockId ?? activeBlockId;
   const [handleTop, setHandleTop] = useState(0);
   const [anchor, setAnchor] = useState<SelectionRect | null>(null);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
+  /** 斜杠菜单锚点（光标视口坐标换算到 .pv-body；null = 退化到 CSS 缺省位）。 */
+  const [slashPos, setSlashPos] = useState<{ top: number; left: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [aiPanel, setAiPanel] = useState<AiPanelState>(AI_PANEL_CLOSED);
   const aiTargetRef = useRef<AiApplyTarget | null>(null);
@@ -267,12 +280,15 @@ export function PageView({ page }: PageViewProps) {
     const syncSelection = () => {
       const { from, to } = editor.state.selection;
       setActiveBlockId(blockIdAtPos(editor, from));
-      const container = containerRef.current;
-      if (container !== null) {
+      // 斜杠菜单锚点随光标实时更新（键入 query 时菜单跟着走；SlashMenu 内部再做视口夹紧）
+      const body = bodyRef.current;
+      if (body !== null) {
         try {
-          setHandleTop(editor.view.coordsAtPos(from).top - container.getBoundingClientRect().top);
+          const coords = editor.view.coordsAtPos(from);
+          const bodyRect = body.getBoundingClientRect();
+          setSlashPos({ top: coords.bottom - bodyRect.top, left: coords.left - bodyRect.left });
         } catch {
-          setHandleTop(0);
+          // pos 越界等瞬态：保留上次锚点
         }
       }
       if (from === to) {
@@ -309,13 +325,30 @@ export function PageView({ page }: PageViewProps) {
     };
   }, [editor, session]);
 
-  /** 换型（手柄菜单与斜杠菜单共用）。 */
+  /** 手柄定位：跟随归属块的 DOM 顶（贴块左），夹在 .pv-body 顶防越出视口（T32-01 ①）。 */
+  useEffect(() => {
+    if (handleBlockId === null) {
+      return;
+    }
+    const body = bodyRef.current;
+    if (body === null) {
+      return;
+    }
+    const el = body.querySelector(`[data-id="${handleBlockId}"]`);
+    if (!(el instanceof HTMLElement)) {
+      return;
+    }
+    const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top;
+    setHandleTop(Math.max(top, 0));
+  }, [handleBlockId, editor, docState]);
+
+  /** 换型（手柄菜单与斜杠菜单共用；blockId 由调用方给定）。 */
   const applyBlockType = useCallback(
-    (blockType: string, level?: 1 | 2 | 3) => {
-      if (editor === null || activeBlockId === null) {
+    (blockId: string | null, blockType: string, level?: 1 | 2 | 3) => {
+      if (editor === null || blockId === null) {
         return;
       }
-      const pos = blockPosById(editor, activeBlockId);
+      const pos = blockPosById(editor, blockId);
       if (pos === null) {
         return;
       }
@@ -343,15 +376,17 @@ export function PageView({ page }: PageViewProps) {
       }
       editor.view.dispatch(tr);
     },
-    [editor, activeBlockId],
+    [editor],
   );
 
   const handleBlockAction = useCallback(
     (action: BlockAction) => {
-      if (editor === null || activeBlockId === null) {
+      // 动作落在手柄归属块上（hover 的块），而非光标所在块（T32-01 §1.1 Notion 手感）
+      const targetId = handleBlockId;
+      if (editor === null || targetId === null) {
         return;
       }
-      const pos = blockPosById(editor, activeBlockId);
+      const pos = blockPosById(editor, targetId);
       if (pos === null) {
         return;
       }
@@ -371,7 +406,7 @@ export function PageView({ page }: PageViewProps) {
           return;
         }
         case 'convert': {
-          applyBlockType(action.blockType, action.level);
+          applyBlockType(targetId, action.blockType, action.level);
           return;
         }
         case 'color': {
@@ -394,16 +429,49 @@ export function PageView({ page }: PageViewProps) {
         }
       }
     },
-    [editor, activeBlockId, applyBlockType],
+    [editor, handleBlockId, applyBlockType],
   );
+
+  /** 点击 ＋：在手柄归属块后插入空段落并把光标移进去（T32-01 §1.1）。 */
+  const insertBlockAfterHandle = useCallback((): void => {
+    if (editor === null || handleBlockId === null) {
+      return;
+    }
+    const pos = blockPosById(editor, handleBlockId);
+    const node = pos !== null ? editor.state.doc.nodeAt(pos) : null;
+    const paragraphType = editor.state.schema.nodes['paragraph'];
+    if (pos === null || node === null || paragraphType === undefined) {
+      return;
+    }
+    const insertAt = pos + node.nodeSize;
+    const tr = editor.state.tr.insert(insertAt, paragraphType.create({ id: ulid() }));
+    editor.view.dispatch(tr);
+    // 空段落内容起点 = insertAt + 1（@tiptap/pm 未在 apps 直依，走实例命令设选区）
+    editor.commands.setTextSelection(insertAt + 1);
+  }, [editor, handleBlockId]);
 
   const handleSlashSelect = useCallback(
     (item: SlashItem) => {
       setSlashOpen(false);
       setSlashQuery('');
-      applyBlockType(item.blockType, item.level);
+      // 应用前清掉「/query」触发文本：取块内光标前最后一个 '/' 到光标的区间删除，
+      // 再把光标所在块换成所选块型（T32-01 §1.2）。
+      let caretBlockId: string | null = null;
+      if (editor !== null) {
+        const caret = editor.state.selection.from;
+        caretBlockId = blockIdAtPos(editor, caret);
+        const pos = caretBlockId !== null ? blockPosById(editor, caretBlockId) : null;
+        if (pos !== null && caret > pos + 1) {
+          const inner = editor.state.doc.textBetween(pos + 1, caret, '\n');
+          const slashIndex = inner.lastIndexOf('/');
+          if (slashIndex >= 0) {
+            editor.view.dispatch(editor.state.tr.delete(pos + 1 + slashIndex, caret));
+          }
+        }
+      }
+      applyBlockType(caretBlockId, item.blockType, item.level);
     },
-    [applyBlockType],
+    [applyBlockType, editor],
   );
 
   const requestLink = useCallback((target: EditorHandle) => {
@@ -437,14 +505,46 @@ export function PageView({ page }: PageViewProps) {
     [slashOpen],
   );
 
-  const onDragStart = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      dragIdRef.current = activeBlockId;
-      if (activeBlockId !== null) {
-        event.dataTransfer?.setData('text/plain', activeBlockId);
+  /** hover 即出现手柄（T32-01 §1.1）：pv-body 内只前进不清零（跨块间隙不闪烁）。 */
+  const onMouseOver = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (pinnedBlockId !== null) {
+        return;
+      }
+      const target = event.target;
+      if (target instanceof Element && target.closest('.pv-handle') !== null) {
+        return; // 悬停手柄/菜单本体时不切换归属块
+      }
+      const id = blockIdentityOf(target);
+      if (id !== null) {
+        setHoverBlockId(id);
       }
     },
-    [activeBlockId],
+    [pinnedBlockId],
+  );
+
+  const onMouseLeaveBody = useCallback((): void => {
+    if (pinnedBlockId === null) {
+      setHoverBlockId(null);
+    }
+  }, [pinnedBlockId]);
+
+  /** 菜单开着时钉住手柄归属块（关闭后交还 hover 跟随）。 */
+  const handleControlsOpenChange = useCallback(
+    (open: boolean) => {
+      setPinnedBlockId(open ? handleBlockId : null);
+    },
+    [handleBlockId],
+  );
+
+  const onDragStart = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      dragIdRef.current = handleBlockId;
+      if (handleBlockId !== null) {
+        event.dataTransfer?.setData('text/plain', handleBlockId);
+      }
+    },
+    [handleBlockId],
   );
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
@@ -493,7 +593,26 @@ export function PageView({ page }: PageViewProps) {
       tr.insert(insertAt, node);
       editor.view.dispatch(tr);
 
-      // ② sort_key：dnd.ts 的纯函数给最小 reorder（放不下则整层重平衡）
+      // ② sort_key：dnd.ts 的纯函数给最小 reorder（放不下则整层重平衡）。
+      //    diff 以「数组顺序」识别 reorder（sort_key 字段在 patch 里被排除），所以必须把
+      //    拖后的视觉顺序写回 blocks 数组，否则差分为空、落库为空（T32-01 §2.④ 修复）。
+      const aliveOrder = currentDoc.blocks
+        .filter((entry) => entry.alive === 1)
+        .map((entry) => entry.id);
+      const fromIndex = aliveOrder.indexOf(draggedId);
+      aliveOrder.splice(fromIndex, 1);
+      const toIndex = beforeId === null ? aliveOrder.length : aliveOrder.indexOf(beforeId);
+      aliveOrder.splice(toIndex < 0 ? aliveOrder.length : toIndex, 0, draggedId);
+      const blockById = new Map(currentDoc.blocks.map((entry) => [entry.id, entry]));
+      const reorderedDoc: BlockDoc = {
+        pageId: currentDoc.pageId,
+        blocks: [
+          ...aliveOrder
+            .map((id) => blockById.get(id))
+            .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined),
+          ...currentDoc.blocks.filter((entry) => entry.alive !== 1),
+        ],
+      };
       const plan = planBlockDrop(
         currentDoc,
         // 占位 actor（会被 main 覆盖）：plan.ops 不外发，提交仍走 EditSession 差分
@@ -504,7 +623,7 @@ export function PageView({ page }: PageViewProps) {
       if (plan.kind === 'noop') {
         return;
       }
-      const next = applySortKeyAssignments(currentDoc, plan.assignments);
+      const next = applySortKeyAssignments(reorderedDoc, plan.assignments);
       docRef.current = next;
       session?.onDocChange(next);
     },
@@ -704,11 +823,14 @@ export function PageView({ page }: PageViewProps) {
       </div>
       <div
         className="pv-body"
+        ref={bodyRef}
         onKeyDown={onKeyDown}
+        onMouseOver={onMouseOver}
+        onMouseLeave={onMouseLeaveBody}
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
-        {activeBlockId !== null ? (
+        {handleBlockId !== null ? (
           <div
             className="pv-handle"
             style={{ top: handleTop }}
@@ -719,7 +841,13 @@ export function PageView({ page }: PageViewProps) {
               setDropTarget(null);
             }}
           >
-            <BlockControls blockId={activeBlockId} onAction={handleBlockAction} visible />
+            <BlockControls
+              blockId={handleBlockId}
+              onAction={handleBlockAction}
+              onInsert={insertBlockAfterHandle}
+              onOpenChange={handleControlsOpenChange}
+              visible
+            />
           </div>
         ) : null}
         {docState.status === 'loading' ? (
@@ -734,6 +862,7 @@ export function PageView({ page }: PageViewProps) {
         <SlashMenu
           open={slashOpen}
           query={slashQuery}
+          position={slashPos ?? undefined}
           onSelect={handleSlashSelect}
           onClose={() => {
             setSlashOpen(false);

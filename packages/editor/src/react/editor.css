@@ -127,6 +127,7 @@ h3.sc-block--heading {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: var(--sc-space-xxs);
   opacity: 0;
   transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
 }
@@ -136,7 +137,8 @@ h3.sc-block--heading {
   opacity: 1;
 }
 
-.sc-blockcontrol__handle {
+.sc-blockcontrol__handle,
+.sc-blockcontrol__add {
   display: grid;
   place-items: center;
   width: var(--sc-size-control-sm);
@@ -145,12 +147,14 @@ h3.sc-block--heading {
   color: var(--sc-color-ink-faint);
 }
 
-.sc-blockcontrol__handle:hover {
+.sc-blockcontrol__handle:hover,
+.sc-blockcontrol__add:hover {
   background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);
 }
 
-.sc-blockcontrol__handle:disabled {
+.sc-blockcontrol__handle:disabled,
+.sc-blockcontrol__add:disabled {
   opacity: 0;
   cursor: default;
 }
@@ -168,6 +172,12 @@ h3.sc-block--heading {
   border: 1px solid var(--sc-color-hairline);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
+}
+
+/* 底边放不下：翻转到手柄上方（T32-01 §1.1） */
+.sc-blockcontrol__menu--above {
+  top: auto;
+  bottom: calc(var(--sc-size-control-sm) + var(--sc-space-xs));
 }
 
 .sc-blockcontrol__item {

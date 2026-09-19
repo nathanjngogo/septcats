@@ -25,6 +25,14 @@ export function DotsHandleIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function PlusIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...BASE} width={16} height={16} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} width={16} height={16} {...props}>
