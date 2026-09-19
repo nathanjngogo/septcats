@@ -11,7 +11,7 @@
  * 打开真实页调一次 touchRecent（失败只记录）。
  * 编辑器只吐 BlockDoc，外发由 EditSession debounce 成一批 Op（计划书 §8.1）。
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, DragEvent, KeyboardEvent, MouseEvent } from 'react';
 import { ulid } from '@septcats/core';
 import type { ActorId } from '@septcats/core';
@@ -52,9 +52,10 @@ import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
-import { pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
+import { aliveNodes, pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
 import { usePageWidth } from '../state/pageWidth';
 import { BacklinksPanel } from './BacklinksPanel';
+import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
 import './PageView.css';
@@ -321,20 +322,52 @@ export function PageView({ page }: PageViewProps) {
    * 视觉变化）；编辑器销毁/换页时释放。IPC 失败只记录，不阻断编辑（collabClient 内
    * 已 catch，这里是 attach 往返本身的兜底）。T42-01-1：门控加「本渲染真正承载
    * 编辑器」——wiki/database 页不接协作层（渲染分派不产出编辑器实例）。
+   * T44-01-1：attach 完成置 collabReady——双链存活对账必须排在 Y→PM 投影/PM→Y
+   * 种子之后，否则投影会把对账结果覆盖回去（见下方 reconcile effect）。
    */
+  const [collabReady, setCollabReady] = useState(false);
   useEffect(() => {
     if (editor === null || activePageId === null || !rendersEditor) {
       return;
     }
     let cancelled = false;
-    attachCollab(activePageId, editor, () => cancelled).catch((error: unknown) => {
-      console.error('[PageView] 协作层接入失败（不阻断编辑）', error);
-    });
+    setCollabReady(false);
+    attachCollab(activePageId, editor, () => cancelled)
+      .then(() => {
+        if (!cancelled) {
+          setCollabReady(true);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('[PageView] 协作层接入失败（不阻断编辑）', error);
+      });
     return () => {
       cancelled = true;
       detachCollab(activePageId);
     };
   }, [editor, activePageId, rendersEditor]);
+
+  /**
+   * T44-01-1：双链「解析语义 ↔ 页面存活」对账。pages.tree 返回 alive+deleted
+   * 全量节点，链接 attrs.target 是插入时写死的页 id——目标页软删后无人重估就会
+   * 永远显示已解析（PM 真机 B3/B3b 实证）。这里以存活集合为真源双向收敛：
+   * 死 target → null（转未解析，点击走新建路径）；null + 唯一存活标题命中 →
+   * 回填 id（回收站恢复后重新解析）。时机：collab attach 完成（防 Y→PM 投影
+   * 覆盖）+ 页面树存活态变化时（删页/恢复随 refresh 即时生效）；模块幂等，
+   * 无需变更时零事务。
+   */
+  const aliveKey = useMemo(
+    () => pageNodes.map((node) => `${node.id}:${String(node.alive)}:${node.title}`).join('|'),
+    [pageNodes],
+  );
+  useEffect(() => {
+    if (editor === null || !collabReady) {
+      return;
+    }
+    reconcileWikilinkTargets(editor, pageNodes);
+    // aliveKey 是 pageNodes 的存活态签名：删页/恢复/改名随 refresh 到来时重对账
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, collabReady, aliveKey]);
 
   useEffect(() => {
     if (editor === null) {
@@ -448,9 +481,11 @@ export function PageView({ page }: PageViewProps) {
 
   /**
    * T44-01：双链点击（Obsidian 式）。
-   * 已解析（target 在当前树里）→ 页签打开目标页（openInTab 同页不重复开）；
-   * 未解析（target=null 或指向已不存在的页）→ 新建该标题页并跳转，回填节点 target
+   * 已解析（target 是**存活**页 id）→ 页签打开目标页（openInTab 同页不重复开）；
+   * 未解析（target=null 或指向已删/不存在的页）→ 新建该标题页并跳转，回填节点 target
    * （稳定 id 键——此后改名不破链）。目标行为显式（新建+跳转），绝不静默无反应。
+   * T44-01-1：pages.tree 返回 alive+deleted 全量节点——判活必须过滤 alive=1，
+   * 否则指向已删页的链接会打开死页页签而不是走新建路径（claim#3 口径）。
    */
   const handleWikilinkClick = useCallback(
     (info: WikilinkClickInfo): void => {
@@ -458,7 +493,8 @@ export function PageView({ page }: PageViewProps) {
         return;
       }
       const targetAlive =
-        info.target !== null && pageNodes.some((node) => node.id === info.target);
+        info.target !== null &&
+        pageNodes.some((node) => node.id === info.target && node.alive === 1);
       if (targetAlive && info.target !== null) {
         pagesActions.openInTab(info.target);
         return;
@@ -477,9 +513,12 @@ export function PageView({ page }: PageViewProps) {
     [editor, pageNodes],
   );
 
-  /** 双链补全候选：当前工作区页面（树真源），按标题过滤（纯函数，limit 8）。 */
+  /**
+   * 双链补全候选：当前工作区**存活**页面（树真源；T44-01-1 起排除已删页——
+   * 删掉的页不该再作为跳转目标被补全出来），按标题过滤（纯函数，limit 8）。
+   */
   const wikilinkHost = {
-    candidates: pageNodes.map((node) => ({ id: node.id, title: node.title })),
+    candidates: aliveNodes(pageNodes).map((node) => ({ id: node.id, title: node.title })),
     onMenuChange: setWikiMenu,
     onLinkClick: handleWikilinkClick,
   };

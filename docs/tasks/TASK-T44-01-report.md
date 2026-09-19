@@ -63,3 +63,29 @@
 > 口径：PM **自写独立探针** `docs/mockups/cdp-e2e-t44-01-pm.mjs`（3 个 boot、18 条断言）
 > ＋ `docs/mockups/cdp-e2e-t44-01-olddb.mjs`（旧库兼容）。
 > **结果：17 PASS / 2 FAIL；console 错...[truncated]
+
+## §T44-01-1 修复闭环
+
+> 工程师：CodeBuddy ｜ 日期：2026-09-20 ｜ 详情：`TASK-T44-01-1-report.md`
+> 触发：本报告 §1 claim#3（「点指向已删页 id 的链接同样走新建路径」）被 PM 真机
+> B3/B3b 证伪——删目标页后 `unresolved=0`，reload 后仍 `unresolved=0`。
+
+**症状 → 根因 → 修法**（三段详见 T44-01-1 报告 §1–§3）：
+
+- 症状：目标页软删后链接仍渲染 `.sc-wikilink`（已解析），reload 不变。
+- 根因：解析语义物化在节点 attrs（`resolved ⇔ attrs.target 非空`，
+  packages/editor types/wikilink.ts:57），target 是插入时写死的页 id，无任何路径按
+  存活态重估；且渲染层把 `pages.tree()` 的 alive+deleted **全量**树当存活口径
+  （点击判活、`[[` 候选）。main/links.ts 的 `links.backlinks` SQL 本带
+  `AND p.alive = 1`，排除嫌疑。
+- 修法（apps/desktop，packages/** 零改动）：新增 `wikilinkResolve.ts` 存活对账——
+  死 target → null（转未解析）；null + 唯一存活标题精确命中 → 回填 id（回收站恢复
+  分支）；对账经正常编辑事务落库（语义进存储层，非纯显示）。PageView 接线：
+  collab attach 完成后 + 树存活态变化时对账；点击判活加 `alive===1`；补全候选改
+  `aliveNodes(pageNodes)`。
+
+**改动**：`wikilinkResolve.ts`（新）、`PageView.tsx`、`test/wikilink-resolve.test.tsx`（新，6 例）。
+**自跑**：desktop 594 全绿（+6）/ editor 197 全绿 / dbview 98 全绿 / typecheck 全绿 /
+tokens 两门禁 OK。**DEVIATION 5 条**（D-1 字面量 'wikilink'、D-2 惰性收敛口径、
+D-3 启动重建保留死 target 行、D-4 回填精确唯一标题、D-5 jsdom 布局桩）待追认，
+详见 T44-01-1 报告 §7。**未做**：真机复跑（B3/B3b + 恢复分支）留 PM。

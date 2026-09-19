@@ -1,0 +1,38 @@
+{
+  "pass": 4,
+  "fail": 0,
+  "results": [
+    {
+      "name": "R1 建链后已解析",
+      "ok": true,
+      "raw": "{\"wikilinks\":1,\"unresolved\":0}"
+    },
+    {
+      "name": "[info] 目标页 id",
+      "ok": null,
+      "raw": "01M2XWH09VYKSZATAHKBFR9BZY"
+    },
+    {
+      "name": "R2 真机删除目标后 → unresolved",
+      "ok": true,
+      "raw": "hasDel=true hasDlg=true {\"wikilinks\":1,\"unresolved\":1}"
+    },
+    {
+      "name": "[info] 回收站恢复按钮",
+      "ok": null,
+      "raw": "hasRestore=true"
+    },
+    {
+      "name": "R3 回收站恢复目标后 → 重新已解析（防单向 bug）",
+      "ok": true,
+      "raw": "hasRestore=true {\"wikilinks\":1,\"unresolved\":0}"
+    },
+    {
+      "name": "R4 reload 后仍已解析（持久化正确）",
+      "ok": true,
+      "raw": "{\"wikilinks\":1,\"unresolved\":0}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

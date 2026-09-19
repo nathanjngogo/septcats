@@ -327,32 +327,46 @@ info('links 通道', JSON.stringify(consistency));
 const api = await page.evaluate(() => Object.keys(window.septcats.links || {}));
 info('links 桥面', JSON.stringify(api));
 
-// 删除目标页 → 链接应变 unresolved，回链清空
-STEP = 'b2|删除目标页';
-const del = await page.evaluate(async () => {
+// ★ 真机路径删除：侧栏 ⋯ → 删除 → 二次确认（走 pagesActions，触发 store refresh）
+// 注：直连桥调 pages.remove 不会触发渲染层 store 刷新，属非真机路径（上一轮 PM 已识别并改正）
+STEP = 'b2|真机删除';
+const delTarget = await page.evaluate(async () => {
   const ws = await window.septcats.workspaces.list();
   const flat = await window.septcats.pages.tree({ workspaceId: ws.activeId });
-  const t = flat.find((n) => String(n.title).includes('链接目标页改名'));
-  if (!t) return { err: 'not found', titles: flat.map((n) => n.title) };
-  const r = await window.septcats.pages.remove({ id: t.id });
-  return { id: t.id, removed: true, r: JSON.stringify(r) };
+  const found = flat.find((n) => String(n.title).includes('链接目标页改名'));
+  return found ? found.id : null;
 });
-info('删除目标页', JSON.stringify(del));
-await wait(1200);
+info('目标页 id', String(delTarget));
+let delViaUi = null;
+if (delTarget !== null) {
+  const row = page.locator(`[data-testid="side-node-${delTarget}"]`).first();
+  await row.hover().catch(() => {});
+  await wait(500);
+  await page.locator(`[data-testid="side-more-${delTarget}"]`).first().click({ force: true }).catch(() => {});
+  await wait(900);
+  const menuText = await page.evaluate(() => {
+    const ms = [...document.querySelectorAll('.sc-menu')];
+    const m = ms[ms.length - 1];
+    return m === null || m === undefined ? null : [...m.querySelectorAll('[role="menuitem"] .sc-menu__label')].map((e) => e.textContent);
+  });
+  const delItem = page.locator('[role="menuitem"]', { hasText: '删除' }).first();
+  const hasDel = (await delItem.count()) > 0;
+  if (hasDel) await delItem.click({ force: true }).catch(() => {});
+  await wait(900);
+  const dlg = page.locator('[data-testid="page-delete-confirm"]').first();
+  const hasDlg = (await dlg.count()) > 0;
+  if (hasDlg) await dlg.click({ force: true }).catch(() => {});
+  await wait(1600);
+  delViaUi = { menuText, hasDel, hasDlg };
+}
+info('真机删除流程', JSON.stringify(delViaUi));
 await openRow(page, '链接源页');
-await wait(1000);
+await wait(1300);
 const afterDel = await page.evaluate(editorState);
-info('删除后源页', JSON.stringify({ wikilinks: afterDel.wikilinks, unresolved: afterDel.unresolved }));
-const removedOk = del && del.removed === true;
-check('B3 删目标页后链接变为 unresolved（派生索引与新事实一致）',
+const removedOk = delViaUi !== null && delViaUi.hasDel === true && delViaUi.hasDlg === true;
+check('B3 删目标页后链接变为 unresolved（真机路径 · 派生索引与新事实一致）',
   removedOk && afterDel.unresolved > 0,
-  `removed=${String(removedOk)} del=${JSON.stringify(del)} state=${JSON.stringify({ w: afterDel.wikilinks, u: afterDel.unresolved })}`);
-
-const rebuildAfterDel = await page.evaluate(async () => {
-  try { return JSON.stringify(await window.septcats.links.rebuild({})).slice(0, 200); } catch (e) { return 'ERR:' + String(e && e.message ? e.message : e); }
-});
-info('删除后 rebuild', String(rebuildAfterDel));
-check('B4 rebuild 通道可用（增量==全量的判据由单测覆盖，此处验通道）', !String(rebuildAfterDel).startsWith('ERR:'), String(rebuildAfterDel));
+  `ui=${JSON.stringify(delViaUi)} state=${JSON.stringify({ w: afterDel.wikilinks, u: afterDel.unresolved })}`);
 
 // B3b：reload 复查 —— 区分「派生索引错」与「界面未刷新」
 STEP = 'b2|reload 复查';

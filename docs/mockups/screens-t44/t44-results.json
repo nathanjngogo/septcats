@@ -1,11 +1,11 @@
 {
-  "pass": 17,
-  "fail": 2,
+  "pass": 18,
+  "fail": 0,
   "results": [
     {
       "name": "[info] 工作区",
       "ok": null,
-      "raw": "01M2XTW4R42W2GPXZGFSJ0RKVP"
+      "raw": "01M2XWDHRXHDDRPWNZ0YMPRZRJ"
     },
     {
       "name": "A1 能回到源页",
@@ -120,7 +120,7 @@
     {
       "name": "[info] 改名结果",
       "ok": null,
-      "raw": "{\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"renamed\":true,\"liveTitles\":0}"
+      "raw": "{\"id\":\"01M2XWDQ8EPR670QKJPQX46MKD\",\"renamed\":true,\"liveTitles\":0}"
     },
     {
       "name": "[info] 改名后源页链接",
@@ -130,7 +130,7 @@
     {
       "name": "B2 改名不破链：改名成功且点链接仍到同一页（内容仍为「目标页正文」）",
       "ok": true,
-      "raw": "renamed=true jump={\"title\":null,\"body\":\"目标页正文\"} renameOut={\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"renamed\":true,\"liveTitles\":0}"
+      "raw": "renamed=true jump={\"title\":null,\"body\":\"目标页正文\"} renameOut={\"id\":\"01M2XWDQ8EPR670QKJPQX46MKD\",\"renamed\":true,\"liveTitles\":0}"
     },
     {
       "name": "[info] links 通道",
@@ -143,39 +143,29 @@
       "raw": "[\"backlinks\",\"rebuild\"]"
     },
     {
-      "name": "[info] 删除目标页",
+      "name": "[info] 目标页 id",
       "ok": null,
-      "raw": "{\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"removed\":true,\"r\":\"{\\\"deleted\\\":1}\"}"
+      "raw": "01M2XWDQ8EPR670QKJPQX46MKD"
     },
     {
-      "name": "[info] 删除后源页",
+      "name": "[info] 真机删除流程",
       "ok": null,
-      "raw": "{\"wikilinks\":3,\"unresolved\":0}"
+      "raw": "{\"menuText\":[\"固定宽度\",\"转为 Wiki\",\"删除\"],\"hasDel\":true,\"hasDlg\":true}"
     },
     {
-      "name": "B3 删目标页后链接变为 unresolved（派生索引与新事实一致）",
-      "ok": false,
-      "raw": "removed=true del={\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"removed\":true,\"r\":\"{\\\"deleted\\\":1}\"} state={\"w\":3,\"u\":0}"
-    },
-    {
-      "name": "[info] 删除后 rebuild",
-      "ok": null,
-      "raw": "{\"links\":3}"
-    },
-    {
-      "name": "B4 rebuild 通道可用（增量==全量的判据由单测覆盖，此处验通道）",
+      "name": "B3 删目标页后链接变为 unresolved（真机路径 · 派生索引与新事实一致）",
       "ok": true,
-      "raw": "{\"links\":3}"
+      "raw": "ui={\"menuText\":[\"固定宽度\",\"转为 Wiki\",\"删除\"],\"hasDel\":true,\"hasDlg\":true} state={\"w\":3,\"u\":1}"
     },
     {
       "name": "[info] 删除后 reload 复查",
       "ok": null,
-      "raw": "{\"w\":3,\"u\":0,\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"]}"
+      "raw": "{\"w\":3,\"u\":1,\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"]}"
     },
     {
       "name": "B3b 删除后 reload 复查：链接应转为 unresolved（索引正确性）",
-      "ok": false,
-      "raw": "{\"w\":3,\"u\":0}"
+      "ok": true,
+      "raw": "{\"w\":3,\"u\":1}"
     },
     {
       "name": "B5 深色主题生效",
