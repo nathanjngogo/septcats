@@ -15,7 +15,7 @@ import {
   type PageNode,
 } from '@septcats/editor';
 import type { ToastTone } from '@septcats/ui';
-import type { SeptcatsApi, WorkspaceSummary } from '../../../types/window';
+import type { PageNodeView, SeptcatsApi, WorkspaceSummary } from '../../../types/window';
 import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
 import { closeTabFallback, moveTab, openInTabs, pruneTabs, readTabs, writeTabs } from './tabs';
@@ -38,8 +38,11 @@ export interface PagesState {
   scope: TreeScope;
   workspaceId: string | null;
   workspaces: WorkspaceSummary[];
-  /** alive + deleted 全量（purge 过的行 deletedAt=0，视图层自行过滤）。 */
-  nodes: PageNode[];
+  /**
+   * alive + deleted 全量（purge 过的行 deletedAt=0，视图层自行过滤）。
+   * T42-01：节点带承载注解（pageType/summary/updatedAt，main 侧 PageNodeView）。
+   */
+  nodes: PageNodeView[];
   expanded: Set<string>;
   selectedId: string | null;
   editingId: string | null;
@@ -85,17 +88,26 @@ export function usePages<T>(selector: (state: PagesState) => T): T {
 // 派生工具（组件复用；纯函数）
 // ---------------------------------------------------------------------------
 
-export function aliveNodes(nodes: readonly PageNode[]): PageNode[] {
+export function aliveNodes<T extends PageNode>(nodes: readonly T[]): T[] {
   return nodes.filter((node) => node.alive === 1);
 }
 
 /** 回收站项：软删除（deletedAt > 0）；彻底删除（deletedAt=0）不再露出。 */
-export function trashNodes(nodes: readonly PageNode[]): PageNode[] {
+export function trashNodes<T extends PageNode>(nodes: readonly T[]): T[] {
   return nodes.filter((node) => node.alive === 0 && node.deletedAt !== null && node.deletedAt > 0);
 }
 
-export function nodeMap(nodes: readonly PageNode[]): Map<string, PageNode> {
+export function nodeMap<T extends PageNode>(nodes: readonly T[]): Map<string, T> {
   return new Map(nodes.map((node) => [node.id, node]));
+}
+
+/**
+ * 承载类型读取（T42-01）：注解缺失（夹具/未知来源的 PageNode）一律按普通页理解，
+ * 与 main 侧 v8 列默认值同口径。
+ */
+export function pageTypeOf(node: PageNode): 'page' | 'wiki' | 'database' {
+  const value = (node as Partial<PageNodeView>)['pageType'];
+  return value === 'wiki' || value === 'database' ? value : 'page';
 }
 
 /** 祖先链（根 → 父），带 visited 防环。 */
@@ -196,7 +208,7 @@ export function pushToast(message: string, tone: ToastTone): void {
 // ---------------------------------------------------------------------------
 
 async function fetchAll(workspaceId: string): Promise<{
-  nodes: PageNode[];
+  nodes: PageNodeView[];
   favoriteIds: string[];
   recentIds: string[];
 }> {
@@ -225,7 +237,7 @@ async function refresh(): Promise<void> {
 }
 
 interface Snapshot {
-  nodes: PageNode[];
+  nodes: PageNodeView[];
   favoriteIds: string[];
   recentIds: string[];
 }
@@ -468,6 +480,21 @@ export const pagesActions = {
       },
     });
     pagesStore.setState((state) => (state.editingId === id ? { ...state, editingId: null } : state));
+  },
+
+  /**
+   * T42-01：页面承载类型双向转换（普通页 ↔ Wiki）。转换不动正文块/子页/收藏/
+   * 最近/页签（内容零丢失）；成功后 refresh() 对账——侧栏分区、落地页、页签标题
+   * 全部随 nodes 更新实时生效。
+   */
+  async convertPage(id: string, to: 'wiki' | 'page'): Promise<void> {
+    try {
+      await bridge().pages.convert({ pageId: id, to });
+      await refresh();
+      pushToast(to === 'wiki' ? t('pages.toastConvertedToWiki') : t('pages.toastConvertedToPage'), 'success');
+    } catch (error) {
+      pushToast(describeError(error), 'danger');
+    }
   },
 
   async movePage(input: {

@@ -47,9 +47,10 @@ import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
-import { pushToast, pagesActions, usePages } from '../state/pages';
+import { pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
 import { usePageWidth } from '../state/pageWidth';
 import { DbPage } from '../db/DbPage';
+import { WikiLanding } from './WikiLanding';
 import './PageView.css';
 
 /**
@@ -144,6 +145,17 @@ export function PageView({ page }: PageViewProps) {
   const activePage: PageViewPage | null =
     page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : null);
   const activePageId = activePage?.id ?? null;
+  /**
+   * T42-01 承载判定（统一处理，同时闭环 T40-01-2）：页面类型来自 pagesStore 真树
+   * （main 侧权威判定：存活 collection 行 → database；否则 page_type 列）。
+   * 重开/重载后树重拉，库页仍是 database 页（不再依赖当次会话的 dbPageId 本地态）。
+   */
+  const activeNodeType: 'page' | 'wiki' | 'database' =
+    page !== undefined
+      ? (page.kind ?? 'page')
+      : selectedNode !== null
+        ? pageTypeOf(selectedNode)
+        : 'page';
 
   // T41-01：页面级「全宽 / 固定宽度」开关（Notion 式）。只读状态切片（toggle 在
   // 侧栏 ⋯ 菜单 / 命令面板），宽度表现由 .pv-root[data-measure='full'] CSS 承载，
@@ -357,7 +369,7 @@ export function PageView({ page }: PageViewProps) {
   }, []);
 
   const chatPageTitle = activePage?.title ?? null;
-  const chatPageIsDb = activePage?.kind === 'database';
+  const chatPageIsDb = activeNodeType === 'database';
   useEffect(() => {
     if (editor === null || activePageId === null || chatPageTitle === null || chatPageIsDb) {
       setEditorChatProvider(null);
@@ -949,8 +961,13 @@ export function PageView({ page }: PageViewProps) {
     );
   }
 
-  if (activePage.kind === 'database') {
+  // T42-01：承载判定统一走真树注解——database 页（含重开/重载后的库页，T40-01-2
+  // 闭环）→ DbPage；wiki 页 → WikiLanding；dbPageId 本地态仅作转换瞬间的兜底。
+  if (activePage.kind === 'database' || activeNodeType === 'database') {
     return <DbPage pageId={activePage.id} />;
+  }
+  if (activeNodeType === 'wiki' && selectedNode !== null) {
+    return <WikiLanding key={selectedNode.id} node={selectedNode} />;
   }
   if (dbPageId !== null) {
     return <DbPage pageId={dbPageId} />;

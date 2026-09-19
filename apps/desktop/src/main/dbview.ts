@@ -55,6 +55,8 @@ import {
   CHANNEL_DB_RELATION_SEARCH,
   CHANNEL_DB_RENAME,
   CHANNEL_DB_VIEW_SAVE,
+  CHANNEL_PAGE_CONVERT,
+  CHANNEL_PAGE_SUMMARY_SET,
 } from '../shared/ipc';
 import { commitOps } from './commit';
 import type { StatementExecutor } from './pages';
@@ -130,6 +132,18 @@ export interface DbViewService {
     query: string;
   }): Promise<{ candidates: DbViewRelationCandidate[] }>;
   exportCsv(input: { pageId: string }): Promise<{ csv: string }>;
+  /**
+   * 页面承载类型双向转换（TASK-T42-01 口径 A）：`to='wiki'` 普通页 → Wiki，
+   * `to='page'` Wiki → 普通页。**整对象 page upsert op** 走账本（page_type 键随
+   * op 同步、可审计）；正文块/子页/收藏/最近/页签均不触碰（内容零丢失）。
+   * 多维数据页（存活 collection 关联）不支持转换（E_MALFORMED），回收站页同理。
+   */
+  convertPage(input: { pageId: string; to: 'wiki' | 'page' }): Promise<{ ok: true }>;
+  /**
+   * Wiki 落地页简介（TASK-T42-01）：独立于正文块的 summary 列（migration #8），
+   * 同样以整对象 page upsert op 走账本。仅 Wiki 页可设（E_MALFORMED）。
+   */
+  setPageSummary(input: { pageId: string; summary: string }): Promise<{ ok: true }>;
 }
 
 export interface DbViewServiceOptions {
@@ -562,6 +576,44 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
     return out;
   }
 
+  /** 读 page 行（承载类型服务用）：存活页限定 + v8 两列收口（转换/简介共用）。 */
+  async function pageRowForType(pageId: string): Promise<PageTypeRow> {
+    const data = await executor.get('page.get', { id: pageId });
+    if (data.row === null) {
+      throw new DbViewApiError('E_NOT_FOUND', `页面不存在：${pageId}`);
+    }
+    const row = data.row as Record<string, unknown>;
+    const workspaceId = typeof row['workspace_id'] === 'string' ? row['workspace_id'] : null;
+    const sortKey = typeof row['sort_key'] === 'string' ? row['sort_key'] : null;
+    if (workspaceId === null || sortKey === null) {
+      throw new DbViewApiError('E_INVARIANT', 'page 行缺少 workspace_id/sort_key');
+    }
+    if (rowNumber(row, 'alive', 1) === 0) {
+      throw new DbViewApiError('E_MALFORMED', '回收站中的页面不支持该操作');
+    }
+    const rawType = row['page_type'];
+    const pageType = rawType === 'wiki' || rawType === 'database' ? rawType : ('page' as const);
+    const text = (key: string): string | null => {
+      const value = row[key];
+      return typeof value === 'string' ? value : null;
+    };
+    const deletedAt = row['deleted_at'];
+    return {
+      id: pageId,
+      workspace_id: workspaceId,
+      title: text('title') ?? '',
+      icon: text('icon'),
+      cover: text('cover'),
+      parent_id: text('parent_id'),
+      sort_key: sortKey,
+      alive: 1,
+      deleted_at: typeof deletedAt === 'number' && Number.isFinite(deletedAt) ? deletedAt : null,
+      version: rowNumber(row, 'version', 1),
+      page_type: pageType,
+      summary: text('summary'),
+    };
+  }
+
   return {
     async create(input) {
       const at = meta();
@@ -617,6 +669,9 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
           alive: 1,
           deleted_at: null,
           updated_at: at,
+          // T42-01/T40-01-2：独立库页的承载类型随 op 入账（读路径权威判定仍是
+          // 「存活 collection 行存在」，此标记为审计/同步重放的一致性服务）
+          page_type: 'database',
         },
       };
       const collectionOp: Op = {
@@ -1175,7 +1230,95 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       // BOM 前缀：zh-CN 场景导出首要消费者是 Excel，无 BOM 的 UTF-8 CSV 必乱码
       return { csv: `${BOM}${toCsv([header, ...body])}` };
     },
+
+    // ---- 页面承载类型（TASK-T42-01）---------------------------------------
+
+    async convertPage(input) {
+      const row = await pageRowForType(input.pageId);
+      // 数据库页（存活 collection 关联）不参与转换：避免同一页出现双重承载语义
+      const coll = await executor.get('collection.getByPage', { page_id: input.pageId });
+      if (coll.row !== null) {
+        throw new DbViewApiError('E_MALFORMED', '多维数据页不支持转换为 Wiki/普通页');
+      }
+      const at = meta();
+      const op: Op = {
+        op_id: ulid(at),
+        lamport: { c: row.version + 1, d: actor },
+        at,
+        actor,
+        target: { table: 'page', id: row.id },
+        kind: 'upsert',
+        // 整对象写：除 page_type 外全部字段原样保留（正文块/子页/收藏/最近/页签
+        // 都锚定 page id，不受影响——内容零丢失）
+        payload: {
+          workspace_id: row.workspace_id,
+          title: row.title,
+          icon: row.icon,
+          cover: row.cover,
+          parent_id: row.parent_id,
+          sort_key: row.sort_key,
+          alive: row.alive,
+          deleted_at: row.deleted_at,
+          updated_at: at,
+          page_type: input.to,
+          summary: row.summary,
+        },
+      };
+      await commitOps(executor, [op], { workspaceId: row.workspace_id });
+      return { ok: true as const };
+    },
+
+    async setPageSummary(input) {
+      const row = await pageRowForType(input.pageId);
+      if (row.page_type !== 'wiki') {
+        throw new DbViewApiError('E_MALFORMED', '只有 Wiki 页可设置简介');
+      }
+      const at = meta();
+      const op: Op = {
+        op_id: ulid(at),
+        lamport: { c: row.version + 1, d: actor },
+        at,
+        actor,
+        target: { table: 'page', id: row.id },
+        kind: 'upsert',
+        payload: {
+          workspace_id: row.workspace_id,
+          title: row.title,
+          icon: row.icon,
+          cover: row.cover,
+          parent_id: row.parent_id,
+          sort_key: row.sort_key,
+          alive: row.alive,
+          deleted_at: row.deleted_at,
+          updated_at: at,
+          page_type: row.page_type,
+          summary: input.summary,
+        },
+      };
+      await commitOps(executor, [op], { workspaceId: row.workspace_id });
+      return { ok: true as const };
+    },
   };
+}
+
+/**
+ * page 行 → 承载类型服务的最小行视图（`page.get` 是 `SELECT *`，v8 起含
+ * page_type/summary 两列；类型收口到本函数，转换/简介两个写路径共用）。
+ * 定义在工厂内以闭包 `executor`。
+ */
+interface PageTypeRow {
+  id: string;
+  workspace_id: string;
+  title: string;
+  icon: string | null;
+  cover: string | null;
+  parent_id: string | null;
+  sort_key: string;
+  alive: 1 | 0;
+  deleted_at: number | null;
+  version: number;
+  page_type: 'page' | 'wiki' | 'database';
+  summary: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1229,6 +1372,9 @@ const DB_INPUT_SCHEMAS = {
     query: z.string(),
   }),
   [CHANNEL_DB_EXPORT_CSV]: z.object({ pageId: zId }),
+  // T42-01：页面承载类型两通道（page:convert / page:summary:set）
+  [CHANNEL_PAGE_CONVERT]: z.object({ pageId: zId, to: z.enum(['wiki', 'page']) }),
+  [CHANNEL_PAGE_SUMMARY_SET]: z.object({ pageId: zId, summary: z.string().max(4000) }),
 } as const;
 
 const FIELD_TYPE_SET: ReadonlySet<string> = new Set<string>([
@@ -1428,4 +1574,19 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
   on(CHANNEL_DB_EXPORT_CSV, DB_INPUT_SCHEMAS[CHANNEL_DB_EXPORT_CSV], (svc, data) =>
     svc.exportCsv({ pageId: String(asRecord(data)['pageId']) }),
   );
+
+  // T42-01：页面承载类型（实现与注册面同住本文件——registerDbViewIpc 自持注册，
+  // 无需改 main/index.ts）
+  on(CHANNEL_PAGE_CONVERT, DB_INPUT_SCHEMAS[CHANNEL_PAGE_CONVERT], (svc, data) => {
+    const input = asRecord(data);
+    return svc.convertPage({
+      pageId: String(input['pageId']),
+      to: input['to'] === 'wiki' ? 'wiki' : 'page',
+    });
+  });
+
+  on(CHANNEL_PAGE_SUMMARY_SET, DB_INPUT_SCHEMAS[CHANNEL_PAGE_SUMMARY_SET], (svc, data) => {
+    const input = asRecord(data);
+    return svc.setPageSummary({ pageId: String(input['pageId']), summary: String(input['summary']) });
+  });
 }

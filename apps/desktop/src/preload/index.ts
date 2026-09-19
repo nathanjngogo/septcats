@@ -5,6 +5,8 @@ import {
   BLOCKS_CHANNELS,
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
+  CHANNEL_PAGE_CONVERT,
+  CHANNEL_PAGE_SUMMARY_SET,
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
   COLLAB_CHANNELS,
@@ -62,6 +64,13 @@ const api: SeptcatsApi = {
     remove: (input) => ipcRenderer.invoke(PAGES_CHANNELS.delete, input) as ReturnType<SeptcatsApi['pages']['remove']>,
     restore: (input) => ipcRenderer.invoke(PAGES_CHANNELS.restore, input) as ReturnType<SeptcatsApi['pages']['restore']>,
     purge: (input) => ipcRenderer.invoke(PAGES_CHANNELS.purge, input) as ReturnType<SeptcatsApi['pages']['purge']>,
+    // T42-01：页面承载类型两通道（实现住 main/dbview.ts，通道名单一来源本文件顶部）
+    convert: (input) =>
+      ipcRenderer.invoke(CHANNEL_PAGE_CONVERT, input) as ReturnType<SeptcatsApi['pages']['convert']>,
+    setSummary: (input) =>
+      ipcRenderer.invoke(CHANNEL_PAGE_SUMMARY_SET, input) as ReturnType<
+        SeptcatsApi['pages']['setSummary']
+      >,
   },
   favorites: {
     set: (input) => ipcRenderer.invoke(FAVORITES_CHANNELS.set, input) as Promise<{ pageIds: string[] }>,

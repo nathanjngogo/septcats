@@ -19,8 +19,9 @@ import type {
   ReactNode,
 } from 'react';
 import type { PageNode } from '@septcats/editor';
-import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Plus, Star, Trash } from '@septcats/ui';
-import { aliveNodes, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
+import type { PageNodeView } from '../../../types/window';
+import { aliveNodes, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
 import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
 import { t } from '../i18n';
@@ -39,10 +40,12 @@ function bySortKey(a: PageNode, b: PageNode): number {
   return a.id < b.id ? -1 : 1;
 }
 
-/** 收藏/最近分组展开态（本地视图态；store 的 expanded 只管页面树行）。 */
+/** 收藏/最近/Wiki 分组展开态（本地视图态；store 的 expanded 只管页面树行）。 */
 interface GroupOpen {
   favorites: boolean;
   recent: boolean;
+  /** T42-01：Wiki 分区（默认展开，转换后立即可见）。 */
+  wiki: boolean;
 }
 
 /** 行内重命名输入框（最小实现：行内 input + 既有 token 样式）。 */
@@ -157,24 +160,28 @@ export function SidebarTree() {
   // T41-01：页面级「全宽 / 固定宽度」集合（行菜单项显示当前页状态并切换）
   const fullWidthPages = usePageWidth((state) => state.full);
   const templates = useTemplates((state) => state.templates);
-  const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false });
+  const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false, wiki: true });
 
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
 
   /** 收藏/最近 → 存活页节点解析（找不到/已删除的 id 跳过）。 */
-  const resolveGroup = (ids: readonly string[]): PageNode[] =>
+  const resolveGroup = (ids: readonly string[]): PageNodeView[] =>
     ids
       .map((id) => byId.get(id))
-      .filter((node): node is PageNode => node !== undefined && node.alive === 1);
+      .filter((node): node is PageNodeView => node !== undefined && node.alive === 1);
 
   const favoriteNodes = useMemo(() => resolveGroup(favoriteIds), [byId, favoriteIds]);
   const recentNodes = useMemo(() => resolveGroup(recentIds), [byId, recentIds]);
   const trashCount = useMemo(() => trashNodes(nodes).length, [nodes]);
 
-  /** 可见树行：roots 按 sortKey 序；展开的节点下钻 alive 子行（childIds 已排序）。 */
+  /** 可见树行：roots 按 sortKey 序；展开的节点下钻 alive 子行（childIds 已排序）。
+   *  T42-01：wiki 页及其子树在此**整枝剪除**（改在「Wiki」分区渲染），普通分区不受影响。 */
   const visibleTree = useMemo(() => {
-    const rows: PageNode[] = [];
-    const walk = (node: PageNode): void => {
+    const rows: PageNodeView[] = [];
+    const walk = (node: PageNodeView): void => {
+      if (pageTypeOf(node) === 'wiki') {
+        return;
+      }
       rows.push(node);
       if (!expanded.has(node.id)) {
         return;
@@ -188,6 +195,38 @@ export function SidebarTree() {
     };
     for (const root of aliveNodes(nodes).filter((node) => node.parentId === null).sort(bySortKey)) {
       walk(root);
+    }
+    return rows;
+  }, [nodes, expanded, byId]);
+
+  /**
+   * T42-01：Wiki 分区行 = 以 wiki 页为根的子树（按 sortKey 序）；下行遇到嵌套
+   * wiki 页即截断（它自己会作为独立根出现在本分区，避免重复行）。
+   */
+  const wikiRootCount = useMemo(
+    () => aliveNodes(nodes).filter((node) => pageTypeOf(node) === 'wiki').length,
+    [nodes],
+  );
+  const wikiRows = useMemo(() => {
+    const rows: Array<{ node: PageNodeView; depth: number }> = [];
+    const walk = (node: PageNodeView, depth: number): void => {
+      rows.push({ node, depth });
+      if (!expanded.has(node.id)) {
+        return;
+      }
+      for (const childId of node.childIds) {
+        const child = byId.get(childId);
+        if (child === undefined || child.alive !== 1) {
+          continue;
+        }
+        if (pageTypeOf(child) === 'wiki') {
+          continue;
+        }
+        walk(child, depth + 1);
+      }
+    };
+    for (const root of aliveNodes(nodes).filter((node) => pageTypeOf(node) === 'wiki').sort(bySortKey)) {
+      walk(root, 0);
     }
     return rows;
   }, [nodes, expanded, byId]);
@@ -240,6 +279,107 @@ export function SidebarTree() {
       );
     });
     return rows;
+  };
+
+  /**
+   * 页面行（普通分区与 Wiki 分区共用，T42-01 抽取）：
+   * ⋯ 菜单 = 全宽开关 + 承载类型转换（wiki 页显示「转为普通页」，普通页显示
+   * 「转为 Wiki」，多维数据页无此项）+ 删除。
+   */
+  const renderPageRow = (
+    node: PageNodeView,
+    depth: number,
+    testIdPrefix: string,
+    rootIcon: ComponentProps<typeof Icon>['icon'],
+  ): ReactNode => {
+    const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
+    const isEditing = editingId === node.id;
+    const type = pageTypeOf(node);
+    const convertItem =
+      type === 'wiki'
+        ? { id: 'convertToPage', label: t('editor.convertToPage') }
+        : type === 'page'
+          ? { id: 'convertToWiki', label: t('editor.convertToWiki') }
+          : null;
+    return (
+      <NavRow
+        key={node.id}
+        testId={`${testIdPrefix}-${node.id}`}
+        label={node.title}
+        icon={depth === 0 ? rootIcon : FileText}
+        depth={depth}
+        active={selectedId === node.id}
+        branch={childCount > 0}
+        open={expanded.has(node.id)}
+        labelNode={isEditing ? <RenameInput id={node.id} title={node.title} /> : undefined}
+        onClick={() => pagesActions.selectPage(node.id)}
+        onCaretClick={(event) => {
+          event.stopPropagation();
+          pagesActions.toggleExpand(node.id);
+        }}
+        onDoubleClick={() => pagesActions.beginRename(node.id)}
+        suffix={
+          // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
+          // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）
+          <span
+            className={
+              rowMenuId === node.id
+                ? 'app-nav-more-wrap app-nav-more-wrap--open'
+                : 'app-nav-more-wrap'
+            }
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <IconButton
+              icon={DotsThree}
+              label={t('sidebar.pageActions')}
+              data-testid={`side-more-${node.id}`}
+              aria-expanded={rowMenuId === node.id}
+              onClick={(event) => {
+                event.stopPropagation();
+                setRowMenuId((current) => (current === node.id ? null : node.id));
+              }}
+            />
+            {rowMenuId === node.id ? (
+              <Menu
+                className="app-nav-menu"
+                label={t('sidebar.pageActions')}
+                items={[
+                  // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）
+                  {
+                    id: 'fullWidth',
+                    label: fullWidthPages.has(node.id)
+                      ? `\u2713 ${t('pageWidth.full')}`
+                      : t('pageWidth.fixed'),
+                  },
+                  ...(convertItem !== null ? [convertItem] : []),
+                  { id: 'delete', label: t('common.delete'), danger: true },
+                ]}
+                onSelect={(action) => {
+                  setRowMenuId(null);
+                  if (action === 'fullWidth') {
+                    pageWidthActions.toggle(node.id);
+                  }
+                  if (action === 'convertToWiki') {
+                    void pagesActions.convertPage(node.id, 'wiki');
+                  }
+                  if (action === 'convertToPage') {
+                    void pagesActions.convertPage(node.id, 'page');
+                  }
+                  if (action === 'delete') {
+                    pagesActions.requestDeletePage(node.id);
+                  }
+                }}
+                onDismiss={() => {
+                  setRowMenuId(null);
+                }}
+              />
+            ) : null}
+          </span>
+        }
+      />
+    );
   };
 
   return (
@@ -301,84 +441,26 @@ export function SidebarTree() {
           : null}
         {renderGroupRows('favorites', t('sidebar.favorites'), Star, favoriteNodes, t('sidebar.emptyFavorites'))}
         {renderGroupRows('recent', t('sidebar.recent'), Clock, recentNodes, t('sidebar.emptyRecent'))}
-        {visibleTree.map((node) => {
-          const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
-          const isEditing = editingId === node.id;
-          return (
-            <NavRow
-              key={node.id}
-              testId={`side-node-${node.id}`}
-              label={node.title}
-              icon={node.depth === 0 ? FolderSimple : FileText}
-              depth={node.depth}
-              active={selectedId === node.id}
-              branch={childCount > 0}
-              open={expanded.has(node.id)}
-              labelNode={
-                isEditing ? <RenameInput id={node.id} title={node.title} /> : undefined
-              }
-              onClick={() => pagesActions.selectPage(node.id)}
-              onCaretClick={(event) => {
-                event.stopPropagation();
-                pagesActions.toggleExpand(node.id);
-              }}
-              onDoubleClick={() => pagesActions.beginRename(node.id)}
-              suffix={
-                // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
-                // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）
-                <span
-                  className={
-                    rowMenuId === node.id
-                      ? 'app-nav-more-wrap app-nav-more-wrap--open'
-                      : 'app-nav-more-wrap'
-                  }
-                  onClick={(event) => {
-                    event.stopPropagation();
-                  }}
-                >
-                  <IconButton
-                    icon={DotsThree}
-                    label={t('sidebar.pageActions')}
-                    data-testid={`side-more-${node.id}`}
-                    aria-expanded={rowMenuId === node.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setRowMenuId((current) => (current === node.id ? null : node.id));
-                    }}
-                  />
-                  {rowMenuId === node.id ? (
-                    <Menu
-                      className="app-nav-menu"
-                      label={t('sidebar.pageActions')}
-                      items={[
-                        // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）
-                        {
-                          id: 'fullWidth',
-                          label: fullWidthPages.has(node.id)
-                            ? `\u2713 ${t('pageWidth.full')}`
-                            : t('pageWidth.fixed'),
-                        },
-                        { id: 'delete', label: t('common.delete'), danger: true },
-                      ]}
-                      onSelect={(action) => {
-                        setRowMenuId(null);
-                        if (action === 'fullWidth') {
-                          pageWidthActions.toggle(node.id);
-                        }
-                        if (action === 'delete') {
-                          pagesActions.requestDeletePage(node.id);
-                        }
-                      }}
-                      onDismiss={() => {
-                        setRowMenuId(null);
-                      }}
-                    />
-                  ) : null}
-                </span>
-              }
-            />
-          );
-        })}
+        {/* T42-01：Wiki 独立分区（图标走 @septcats/ui 出口 Note），列本工作区全部 wiki 页
+            （及其子树；嵌套 wiki 页独立成根）。空态与收藏/最近同款 .app-nav-empty。 */}
+        <NavRow
+          testId="side-wiki"
+          label={t('sidebar.wiki')}
+          icon={Note}
+          head
+          count={wikiRootCount}
+          onClick={() => toggleGroup('wiki')}
+        />
+        {groupOpen.wiki ? (
+          wikiRows.length === 0 ? (
+            <div className="app-nav-empty" style={indentStyle(1)} data-testid="side-wiki-empty">
+              {t('sidebar.emptyWiki')}
+            </div>
+          ) : (
+            wikiRows.map(({ node, depth }) => renderPageRow(node, depth, 'side-wiki-node', Note))
+          )
+        ) : null}
+        {visibleTree.map((node) => renderPageRow(node, node.depth, 'side-node', FolderSimple))}
       </div>
       <div
         className={view === 'trash' ? 'app-side-foot app-side-foot--active' : 'app-side-foot'}

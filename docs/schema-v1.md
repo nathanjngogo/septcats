@@ -56,6 +56,11 @@
 | parent_id / parent_table | id? / 'page'\|'workspace' | 根页 parent=null+workspace |
 | sort_key | base62 | 兄弟序 |
 
+**T42-01 追加（migration #8，向后兼容·纯加列）**：
+- op payload 新键 `page_type`（`'page' | 'wiki' | 'database'`，**缺省 = 'page'**——旧版本 op 重放/未携带该键的 payload 一律按普通页物化，非法值在 commit 层显式拒绝）与 `summary`（string?，Wiki 落地页简介，独立于正文块）。两者只随 **upsert（整对象）op** 落库（page.upsert 语句新增 `page_type`/`summary` 两列参数）；patch/move/reorder/delete 不携带。
+- 读路径的**权威承载判定**沿用既有范式：存活 `collection` 行存在（`collection.page_id` 关联）→ `database`；否则取物化列 `page.page_type`（v8 加列，默认 `'page'`）。旧版本创建的库页不依赖新列即可识别。
+- 转换（普通页 ↔ Wiki）= 一条整对象 page upsert op（仅 `page_type` 变化，其余字段原样保留），走 `page:convert` 通道；正文块/子页/收藏/最近/页签均不触碰。
+
 ### block
 `page_id`、`workspace_id`、`type`、`props`、`content`、`sort_key`（均必填除标 ?）。**块永不跨页移动**（move 仅同页排序或改 parent 到子页 → 实为 page 操作），此约束大幅简化级联。
 

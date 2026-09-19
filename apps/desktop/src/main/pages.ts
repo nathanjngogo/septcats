@@ -59,6 +59,31 @@ export interface WorkspaceSummary {
   name: string;
 }
 
+/**
+ * 页面承载类型（TASK-T42-01 口径 A：Wiki = 一类页面）。
+ * - `page`：普通文档页（默认，含旧版本写入的全部存量行）；
+ * - `wiki`：Wiki 页（落地页 = 标题 + 简介 + 子页索引）；
+ * - `database`：行内数据库页（既有范式：存活 collection 行存在，T7b）。
+ */
+export type PageType = 'page' | 'wiki' | 'database';
+
+/**
+ * 树节点 + 承载注解（T42-01）：`PageNode` 之上追加 renderer 直接可用的三类字段。
+ * 三个注解**均可缺省**（`PageNode` 结构上仍是合法 `PageNodeView`）：
+ * 读取一律经 `pageTypeOf` 等兜底口径（缺省 = 普通页/无简介/无时间），
+ * 与「旧库/旧夹具/旧版本桥接数据没有注解」的现状兼容。main 侧 `toNode` 恒填充。
+ * - `pageType`：**读路径权威判定** = 存活 collection 行存在 → 'database'（复用既有
+ *   「collection 行与 page 关联」范式，旧版本建的库页照常识别）；否则取 v8 列
+ *   `page.page_type`（缺省 'page'）；
+ * - `summary`：Wiki 落地页简介（独立于正文块；v8 列，随 page upsert op 走账本）；
+ * - `updatedAt`：page.updated_at（子页索引「末次更新时间」展示用）。
+ */
+export interface PageNodeView extends PageNode {
+  pageType?: PageType;
+  summary?: string | null;
+  updatedAt?: number | null;
+}
+
 export interface MovePageInput {
   id: string;
   newParentId: string | null;
@@ -81,7 +106,7 @@ export interface PagesService {
   renameWorkspace(input: { id: string; name: string }): Promise<{ id: string }>;
   switchWorkspace(input: { id: string }): Promise<{ activeId: string }>;
 
-  listTree(input: { workspaceId: string }): Promise<PageNode[]>;
+  listTree(input: { workspaceId: string }): Promise<PageNodeView[]>;
   createPage(input: { parentId: string | null }): Promise<{ id: string; sortKey: string }>;
   renamePage(input: { id: string; title: string }): Promise<{ id: string }>;
   movePage(input: MovePageInput): Promise<MovePageResult>;
@@ -122,7 +147,7 @@ export function defaultWorkspaceNameForLocale(locale: string): string {
   return locale.toLowerCase().startsWith('zh') ? '个人工作区' : 'Personal Workspace';
 }
 
-/** page 行（`SELECT *` 的列：schema-v1 §6.2 + v2 的 deleted_at）。 */
+/** page 行（`SELECT *` 的列：schema-v1 §6.2 + v2 的 deleted_at + v8 的 page_type/summary）。 */
 interface PageRow {
   id: string;
   workspace_id: string;
@@ -134,6 +159,9 @@ interface PageRow {
   alive: number;
   version: number;
   deleted_at: number | null;
+  page_type: string | null;
+  summary: string | null;
+  updated_at: number | null;
 }
 
 function rowToString(row: unknown, key: string): string | null {
@@ -169,10 +197,18 @@ function toPageRow(row: unknown): PageRow {
     alive: rowToNumber(row, 'alive', 1) === 0 ? 0 : 1,
     version: rowToNumber(row, 'version', 1),
     deleted_at: rowToNullableNumber(row, 'deleted_at'),
+    page_type: rowToString(row, 'page_type'),
+    summary: rowToString(row, 'summary'),
+    updated_at: rowToNullableNumber(row, 'updated_at'),
   };
 }
 
-function toNode(row: PageRow): PageNode {
+function toNode(row: PageRow, dbPageIds: ReadonlySet<string>): PageNodeView {
+  const pageType: PageType = dbPageIds.has(row.id)
+    ? 'database'
+    : row.page_type === 'wiki' || row.page_type === 'database'
+      ? row.page_type
+      : 'page';
   return {
     id: row.id,
     title: row.title ?? '',
@@ -186,22 +222,27 @@ function toNode(row: PageRow): PageNode {
     deletedAt: row.deleted_at,
     childIds: [],
     depth: 0,
+    pageType,
+    summary: row.summary,
+    updatedAt: row.updated_at,
   };
 }
 
 /**
  * 派生 childIds/depth（renderer 直接可用）。`buildTree` 的产物是副本，
  * 这里把根与全部子节点合并成一份「已派生」的节点表；parent 链成环 → TreeCycleError 上抛。
+ * 泛型 T（T42-01 的 PageNodeView）：buildTree 内部按 `{ ...page, childIds, depth }`
+ * 浅拷贝，承载注解（pageType/summary/updatedAt）在运行时原样保留，类型层用断言收口。
  */
-function withDerivedNodes(nodes: readonly PageNode[]): PageNode[] {
+function withDerivedNodes<T extends PageNode>(nodes: readonly T[]): T[] {
   const index = buildTree(nodes);
-  const out: PageNode[] = [...index.roots];
+  const out: T[] = [...(index.roots as T[])];
   const seen = new Set(out.map((node) => node.id));
   for (const list of index.childrenOf.values()) {
     for (const node of list) {
       if (!seen.has(node.id)) {
         seen.add(node.id);
-        out.push(node);
+        out.push(node as T);
       }
     }
   }
@@ -279,16 +320,26 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
     return first.id;
   }
 
-  async function loadNodes(workspaceId: string): Promise<PageNode[]> {
-    const data = await executor.all('page.listAll', { workspace_id: workspaceId });
-    return data.rows.map((row) => toNode(toPageRow(row)));
+  async function loadNodes(workspaceId: string): Promise<PageNodeView[]> {
+    const [data, collections] = await Promise.all([
+      executor.all('page.listAll', { workspace_id: workspaceId }),
+      executor.all('collection.listByWorkspace', { workspace_id: workspaceId }),
+    ]);
+    // T42-01：数据库页判定沿用既有范式（§0.2）——存活 collection 行存在 → 'database'。
+    // 旧版本建的库页（page_type 列缺省 'page'）由此照常识别，不依赖新列。
+    const dbPageIds = new Set(
+      collections.rows
+        .map((row) => rowToString(row, 'page_id'))
+        .filter((id): id is string => id !== null),
+    );
+    return data.rows.map((row) => toNode(toPageRow(row), dbPageIds));
   }
 
   async function requirePage(
     workspaceId: string,
     id: string,
     requireAlive = true,
-  ): Promise<{ node: PageNode; all: PageNode[] }> {
+  ): Promise<{ node: PageNodeView; all: PageNodeView[] }> {
     const all = await loadNodes(workspaceId);
     const node = all.find((candidate) => candidate.id === id);
     if (node === undefined || (requireAlive && node.alive === 0)) {

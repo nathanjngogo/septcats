@@ -1,0 +1,178 @@
+{
+  "pass": 17,
+  "fail": 0,
+  "results": [
+    {
+      "name": "[info] 新建普通页 id",
+      "ok": null,
+      "raw": "01M2XP0SS14EPFJNSPR9A4YMC7"
+    },
+    {
+      "name": "T1 新建页面成功",
+      "ok": true,
+      "raw": "id=01M2XP0SS14EPFJNSPR9A4YMC7"
+    },
+    {
+      "name": "[info] 转换前状态",
+      "ok": null,
+      "raw": "{\"blocks\":2,\"text\":\"第一段正文内容|第二段正文内容\",\"landing\":false}"
+    },
+    {
+      "name": "T1b 转换前是普通编辑器页（.pv-body 在、无 .wiki-body）",
+      "ok": true,
+      "raw": "editor=true landing=false"
+    },
+    {
+      "name": "[info] P1 库页 id",
+      "ok": null,
+      "raw": "pg-01M2XP0X8C4DDQMHNNSD15R2WZ"
+    },
+    {
+      "name": "[info] 转为 Wiki 结果",
+      "ok": null,
+      "raw": "{\"ok\":true}"
+    },
+    {
+      "name": "T2 ⋯ 菜单含「转为 Wiki」且点击成功",
+      "ok": true,
+      "raw": "{\"ok\":true}"
+    },
+    {
+      "name": "[info] 转换后状态",
+      "ok": null,
+      "raw": "{\"landing\":true,\"indexRows\":0,\"indexEmpty\":true,\"summary\":\"\"}"
+    },
+    {
+      "name": "§2.1a Wiki 落地页渲染（.wiki-body）",
+      "ok": true,
+      "raw": "landing=true"
+    },
+    {
+      "name": "§2.1b 侧栏出现 Wiki 分区",
+      "ok": true,
+      "raw": "wikiLabel=true"
+    },
+    {
+      "name": "[info] 简介写入后本会话值",
+      "ok": null,
+      "raw": "这是 PM 写入的简介"
+    },
+    {
+      "name": "[info] 回到 wiki 落地页（建 子页甲 后）",
+      "ok": null,
+      "raw": "back=true"
+    },
+    {
+      "name": "[info] 回到 wiki 落地页（建 子页乙 后）",
+      "ok": null,
+      "raw": "back=true"
+    },
+    {
+      "name": "[info] 子页索引",
+      "ok": null,
+      "raw": "{\"rows\":2,\"titles\":[\"子页\"]}"
+    },
+    {
+      "name": "§2.2a 新建 2 个子页后索引条目数 = 2",
+      "ok": true,
+      "raw": "rows=2 titles=[\"子页\"]"
+    },
+    {
+      "name": "[info] 重开后",
+      "ok": null,
+      "raw": "{\"landing\":true,\"indexRows\":2,\"summary\":\"这是 PM 写入的简介\",\"wikiLabel\":true}"
+    },
+    {
+      "name": "§2.1c 重开应用后仍是 Wiki 落地页（type 持久化）",
+      "ok": true,
+      "raw": "openOk=true landing=true"
+    },
+    {
+      "name": "§2.1d 重开后侧栏 Wiki 分区仍在",
+      "ok": true,
+      "raw": "wikiLabel=true"
+    },
+    {
+      "name": "§2.2b 简介重开仍在（= PM 写入值）",
+      "ok": true,
+      "raw": "summaryVal=\"这是 PM 写入的简介\""
+    },
+    {
+      "name": "§2.2c 子页索引重开后仍为 2 条",
+      "ok": true,
+      "raw": "rows=2"
+    },
+    {
+      "name": "[info] P1 库页重开后",
+      "ok": null,
+      "raw": "{\"dbPage\":true,\"editor\":false}"
+    },
+    {
+      "name": "★ P1 闭环：库页重启后仍是数据库页（不再退化）",
+      "ok": true,
+      "raw": "opened=true dbPage=true editor=false"
+    },
+    {
+      "name": "[info] 转回普通页后",
+      "ok": null,
+      "raw": "{\"landing\":false,\"editor\":true,\"blocks\":2,\"wikiLabel\":true}"
+    },
+    {
+      "name": "§2.3a 「转为普通页」成功且回到编辑器页",
+      "ok": true,
+      "raw": "ok=true editor=true landing=false"
+    },
+    {
+      "name": "§2.3b 正文块数逐条不变（转换前 vs 转回后）",
+      "ok": true,
+      "raw": "before=2 after=2"
+    },
+    {
+      "name": "§2.3c 正文文本校验和不变",
+      "ok": true,
+      "raw": "equal=true"
+    },
+    {
+      "name": "[info] 页签条",
+      "ok": null,
+      "raw": "{\"tabsBar\":true,\"titles\":[\"Wiki源页\",\"Wiki源页\",\"子页甲\",\"子页甲\",\"子页乙\",\"子页乙\"]}"
+    },
+    {
+      "name": "§2.4 页签条存在且标题含被转换页",
+      "ok": true,
+      "raw": "[\"Wiki源页\",\"Wiki源页\",\"子页甲\",\"子页甲\",\"子页乙\",\"子页乙\"]"
+    },
+    {
+      "name": "§2.6a 窗口零滚动",
+      "ok": true,
+      "raw": "x=0 y=0"
+    },
+    {
+      "name": "[info] 侧栏宽",
+      "ok": null,
+      "raw": "sideW=239 collapsed=false"
+    },
+    {
+      "name": "§2.7 深色主题下编辑器页正常（data-theme=dark）",
+      "ok": true,
+      "raw": "theme=dark editor=true"
+    }
+  ],
+  "consoleErrors": [
+    "[b1|新建子页 子页甲] [YjsEditor] Y→PM 初始投影失败（pageId=01M2XP0SS14EPFJNSPR9A4YMC7） TypeError: Cannot read properties of null (reading 'topNodeType')\n    at yXmlFragmentToProseMirrorRootNode (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44471:76)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44611:23)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
+    "[b1|新建子页 子页甲] [PageView] 协作层接入失败（不阻断编辑） RangeError: Adding different instances of a keyed plugin (y-sync$)\n    at file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22407:17\n    at Array.forEach (<anonymous>)\n    at new Configuration (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22405:15)\n    at EditorState.reconfigure (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22527:19)\n    at Editor.registerPlugin (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:32816:30)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44630:12)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
+    "[b1|新建子页 子页乙] [YjsEditor] Y→PM 初始投影失败（pageId=01M2XP0SS14EPFJNSPR9A4YMC7） TypeError: Cannot read properties of null (reading 'topNodeType')\n    at yXmlFragmentToProseMirrorRootNode (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44471:76)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44611:23)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
+    "[b1|新建子页 子页乙] [PageView] 协作层接入失败（不阻断编辑） RangeError: Adding different instances of a keyed plugin (y-sync$)\n    at file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22407:17\n    at Array.forEach (<anonymous>)\n    at new Configuration (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22405:15)\n    at EditorState.reconfigure (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22527:19)\n    at Editor.registerPlugin (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:32816:30)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44630:12)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)"
+  ],
+  "pageErrors": [],
+  "shots": [
+    "dark-01-page.png",
+    "light-01-before.png",
+    "light-02-wiki-landing.png",
+    "light-03-wiki-index.png",
+    "light-04-dbpage-after-restart.png",
+    "light-05-converted-back.png"
+  ],
+  "wikiId": "01M2XP0SS14EPFJNSPR9A4YMC7",
+  "dbPageId": "pg-01M2XP0X8C4DDQMHNNSD15R2WZ"
+}

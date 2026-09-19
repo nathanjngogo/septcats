@@ -87,10 +87,13 @@ ON CONFLICT(id) DO UPDATE SET
   },
 
   // ---- page ---------------------------------------------------------------
+  // T42-01（migration #8）：page.upsert 增加 page_type / summary 两列（v8 加列）。
+  // 缺省 page_type='page'：旧版本 op 重放（payload 无该键）按普通页理解；
+  // summary 为 Wiki 落地页简介（独立于正文块，nullable）。
   'page.upsert': {
     kind: 'run',
-    sql: `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, deleted_at, updated_at)
-VALUES (@id, @workspace_id, @title, @icon, @cover, @parent_id, @sort_key, @alive, @version, @deleted_at, @updated_at)
+    sql: `INSERT INTO page (id, workspace_id, title, icon, cover, parent_id, sort_key, alive, version, deleted_at, updated_at, page_type, summary)
+VALUES (@id, @workspace_id, @title, @icon, @cover, @parent_id, @sort_key, @alive, @version, @deleted_at, @updated_at, @page_type, @summary)
 ON CONFLICT(id) DO UPDATE SET
   workspace_id = excluded.workspace_id,
   title = excluded.title,
@@ -101,7 +104,9 @@ ON CONFLICT(id) DO UPDATE SET
   alive = excluded.alive,
   version = excluded.version,
   deleted_at = excluded.deleted_at,
-  updated_at = excluded.updated_at`,
+  updated_at = excluded.updated_at,
+  page_type = excluded.page_type,
+  summary = excluded.summary`,
     params: z.object({
       id: idText,
       workspace_id: workspaceIdText,
@@ -114,6 +119,8 @@ ON CONFLICT(id) DO UPDATE SET
       version: versionInt,
       deleted_at: nullableTimestamp,
       updated_at: nullableTimestamp,
+      page_type: z.enum(['page', 'wiki', 'database']).default('page'),
+      summary: nullableText,
     }),
   },
   'page.get': {

@@ -40,12 +40,24 @@ export const zhCN = {
     recent: '最近',
     emptyFavorites: '暂无收藏',
     emptyRecent: '暂无最近',
+    // T42-01：Wiki 独立分区（图标 Note 走 @septcats/ui 出口）
+    wiki: 'Wiki',
+    emptyWiki: '暂无 Wiki 页',
     renameAria: '重命名页面',
     pageActions: '页面操作',
     trash: '回收站',
   },
   editor: {
     convertToDatabase: '转为多维数据',
+    // T42-01：承载类型双向转换 + Wiki 落地页
+    convertToWiki: '转为 Wiki',
+    convertToPage: '转为普通页',
+    wikiSummaryLabel: '简介',
+    wikiSummaryPlaceholder: '为这个 Wiki 写一段简介…',
+    wikiIndexTitle: '子页',
+    wikiNewSubpage: '新建子页',
+    wikiEmptyIndex: '暂无子页，点击「新建子页」开始',
+    wikiUpdatedAt: '末次更新',
     linkPrompt: '链接地址（https:// / notion:// / page: / #锚点）',
     emptyPage: '还没有页面。在左侧栏「新建页面」，或从模板开始。',
   },
@@ -117,6 +129,9 @@ export const zhCN = {
     toastUnfavorited: '已移出收藏',
     toastWorkspaceCreated: '已创建工作区',
     toastWorkspaceSwitched: '已切换工作区',
+    // T42-01：承载类型转换结果提示
+    toastConvertedToWiki: '已转为 Wiki',
+    toastConvertedToPage: '已转为普通页',
   },
   importWizard: {
     title: '导入',

@@ -61,8 +61,8 @@ describe('MIGRATIONS 表', () => {
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
     // TASK-T15-01：版本断言一律 LATEST_SCHEMA_VERSION 参数化，不硬编码 id；
-    // 最新迁移语义由名称锁死（T23-01：v7-template）
-    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v7-template');
+    // 最新迁移语义由名称锁死（T42-01：v8-page-type）
+    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v8-page-type');
   });
 
   it('#1..#5 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填，v5 只建导入表', () => {

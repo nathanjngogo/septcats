@@ -146,6 +146,24 @@ function readJsonField(op: Op, key: string, fallback: string): string {
   return JSON.stringify(value);
 }
 
+/** page 承载类型全集（T42-01：与 page.upsert 语句参数、schema.v8 列默认值同口径）。 */
+export const PAGE_TYPES: readonly string[] = ['page', 'wiki', 'database'];
+
+/**
+ * 读 page upsert payload 的承载类型（T42-01）：缺省 'page'（旧版本 op 重放、
+ * 未携带该键的 payload 一律按普通页物化），非法值显式拒绝（不静默纠偏）。
+ */
+function readPageType(op: Op): string {
+  const value = op.payload['page_type'];
+  if (value === undefined || value === null) {
+    return 'page';
+  }
+  if (typeof value !== 'string' || !PAGE_TYPES.includes(value)) {
+    throw malformed(op, `payload.page_type 必须是 ${PAGE_TYPES.join('/')} 之一`);
+  }
+  return value;
+}
+
 /** upsert：整对象 payload → page.upsert 参数（version 取 lamport.c，不由 payload 携带）。 */
 function pageUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
   return {
@@ -162,6 +180,9 @@ function pageUpsertStatement(op: Op, workspaceId: string): DbBatchStatement {
       version: op.lamport.c,
       deleted_at: readNullableNumber(op, 'deleted_at'),
       updated_at: readNumber(op, 'updated_at', op.at),
+      // T42-01：承载类型与 Wiki 简介随整对象 op 走账本（迁移 #8 的两列）
+      page_type: readPageType(op),
+      summary: readNullableString(op, 'summary'),
     },
   };
 }

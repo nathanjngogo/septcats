@@ -5,6 +5,7 @@
 import type { Op } from '@septcats/core';
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
+import type { PageNodeView } from '../main/pages';
 import type { SearchInput, SearchResponse } from '../shared/search';
 import type {
   AppSettings,
@@ -36,6 +37,10 @@ import type {
   AiMessage,
   AiStateSnapshot,
 } from '../shared/ai';
+
+/** 树节点 + 承载注解（TASK-T42-01；真源在 main/pages.ts，此处转出口供 renderer 使用）。 */
+export type { PageNodeView } from '../main/pages';
+export type { PageType } from '../main/pages';
 
 /**
  * AI IPC（M11 · TASK-T18-01 §2.10）。通道与 `src/shared/ipc.ts` 的 AI_CHANNELS
@@ -153,8 +158,11 @@ export interface SeptcatsBlocksApi {
  * 错误码经 Error.message 透传（E_NOT_FOUND / E_PARENT_GONE / E_CYCLE / E_INVARIANT）。
  */
 export interface SeptcatsPagesApi {
-  /** 返回 alive+deleted 全量节点（childIds/depth 已派生），渲染器再组树。 */
-  tree(input: { workspaceId: string }): Promise<PageNode[]>;
+  /**
+   * 返回 alive+deleted 全量节点（childIds/depth 已派生 + T42-01 承载注解
+   * pageType/summary/updatedAt），渲染器再组树。
+   */
+  tree(input: { workspaceId: string }): Promise<PageNodeView[]>;
   /** 新建页（title='未命名'，sort_key=该父下 max+1；父不存在 → E_PARENT_GONE）。 */
   create(input: { parentId: string | null }): Promise<{ id: string; sortKey: string }>;
   rename(input: { id: string; title: string }): Promise<{ id: string }>;
@@ -175,6 +183,13 @@ export interface SeptcatsPagesApi {
   restore(input: { id: string }): Promise<{ restored: number }>;
   /** 从回收站彻底删除（deleted_at=0 标记，物理清除归 GC）。 */
   purge(input: { id: string }): Promise<{ purged: number }>;
+  /**
+   * 页面承载类型双向转换（TASK-T42-01）：普通页 ↔ Wiki；多维数据页/回收站页拒绝
+   * （E_MALFORMED）。正文块/子页/收藏/最近/页签零触碰。
+   */
+  convert(input: { pageId: string; to: 'wiki' | 'page' }): Promise<{ ok: true }>;
+  /** Wiki 落地页简介（独立于正文块）；仅 Wiki 页可设（E_MALFORMED）。 */
+  setSummary(input: { pageId: string; summary: string }): Promise<{ ok: true }>;
 }
 
 /** 工作区（Q4 单库多工作区分片）。 */

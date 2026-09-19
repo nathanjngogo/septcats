@@ -50,6 +50,24 @@ export const PAGES_CHANNELS = {
 export type PagesChannel = (typeof PAGES_CHANNELS)[keyof typeof PAGES_CHANNELS];
 
 // ---------------------------------------------------------------------------
+// 页面承载类型（TASK-T42-01 · 新增通道；写路径在 main 侧造 page upsert op 走
+// commitOps（账本 + 物化同事务），实现住 main/dbview.ts 的 DbViewService——
+// 该文件自持 IPC 注册面（registerDbViewIpc），无需改 main/index.ts）
+// ---------------------------------------------------------------------------
+
+/** 双向转换：{pageId, to:'wiki'|'page'} → {ok:true}（page_type 随整对象 op 走账本）。 */
+export const CHANNEL_PAGE_CONVERT = 'page:convert';
+/** Wiki 落地页简介：{pageId, summary} → {ok:true}（summary 列，独立于正文块）。 */
+export const CHANNEL_PAGE_SUMMARY_SET = 'page:summary:set';
+
+export const PAGE_TYPE_CHANNELS = {
+  convert: CHANNEL_PAGE_CONVERT,
+  setSummary: CHANNEL_PAGE_SUMMARY_SET,
+} as const;
+
+export type PageTypeChannel = (typeof PAGE_TYPE_CHANNELS)[keyof typeof PAGE_TYPE_CHANNELS];
+
+// ---------------------------------------------------------------------------
 // 收藏 / 最近（设备本地派生态）
 // ---------------------------------------------------------------------------
 

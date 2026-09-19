@@ -1,0 +1,116 @@
+/**
+ * WikiLanding.css —— Wiki 落地页样式（TASK-T42-01）。
+ * 门禁纪律：颜色/间距/圆角全部 var(--sc-*) token（禁字面 hex）；不引入 transition
+ * （无需 reduced-motion 自查块）；空态字号/颜色与 .pv-empty/.app-nav-empty 同口径。
+ */
+
+.wiki-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-lg);
+  padding: 0 var(--sc-space-gutter) var(--sc-space-gutter);
+}
+
+.wiki-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+.wiki-summary-label {
+  font-size: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.wiki-summary-input {
+  width: 100%;
+  resize: vertical;
+  min-height: calc(var(--sc-space-xl) * 2);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-content);
+  font-family: var(--sc-font-ui);
+  font-size: var(--sc-text-editor-body);
+}
+
+.wiki-summary-input::placeholder {
+  color: var(--sc-color-icon-faint);
+}
+
+.wiki-title-input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--sc-text-h1);
+}
+
+.wiki-title {
+  cursor: text;
+}
+
+.wiki-index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+.wiki-index-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+}
+
+.wiki-index-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  font-size: var(--sc-text-ui-md);
+  color: var(--sc-color-ink-secondary);
+}
+
+.wiki-index-empty {
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  font-size: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.wiki-index-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-radius: var(--sc-radius-md);
+  color: var(--sc-color-content);
+  cursor: pointer;
+}
+
+.wiki-index-row:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.wiki-index-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sc-color-focus-ring);
+}
+
+.wiki-index-icon {
+  color: var(--sc-color-icon-faint);
+  flex: none;
+}
+
+.wiki-index-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--sc-text-ui-md);
+}
+
+.wiki-index-time {
+  flex: none;
+  font-size: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}

@@ -25,6 +25,7 @@ import { SCHEMA_V4_STATEMENTS } from './schema.v4';
 import { SCHEMA_V5_STATEMENTS } from './schema.v5';
 import { SCHEMA_V6_STATEMENTS } from './schema.v6';
 import { SCHEMA_V7_STATEMENTS } from './schema.v7';
+import { SCHEMA_V8_ADDED_COLUMNS } from './schema.v8';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -210,6 +211,22 @@ function applySchemaV7(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #8：页面承载类型列（TASK-T42-01 §0，口径 A：Wiki = 一类页面）。
+ *
+ * 幂等性与 #2/#3 同：加列走 `PRAGMA table_info` 存在性判断。语句见 `schema.v8.ts`。
+ * 向后兼容：旧库打开时补列，存量行 page_type 落默认 'page'；读路径的数据库页判定
+ * 仍以「存活 collection 行存在」为权威（既有范式），旧版本建的库页不受影响。
+ */
+function applySchemaV8(db: SqliteDatabase): void {
+  for (const column of SCHEMA_V8_ADDED_COLUMNS) {
+    if (!hasColumn(db, column.table, column.column)) {
+      db.exec(column.sql);
+    }
+  }
+  setMeta(db, 'schema_version', '8');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -221,6 +238,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 5, name: 'v5-import-source', up: applySchemaV5 },
   { id: 6, name: 'v6-fts-defer', up: applySchemaV6 },
   { id: 7, name: 'v7-template', up: applySchemaV7 },
+  { id: 8, name: 'v8-page-type', up: applySchemaV8 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */
