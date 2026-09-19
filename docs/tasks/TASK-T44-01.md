@@ -6,7 +6,7 @@
 ## 0. 第一步：核实承载（**必须先给结论，别直接开写**）
 
 1. `packages/importer` 是否**已解析** `[[页名]]`（Obsidian 导入路径）——若有，**复用其解析器**，不要另造语法；
-2. 是否已有 `link`/`backlink` 表或搜索侧支持（PM 侦察：`backlink|page_link|wikilink` 全仓命中 **0**）；
+2. 是否已有 `link`/`backlink` 表或搜索侧支持（PM 侦察：`backlink|page_link|wikilink` 在 8 个文件命中——`packages/dbview/src/types.ts`、`packages/editor/src/blocks.ts`、`packages/schema/src/index.ts`、`apps/desktop/src/db/{migrations,schema.v2,statements}.ts`、`apps/desktop/src/main/commit.ts`、`packages/dbview/src/view.ts`——**必须先读清这些命中是「值类型 link / 关系列」还是「页面互链」**，是后者就直接复用，不许另造）；
 3. 页面**改名**时既有引用的现状（是否有改写/失效处理）；
 4. `packages/editor` 现有 inline 装饰/节点体系（T36 教训：**inline style 会被协作回声重渲染抹掉**，承载要走**装饰或真实节点**，不许用临时内联样式）。
 
