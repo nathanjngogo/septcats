@@ -53,6 +53,11 @@ export const zhCN = {
     barLabel: '打开的页面标签',
     close: '关闭标签页',
   },
+  pageWidth: {
+    // T41-01：页面 ⋯ 菜单项的两种状态文案（✓ 前缀 = 当前页为全宽）
+    full: '全宽',
+    fixed: '固定宽度',
+  },
   pageDelete: {
     title: '删除页面',
     body: '「{name}」将移入回收站，可随时在回收站中恢复。',
@@ -462,6 +467,7 @@ export const zhCN = {
       new: '新建页面',
       saveAsTemplate: '另存为模板',
       delete: '删除页面',
+      toggleFullWidth: '全宽 / 固定宽度',
     },
     workspace: {
       switch: '切换工作区',
@@ -495,6 +501,7 @@ export const zhCN = {
       new: '在根层创建空白页',
       saveAsTemplate: '把当前页面结构存为模板，之后可从模板新建',
       delete: '把当前页面移入回收站（可在回收站恢复）',
+      toggleFullWidth: '切换当前页正文列宽度（每页独立记忆）',
     },
     workspace: {
       switch: '切换到下一个工作区',

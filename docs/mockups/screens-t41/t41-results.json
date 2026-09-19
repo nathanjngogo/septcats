@@ -1,0 +1,148 @@
+{
+  "pass": 18,
+  "fail": 0,
+  "results": [
+    {
+      "name": "[info] 启动",
+      "ok": null,
+      "raw": "pid=8412"
+    },
+    {
+      "name": "[info] 页面 id",
+      "ok": null,
+      "raw": "A=01M2XJK92ZX6CG7CGKFEWP0NV8 B=01M2XJKAAGRJAJD030E62TGWWP"
+    },
+    {
+      "name": "P1 两页创建成功（侧栏行 id 可解析）",
+      "ok": true,
+      "raw": "A=01M2XJK92ZX6CG7CGKFEWP0NV8 B=01M2XJKAAGRJAJD030E62TGWWP"
+    },
+    {
+      "name": "[info] 固定态（B 页，AI 开）",
+      "ok": null,
+      "raw": "{\"bodyCW\":529,\"bodyMaxW\":\"650px\",\"pvRootCW\":609,\"pvRootInnerW\":529,\"measureVar\":\"650px\",\"titleW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"aiOpen\":true,\"dataMeasure\":null,\"pageAttrFull\":false,\"theme\":\"light\",\"tabsCount\":4,\"tabIds\":[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"],\"scrollX\":0,\"scrollY\":0,\"pagewidthStore\":[]}"
+    },
+    {
+      "name": "A1a 固定态：.pv-root 无 data-measure，正文列 max-width = measure 变量",
+      "ok": true,
+      "raw": "data-measure=null max-width=650px var=650px"
+    },
+    {
+      "name": "[info] 菜单项点击前文案",
+      "ok": null,
+      "raw": "固定宽度"
+    },
+    {
+      "name": "[info] 全宽态（A 页，AI 开）",
+      "ok": null,
+      "raw": "{\"bodyCW\":529,\"bodyMaxW\":\"none\",\"pvRootCW\":609,\"pvRootInnerW\":529,\"measureVar\":\"650px\",\"titleW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"aiOpen\":true,\"dataMeasure\":\"full\",\"pageAttrFull\":true,\"theme\":\"light\",\"tabsCount\":4,\"tabIds\":[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"],\"scrollX\":0,\"scrollY\":0,\"pagewidthStore\":[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJK92ZX6CG7CGKFEWP0NV8\\\"]}\"]}"
+    },
+    {
+      "name": "A1b 全宽态：data-measure=full，正文列 clientWidth = 容器内容宽",
+      "ok": true,
+      "raw": "bodyCW=529 容器内容宽=529（pv-root clientWidth=609）"
+    },
+    {
+      "name": "[info] 固定态（A 页，AI 关）",
+      "ok": null,
+      "raw": "{\"bodyCW\":650,\"bodyMaxW\":\"650px\",\"pvRootCW\":929,\"pvRootInnerW\":849,\"measureVar\":\"650px\",\"titleW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"aiOpen\":false,\"dataMeasure\":null,\"pageAttrFull\":false,\"theme\":\"light\",\"tabsCount\":4,\"tabIds\":[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"],\"scrollX\":0,\"scrollY\":0,\"pagewidthStore\":[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[]}\"]}"
+    },
+    {
+      "name": "[info] 全宽态（A 页，AI 关）",
+      "ok": null,
+      "raw": "{\"bodyCW\":849,\"bodyMaxW\":\"none\",\"pvRootCW\":929,\"pvRootInnerW\":849,\"measureVar\":\"650px\",\"titleW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"aiOpen\":false,\"dataMeasure\":\"full\",\"pageAttrFull\":true,\"theme\":\"light\",\"tabsCount\":4,\"tabIds\":[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"],\"scrollX\":0,\"scrollY\":0,\"pagewidthStore\":[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJK92ZX6CG7CGKFEWP0NV8\\\"]}\"]}"
+    },
+    {
+      "name": "A1c 固定 vs 全宽：正文列 clientWidth 差值 > 0（贴数值）",
+      "ok": true,
+      "raw": "固定=650px（=measure 650）全宽=849px（=容器）差值=199px"
+    },
+    {
+      "name": "A2a 标题行宽度不变（固定 vs 全宽，同页 A；且 ≤ 正文列全宽）",
+      "ok": true,
+      "raw": "标题行：固定=650 全宽=650｜正文列全宽=849"
+    },
+    {
+      "name": "A2b 页签条宽度不变",
+      "ok": true,
+      "raw": "页签条：固定=944 全宽=944"
+    },
+    {
+      "name": "A2c 侧栏宽度不变",
+      "ok": true,
+      "raw": "侧栏：固定=239 全宽=239"
+    },
+    {
+      "name": "A2d AI 面板宽度不变（开启态对比）",
+      "ok": true,
+      "raw": "AI 面板：固定=320 全宽=320 open=true"
+    },
+    {
+      "name": "A3 每页独立：A 全宽后 B 页仍固定（无 data-measure、正文列=measure）",
+      "ok": true,
+      "raw": "B data-measure=null max-width=650px"
+    },
+    {
+      "name": "[info] 全宽装订线量测",
+      "ok": null,
+      "raw": "{\"gutter\":12,\"overlap\":false}"
+    },
+    {
+      "name": "A4 装订线不回归：overlap=false 且 gutter ≥ 8",
+      "ok": true,
+      "raw": "{\"gutter\":12,\"overlap\":false}"
+    },
+    {
+      "name": "[info] localStorage septcats.pagewidth.*",
+      "ok": null,
+      "raw": "[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJK92ZX6CG7CGKFEWP0NV8\\\"]}\"]"
+    },
+    {
+      "name": "A5 全宽记录已按 workspace 写 localStorage（septcats.pagewidth.<ws> 含 A 不含 B）",
+      "ok": true,
+      "raw": "[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJK92ZX6CG7CGKFEWP0NV8\\\"]}\"]"
+    },
+    {
+      "name": "A6 回归：窗口零滚动（横向+纵向）",
+      "ok": true,
+      "raw": "x=0 y=0"
+    },
+    {
+      "name": "A7 回归：页签条在（T37），A/B 两页各占一签",
+      "ok": true,
+      "raw": "tabs=[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"]"
+    },
+    {
+      "name": "A8 回归：AI 面板仍开启（T38 开合不受影响）",
+      "ok": true,
+      "raw": "aiOpen=true"
+    },
+    {
+      "name": "[info] 重开后（A 页应选中且全宽）",
+      "ok": null,
+      "raw": "{\"bodyCW\":529,\"bodyMaxW\":\"none\",\"pvRootCW\":609,\"pvRootInnerW\":529,\"measureVar\":\"650px\",\"titleW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"aiOpen\":true,\"dataMeasure\":\"full\",\"pageAttrFull\":true,\"theme\":\"light\",\"tabsCount\":4,\"tabIds\":[\"tab-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-close-01M2XJK92ZX6CG7CGKFEWP0NV8\",\"tab-01M2XJKAAGRJAJD030E62TGWWP\",\"tab-close-01M2XJKAAGRJAJD030E62TGWWP\"],\"scrollX\":0,\"scrollY\":0,\"pagewidthStore\":[\"septcats.pagewidth.01M2XJK7JMB1SST5BVQE1KCAJ6={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJK92ZX6CG7CGKFEWP0NV8\\\"]}\"]}"
+    },
+    {
+      "name": "B1 重开还原：A 页 data-measure=full，正文列 clientWidth = 容器内容宽",
+      "ok": true,
+      "raw": "data-measure=full bodyCW=529 容器=529"
+    },
+    {
+      "name": "B2 重开还原：B 页仍固定（无 data-measure，正文列 = measure）",
+      "ok": true,
+      "raw": "B data-measure=null max-width=650px"
+    },
+    {
+      "name": "B3 深色 + 全宽：主题生效且全宽保持",
+      "ok": true,
+      "raw": "theme=dark data-measure=full"
+    },
+    {
+      "name": "B4 重开后窗口零滚动",
+      "ok": true,
+      "raw": "x=0 y=0"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

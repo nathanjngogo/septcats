@@ -1,0 +1,163 @@
+{
+  "pass": 18,
+  "fail": 0,
+  "results": [
+    {
+      "name": "[info] A 页固定态",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":650,\"bodyClientW\":650,\"bodyMaxW\":\"650px\",\"rootClientW\":929,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"scrollX\":0,\"scrollY\":0,\"pw\":[],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "[info] B 页固定态",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":650,\"bodyClientW\":650,\"bodyMaxW\":\"650px\",\"rootClientW\":929,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"scrollX\":0,\"scrollY\":0,\"pw\":[],\"text\":\"T41页B 正文\"}"
+    },
+    {
+      "name": "§2.0-pre 测试前提成立：容器内容宽 > measure（否则全宽测不出差异）",
+      "ok": true,
+      "raw": "容器=929px measure=650px"
+    },
+    {
+      "name": "§2.0 固定态正文列受 measure 约束（max-width 非 none 且实测宽 ≈ measure）",
+      "ok": true,
+      "raw": "maxWidth=650px bodyW=650 容器内容宽=849"
+    },
+    {
+      "name": "[info] A 页固定态（切前，无 AI 面板）",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":650,\"bodyClientW\":650,\"bodyMaxW\":\"650px\",\"rootClientW\":929,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"scrollX\":0,\"scrollY\":0,\"pw\":[],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "[info] ⋯ 菜单内容（切前=固定）",
+      "ok": null,
+      "raw": "固定宽度 | 删除"
+    },
+    {
+      "name": "[info] A 页全宽态",
+      "ok": null,
+      "raw": "{\"measureAttr\":\"full\",\"bodyW\":849,\"bodyClientW\":849,\"bodyMaxW\":\"none\",\"rootClientW\":929,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":650,\"tabsW\":944,\"sideW\":239,\"aiW\":null,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJHFXKJPWANWW82R4D2REG\\\"]}\"],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "§2.1a 切换到全宽后 `data-measure=\"full\"` 已挂上页面根",
+      "ok": true,
+      "raw": "data-measure=full"
+    },
+    {
+      "name": "§2.1b 全宽：正文列 max-width = none 且实测宽 = 容器**内容宽**（clientWidth − 左右内边距）",
+      "ok": true,
+      "raw": "maxWidth=none bodyClientW=849 容器内容宽=849（clientW=929 − pad 40+40）"
+    },
+    {
+      "name": "§2.1c 全宽 vs 固定：正文列宽度**差值 > 0**（全宽更宽）",
+      "ok": true,
+      "raw": "固定=650px 全宽=849px 差=199px（容器=929 measure=650px）"
+    },
+    {
+      "name": "[info] 切换前（A 固定 + AI 面板开）",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":529,\"bodyClientW\":529,\"bodyMaxW\":\"650px\",\"rootClientW\":609,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[]}\"],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "[info] ⋯ 菜单内容（切前=固定，AI 面板开）",
+      "ok": null,
+      "raw": "固定宽度 | 删除"
+    },
+    {
+      "name": "[info] 切换后（A 全宽 + AI 面板开）",
+      "ok": null,
+      "raw": "{\"measureAttr\":\"full\",\"bodyW\":529,\"bodyClientW\":529,\"bodyMaxW\":\"none\",\"rootClientW\":609,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJHFXKJPWANWW82R4D2REG\\\"]}\"],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "§2.2a 标题行宽度**不变**",
+      "ok": true,
+      "raw": "切换前=529px 切换后=529px"
+    },
+    {
+      "name": "§2.2b 页签条宽度**不变**",
+      "ok": true,
+      "raw": "切换前=624px 切换后=624px"
+    },
+    {
+      "name": "§2.2c 侧栏宽度**不变**",
+      "ok": true,
+      "raw": "切换前=239px 切换后=239px"
+    },
+    {
+      "name": "§2.2d AI 面板宽度**不变**（且在位）",
+      "ok": true,
+      "raw": "切换前=320px 切换后=320px"
+    },
+    {
+      "name": "[info] 全宽下装订线",
+      "ok": null,
+      "raw": "{\"gutter\":12,\"clusterW\":58,\"overlap\":false}"
+    },
+    {
+      "name": "§2.3 全宽下装订线 gutter ≥ 8 且无重叠（overlap=false）",
+      "ok": true,
+      "raw": "{\"gutter\":12,\"clusterW\":58,\"overlap\":false}"
+    },
+    {
+      "name": "§2.5a 全宽下窗口**零滚动**",
+      "ok": true,
+      "raw": "x=0 y=0"
+    },
+    {
+      "name": "[info] B 页（A 已全宽后）",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":529,\"bodyClientW\":529,\"bodyMaxW\":\"650px\",\"rootClientW\":609,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJHFXKJPWANWW82R4D2REG\\\"]}\"],\"text\":\"T41页B 正文\"}"
+    },
+    {
+      "name": "§2.4a **每页独立**：A 全宽时 B 仍固定",
+      "ok": true,
+      "raw": "B.data-measure=null B.maxWidth=650px"
+    },
+    {
+      "name": "[info] 持久化键",
+      "ok": null,
+      "raw": "septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\"v\":1,\"full\":[\"01M2XJHFXKJPWANWW82R4D2REG\"]}"
+    },
+    {
+      "name": "§2.4b 持久化写入 `septcats.pagewidth.<ws>` 且只含 A",
+      "ok": true,
+      "raw": "idA=01M2XJHFXKJPWANWW82R4D2REG idB=01M2XJHJVN0W52MNZ7SZQ7K5CA keys=septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\"v\":1,\"full\":[\"01M2XJHFXKJPWANWW82R4D2REG\"]}"
+    },
+    {
+      "name": "[info] 重启后 A",
+      "ok": null,
+      "raw": "{\"measureAttr\":\"full\",\"bodyW\":529,\"bodyClientW\":529,\"bodyMaxW\":\"none\",\"rootClientW\":609,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJHFXKJPWANWW82R4D2REG\\\"]}\"],\"text\":\"T41页A 正文\"}"
+    },
+    {
+      "name": "§2.4c 重启后 **A 仍全宽**（data-measure=full + max-width none）",
+      "ok": true,
+      "raw": "data-measure=full maxWidth=none"
+    },
+    {
+      "name": "[info] 重启后 B",
+      "ok": null,
+      "raw": "{\"measureAttr\":null,\"bodyW\":529,\"bodyClientW\":529,\"bodyMaxW\":\"650px\",\"rootClientW\":609,\"rootPadL\":40,\"rootPadR\":40,\"titleRowW\":529,\"tabsW\":624,\"sideW\":239,\"aiW\":320,\"scrollX\":0,\"scrollY\":0,\"pw\":[\"septcats.pagewidth.01M2XJHEAA2DGWFWQAX48FGE28={\\\"v\\\":1,\\\"full\\\":[\\\"01M2XJHFXKJPWANWW82R4D2REG\\\"]}\"],\"text\":\"T41页B 正文\"}"
+    },
+    {
+      "name": "§2.4d 重启后 **B 仍固定**（不被 A 影响）",
+      "ok": true,
+      "raw": "data-measure=null maxWidth=650px"
+    },
+    {
+      "name": "§2.6a 深色下固定态正常（data-theme=dark）",
+      "ok": true,
+      "raw": "theme/dark fixed=null"
+    },
+    {
+      "name": "§2.6b 深色下全宽态正常",
+      "ok": true,
+      "raw": "full=full maxWidth=none"
+    },
+    {
+      "name": "§2.5b 深色下窗口零滚动",
+      "ok": true,
+      "raw": "x=0 y=0"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

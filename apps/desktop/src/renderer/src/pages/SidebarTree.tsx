@@ -21,6 +21,7 @@ import type {
 import type { PageNode } from '@septcats/editor';
 import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Plus, Star, Trash } from '@septcats/ui';
 import { aliveNodes, nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
 import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
@@ -153,6 +154,8 @@ export function SidebarTree() {
   const [tplOpen, setTplOpen] = useState(false);
   // T24-01 §0.A：页面行「⋯」菜单展开态（本地视图态；每树同时至多一个）
   const [rowMenuId, setRowMenuId] = useState<string | null>(null);
+  // T41-01：页面级「全宽 / 固定宽度」集合（行菜单项显示当前页状态并切换）
+  const fullWidthPages = usePageWidth((state) => state.full);
   const templates = useTemplates((state) => state.templates);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false });
 
@@ -347,9 +350,21 @@ export function SidebarTree() {
                     <Menu
                       className="app-nav-menu"
                       label={t('sidebar.pageActions')}
-                      items={[{ id: 'delete', label: t('common.delete'), danger: true }]}
+                      items={[
+                        // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）
+                        {
+                          id: 'fullWidth',
+                          label: fullWidthPages.has(node.id)
+                            ? `\u2713 ${t('pageWidth.full')}`
+                            : t('pageWidth.fixed'),
+                        },
+                        { id: 'delete', label: t('common.delete'), danger: true },
+                      ]}
                       onSelect={(action) => {
                         setRowMenuId(null);
+                        if (action === 'fullWidth') {
+                          pageWidthActions.toggle(node.id);
+                        }
                         if (action === 'delete') {
                           pagesActions.requestDeletePage(node.id);
                         }

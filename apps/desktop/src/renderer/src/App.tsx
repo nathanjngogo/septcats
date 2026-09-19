@@ -28,6 +28,7 @@ import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
 import { templatesActions } from './state/templates';
 import { pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
+import { pageWidthActions } from './state/pageWidth';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import './App.css';
 
@@ -76,6 +77,13 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
               const id = pagesStore.getState().selectedId;
               if (id !== null) {
                 pagesActions.requestDeletePage(id);
+              }
+            },
+            // T41-01：「全宽 / 固定宽度」条件命令（每页独立，toggle 写 pageWidth store+存储）
+            toggleFullWidth: (): void => {
+              const id = pagesStore.getState().selectedId;
+              if (id !== null) {
+                pageWidthActions.toggle(id);
               }
             },
             notify: (message): void => {

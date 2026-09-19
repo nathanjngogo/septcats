@@ -43,6 +43,14 @@
   );
 }
 
+/* T41-01：页面级「全宽」开关（Notion 式 Full width）——实现口径走 CSS 属性选择器，
+   零 JS 量测/内联宽高；只放开正文列（.pv-body），标题行（.pv-title-row）保持
+   measure（页面级开关优先于 T39-01 的全局 --sc-layout-measure 默认）；
+   装订线 padding-left 不动，手柄簇右缘恒在文本左缘外 gutter = var(--sc-space-md) ≥ 8。 */
+.pv-root[data-measure='full'] .pv-body {
+  max-width: none;
+}
+
 /* 空库空态（T26-01 §0.A）：与 .trash-empty/.search-empty 同 token 组合（字号/色/留白），
    无选中页时替代 demo 假内容；双主题成立（颜色走 ink-faint token）。 */
 .pv-empty {

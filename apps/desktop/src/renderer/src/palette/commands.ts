@@ -77,6 +77,11 @@ export interface CommandDeps {
    * 测试 spy deps 不注入 → 不出现（静态清单基线不受影响）。
    */
   cycleLayoutPreset?(): void;
+  /**
+   * T41-01：切换当前页「全宽 / 固定宽度」（每页独立记忆）。条件命令，口径同
+   * deletePage：无选中页经 configurePaletteCommands 摘除（不出现、不抛错）。
+   */
+  toggleFullWidth?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -125,6 +130,18 @@ export const LAYOUT_PRESET_DEF: PaletteCommandDef = {
   label: t('commands.app.layoutPreset'),
   hint: t('commandHints.app.layoutPreset'),
   aliases: ['bujuyshezhi', 'bujuys', 'buju', 'qiehuanbuju', 'layout preset', 'layout', 'preset'],
+};
+
+/**
+ * T41-01：「全宽 / 固定宽度」切换命令定义。**不在静态 COMMAND_DEFS 里**——
+ * 与 deletePage 同为条件命令（仅有选中页时出现，configurePaletteCommands 摘除），
+ * palette.test.ts 的静态清单/别名基线因此不受影响。
+ */
+export const TOGGLE_FULL_WIDTH_DEF: PaletteCommandDef = {
+  id: 'page.toggleFullWidth',
+  label: t('commands.page.toggleFullWidth'),
+  hint: t('commandHints.page.toggleFullWidth'),
+  aliases: ['quankuan', 'quan', 'qw', 'gudingkuandu', 'gdkd', 'full width', 'fullwidth', 'full'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -219,12 +236,21 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       run: deps.cycleLayoutPreset,
     });
   }
+  if (deps.toggleFullWidth !== undefined) {
+    commands.push({
+      ...TOGGLE_FULL_WIDTH_DEF,
+      label: t('commands.page.toggleFullWidth'),
+      hint: t('commandHints.page.toggleFullWidth'),
+      run: deps.toggleFullWidth,
+    });
+  }
   return commands;
 }
 
 /**
  * T23-02 §B 装配口径：无选中页 → 「另存为模板」**不出现**（不是置灰），
- * T24-01 §0.A 起「删除页面」同口径；其余命令不受影响。App 在 selectedId 变化时重装配。
+ * T24-01 §0.A 起「删除页面」同口径，T41-01 起「全宽 / 固定宽度」同口径
+ * （页面级开关对无选中页无意义）；其余命令不受影响。App 在 selectedId 变化时重装配。
  */
 export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolean): PaletteCommand[] {
   if (hasSelection) {
@@ -233,5 +259,6 @@ export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolea
   const scoped = { ...deps };
   delete scoped.saveAsTemplate; // exactOptionalPropertyTypes：不能显式传 undefined，改整键删除
   delete scoped.deletePage;
+  delete scoped.toggleFullWidth;
   return bindPaletteCommands(scoped);
 }

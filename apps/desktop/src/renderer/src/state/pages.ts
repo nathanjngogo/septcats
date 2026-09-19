@@ -19,6 +19,7 @@ import type { SeptcatsApi, WorkspaceSummary } from '../../../types/window';
 import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
 import { closeTabFallback, moveTab, openInTabs, pruneTabs, readTabs, writeTabs } from './tabs';
+import { pageWidthActions } from './pageWidth';
 
 export type PagesStatus = 'loading' | 'ready' | 'error';
 export type TreeScope = 'all' | 'favorites' | 'recent';
@@ -296,6 +297,9 @@ export const pagesActions = {
       if (restored === null) {
         pagesActions.ensureSelection();
       }
+      // T41-01 §1.4：活动工作区就位后同步「全宽/固定宽度」集合（首次加载与
+      // switchWorkspace 都汇入 load，切工作区/重开各还原各的）
+      pageWidthActions.syncWorkspace(activeId);
     } catch (error) {
       pagesStore.setState((state) => ({ ...state, status: 'error', error: describeError(error) }));
     }

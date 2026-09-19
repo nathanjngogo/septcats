@@ -48,6 +48,7 @@ import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
 import { pushToast, pagesActions, usePages } from '../state/pages';
+import { usePageWidth } from '../state/pageWidth';
 import { DbPage } from '../db/DbPage';
 import './PageView.css';
 
@@ -143,6 +144,12 @@ export function PageView({ page }: PageViewProps) {
   const activePage: PageViewPage | null =
     page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : null);
   const activePageId = activePage?.id ?? null;
+
+  // T41-01：页面级「全宽 / 固定宽度」开关（Notion 式）。只读状态切片（toggle 在
+  // 侧栏 ⋯ 菜单 / 命令面板），宽度表现由 .pv-root[data-measure='full'] CSS 承载，
+  // 这里不量测、不内联改宽高；页面级开关优先于 T39-01 的全局 measure 默认。
+  const fullWidthPages = usePageWidth((state) => state.full);
+  const isFullWidth = activePageId !== null && fullWidthPages.has(activePageId);
 
   const [docState, setDocState] = useState<PageDocState>({ status: 'loading' });
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -954,7 +961,7 @@ export function PageView({ page }: PageViewProps) {
   const editorDoc: BlockDoc | null = docState.status === 'ready' ? docState.doc : null;
 
   return (
-    <div className="pv-root" ref={containerRef}>
+    <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
       <div className="pv-title-row">
         <span className="pv-page-icon" aria-hidden="true">
           🔭

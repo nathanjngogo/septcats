@@ -53,6 +53,11 @@ export const enUS = {
     barLabel: 'Open page tabs',
     close: 'Close tab',
   },
+  pageWidth: {
+    // T41-01：页面 ⋯ 菜单项的两种状态文案（✓ 前缀 = 当前页为全宽）
+    full: 'Full width',
+    fixed: 'Fixed width',
+  },
   pageDelete: {
     title: 'Delete Page',
     body: '"{name}" will be moved to the Trash. You can restore it from the Trash at any time.',
@@ -483,6 +488,7 @@ export const enUS = {
       new: 'New Page',
       saveAsTemplate: 'Save as Template',
       delete: 'Delete Page',
+      toggleFullWidth: 'Full width / Fixed width',
     },
     workspace: {
       switch: 'Switch Workspace',
@@ -516,6 +522,7 @@ export const enUS = {
       new: 'Create a blank page at the top level',
       saveAsTemplate: 'Save the current page structure as a template for later reuse',
       delete: 'Move the current page to the Trash (restorable from the Trash)',
+      toggleFullWidth: 'Toggle the body column width of the current page (remembered per page)',
     },
     workspace: {
       switch: 'Switch to the next workspace',
