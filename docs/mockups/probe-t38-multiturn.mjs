@@ -245,10 +245,12 @@ function findLogs(dir, depth = 0, acc = []) {
 // ===========================================================================
 const realRootBefore = dirMtime(REAL_ROOT);
 rmSync(RUN, { recursive: true, force: true });
+// 只清理**本探针自己的**产物（不动同目录下别的探针的截图/结果）
 if (existsSync(SHOTS)) {
   for (const name of readdirSync(SHOTS)) {
-    if (name === 'probe-ai.log') continue;
-    rmSync(join(SHOTS, name), { recursive: true, force: true });
+    if (name.startsWith('t38-multiturn') || name === 'probe-ai.log') {
+      rmSync(join(SHOTS, name), { recursive: true, force: true });
+    }
   }
 }
 mkdirSync(UD, { recursive: true });
@@ -329,18 +331,22 @@ check('② 夹具 provider 命中真本机端点且判为本地（isLocal=true�
 check('② 云端 consent 保持 false（本地端点无需同意，未触发云端门禁）', aiState.cloudConsent === false,
   `cloudConsent=${String(aiState.cloudConsent)}`);
 
-// 端点可达性（探针侧直连一次 /v1/models，纯本机）
-const modelsOk = await page.evaluate(async (endpoint) => {
+// 端点可达性：**探针侧（Node）直连**一次 /v1/models（纯本机，零外网）。
+// 注：不能用渲染器 fetch —— 产品 CSP（apps/desktop/src/renderer/index.html）
+// `connect-src 'self' asset: attachment: ws://localhost:* http://localhost:*`
+// 不放行 http://127.0.0.1:1234，渲染器直连会被拦；产品真实 AI 调用走
+// main 侧 net.fetch（不受该 CSP 约束），故此处用 Node 侧探测。
+const modelsOk = await (async () => {
   try {
-    const res = await fetch(`${endpoint}/models`);
+    const res = await fetch(`${ENDPOINT}/models`);
     const body = await res.json();
-    return { ok: res.ok, status: res.status, ids: (body.data ?? []).map((m) => m.id) };
+    return { ok: res.ok, status: res.status, ids: (body.data ?? []).map((m) => m.id), via: 'node-probe' };
   } catch (e) {
-    return { ok: false, error: String(e?.message ?? e) };
+    return { ok: false, error: String(e?.message ?? e), via: 'node-probe' };
   }
-}, ENDPOINT);
-check('③ 端点 /v1/models 可达且含目标模型', modelsOk.ok === true && (modelsOk.ids ?? []).includes(MODEL),
-  JSON.stringify(modelsOk));
+})();
+check('③ 端点 /v1/models 可达且含目标模型（探针侧 Node 直连）',
+  modelsOk.ok === true && (modelsOk.ids ?? []).includes(MODEL), JSON.stringify(modelsOk));
 
 // ============ 0 号轮：直连 IPC（显式 maxTokens:800）——「请求给足 max_tokens」取证 ============
 const t0 = Date.now();
@@ -606,6 +612,7 @@ const payload = {
   probeProductFacts: {
     panelSendPassesMaxTokens: false,
     note: 'AiChatPanel.send() 调 ai.chat({providerId, messages})，不带 maxTokens → 真实请求体无 max_tokens；main/ai/client.ts 默认 chatTimeoutMs=120_000（未改源码）。探针每轮等待上限 180s。',
+    cspNote: '渲染器 CSP（apps/desktop/src/renderer/index.html）：connect-src \'self\' asset: attachment: ws://localhost:* http://localhost:* —— 渲染器直连 http://127.0.0.1:1234 会被拦（本探针首轮误用渲染器 fetch 探测时实测到该 console 错误；产品真实调用走 main 侧 net.fetch，不受此限），故本轮端点探测改为探针侧 Node 直连。',
     endpointMirror: '端点直连摸底（探针侧，非面板路径）见 _scratch/endpoint-probe.json：max_tokens=800 → 9.9s content="已记住。" finish_reason=stop reasoning 1033 字符；无 max_tokens → 12.48s content="收到。" finish_reason=stop；多轮 → 11.17s content="7391"。',
   },
   messages: { round1: ROUND1_MSG, round2: ROUND2_MSG, round3: ROUND3_MSG },
