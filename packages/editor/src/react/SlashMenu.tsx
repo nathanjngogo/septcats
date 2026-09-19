@@ -18,8 +18,12 @@ export interface SlashMenuProps {
   query: string;
   onSelect: (item: SlashItem) => void;
   onClose: () => void;
-  /** 覆盖候选（宿主持有状态机时喂入；缺省按 query 现场过滤）。 */
-  items?: SlashItem[];
+  /**
+   * 覆盖候选（宿主持有状态机时喂入；缺省按 query 现场过滤）。
+   * T44-01：放宽为 Pick<SlashItem,'id'|'label'|'hint'>——双链补全复用本组件，
+   * 候选是页面而非块型（SlashItem 仍天然可赋值，既有用法零影响）。
+   */
+  items?: Array<Pick<SlashItem, 'id' | 'label' | 'hint'>>;
   position?: { top: number; left: number } | undefined;
   title?: ReactNode;
 }
@@ -79,7 +83,9 @@ export function SlashMenu({ open, query, onSelect, onClose, items, position, tit
         const item = list[activeIndex];
         if (item !== undefined) {
           event.preventDefault();
-          onSelect(item);
+          // items 覆盖时可能是页面候选（仅 id/label/hint）；onSelect 契约按 SlashItem
+          // 签名（既有宿主回调收窄使用字段，不会读 blockType 之外的缺失键）
+          onSelect(item as SlashItem);
         }
       }
     };
@@ -147,7 +153,7 @@ export function SlashMenu({ open, query, onSelect, onClose, items, position, tit
               setActiveIndex(index);
             }}
             onClick={() => {
-              onSelect(item);
+              onSelect(item as SlashItem);
             }}
           >
             <span className="sc-slashmenu__label">{item.label}</span>

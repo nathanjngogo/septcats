@@ -90,3 +90,61 @@
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-accent);
 }
+
+/* T44-01：反向链接面板（双链）。与正文列同 measure（对齐标题行），token-only。 */
+.pv-backlinks {
+  max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
+  margin: var(--sc-space-xl) auto 0;
+  border-top: 1px solid var(--sc-color-surface-active);
+  padding-top: var(--sc-space-md);
+}
+
+.pv-backlinks__title {
+  font: var(--sc-text-ui-sm);
+  font-weight: 600;
+  color: var(--sc-color-ink-faint);
+  margin-bottom: var(--sc-space-xs);
+}
+
+.pv-backlinks__empty {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.pv-backlinks__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sc-space-xxs);
+}
+
+.pv-backlinks__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--sc-radius-md);
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  cursor: pointer;
+  color: inherit;
+}
+
+.pv-backlinks__item:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.pv-backlinks__source {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-accent);
+}
+
+.pv-backlinks__context {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

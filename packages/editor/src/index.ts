@@ -19,4 +19,5 @@ export * from './types';
 export * from './rules/inputRules';
 export * from './rules/slashMenu';
 export * from './rules/markdownPaste';
+export * from './rules/wikilink';
 export * from './yjs';

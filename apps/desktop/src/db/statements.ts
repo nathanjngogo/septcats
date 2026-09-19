@@ -689,6 +689,64 @@ WHERE p.id = @page_id AND p.alive = 1`,
     params: emptyParams,
   },
 
+  // ---- 双链派生表（v9 · TASK-T44-01：页面互链索引，设备本地派生态）---------
+  // 维护口径同 FTS：增量 = 按涉及页 link.clearPage + link.insert 成对；重建 =
+  // links.clearAll + links.insert 全量。target_page_id 是目标页稳定 id（改名不破链）；
+  // 未解析链接（target=null）不入索引（点击时由宿主新建目标页并回填）。
+  'link.clearPage': {
+    kind: 'run',
+    sql: `DELETE FROM page_link_index WHERE source_page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'link.insert': {
+    kind: 'run',
+    sql: `INSERT OR REPLACE INTO page_link_index
+(source_page_id, source_block_id, target_page_id, workspace_id, title, context)
+VALUES (@source_page_id, @source_block_id, @target_page_id, @workspace_id, @title, @context)`,
+    params: z.object({
+      source_page_id: idText,
+      source_block_id: idText,
+      target_page_id: idText,
+      workspace_id: workspaceIdText,
+      title: z.string(),
+      context: z.string(),
+    }),
+  },
+  'links.clearAll': {
+    kind: 'run',
+    sql: `DELETE FROM page_link_index`,
+    params: emptyParams,
+  },
+  // block patch/delete/reorder 拿不到 page_id（payload 无该键）：提交后按块 id 反查
+  // 所在页（block 行软删后仍在，page_id 可恢复；物理缺失 → row=null → 跳过）。
+  'links.blockPage': {
+    kind: 'get',
+    sql: `SELECT page_id, workspace_id FROM block WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
+  // 回链面板：谁引用了我（源页存活 + 同工作区分片；title 取源页当前名——改名后面板即时可读）
+  'links.backlinks': {
+    kind: 'all',
+    sql: `SELECT
+  l.source_page_id AS source_page_id,
+  p.title AS source_title,
+  l.source_block_id AS source_block_id,
+  l.context AS context
+FROM page_link_index l
+JOIN page p ON p.id = l.source_page_id
+WHERE l.target_page_id = @page_id
+  AND p.alive = 1
+  AND p.workspace_id = l.workspace_id
+ORDER BY p.title ASC, l.source_block_id ASC`,
+    params: z.object({ page_id: idText }),
+  },
+  // 全量重建的块扫描（存活块全量；解析在 main/links.ts 做——SQL 不做 JSON 解析）
+  'links.allBlocks': {
+    kind: 'all',
+    sql: `SELECT id, page_id, workspace_id, content_json FROM block WHERE alive = 1`,
+    params: emptyParams,
+  },
+
   // search:query 的三条真库查询（bm25 主检索 + LIKE 兜底）。FTS 行是页粒度，
   // join page 取存活行与 updated_at（排序键之一）。
   'search.ftsPage': {

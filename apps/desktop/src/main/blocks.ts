@@ -23,6 +23,7 @@ import type { ActorId, Op } from '@septcats/core';
 import type { Block } from '@septcats/editor';
 import { CHANNEL_BLOCKS_COMMIT, CHANNEL_BLOCKS_LIST } from '../shared/ipc';
 import { CommitError, commitOps } from './commit';
+import { pageIdsTouchedByOps, syncLinksForPages } from './links';
 import { PagesApiError, type StatementExecutor } from './pages';
 
 // ---------------------------------------------------------------------------
@@ -212,11 +213,19 @@ export function createBlocksService(options: BlocksServiceOptions): BlocksServic
       // 非法 op → CommitError(E_MALFORMED_OP)，经 toBlocksError 收敛为 E_MALFORMED。
       // 写入前权威改写设备身份（TASK-T28-01）：只动 actor/lamport.d，其余字段不变。
       const workspaceId = await activeWorkspaceId();
-      return commitOps(
-        executor,
-        ops.map((op) => rebindOpActor(op, actor)),
-        { workspaceId },
-      );
+      const rebound = ops.map((op) => rebindOpActor(op, actor));
+      const written = await commitOps(executor, rebound, { workspaceId });
+      // T44-01：双链派生索引增量同步（commit 主体成功后做；失败只记录不回滚——
+      // 派生态，下次编辑同页或启动重建兜底）。page 收集含 patch/delete 的块反查。
+      try {
+        const touched = await pageIdsTouchedByOps(executor, rebound);
+        if (touched.size > 0) {
+          await syncLinksForPages(executor, touched);
+        }
+      } catch (error) {
+        console.error('[blocks] 双链派生索引同步失败（重建兜底）', error);
+      }
+      return written;
     },
   };
 }

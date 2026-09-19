@@ -335,3 +335,20 @@ export const TEMPLATES_CHANNELS = {
 } as const;
 
 export type TemplatesChannel = (typeof TEMPLATES_CHANNELS)[keyof typeof TEMPLATES_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 双链（R8 · TASK-T44-01：页面互链派生索引 + 回链查询；派生态不进 Op，
+// 通道只读 + 重建；实现在 main/links.ts）
+// ---------------------------------------------------------------------------
+
+/** 回链面板：{pageId} → {entries: BacklinkEntry[]}（谁引用了我，含上下文片段）。 */
+export const CHANNEL_LINKS_BACKLINKS = 'links:backlinks';
+/** 全量重建派生索引（启动时自动跑一次）→ {links: number}。 */
+export const CHANNEL_LINKS_REBUILD = 'links:rebuild';
+
+export const LINKS_CHANNELS = {
+  backlinks: CHANNEL_LINKS_BACKLINKS,
+  rebuild: CHANNEL_LINKS_REBUILD,
+} as const;
+
+export type LinksChannel = (typeof LINKS_CHANNELS)[keyof typeof LINKS_CHANNELS];

@@ -1,0 +1,193 @@
+{
+  "pass": 17,
+  "fail": 2,
+  "results": [
+    {
+      "name": "[info] 工作区",
+      "ok": null,
+      "raw": "01M2XTW4R42W2GPXZGFSJ0RKVP"
+    },
+    {
+      "name": "A1 能回到源页",
+      "ok": true,
+      "raw": "ok=true"
+    },
+    {
+      "name": "A2 输入 [[ 触发补全浮层",
+      "ok": true,
+      "raw": "slashOpen=true"
+    },
+    {
+      "name": "[info] 过滤后候选",
+      "ok": null,
+      "raw": "[\"链接目标页\"]"
+    },
+    {
+      "name": "A3 按标题过滤命中「链接目标页」",
+      "ok": true,
+      "raw": "[\"链接目标页\"]"
+    },
+    {
+      "name": "[info] 插入后",
+      "ok": null,
+      "raw": "{\"wikilinks\":1,\"linkTexts\":[\"链接目标页\"],\"unresolved\":0}"
+    },
+    {
+      "name": "A4 [[ 补全插入后渲染为链接节点（.sc-wikilink）",
+      "ok": true,
+      "raw": "[\"链接目标页\"]"
+    },
+    {
+      "name": "A5 目标存在 → 非 unresolved",
+      "ok": true,
+      "raw": "unresolved=0"
+    },
+    {
+      "name": "[info] 同段多链接",
+      "ok": null,
+      "raw": "{\"n\":2,\"texts\":[\"链接目标页\",\"链接源页\"]}"
+    },
+    {
+      "name": "A6 同段两个链接各自成节点（互不串扰）",
+      "ok": true,
+      "raw": "[\"链接目标页\",\"链接源页\"]"
+    },
+    {
+      "name": "[info] 跳转前后页签",
+      "ok": null,
+      "raw": "{\"before\":[\"链接源页\",\"\",\"链接目标页\",\"\"],\"after\":{\"title\":\"🔭链接目标页转为多维数据\",\"body\":\"目标页正文\"}}"
+    },
+    {
+      "name": "A7 点击链接跳到目标页（正文=目标页正文）",
+      "ok": true,
+      "raw": "{\"title\":\"🔭链接目标页转为多维数据\",\"body\":\"目标页正文\"}"
+    },
+    {
+      "name": "[info] 回链面板",
+      "ok": null,
+      "raw": "{\"panel\":true,\"n\":1,\"sources\":[\"链接源页\"]}"
+    },
+    {
+      "name": "A8 目标页出现回链面板且含源页",
+      "ok": true,
+      "raw": "[\"链接源页\"]"
+    },
+    {
+      "name": "A9 Esc 可取消补全",
+      "ok": true,
+      "raw": "slashOpen=false"
+    },
+    {
+      "name": "[info] 未解析链接",
+      "ok": null,
+      "raw": "{\"wikilinks\":3,\"unresolved\":1}"
+    },
+    {
+      "name": "A10 目标不存在 → 渲染为 unresolved 样式",
+      "ok": true,
+      "raw": "unresolved=1"
+    },
+    {
+      "name": "[info] 点未解析链接后",
+      "ok": null,
+      "raw": "{\"title\":\"🔭不存在的页转为多维数据\",\"resolved\":0}"
+    },
+    {
+      "name": "A11 点未解析链接 → 新建该页并跳转（不静默）",
+      "ok": true,
+      "raw": "{\"title\":\"🔭不存在的页转为多维数据\",\"resolved\":0}"
+    },
+    {
+      "name": "[info] slash 菜单",
+      "ok": null,
+      "raw": "{\"open\":true,\"title\":\"转为块类型 · 输入 / 后继续过滤\",\"options\":[\"文本\",\"标题 1\",\"标题 2\",\"标题 3\",\"无序列表\",\"有序列表\"]}"
+    },
+    {
+      "name": "A12 回归：slash 菜单仍可打开且候选为块型",
+      "ok": true,
+      "raw": "[\"文本\",\"标题 1\",\"标题 2\",\"标题 3\"]"
+    },
+    {
+      "name": "[info] 重开后源页",
+      "ok": null,
+      "raw": "{\"open\":true,\"wikilinks\":3,\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"]}"
+    },
+    {
+      "name": "B1 重开后链接仍在且仍解析",
+      "ok": true,
+      "raw": "{\"w\":3,\"u\":0,\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"]}"
+    },
+    {
+      "name": "[info] 改名结果",
+      "ok": null,
+      "raw": "{\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"renamed\":true,\"liveTitles\":0}"
+    },
+    {
+      "name": "[info] 改名后源页链接",
+      "ok": null,
+      "raw": "{\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"],\"unresolved\":0}"
+    },
+    {
+      "name": "B2 改名不破链：改名成功且点链接仍到同一页（内容仍为「目标页正文」）",
+      "ok": true,
+      "raw": "renamed=true jump={\"title\":null,\"body\":\"目标页正文\"} renameOut={\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"renamed\":true,\"liveTitles\":0}"
+    },
+    {
+      "name": "[info] links 通道",
+      "ok": null,
+      "raw": "{\"channelOk\":true,\"rebuild\":\"{\\\"links\\\":3}\"}"
+    },
+    {
+      "name": "[info] links 桥面",
+      "ok": null,
+      "raw": "[\"backlinks\",\"rebuild\"]"
+    },
+    {
+      "name": "[info] 删除目标页",
+      "ok": null,
+      "raw": "{\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"removed\":true,\"r\":\"{\\\"deleted\\\":1}\"}"
+    },
+    {
+      "name": "[info] 删除后源页",
+      "ok": null,
+      "raw": "{\"wikilinks\":3,\"unresolved\":0}"
+    },
+    {
+      "name": "B3 删目标页后链接变为 unresolved（派生索引与新事实一致）",
+      "ok": false,
+      "raw": "removed=true del={\"id\":\"01M2XTWA6NK5SHCFM9K5QG6JFB\",\"removed\":true,\"r\":\"{\\\"deleted\\\":1}\"} state={\"w\":3,\"u\":0}"
+    },
+    {
+      "name": "[info] 删除后 rebuild",
+      "ok": null,
+      "raw": "{\"links\":3}"
+    },
+    {
+      "name": "B4 rebuild 通道可用（增量==全量的判据由单测覆盖，此处验通道）",
+      "ok": true,
+      "raw": "{\"links\":3}"
+    },
+    {
+      "name": "[info] 删除后 reload 复查",
+      "ok": null,
+      "raw": "{\"w\":3,\"u\":0,\"texts\":[\"链接目标页\",\"链接源页\",\"不存在的页\"]}"
+    },
+    {
+      "name": "B3b 删除后 reload 复查：链接应转为 unresolved（索引正确性）",
+      "ok": false,
+      "raw": "{\"w\":3,\"u\":0}"
+    },
+    {
+      "name": "B5 深色主题生效",
+      "ok": true,
+      "raw": "theme=dark"
+    },
+    {
+      "name": "B6 窗口零滚动（深色）",
+      "ok": true,
+      "raw": "x=0 y=0"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

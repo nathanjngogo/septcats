@@ -122,6 +122,23 @@ h3.sc-block--heading {
   padding: 0 var(--sc-space-xxs);
 }
 
+/* 双链（T44-01）：已解析走 accent 链接样式；未解析弱化（ink-faint + 虚线下划线），
+   两态都用 token，不写死 hex。点击目标由宿主插件分派，样式层不做指针劫持。 */
+.sc-wikilink {
+  color: var(--sc-color-accent);
+  background: var(--sc-color-accent-soft);
+  border-radius: var(--sc-radius-xs);
+  padding: 0 var(--sc-space-xxs);
+  cursor: pointer;
+}
+
+.sc-wikilink--unresolved {
+  color: var(--sc-color-ink-faint);
+  background: transparent;
+  text-decoration: underline dotted var(--sc-color-ink-faint);
+  text-underline-offset: 2px;
+}
+
 /* 块手柄：hover 显形（对齐 mockup .handle 的 28px 命中区） */
 .sc-blockcontrol {
   position: relative;

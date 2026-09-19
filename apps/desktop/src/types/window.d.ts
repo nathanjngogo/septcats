@@ -347,6 +347,25 @@ export interface SeptcatsTemplatesApi {
   createPage(input: { templateId: string; parentId: string | null }): Promise<{ pageId: string }>;
 }
 
+/**
+ * 双链 IPC（R8 · TASK-T44-01）。通道与 `src/shared/ipc.ts` 的 LINKS_CHANNELS 一对一；
+ * 派生索引全本地维护（不进 Op 真相层），零外呼。
+ * 错误经 Error.message 透传（E_MALFORMED / E_INVARIANT）。
+ */
+export interface SeptcatsLinksApi {
+  /** 回链面板：引用了本页的存活源页（源页 id/当前标题 + 源块 id + 上下文片段）。 */
+  backlinks(input: { pageId: string }): Promise<{
+    entries: Array<{
+      sourcePageId: string;
+      sourceTitle: string;
+      sourceBlockId: string;
+      context: string;
+    }>;
+  }>;
+  /** 全量重建派生索引（启动时自动跑一次；也可手动触发）。回索引行数。 */
+  rebuild(): Promise<{ links: number }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -378,6 +397,8 @@ export interface SeptcatsApi {
   collab: SeptcatsCollabApi;
   /** 模板（M13 · T23-01 数据面）。 */
   templates: SeptcatsTemplatesApi;
+  /** 双链（R8 · T44-01）。 */
+  links: SeptcatsLinksApi;
 }
 
 declare global {

@@ -19,6 +19,7 @@ import {
   SETTINGS_CHANNELS,
   SYNC_CHANNELS,
   TEMPLATES_CHANNELS,
+  LINKS_CHANNELS,
   WORKSPACES_CHANNELS,
 } from '../shared/ipc';
 import { UPDATE_CHANNELS } from '../shared/ipc';
@@ -198,6 +199,14 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(TEMPLATES_CHANNELS.createPage, input) as ReturnType<
         SeptcatsApi['templates']['createPage']
       >,
+  },
+  links: {
+    backlinks: (input) =>
+      ipcRenderer.invoke(LINKS_CHANNELS.backlinks, input) as ReturnType<
+        SeptcatsApi['links']['backlinks']
+      >,
+    rebuild: () =>
+      ipcRenderer.invoke(LINKS_CHANNELS.rebuild) as ReturnType<SeptcatsApi['links']['rebuild']>,
   },
 };
 

@@ -75,6 +75,12 @@ import {
   type TemplatesService,
 } from './templates';
 import {
+  createLinksService,
+  rebuildLinksIndex,
+  registerLinksIpc,
+  type LinksService,
+} from './links';
+import {
   createImporterService,
   toImporterError,
   type ImporterService,
@@ -207,7 +213,7 @@ async function readMetaValue(handle: DbHandle, key: string): Promise<string | nu
   return typeof value === 'string' ? value : null;
 }
 
-/** 起库后造出的六套服务（页面树 / 行内数据库 / 搜索 / 导入器 / 块 / 模板），共用同一 DbHandle 与 actor。 */
+/** 起库后造出的七套服务（页面树 / 行内数据库 / 搜索 / 导入器 / 块 / 模板 / 双链），共用同一 DbHandle 与 actor。 */
 interface DatabaseServices {
   pages: PagesService;
   db: DbViewService;
@@ -215,6 +221,7 @@ interface DatabaseServices {
   importer: ImporterService;
   blocks: BlocksService;
   templates: TemplatesService;
+  links: LinksService;
 }
 
 /**
@@ -306,6 +313,15 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       defaultWorkspaceName: defaultWorkspaceNameForLocale(app.getLocale()),
     });
     pagesRef = pages;
+    // T44-01：启动全量重建双链派生索引（派生态修复 + 旧库补齐；失败只记录，
+    // 下次启动重试）——这也是「增量维护 == 全量重建」判据的兜底路径。
+    void rebuildLinksIndex(handle)
+      .then((links) => {
+        logger.info(`双链派生索引重建完成：${String(links)} 行`);
+      })
+      .catch((error: unknown) => {
+        logger.error(`双链派生索引重建失败（下次启动重试）：${describeError(error)}`);
+      });
     return {
       pages,
       db: createDbViewService({ executor, actor }),
@@ -347,6 +363,9 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           return workspaces.activeId;
         },
       }),
+      // T44-01：双链服务——派生索引维护/回链查询；用裸 handle（派生态不进攒段器，
+      // 与 search 同款：derived 写不触发同步发布）
+      links: createLinksService({ executor: handle }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
@@ -603,6 +622,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());
   // 模板（T23-01）：templates:* 六通道
   registerTemplatesIpc(services?.templates ?? null, dbViewRegistrar());
+  // 双链（T44-01）：links:backlinks / links:rebuild
+  registerLinksIpc(services?.links ?? null, dbViewRegistrar());
 
   // 同步运行时（M8b）：status / setEnabled / now 三通道 + 状态推流（sync:state 在
   // bootstrapDatabase 的 onState 里广播）。runtime 缺失时统一回 E_INVARIANT。

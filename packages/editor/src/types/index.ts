@@ -19,6 +19,7 @@ import { BulletedListNode, NumberedListNode, TodoNode } from './lists';
 import { ParagraphNode } from './paragraph';
 import { QuoteNode } from './quote';
 import { TextNode } from './text';
+import { WikilinkNode } from './wikilink';
 
 /** 撤销/重做（PM 侧）；Op 级撤销栈见 history.ts（两者职责不同）。 */
 export const SeptcatsHistory = Extension.create({
@@ -40,6 +41,8 @@ export const BLOCK_NODES = [
   CodeNode,
   DividerNode,
   ImageNode,
+  // T44-01：双链内联节点（inline，独立于块节点白名单；块级语义零触碰）
+  WikilinkNode,
 ];
 
 /** 每次调用返回全新数组（Tiptap 会原地消费扩展列表，避免跨实例共享）。 */

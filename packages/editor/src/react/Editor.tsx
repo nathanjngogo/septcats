@@ -19,6 +19,13 @@ import {
 } from '../model';
 import { editorExtensions } from '../types';
 import { blockAnchorPlugin } from './blockAnchor';
+import {
+  createWikilinkClickPlugin,
+  createWikilinkInputRulePlugin,
+  createWikilinkMenuPlugin,
+  type WikilinkHostHandlers,
+  type WikilinkHostRef,
+} from '../rules/wikilink';
 import './editor.css';
 
 /** 编辑器包自用的本地 actor（apps 层接 IPC 时换成真实设备 ID）。 */
@@ -77,9 +84,15 @@ export interface EditorProps {
   onReady?: (editor: TiptapEditor | null) => void;
   editable?: boolean;
   className?: string;
+  /**
+   * 双链宿主注入（TASK-T44-01，只增）：候选页面 + 补全菜单回调 + 点击回调。
+   * 经 ref 热更新（编辑器实例只建一次，props 每帧变经 ref 透传）；
+   * 缺省 undefined = 双链插件照常注册但全部 no-op（不影响既有用例）。
+   */
+  wikilinkHost?: WikilinkHostHandlers | undefined;
 }
 
-export function Editor({ doc, onChange, onReady, editable = true, className }: EditorProps) {
+export function Editor({ doc, onChange, onReady, editable = true, className, wikilinkHost }: EditorProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const docRef = useRef<BlockDoc>(doc);
   const onChangeRef = useRef(onChange);
@@ -88,6 +101,9 @@ export function Editor({ doc, onChange, onReady, editable = true, className }: E
   onChangeRef.current = onChange;
   onReadyRef.current = onReady;
   editableRef.current = editable;
+  // WikilinkHostRef = { current: WikilinkHostHandlers | null }，可变 ref 天然满足
+  const wikilinkHostRef = useRef<WikilinkHostHandlers | null>(null) as WikilinkHostRef;
+  wikilinkHostRef.current = wikilinkHost ?? null;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -120,6 +136,11 @@ export function Editor({ doc, onChange, onReady, editable = true, className }: E
     });
     // T36-01：块锚定补偿装饰（换块型首行视觉锚定；见 react/blockAnchor.ts）
     instance.registerPlugin(blockAnchorPlugin());
+    // T44-01：双链三插件（补全菜单状态机 / `]]` 收口 / 点击回调）——宿主经
+    // wikilinkHostRef 注入能力；未注入时插件 no-op，不影响既有行为。
+    instance.registerPlugin(createWikilinkMenuPlugin(wikilinkHostRef));
+    instance.registerPlugin(createWikilinkInputRulePlugin(wikilinkHostRef));
+    instance.registerPlugin(createWikilinkClickPlugin(wikilinkHostRef));
     onReadyRef.current?.(instance);
     return () => {
       onReadyRef.current?.(null);

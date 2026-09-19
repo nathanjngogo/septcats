@@ -152,7 +152,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
     h.core.dispose();
     const core = makeCore(ctor, temp.path);
     const migrated = await requestOk<MigrateData>(core, { id: 'migrate-reopen', t: 'migrate' });
-    expect(migrated.to).toBe(8);
+    expect(migrated.to).toBe(9); // T44-01：v9-page-link-index 起逐次顺延
     h = buildHarness(core);
   }
 
@@ -280,7 +280,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
   });
 
   it('旧库兼容：v7 夹具库打开 → 迁移补列（存量行按普通页），转换/库页照常可用', async () => {
-    // 本用例自建独立「未升级旧库」（beforeEach 的库已随 makeCore 升到 v8，不复用）
+    // 本用例自建独立「未升级旧库」（beforeEach 的库已随 makeCore 升到最新版，不复用）
     h.core.dispose();
     const legacyTemp = makeTempDb('septcats-wiki-legacy');
     try {
@@ -305,12 +305,12 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
           raw.close();
         }
       }
-      // ② 新版本代码打开：迁移到 v8（补 page_type/summary 两列）
+      // ② 新版本代码打开：迁移到最新版（v8 补 page_type/summary 两列；v9 补双链派生表）
       const core = makeCore(ctor, legacyTemp.path);
       try {
         const migrated = await requestOk<MigrateData>(core, { id: 'migrate-legacy', t: 'migrate' });
         expect(migrated.from).toBe(7);
-        expect(migrated.to).toBe(8);
+        expect(migrated.to).toBe(9); // 迁移目标随 LATEST_SCHEMA_VERSION 顺延（v9）
 
         const executor = coreExecutor(core);
         // ③ 存量行（迁移前插入）默认 page_type='page'

@@ -26,6 +26,7 @@ import { SCHEMA_V5_STATEMENTS } from './schema.v5';
 import { SCHEMA_V6_STATEMENTS } from './schema.v6';
 import { SCHEMA_V7_STATEMENTS } from './schema.v7';
 import { SCHEMA_V8_ADDED_COLUMNS } from './schema.v8';
+import { SCHEMA_V9_STATEMENTS } from './schema.v9';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -227,6 +228,20 @@ function applySchemaV8(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #9：页面互链派生表 `page_link_index`（TASK-T44-01，双链）。
+ *
+ * 幂等性：建表/建索引全走 `IF NOT EXISTS`（无加列，语句自含主键）。语句见 `schema.v9.ts`。
+ * 向后兼容：纯新增派生表，旧库直接打开（MIN_SUPPORTED 不变）；存量内容派生行由
+ * 启动时的全量重建（main/links.ts rebuildLinksIndex）补齐——派生态不进账本。
+ */
+function applySchemaV9(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V9_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '9');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -239,6 +254,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 6, name: 'v6-fts-defer', up: applySchemaV6 },
   { id: 7, name: 'v7-template', up: applySchemaV7 },
   { id: 8, name: 'v8-page-type', up: applySchemaV8 },
+  { id: 9, name: 'v9-page-link-index', up: applySchemaV9 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

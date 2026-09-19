@@ -17,8 +17,13 @@ import { ulid } from '@septcats/core';
 import type { ActorId } from '@septcats/core';
 import {
   EditSession,
+  filterWikilinkCandidates,
+  insertWikilinkSelection,
   pmNodeNameOf,
+  resolveWikilinkTarget,
   type BlockDoc,
+  type WikilinkClickInfo,
+  type WikilinkMenuState,
 } from '@septcats/editor';
 import type { SlashItem } from '@septcats/editor';
 import {
@@ -49,6 +54,7 @@ import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
 import { pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
 import { usePageWidth } from '../state/pageWidth';
+import { BacklinksPanel } from './BacklinksPanel';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
 import './PageView.css';
@@ -199,6 +205,10 @@ export function PageView({ page }: PageViewProps) {
   const [slashQuery, setSlashQuery] = useState('');
   /** 斜杠菜单锚点（光标视口坐标换算到 .pv-body；null = 退化到 CSS 缺省位）。 */
   const [slashPos, setSlashPos] = useState<{ top: number; left: number } | null>(null);
+  /** T44-01：双链补全菜单状态（`[[query` 触发；null = 关闭）。 */
+  const [wikiMenu, setWikiMenu] = useState<WikilinkMenuState | null>(null);
+  /** T44-01：内容修订号（每次编辑 +1；反向链接面板防抖重拉 = 实时更新）。 */
+  const [blocksRevision, setBlocksRevision] = useState(0);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [aiPanel, setAiPanel] = useState<AiPanelState>(AI_PANEL_CLOSED);
   const aiTargetRef = useRef<AiApplyTarget | null>(null);
@@ -290,6 +300,8 @@ export function PageView({ page }: PageViewProps) {
     (next: BlockDoc) => {
       docRef.current = next;
       session?.onDocChange(next);
+      // T44-01：反向链接面板随编辑实时更新（面板内防抖重拉）
+      setBlocksRevision((revision) => revision + 1);
     },
     [session],
   );
@@ -433,6 +445,62 @@ export function PageView({ page }: PageViewProps) {
       jumpToBlockId(editor, pending.blockId);
     }
   }, [editor, activePageId, chatPageIsDb, jumpToBlockId]);
+
+  /**
+   * T44-01：双链点击（Obsidian 式）。
+   * 已解析（target 在当前树里）→ 页签打开目标页（openInTab 同页不重复开）；
+   * 未解析（target=null 或指向已不存在的页）→ 新建该标题页并跳转，回填节点 target
+   * （稳定 id 键——此后改名不破链）。目标行为显式（新建+跳转），绝不静默无反应。
+   */
+  const handleWikilinkClick = useCallback(
+    (info: WikilinkClickInfo): void => {
+      if (editor === null) {
+        return;
+      }
+      const targetAlive =
+        info.target !== null && pageNodes.some((node) => node.id === info.target);
+      if (targetAlive && info.target !== null) {
+        pagesActions.openInTab(info.target);
+        return;
+      }
+      void (async () => {
+        const created = await window.septcats.pages.create({ parentId: null });
+        await window.septcats.pages.rename({ id: created.id, title: info.title });
+        await pagesActions.refresh();
+        pagesActions.openInTab(created.id);
+        // 回填 target（未解析 → 已解析）：节点以稳定 id 为键，改名不破链
+        resolveWikilinkTarget(editor, info.pos, created.id);
+      })().catch((error: unknown) => {
+        console.error('[PageView] 未解析链接新建目标页失败（不吞）', error);
+      });
+    },
+    [editor, pageNodes],
+  );
+
+  /** 双链补全候选：当前工作区页面（树真源），按标题过滤（纯函数，limit 8）。 */
+  const wikilinkHost = {
+    candidates: pageNodes.map((node) => ({ id: node.id, title: node.title })),
+    onMenuChange: setWikiMenu,
+    onLinkClick: handleWikilinkClick,
+  };
+
+  /** 补全确认：把 `[[query` 区间替换为 wikilink 节点（target=候选稳定 id）。 */
+  const handleWikiSelect = useCallback(
+    (item: { id: string; label: string }): void => {
+      setWikiMenu(null);
+      if (editor === null || wikiMenu === null) {
+        return;
+      }
+      const caret = editor.state.selection.from;
+      const candidate = pageNodes.find((node) => node.id === item.id);
+      insertWikilinkSelection(editor, wikiMenu.from, caret, {
+        target: item.id,
+        title: candidate?.title ?? item.label,
+        alias: null,
+      });
+    },
+    [editor, wikiMenu, pageNodes],
+  );
 
   /**
    * 手柄定位（T36-01 §1.1）：簇垂直中心 = 归属块**首行行框**的垂直中心（偏差 ≤1px）。
@@ -672,6 +740,10 @@ export function PageView({ page }: PageViewProps) {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
+      // 双链补全菜单打开期间，斜杠触发让位（两浮层不叠开；键盘归 SlashMenu capture）
+      if (wikiMenu !== null) {
+        return;
+      }
       if (event.key === '/') {
         setSlashOpen(true);
         setSlashQuery('');
@@ -688,7 +760,7 @@ export function PageView({ page }: PageViewProps) {
         setSlashQuery((query) => query + event.key);
       }
     },
-    [slashOpen],
+    [slashOpen, wikiMenu],
   );
 
   /** hover 即出现手柄（T32-01 §1.1）：pv-body 内只前进不清零（跨块间隙不闪烁）。 */
@@ -1047,7 +1119,13 @@ export function PageView({ page }: PageViewProps) {
           <ErrorPanel description={docState.message} onRetry={reloadBlocks} />
         ) : editorDoc !== null ? (
           // doc 挂载时读一次（packages/editor/react/Editor.tsx），key=pageId 保证换页重建
-          <Editor key={editorDoc.pageId} doc={editorDoc} onChange={handleChange} onReady={setEditor} />
+          <Editor
+            key={editorDoc.pageId}
+            doc={editorDoc}
+            onChange={handleChange}
+            onReady={setEditor}
+            wikilinkHost={wikilinkHost}
+          />
         ) : null}
         {dropTarget === null ? null : <div className="pv-dropline" data-target={dropTarget} />}
         <SlashMenu
@@ -1060,8 +1138,22 @@ export function PageView({ page }: PageViewProps) {
             setSlashQuery('');
           }}
         />
+        <SlashMenu
+          open={wikiMenu !== null}
+          query={wikiMenu?.query ?? ''}
+          position={slashPos ?? undefined}
+          title={t('editor.wikilinkMenuTitle')}
+          items={filterWikilinkCandidates(wikilinkHost.candidates, wikiMenu?.query ?? '').map(
+            (candidate) => ({ id: candidate.id, label: candidate.title, hint: '' }),
+          )}
+          onSelect={handleWikiSelect}
+          onClose={() => {
+            setWikiMenu(null);
+          }}
+        />
         <SelectionToolbar editor={editor} anchor={anchor} onRequestLink={requestLink} />
       </div>
+      <BacklinksPanel pageId={activePage.id} revision={blocksRevision} />
       <AiActionPanel
         open={aiPanel.open}
         action={aiPanel.action}

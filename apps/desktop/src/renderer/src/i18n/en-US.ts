@@ -58,6 +58,12 @@ export const enUS = {
     wikiUpdatedAt: 'Updated',
     linkPrompt: 'Link URL (https:// / notion:// / page: / #anchor)',
     emptyPage: 'No pages yet. Use "New Page" in the sidebar, or start from a template.',
+    // T44-01: backlinks ([[ ]] style)
+    wikilinkMenuTitle: 'Link to page · type to filter',
+    wikilinkMenuEmpty: 'No matching pages',
+    backlinksTitle: 'Backlinks',
+    backlinksEmpty: 'No pages link here yet',
+    backlinksJumpAria: 'Jump to reference',
   },
   tabs: {
     barLabel: 'Open page tabs',

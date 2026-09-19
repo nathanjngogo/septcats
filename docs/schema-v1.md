@@ -87,3 +87,11 @@
 - code 块 content 是否转 PM doc 统一（倾向：否，纯文本更稳）→ M4 实测定。
 - mention 反链索引表（`mention(page_id,target_id)`）放 M5 建，schema 本文件已隐含字段。
 - callout 与 quote 合并是否影响 01 mockup 视觉 → UI 层 props.icon 分支即可。
+
+## 8. 设备本地派生表（不进 Op 真相层）
+
+### page_link_index（migration #9，TASK-T44-01 双链）
+- 列：`source_page_id`、`source_block_id`、`target_page_id`、`workspace_id`、`title`、`context`；PK `(source_block_id, target_page_id)`。
+- 语义：从存活块 content（PM doc JSON）里的 `wikilink` 内联节点派生的**页面互链索引**（Obsidian 式 `[[ ]]`）。链接以 `target_page_id`（目标页稳定 id）为键——页面改名不破链；未解析链接（target=null）不入索引（点击时新建目标页并回填 id）。
+- 维护：设备本地派生态，**不产生 Op、不随同步发布**（口径同 record.backlinks_json / page_block_fts）。增量 = 提交路径按涉及页「`link.clearPage` + `link.insert`」同事务成对维护；全量 = `links.clearAll` + 重扫全部存活块（启动时自动跑一次，一致性判据：`增量维护结果 == 全量重建结果`）。
+- 查询：`links.backlinks`（回链面板）按 `target_page_id` 反查，JOIN 源页 `alive=1` 且同工作区分片。

@@ -60,6 +60,12 @@ export const zhCN = {
     wikiUpdatedAt: '末次更新',
     linkPrompt: '链接地址（https:// / notion:// / page: / #锚点）',
     emptyPage: '还没有页面。在左侧栏「新建页面」，或从模板开始。',
+    // T44-01：双链（Obsidian 式 [[ ]]）
+    wikilinkMenuTitle: '链接到页面 · 输入以过滤',
+    wikilinkMenuEmpty: '无匹配页面',
+    backlinksTitle: '反向链接',
+    backlinksEmpty: '暂无页面引用本页',
+    backlinksJumpAria: '跳转到引用位置',
   },
   tabs: {
     barLabel: '打开的页面标签',
