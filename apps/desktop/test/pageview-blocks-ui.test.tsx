@@ -139,6 +139,34 @@ describe('PageView 斜杠菜单（T32-01 §1.2）', () => {
     });
     expect(screen.queryByTestId('septcats-slashmenu')).toBeNull();
   });
+
+  it('Enter 落在 contenteditable（真机路径）只应用块型：不分块、无残留、scrollTop=0（T35-01/T36-01 §1.3）', async () => {
+    const host = await mountPageView();
+    const body = document.querySelector('.pv-body')!;
+    const scroller = document.querySelector('.pv-root') as HTMLElement;
+
+    fireEvent.keyDown(body, { key: '/' });
+    await screen.findByTestId('septcats-slashmenu');
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+
+    // 焦点在编辑器时 Enter 先经 PM 的 view.dom 冒泡、后到 window 菜单处理器。
+    // 修复前（bubble 监听）PM 先 splitBlock、菜单再应用 → 双处理：多出空块 + 残留。
+    // 修复后 SlashMenu 在 capture 阶段 preventDefault，PM 的 eventBelongsToView
+    // 看到 defaultPrevented 直接跳过 → 键盘只属于菜单。
+    const editable = host.querySelector('.ProseMirror')!;
+    fireEvent.keyDown(editable, { key: 'Enter', keyCode: 13 });
+
+    await waitFor(() => {
+      expect(host.querySelector('h1[data-id="blk-1"]')).not.toBeNull();
+    });
+    expect(screen.queryByTestId('septcats-slashmenu')).toBeNull();
+    // 仍只有 2 个块（修复前 splitBlock 会多出一个空段落）
+    expect(host.querySelectorAll('[data-id]').length).toBe(2);
+    // 无残留文本：h1 内容 = 原文「第一段」
+    expect(host.querySelector('h1[data-id="blk-1"]')?.textContent).toBe('第一段');
+    // 换型不牵动滚动（jsdom 无布局，scrollTop 恒 0；数值断言在真机探针 §2.1②）
+    expect(scroller.scrollTop).toBe(0);
+  });
 });
 
 describe('PageView 手柄拖拽（T32-01 §2.④）', () => {

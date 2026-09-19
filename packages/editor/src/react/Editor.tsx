@@ -18,6 +18,7 @@ import {
   type PMDocJSON,
 } from '../model';
 import { editorExtensions } from '../types';
+import { blockAnchorPlugin } from './blockAnchor';
 import './editor.css';
 
 /** 编辑器包自用的本地 actor（apps 层接 IPC 时换成真实设备 ID）。 */
@@ -117,6 +118,8 @@ export function Editor({ doc, onChange, onReady, editable = true, className }: E
         writeBackBlockIds(instance, next);
       },
     });
+    // T36-01：块锚定补偿装饰（换块型首行视觉锚定；见 react/blockAnchor.ts）
+    instance.registerPlugin(blockAnchorPlugin());
     onReadyRef.current?.(instance);
     return () => {
       onReadyRef.current?.(null);

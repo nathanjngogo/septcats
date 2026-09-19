@@ -6,4 +6,6 @@ export * from './Editor';
 export * from './BlockControls';
 export * from './SlashMenu';
 export * from './SelectionToolbar';
+export * from './anchor';
+export * from './blockAnchor';
 export * from './dnd';

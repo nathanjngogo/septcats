@@ -83,6 +83,11 @@ export function SlashMenu({ open, query, onSelect, onClose, items, position, tit
         }
       }
     };
+    // T35-01：必须挂在 **capture 阶段**（window → … → contenteditable）。菜单打开时
+    // Enter/↑↓/Esc 若走 bubble（window 末位），ProseMirror 在 view.dom 上先处理了
+    // 同一个 keydown（Enter → 分块），preventDefault 已太迟 → 「分块 + 应用」双处理、
+    // 原块残留 /query 文本。capture 阶段 preventDefault 后，PM 的 eventBelongsToView
+    // 检查 defaultPrevented 直接跳过本事件，键盘只属于菜单。
     // 菜单外 mousedown 关闭（对齐 BlockControls 外点关闭手感；菜单内点击不关）
     const onPointerDown = (event: MouseEvent) => {
       const root = menuRef.current;
@@ -90,10 +95,10 @@ export function SlashMenu({ open, query, onSelect, onClose, items, position, tit
         onClose();
       }
     };
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
     document.addEventListener('mousedown', onPointerDown);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('mousedown', onPointerDown);
     };
   }, [open, list, activeIndex, onSelect, onClose]);

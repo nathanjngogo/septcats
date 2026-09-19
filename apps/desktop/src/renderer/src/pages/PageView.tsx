@@ -30,7 +30,11 @@ import {
   applySortKeyAssignments,
   blockIdAtPos,
   blockPosById,
+  firstLineAnchorCompensation,
+  firstLineRectOf,
+  handleTopForFirstLine,
   planBlockDrop,
+  setBlockAnchorStyle,
   EDITOR_ACTOR,
   type BlockAction,
   type SelectionRect,
@@ -154,6 +158,8 @@ export function PageView({ page }: PageViewProps) {
   const [pinnedBlockId, setPinnedBlockId] = useState<string | null>(null);
   const handleBlockId = pinnedBlockId ?? hoverBlockId ?? activeBlockId;
   const [handleTop, setHandleTop] = useState(0);
+  /** 手柄量测器（applyBlockType 补偿落样式后手动触发一次重对齐）。 */
+  const measureHandleRef = useRef<() => void>(() => {});
   const [anchor, setAnchor] = useState<SelectionRect | null>(null);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
@@ -325,7 +331,13 @@ export function PageView({ page }: PageViewProps) {
     };
   }, [editor, session]);
 
-  /** 手柄定位：跟随归属块的 DOM 顶（贴块左），夹在 .pv-body 顶防越出视口（T32-01 ①）。 */
+  /**
+   * 手柄定位（T36-01 §1.1）：簇垂直中心 = 归属块**首行行框**的垂直中心（偏差 ≤1px）。
+   * 首行行框取编辑器 coordsAtPos(块内容起点) 的行框盒——多行块只按首行（T32-01 时代的
+   * 「块顶=手柄顶」即 PM 实测簇 centerY 偏 3px 的根因）；叶子块（divider/image）退化
+   * 整块盒。换型/输入等文档变化会移动首行行框 → 随 editor 'update' 重测（菜单钉住
+   * 期间同样保持对齐）；仍夹在 .pv-body 顶防越出视口（T32-01 ①）。
+   */
   useEffect(() => {
     if (handleBlockId === null) {
       return;
@@ -334,15 +346,48 @@ export function PageView({ page }: PageViewProps) {
     if (body === null) {
       return;
     }
-    const el = body.querySelector(`[data-id="${handleBlockId}"]`);
-    if (!(el instanceof HTMLElement)) {
+    const measure = (): void => {
+      const el = body.querySelector(`[data-id="${handleBlockId}"]`);
+      if (!(el instanceof HTMLElement)) {
+        return;
+      }
+      const elRect = el.getBoundingClientRect();
+      const pos = editor !== null ? blockPosById(editor, handleBlockId) : null;
+      const node = editor !== null && pos !== null ? editor.state.doc.nodeAt(pos) : null;
+      const firstLine =
+        editor !== null && pos !== null && node !== null
+          ? firstLineRectOf(editor.view, node, pos)
+          : null;
+      const line = firstLine ?? { top: elRect.top, bottom: elRect.bottom };
+      const cluster = body.querySelector('.pv-handle');
+      const clusterHeight =
+        cluster instanceof HTMLElement && cluster.offsetHeight > 0
+          ? cluster.offsetHeight
+          : line.bottom - line.top;
+      setHandleTop(Math.max(handleTopForFirstLine(line, clusterHeight, body.getBoundingClientRect().top), 0));
+    };
+    measureHandleRef.current = measure;
+    measure();
+    if (editor === null) {
       return;
     }
-    const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top;
-    setHandleTop(Math.max(top, 0));
+    editor.on('update', measure);
+    return () => {
+      editor.off('update', measure);
+      measureHandleRef.current = () => {};
+    };
   }, [handleBlockId, editor, docState]);
 
-  /** 换型（手柄菜单与斜杠菜单共用；blockId 由调用方给定）。 */
+  /**
+   * 换型（手柄菜单与斜杠菜单共用；blockId 由调用方给定）。
+   * T36-01 §1.2 视觉锚定：换型前量首行行框中心，换型后把位移用 inline
+   * padding-top（下移，不参与坍缩）/ margin-top（上移，按坍缩代数）补偿回零——
+   * 首行中心不动、scrollTop 不被牵动、光标映射后仍在原块（tr 未 scrollIntoView）。
+   * 补偿是**量测驱动**的（每次转换前重测现状），不累积误差；叶子块（divider/image）
+   * 或量测失败时退化为旧行为。JS 量测补偿而非块型 CSS 改间距的原因：列表块是
+   * 扁平单 li 块（块间 0 间距是列表观感的一部分），统一锚点 CSS 会破坏列表节奏，
+   * 且 UA margin 坍缩使 CSS 补偿无法对任意前邻块成立。
+   */
   const applyBlockType = useCallback(
     (blockId: string | null, blockType: string, level?: 1 | 2 | 3) => {
       if (editor === null || blockId === null) {
@@ -357,6 +402,9 @@ export function PageView({ page }: PageViewProps) {
       if (node === null || nodeType === undefined) {
         return;
       }
+      const beforeRect = firstLineRectOf(editor.view, node, pos);
+      const beforeCenter =
+        beforeRect !== null ? (beforeRect.top + beforeRect.bottom) / 2 : null;
       const attrs: Record<string, unknown> = { ...node.attrs };
       if (level !== undefined) {
         attrs['level'] = level;
@@ -375,6 +423,41 @@ export function PageView({ page }: PageViewProps) {
         tr.setNodeMarkup(pos, nodeType, attrs);
       }
       editor.view.dispatch(tr);
+      if (beforeCenter === null) {
+        return;
+      }
+      // PM 的 dispatch 同步完成 DOM 更新 → 此处的量测已反映新块型
+      const afterNode = editor.state.doc.nodeAt(pos);
+      const el = document.querySelector(`[data-id="${blockId}"]`);
+      if (afterNode === null || afterNode.isLeaf || !(el instanceof HTMLElement)) {
+        return;
+      }
+      const afterRect = firstLineRectOf(editor.view, afterNode, pos);
+      if (afterRect === null) {
+        return;
+      }
+      const afterStyle = window.getComputedStyle(el);
+      const prev = el.previousElementSibling;
+      // 前邻块的 margin-bottom；首块传 0——首块的 margin-top 与 .ProseMirror（无
+      // padding/border）坍缩传播，视觉上同样有效（PM 实测 P→H1 dTop=-4 = mt 16↔12 差），
+      // 坍缩代数与「mb=0 的前邻」完全同构。
+      const marginBottomPrev =
+        prev instanceof HTMLElement
+          ? parseFloat(window.getComputedStyle(prev).marginBottom) || 0
+          : 0;
+      const input = {
+        centerBefore: beforeCenter,
+        centerAfter: (afterRect.top + afterRect.bottom) / 2,
+        paddingTopAfter: parseFloat(afterStyle.paddingTop) || 0,
+        marginTopAfter: parseFloat(afterStyle.marginTop) || 0,
+        marginBottomPrev,
+      };
+      const comp = firstLineAnchorCompensation(input);
+      // 补偿以 Node 装饰承载（PM 重渲染自动重放）：直接写 el.style 会被
+      // EditSession/collab 回声引发的重渲染抹掉（T36-01 真机实证）
+      setBlockAnchorStyle(editor, blockId, comp);
+      // 补偿移动了首行 → 手柄重对齐（'update' 已在 dispatch 内跑过，这里补一次）
+      measureHandleRef.current();
     },
     [editor],
   );
