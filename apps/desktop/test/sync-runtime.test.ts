@@ -44,6 +44,8 @@ import { createCipheriv, randomBytes } from 'node:crypto';
 
 class MemoryLedger {
   readonly ops = new Map<string, Op>();
+  /** T31-01：op_id → seg_id 标记（null = 未标记已发布）。 */
+  readonly segIds = new Map<string, string | null>();
   rebuildCount = 0;
 
   async batch(stmts: readonly DbBatchStatement[]): Promise<BatchData> {
@@ -53,6 +55,14 @@ class MemoryLedger {
         const op = decodeOp(p.op_json);
         if (!this.ops.has(op.op_id)) {
           this.ops.set(op.op_id, op);
+          this.segIds.set(op.op_id, null);
+        }
+      }
+      if (stmt.sqlId === 'opLedger.markSeg') {
+        // 与真语句同语义：仅未标记行生效（幂等）
+        const p = stmt.params as { op_id: string; seg_id: string };
+        if (this.segIds.get(p.op_id) === null) {
+          this.segIds.set(p.op_id, p.seg_id);
         }
       }
       return { sqlId: stmt.sqlId, data: { changes: 1, lastInsertRowid: 1 } };
@@ -63,6 +73,12 @@ class MemoryLedger {
   async all(sqlId: string, _params?: unknown): Promise<AllData> {
     if (sqlId === 'opLedger.listAll') {
       return { rows: [...this.ops.values()].map((op) => ({ op_json: encodeOp(op) })) };
+    }
+    if (sqlId === 'opLedger.listUnpublished') {
+      const rows = [...this.ops.values()]
+        .filter((op) => this.segIds.get(op.op_id) === null)
+        .map((op) => ({ op_json: encodeOp(op) }));
+      return { rows };
     }
     throw new Error(`unexpected all(${sqlId})`);
   }
@@ -96,6 +112,29 @@ class MemoryLedger {
   /** 投影稳定快照（收敛断言用，与 server.exportSnapshot 同口径）。 */
   projection(): string {
     return opsToSnapshot(replay([...this.ops.values()]).projection);
+  }
+
+  // --- T31-01 对账断言辅助 ---------------------------------------------------
+
+  /** 模拟升级库「发布后 seg_id 永不回写」：清空全部标记。 */
+  clearSegMarks(): void {
+    for (const id of this.segIds.keys()) {
+      this.segIds.set(id, null);
+    }
+  }
+
+  unpublishedCount(): number {
+    let n = 0;
+    for (const v of this.segIds.values()) {
+      if (v === null) {
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  segIdOf(opId: string): string | null {
+    return this.segIds.get(opId) ?? null;
   }
 }
 
@@ -140,6 +179,8 @@ interface MakeRuntimeOptions {
   encrypt?: boolean;
   maxKeepSegs?: number;
   mergeIntervalMs?: number;
+  /** T31-01：注入共享内存账本（模拟「同一升级库重启」）。 */
+  db?: MemoryLedger;
 }
 
 interface RuntimeHandle {
@@ -149,7 +190,7 @@ interface RuntimeHandle {
 }
 
 function makeRuntime(options: MakeRuntimeOptions): RuntimeHandle {
-  const ledger = new MemoryLedger();
+  const ledger = options.db ?? new MemoryLedger();
   const keyring = new SyncKeyring(fakeStore(options.dek ?? null));
   const runtime = new SyncRuntime({
     rootDir: options.syncDir,
@@ -619,5 +660,73 @@ describe('sync/runtime 双实例集成', () => {
     expect(status.pendingOps).toBe(0);
     expect(status.pendingSegs).toBe(0);
     a.runtime.stop();
+  });
+
+  // TASK-T31-01（P0-3）：升级库重发循环回归。老板库同构数据：
+  //   盘上有历史段、账本里 op 全部 seg_id IS NULL（rc.5 发布后未回写）、
+  //   另有若干从未发布的 op（老板库 c=9,10 同构）。修复后首轮对账必须：
+  //   ① 已在盘上段的 op 只回写标记（零重发、零重复段）；② 未发布 op 补发成新段并标记；
+  //   ③ 连续 3 轮段数稳定（无循环）；④ state=ok、errors=[]；⑤ 水位到账本末尾。
+  it('M：升级库重发循环 → 首轮对账 28 型 NULL 全标记、只补发缺失区间、3 轮段数稳定', async () => {
+    const syncDir = tempDir('septcats-sync-t31-');
+    const shared = new MemoryLedger(); // 同一「库」：跨重启共享（升级库同构）
+
+    // ① 历史：正常发布 2 段（盘上有段），随后清空标记模拟「发布后 seg_id 永不回写」
+    const a = makeRuntime({ syncDir, actor: 'aaaa0001', db: shared });
+    await a.runtime.start();
+    await commit(a, [upsertOp('aaaa0001', 'pg-1', '初始', 1), patchOp('aaaa0001', 'pg-1', '改名', 2)]);
+    await a.runtime.flushAndPublish();
+    await commit(a, [upsertOp('aaaa0001', 'pg-2', '页二', 3)]);
+    await a.runtime.flushAndPublish();
+    a.runtime.stop();
+    const segsBefore = readdirSync(syncDir).filter((n) => n.startsWith('seg-'));
+    expect(segsBefore.length).toBe(2);
+    shared.clearSegMarks();
+    expect(shared.unpublishedCount()).toBe(3);
+
+    // ② 从未发布的 op（c=4,5；模拟老板库尾部未发布的 c=9,10）：
+    //    commit 进库但立即 stop，发布路径不触发（builder 随进程消失，op 滞留账本）
+    await commit(a, [upsertOp('aaaa0001', 'pg-3', '未发布页三', 4), upsertOp('aaaa0001', 'pg-4', '未发布页四', 5)]);
+    expect(shared.ops.size).toBe(5);
+
+    // ③ 「重启」：同库同 actor 的新 runtime（builder 为空，只剩账本 + 盘上历史段）
+    const b = makeRuntime({ syncDir, actor: 'aaaa0001', db: shared });
+    await b.runtime.start();
+
+    // 首轮对账：5 条 NULL 全部标记；已在盘上段的 3 条不产生新段；只补发 1 段（c=4,5）
+    expect(shared.unpublishedCount()).toBe(0);
+    const segsAfterFirst = readdirSync(syncDir).filter((n) => n.startsWith('seg-'));
+    expect(segsAfterFirst.length).toBe(3);
+    for (const op of shared.ops.values()) {
+      expect(shared.segIdOf(op.op_id), `op ${op.op_id} 首轮后应已标记`).not.toBeNull();
+    }
+    // 已发布区间的 op 标回其所在段（内容级 seg_id），未发布 op 标到新段
+    const diskSegByOpId = new Map<string, string>();
+    for (const name of segsBefore) {
+      for (const op of decodeSegment(readFileSync(join(syncDir, name), 'utf8')).ops) {
+        diskSegByOpId.set(op.op_id, decodeSegment(readFileSync(join(syncDir, name), 'utf8')).seg_id);
+      }
+    }
+    for (const [opId, segId] of diskSegByOpId) {
+      expect(shared.segIdOf(opId)).toBe(segId);
+    }
+    const newSegName = segsAfterFirst.find((n) => !segsBefore.includes(n))!;
+    const newSeg = decodeSegment(readFileSync(join(syncDir, newSegName), 'utf8'));
+    expect(newSeg.ops.map((op) => op.lamport.c).sort((x, y) => x - y)).toEqual([4, 5]);
+
+    // ④ 连续 3 轮段数稳定（无重发循环）、状态 ok、errors 空
+    for (let round = 0; round < 3; round += 1) {
+      await b.runtime.runCycle();
+      expect(readdirSync(syncDir).filter((n) => n.startsWith('seg-')).length).toBe(3);
+    }
+    const status = b.runtime.getStatus();
+    expect(status.state).toBe('ok');
+    expect(status.errors).toEqual([]);
+    expect(status.pendingOps).toBe(0);
+
+    // ⑤ 水位推进到账本末尾（maxC=5）
+    const manifest = decodeManifest(readFileSync(join(syncDir, 'manifest.json'), 'utf8'));
+    expect(manifest?.segment_watermark).toBe(5);
+    b.runtime.stop();
   });
 });

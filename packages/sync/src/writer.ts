@@ -1,6 +1,7 @@
 import {
   SegmentValidationError,
   buildSegment,
+  compareLamport,
   encodeOp,
   encodeSegment,
   validateSegment,
@@ -98,6 +99,69 @@ export class SegmentBuilder {
     this.maxC = Number.NEGATIVE_INFINITY;
     this.lastOpAtMs = Number.NEGATIVE_INFINITY;
     return seg;
+  }
+
+  /**
+   * T31-01：产出当前缓冲的**全部**规范段并清空缓冲；空则 []。
+   *
+   * 为什么不止一段：core 段不变量 5 要求段内 ops 按 compareLamport **严格**升序
+   * （不得等值）。不同实体的 op 可能携带等值 lamport（如两个新建页各自的 c=1，
+   * lamport.d 同设备）——它们不能同段。旧 flush() 遇此批直接抛校验异常且**缓冲
+   * 不清空**，调用方每轮重抛 → 永久错误循环（老板真机「同步错误常驻」的根因
+   * 之一）。flushAll 按等值 lamport 边界把缓冲切分为严格递增的连续 run，逐 run
+   * buildSegment + 自校验，缓冲整体清空，绝不留滞留 op。
+   */
+  flushAll(): Segment[] {
+    if (this.ops.length === 0) {
+      return [];
+    }
+    const clear = (): void => {
+      this.ops = [];
+      this.byteSize = 0;
+      this.minC = Number.POSITIVE_INFINITY;
+      this.maxC = Number.NEGATIVE_INFINITY;
+      this.lastOpAtMs = Number.NEGATIVE_INFINITY;
+    };
+    const whole = buildSegment(this.dev, this.ops);
+    const wholeIssues = validateSegment(whole);
+    if (wholeIssues.length === 0) {
+      clear();
+      return [whole];
+    }
+    const sorted = [...this.ops].sort((a, b) => {
+      const byLamport = compareLamport(a.lamport, b.lamport);
+      if (byLamport !== 0) {
+        return byLamport;
+      }
+      if (a.op_id === b.op_id) {
+        return 0;
+      }
+      return a.op_id < b.op_id ? -1 : 1;
+    });
+    const runs: Op[][] = [];
+    let current: Op[] = [];
+    for (const op of sorted) {
+      const previous = current[current.length - 1];
+      if (previous !== undefined && compareLamport(previous.lamport, op.lamport) >= 0) {
+        runs.push(current);
+        current = [];
+      }
+      current.push(op);
+    }
+    if (current.length > 0) {
+      runs.push(current);
+    }
+    const segments: Segment[] = [];
+    for (const run of runs) {
+      const seg = buildSegment(this.dev, run);
+      const issues = validateSegment(seg);
+      if (issues.length > 0) {
+        throw new SegmentValidationError(issues); // 单 op run 仍非法（设备不符等）：按旧语义上抛
+      }
+      segments.push(seg);
+    }
+    clear();
+    return segments;
   }
 
   get pendingCount(): number {

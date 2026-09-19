@@ -58,7 +58,8 @@
 | └ T29-01 🔴 P0-2 修复：同步段名碰撞 → 静默丢 op | 09-19 | ✅ **双实例真机 ALL-PASS 10/10** | 段名改**内容寻址** `seg-<c_from>-<dev>-<n>-<digest8>`（碰撞消解，`packages/core` 零改动）+ `publishSegment` 同名读回比对（同内容幂等成功／异内容改名重写／全宽冲突抛错且 op 留 pending 重试，**不丢**）+ 冲突入 `sync.status().errors`（不再静默）+ 旧命名段全路径兼容；**真机核心不变量**：盘上 4 op / 两端账本各 4 / **missing=0**（集合级 `ledger ⊆ disk`）、两端收敛、`errors:[]`；全仓 1020 无红（sync 108）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**PM 修脚本 2 处**（共享目录应判并集而非等式；读库改 python 以避 ABI 冲突）；版本 → 0.3.0-rc.5 || # | 缺陷 | 严重度 | 修复 |
 
 | └ T30-01 布局三缺陷（老板报障） | 09-19 | ✅ 交付（真机 11/11 PASS；PM 独立复跑随 rc.6） | ①折叠=**完全收起**（`display:none`+单列，实测 sidebar width 48→0、主区占满、可再展开）；②**窗口零滚动**（真因：`#root` 未定高 → `.sc-shell{height:100%}` 解析为 auto；修 `#root{height:100%;overflow:hidden}`+`html,body{overflow:hidden}`，实测 scrollHeight 2406→735、侧栏 top Δ0、主区内滚）；③**非浮层遮挡**（`elementFromPoint` 采样反证 PM 假设，真因同②：主区溢出视口被裁 46.3%）→ 修后 0 null 采样、单元格编辑全可见、Esc 可关；全仓 1028 无红（ui 76 / desktop 435）、typecheck 9/9、双门禁 ✓；13 张 before/after 截图留档 ||---|---|---|---|
-| 1 | sortkey：相邻数字取 b 首字符→前缀死区 | 高（拖拽排序无解崩溃） | digitA=-1 哨兵 + 沿 b 递归 |
+
+| └ T31-01 🔴 P0-3 修复：升级库同步重发循环 | 09-19 | ✅ **老板库副本真机闭环（rc.6）** | 根因=段写入与 `seg_id` 回写/水位推进**非原子** → 水位不推进 → 每轮重取同一区间无限重发；修=`runtime.ts` 取批改以「`seg_id IS NULL` 的 op」为准 + 段落后统一回写 + 冲突/异常留痕 + 每轮日志，`statements.ts` **只增**两条（`opLedger.listUnpublished`/`markSeg` 幂等）。**PM 独立验收（老板库只读副本）**：基线 `seg_id NULL=28/30` → 第 1 轮 **0/30**、水位 maxc=10、段数 13→23 后**连续三轮稳定不再新增**、日志无 sync 错误。全仓 1029 无红（sync 109）、typecheck 9/9、门禁 ✓（dbview 1 万条夹具单跑 95/95 = 并发假红）。**CB 跑满 150 轮上限**（报告未写，PM 接手复跑+文档）；**升级库夹具固化为回归资产** || 1 | sortkey：相邻数字取 b 首字符→前缀死区 | 高（拖拽排序无解崩溃） | digitA=-1 哨兵 + 沿 b 递归 |
 | 2 | replay：未记"覆盖冲突" | 中（冲突副本丢失） | 异设备覆盖写入 report |
 | 3 | apps/desktop 用 zod 未声明依赖 | 高（CI 必挂） | 补声明 |
 | 4 | Node/Electron 双 ABI → 15 测试静默 skip | 高（假绿） | ensure-abi 守卫脚本 |
@@ -118,7 +119,8 @@
 - [x] ~~Q-3（🔴 P0-2）~~：已由 T29-01 修复并双实例真机闭环（rc.5，`ledger ⊆ disk` missing=0）
 - [ ] ~~原 Q-3 登记~~：`packages/sync` 段名碰撞 → `publishSegment` 把「同名不同内容」当成功 → **静默丢 op**（账本 4/盘上 2、watermark=3）→ T29-01 修，**阻断 0.3.0**
 - [ ] ~~原 Q-1 登记~~：编辑器输入触发 `E_SYNC_CYCLE_FAILED`（`PageView.tsx:45 PAGE_ACTOR='desktop0001'` 硬编码设备 id → 段头 dev 不符 → 同步永久错误）→ **阻断 0.3.0**，T28-01 修
-- [ ] **Q-5（🔴 P0-3，老板真机 rc.5）**：升级库上**同步重发循环**——`op_ledger` 28/30 条 `seg_id IS NULL`（发布后未回写）、同一区间反复发段（摘要不同）→ 状态栏常驻「同步错误」；复现夹具=老板库副本 `_scratch/repro-boss-lib` → **T31-01**
+- [x] ~~Q-5（🔴 P0-3，老板真机 rc.5）~~：已由 T31-01 修复并在老板库副本上真机闭环（rc.6：NULL 28→0、三轮段数稳定）
+- [ ] ~~原 Q-5 登记~~：升级库上**同步重发循环**——`op_ledger` 28/30 条 `seg_id IS NULL`（发布后未回写）、同一区间反复发段（摘要不同）→ 状态栏常驻「同步错误」；复现夹具=老板库副本 `_scratch/repro-boss-lib` → **T31-01**
 - [x] ~~Q-4（P1，老板报障）~~：已由 T30-01 修（折叠完全收起 / 窗口零滚动 / 转库不再被裁）；PM 独立真机复跑随 rc.6
 - [ ] ~~原 Q-4 登记~~：①侧栏不能完全收起（窄轨占位）②侧栏随内容滚动（窗口级滚动，shell 未定高/未禁滚）③转库编辑被遮半屏 → **T30-01**
 - [ ] **Q-2（UX）**：重载不恢复上次打开的页（落到「未命名」）

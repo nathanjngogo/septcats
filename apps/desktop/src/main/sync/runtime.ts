@@ -25,10 +25,13 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import {
   SCHEMA_VERSION,
+  SegmentValidationError,
+  buildSegment,
   compareLamport,
   decodeOp,
   decodeSegment,
   snapshotToOps,
+  validateSegment,
   type ActorId,
   type CrdtUpdateEntry,
   type Lamport,
@@ -36,6 +39,7 @@ import {
   type Segment,
 } from '@septcats/core';
 import {
+  DEFAULT_WRITE_POLICY,
   SyncErrorCodes,
   buildSnapshotText,
   decodeManifest,
@@ -118,6 +122,8 @@ export interface SyncRuntimeEvents {
 const MAX_ERRORS = 10;
 const DEFAULT_MAX_KEEP_SEGS = 20;
 const DEFAULT_RETENTION_DAYS = 30;
+/** T31-01 对账补发的单段条数上限（与攒段策略 maxOps 同源）。 */
+const RECONCILE_BATCH_OPS = DEFAULT_WRITE_POLICY.maxOps;
 
 /** 稳定错误码（运行时面新增；E_SYNC_KEY_MISMATCH / E_KEY_ID_MISMATCH 定义在 crypto.ts）。 */
 export const SYNC_RUNTIME_ERRORS = {
@@ -126,6 +132,12 @@ export const SYNC_RUNTIME_ERRORS = {
   PUBLISH_FAILED: 'E_SYNC_PUBLISH_FAILED',
   /** T29-01：段发布同名冲突（已改新名重写、数据未丢；留痕禁止静默）。 */
   SEGMENT_CONFLICT: 'E_SYNC_SEGMENT_CONFLICT',
+  /** T31-01：段文件无法解码/段名无法解析（不参与合并；留痕禁止静默）。 */
+  UNPARSED_SEGMENT: 'E_SYNC_SEGMENT_UNPARSEABLE',
+  /** T31-01：seg_id 回写失败（段落盘已成功；下轮对账兜底补标记）。 */
+  MARK_FAILED: 'E_SYNC_MARK_FAILED',
+  /** T31-01：非本机 op 未出现在任何段中（数据异常；本机不代发他人 op，留痕）。 */
+  FOREIGN_UNPUBLISHED: 'E_SYNC_FOREIGN_OP_UNPUBLISHED',
   MANIFEST_INVALID: SyncErrorCodes.MANIFEST_INVALID,
   PROJECTION_REBUILT: 'E_PROJECTION_REBUILT',
   KEY_MISMATCH: E_SYNC_KEY_MISMATCH,
@@ -416,14 +428,15 @@ export class SyncRuntime {
   /**
    * 攒段 flush → publishSegment（T29-01：首选名含内容摘要，同名同内容幂等 'existed'、
    * 同名不同内容改新名重写 'rewritten'；失败暂存下一轮重试，不丢数据）。
+   * T31-01：改用 flushAll——等值 lamport 的 op（不同实体的同 (c,d)，如两个新建页各自
+   * 的 c=1）不能同段，旧单段 flush 遇此批抛校验异常且缓冲不清空 → 每轮重抛的
+   * 永久错误循环；flushAll 按等值边界切分多段，整缓冲清空。
    */
   async flushAndPublish(): Promise<void> {
-    const fresh = this.builder.flush();
+    const fresh = this.builder.flushAll();
     const queue: Segment[] = this.pendingPublish === null ? [] : [this.pendingPublish];
     this.pendingPublish = null;
-    if (fresh !== null) {
-      queue.push(fresh);
-    }
+    queue.push(...fresh);
     for (const seg of queue) {
       try {
         const result = await publishSegment(this.encFs, '', seg);
@@ -435,6 +448,11 @@ export class SyncRuntime {
             `段发布同名冲突：seg_id=${seg.seg_id} 已按内容摘要改新名重写（数据未丢失）`,
           );
         }
+        // T31-01 不变量①（发布原子）：段落盘成功后**立即**回写该批 op 的 seg_id，
+        // 不允许「段已落盘但 op 未标记」。段（幂等可重试）与回写是文件/DB 两种介质，
+        // 无法真同事务——回写失败时下轮对账（reconcileUnpublished）会按盘上段补标记，
+        // 收敛不变量：任何失败路径重试后最终「段与标记一致」，且不产生重复段。
+        await this.markOpsPublished(seg);
       } catch (error) {
         this.pendingPublish = seg;
         this.recordError(SYNC_RUNTIME_ERRORS.PUBLISH_FAILED, `段发布失败（下轮重试）：${describe(error)}`);
@@ -442,6 +460,19 @@ export class SyncRuntime {
       }
     }
     this.emit();
+  }
+
+  /** T31-01：一个段发布成功后回写其全部 op 的 seg_id（失败仅留痕，不阻断发布）。 */
+  private async markOpsPublished(seg: Segment): Promise<void> {
+    try {
+      await this.db.batch(seg.ops.map((op) => markOpSegStatement(op.op_id, seg.seg_id)));
+      this.log(`发布完成：seg=${seg.seg_id} ops=${String(seg.ops.length)}（seg_id 已回写）`);
+    } catch (error) {
+      this.recordError(
+        SYNC_RUNTIME_ERRORS.MARK_FAILED,
+        `seg_id 回写失败（段落盘已成功，下轮对账补标记）：seg=${seg.seg_id} ${describe(error)}`,
+      );
+    }
   }
 
   // --- S10 钥匙生命周期（T17-01 D3/D4） --------------------------------------
@@ -760,8 +791,15 @@ export class SyncRuntime {
     // S2 自愈：坏段搬 quarantine/，下轮不再重试
     await this.quarantine(report);
 
+    // T31-01 不变量③：根目录里段名无法解析的 .jsonl 留痕（不参与合并，也不静默）
+    await this.auditSegmentFileNames();
+
     // 攒段 flush（定时轮也兜底发布）
     await this.flushAndPublish();
+
+    // T31-01 不变量①②④：对账本「seg_id IS NULL 的 op」——已出现在盘上段的只回写
+    // 标记（不重发，杜绝同区间重复段），未发布的按策略补发，最后统一回写并记日志。
+    await this.reconcileUnpublished();
 
     // 首轮：ledger 计数一致性校验（不一致 → 以段重建，log E_PROJECTION_REBUILT）
     if (!this.firstCycleDone) {
@@ -808,6 +846,174 @@ export class SyncRuntime {
     return ops;
   }
 
+  /**
+   * T31-01 发布对账（不变量①②④）：以「seg_id IS NULL 的 op」为取批口径（而非水位推断）。
+   *
+   * - 已出现在盘上段的 op：只回写标记（seg_id=段内容级 seg_id），**不重发**——
+   *   升级库「发布后未回写」的历史 op 据此一轮收口，杜绝同区间重复段；
+   * - 未出现在任何段中的本机 op：按攒段条数上限切批 buildSegment → publishSegment
+   *   （幂等命名）→ 回写标记（重发收敛：同名同内容 'existed'，不产生重复数据）；
+   * - 未出现在任何段中的非本机 op：不代发（发布主体必须是其产生设备），留痕报错；
+   * - 回写走单 batch（单事务），失败留痕下轮重试；每轮把取批区间/补发段名/标记
+   *   条数/水位写日志（可观测，便于一眼定位此类问题）。
+   */
+  private async reconcileUnpublished(): Promise<void> {
+    if (this.provider === null) {
+      return;
+    }
+    const data = await this.db.all('opLedger.listUnpublished', {});
+    const pending: Op[] = [];
+    for (const row of data.rows) {
+      const json = (row as { op_json?: unknown }).op_json;
+      if (typeof json !== 'string') {
+        continue;
+      }
+      try {
+        pending.push(decodeOp(json));
+      } catch (error) {
+        this.recordError(SYNC_RUNTIME_ERRORS.CYCLE_FAILED, `未标记 op 解码失败，对账跳过：${describe(error)}`);
+      }
+    }
+    if (pending.length === 0) {
+      return;
+    }
+
+    // 盘上段 op_id → 内容级 seg_id（解码失败的段计数留痕，不参与对账）
+    const diskSegByOpId = new Map<string, string>();
+    let undecodable = 0;
+    for (const { file } of await this.provider.listSegments()) {
+      const text = await this.provider.get(file);
+      if (text === null) {
+        continue;
+      }
+      try {
+        const seg = decodeSegment(text);
+        for (const op of seg.ops) {
+          if (!diskSegByOpId.has(op.op_id)) {
+            diskSegByOpId.set(op.op_id, seg.seg_id);
+          }
+        }
+      } catch {
+        undecodable += 1;
+      }
+    }
+    if (undecodable > 0) {
+      this.recordError(
+        SYNC_RUNTIME_ERRORS.UNPARSED_SEGMENT,
+        `对账时 ${String(undecodable)} 个段文件无法解码（跳过，不参与标记）`,
+      );
+    }
+
+    const marks: DbBatchStatement[] = [];
+    const toPublish: Op[] = [];
+    for (const op of pending) {
+      const segId = diskSegByOpId.get(op.op_id);
+      if (segId !== undefined) {
+        marks.push(markOpSegStatement(op.op_id, segId));
+      } else {
+        toPublish.push(op);
+      }
+    }
+    const markedFromDisk = pending.length - toPublish.length;
+
+    const foreign = toPublish.filter((op) => op.actor !== this.actor);
+    if (foreign.length > 0) {
+      this.recordError(
+        SYNC_RUNTIME_ERRORS.FOREIGN_UNPUBLISHED,
+        `${String(foreign.length)} 条非本机 op 未出现在任何段中（不代发）：${foreign
+          .slice(0, 3)
+          .map((op) => op.op_id)
+          .join(', ')}`,
+      );
+    }
+    const mine = toPublish
+      .filter((op) => op.actor === this.actor)
+      .sort((a, b) => compareLamport(a.lamport, b.lamport) || (a.op_id < b.op_id ? -1 : a.op_id > b.op_id ? 1 : 0));
+
+    let publishedSegs = 0;
+    // 切批：条数上限 + **等值 lamport 边界强制分段**（core 段不变量 5 要求 ops 按
+    // compareLamport 严格升序、不得等值——不同实体的同 (c,d) op，如 10 个新建页各自
+    // 的 c=1，绝不能同段；老板升级库的 12 条未发布 op 正是此形态）。
+    let batch: Op[] = [];
+    const flushBatch = async (): Promise<void> => {
+      if (batch.length === 0) {
+        return;
+      }
+      const seg = buildSegment(this.actor, batch);
+      const issues = validateSegment(seg);
+      if (issues.length > 0) {
+        throw new SegmentValidationError(issues);
+      }
+      const result = await publishSegment(this.encFs, '', seg);
+      if (result === 'rewritten') {
+        this.recordError(
+          SYNC_RUNTIME_ERRORS.SEGMENT_CONFLICT,
+          `补发段同名冲突：seg_id=${seg.seg_id} 已按内容摘要改新名重写（数据未丢失）`,
+        );
+      }
+      publishedSegs += 1;
+      this.log(
+        `补发段：seg=${seg.seg_id} ops=${String(batch.length)}（c=${String(seg.header.c_from)}..${String(seg.header.c_to)}）`,
+      );
+      for (const op of batch) {
+        marks.push(markOpSegStatement(op.op_id, seg.seg_id));
+      }
+      batch = [];
+    };
+    for (const op of mine) {
+      if (
+        batch.length >= RECONCILE_BATCH_OPS ||
+        (batch.length > 0 && compareLamport(batch[batch.length - 1]!.lamport, op.lamport) >= 0)
+      ) {
+        await flushBatch();
+      }
+      batch.push(op);
+    }
+    await flushBatch();
+
+    if (marks.length > 0) {
+      try {
+        await this.db.batch(marks);
+      } catch (error) {
+        this.recordError(
+          SYNC_RUNTIME_ERRORS.MARK_FAILED,
+          `对账标记回写失败（下轮重试）：${String(marks.length)} 条 ${describe(error)}`,
+        );
+        return;
+      }
+    }
+    const ledgerMax = await this.db.get('opLedger.maxLamport', {});
+    const maxC = (ledgerMax.row as { c?: unknown } | null)?.c;
+    this.log(
+      `对账收口：未标记=${String(pending.length)} 盘中回写=${String(markedFromDisk)} 补发=${String(publishedSegs)} 段/${
+        String(mine.length)
+      } op 异常留痕=${String(foreign.length)} 水位=${typeof maxC === 'number' ? String(maxC) : '0'}`,
+    );
+  }
+
+  /**
+   * T31-01 不变量③：根目录中「.jsonl / .jsonl.enc 但段名无法解析」的文件留痕。
+   * provider.listSegments 按可解析名过滤——这类文件永不参与合并，也永不隔离，
+   * 若不在此显式报错就是永久静默。文件持续存在则每轮持续报（滑窗封顶），非死循环。
+   */
+  private async auditSegmentFileNames(): Promise<void> {
+    let names: string[] = [];
+    try {
+      names = await this.rawFs.list(this.rootDir);
+    } catch {
+      return; // 断链路径由 probe/degraded 负责
+    }
+    const bad = names.filter(
+      (name) => (name.endsWith('.jsonl') || name.endsWith('.jsonl.enc')) && parseSegmentFileName(name) === null,
+    );
+    if (bad.length > 0) {
+      this.recordError(
+        SYNC_RUNTIME_ERRORS.UNPARSED_SEGMENT,
+        `同步目录存在无法解析的段文件（不参与合并，请人工检查）：${bad.join(', ')}`,
+      );
+    }
+  }
+
   /** 空账本且有快照 → 用最新快照播种（S5）。 */
   private async seedFromSnapshot(): Promise<void> {
     const provider = this.provider;
@@ -829,8 +1035,13 @@ export class SyncRuntime {
     try {
       const seedOps = snapshotToOps(text, this.actor);
       if (seedOps.length > 0) {
-        await commitOps(this.db, seedOps, { workspaceId: await this.resolveWorkspaceId() });
-        this.log(`S5 播种：从 ${newest.file} 回转 ${String(seedOps.length)} 条 op`);
+        // T31-01：快照播种的 op 就地标记为快照来源（同事务 extraStatements），
+        // 防止对账把它们当作「未发布」再补发成重复段（快照本身就是传播载体）。
+        await commitOps(this.db, seedOps, {
+          workspaceId: await this.resolveWorkspaceId(),
+          extraStatements: seedOps.map((op) => markOpSegStatement(op.op_id, newest.file)),
+        });
+        this.log(`S5 播种：从 ${newest.file} 回转 ${String(seedOps.length)} 条 op（seg_id 标记为快照来源）`);
       }
     } catch (error) {
       this.recordError(SYNC_RUNTIME_ERRORS.CYCLE_FAILED, `快照播种失败：${describe(error)}`);
@@ -1043,6 +1254,14 @@ export class SyncRuntime {
 }
 
 // --- 模块级工具 ---------------------------------------------------------------
+
+/** T31-01：op 的 seg_id 回写语句（仅未标记行生效，幂等；走 batch 单事务）。 */
+function markOpSegStatement(opId: string, segId: string): DbBatchStatement {
+  return {
+    sqlId: 'opLedger.markSeg',
+    params: { op_id: opId, seg_id: segId },
+  };
+}
 
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

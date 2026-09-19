@@ -44,6 +44,8 @@ const RENDERER: ActorId = 'desktop0001';
 
 class MemoryLedger {
   readonly ops = new Map<string, Op>();
+  /** T31-01：op_id → seg_id 标记（null = 未标记已发布）。 */
+  readonly segIds = new Map<string, string | null>();
 
   async batch(stmts: readonly DbBatchStatement[]): Promise<BatchData> {
     const results = stmts.map((stmt) => {
@@ -52,6 +54,13 @@ class MemoryLedger {
         const op = decodeOp(p.op_json);
         if (!this.ops.has(op.op_id)) {
           this.ops.set(op.op_id, op);
+          this.segIds.set(op.op_id, null);
+        }
+      }
+      if (stmt.sqlId === 'opLedger.markSeg') {
+        const p = stmt.params as { op_id: string; seg_id: string };
+        if (this.segIds.get(p.op_id) === null) {
+          this.segIds.set(p.op_id, p.seg_id);
         }
       }
       return { sqlId: stmt.sqlId, data: { changes: 1, lastInsertRowid: 1 } };
@@ -62,6 +71,12 @@ class MemoryLedger {
   async all(sqlId: string, _params?: unknown): Promise<AllData> {
     if (sqlId === 'opLedger.listAll') {
       return { rows: [...this.ops.values()].map((op) => ({ op_json: encodeOp(op) })) };
+    }
+    if (sqlId === 'opLedger.listUnpublished') {
+      const rows = [...this.ops.values()]
+        .filter((op) => this.segIds.get(op.op_id) === null)
+        .map((op) => ({ op_json: encodeOp(op) }));
+      return { rows };
     }
     throw new Error(`unexpected all(${sqlId})`);
   }

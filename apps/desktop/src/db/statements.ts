@@ -595,6 +595,21 @@ FROM op_ledger ORDER BY seq ASC`,
     sql: `SELECT COALESCE(MAX(lamport_c), 0) AS c FROM op_ledger`,
     params: emptyParams,
   },
+  // T31-01（P0-3）：发布对账——取「未标记已发布」的 op（取批以 seg_id IS NULL 为准，
+  // 而非水位推断；下行 op 由对账按盘上段回写标记，本机未发布 op 由对账补发）。
+  'opLedger.listUnpublished': {
+    kind: 'all',
+    sql: `SELECT seq, op_id, seg_id, lamport_c, lamport_d, target_table, target_id, op_json, applied_at
+FROM op_ledger WHERE seg_id IS NULL ORDER BY seq ASC`,
+    params: emptyParams,
+  },
+  // T31-01（P0-3）：单条 op 的 seg_id 回写（仅未标记行生效，幂等）；
+  // 发布路径在段落盘后调用，与既有 opLedger.insert 同走 batch 单事务。
+  'opLedger.markSeg': {
+    kind: 'run',
+    sql: `UPDATE op_ledger SET seg_id = @seg_id WHERE op_id = @op_id AND seg_id IS NULL`,
+    params: z.object({ op_id: z.string().min(1), seg_id: z.string().min(1) }),
+  },
 
   // ---- meta ---------------------------------------------------------------
   'meta.get': {

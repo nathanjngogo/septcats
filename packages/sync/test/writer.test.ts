@@ -94,6 +94,38 @@ describe('SegmentBuilder', () => {
     const b = new SegmentBuilder(DEV_A);
     expect(b.shouldFlush(0, 0)).toBe(false);
   });
+
+  // T31-01（P0-3）：等值 lamport（不同实体同 (c,d)，如两个新建页各自的 c=1）不能同段
+  // （core 段不变量 5「严格升序」）。旧 flush() 遇此批抛校验异常且缓冲不清空 →
+  // 调用方每轮重抛的永久错误循环；flushAll 按等值边界切分多段并整缓冲清空。
+  it('flushAll：等值 lamport 切成多个合法段、op 零丢失、缓冲清空', () => {
+    const b = new SegmentBuilder(DEV_A);
+    b.add(makeOp({ c: 1, d: DEV_A, entityId: 'ent-a' }));
+    b.add(makeOp({ c: 1, d: DEV_A, entityId: 'ent-b' })); // 与上一条等值 (c,d)
+    b.add(makeOp({ c: 2, d: DEV_A, entityId: 'ent-c' }));
+    b.add(makeOp({ c: 9, d: DEV_A, entityId: 'ent-d' }));
+
+    // 旧路径此时已不可恢复：flush() 会抛 SegmentValidationError
+    expect(() => b.flush()).toThrow();
+
+    const segs = b.flushAll();
+    expect(segs.length).toBe(2);
+    for (const seg of segs) {
+      expect(validateSegment(seg)).toEqual([]);
+    }
+    expect(segs.map((seg) => seg.ops.length)).toEqual([1, 3]); // [c1a] | [c1b,c2,c9]：等值边界切分
+    expect(segs.flatMap((seg) => seg.ops).map((op) => op.lamport.c)).toEqual([1, 1, 2, 9]);
+    expect(b.pendingCount).toBe(0);
+
+    // 空缓冲 flushAll 返回 []；正常批（无等值）等价旧 flush
+    expect(b.flushAll()).toEqual([]);
+    const b2 = new SegmentBuilder(DEV_A);
+    b2.add(makeOp({ c: 5, d: DEV_A, entityId: 'ent-e' }));
+    b2.add(makeOp({ c: 6, d: DEV_A, entityId: 'ent-f' }));
+    const one = b2.flushAll();
+    expect(one.length).toBe(1);
+    expect(one[0]?.ops).toHaveLength(2);
+  });
 });
 
 describe('publishSegment', () => {
