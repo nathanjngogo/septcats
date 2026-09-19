@@ -146,3 +146,30 @@ danger + danger-soft（AiActionPanel error 同构）；正式视觉由 PM 真机
 2. **隐私真机复跑数值**（非本地端点 + 未 consent → fetch 计数 = 0）与 localStorage/日志无密钥的现场取证；
 3. **重启还原**（历史逐字 + 面板收起态）与双主题 × 四态截图。
 工程师未留 T38 探针与截图（`docs/mockups/` 无 t38 产物）→ 由 PM 写探针后补齐，**补齐前本单不计「真机闭环」**。
+
+
+## §PM 真机复跑（独立工作流，2026-09-19 深夜）—— **29 PASS / 0 FAIL**
+
+**探针**：`docs/mockups/probe-t38-ai.mjs`；**截图**：`docs/mockups/screens-t38/`（7 张 + results.json）
+**夹具隔离**：`_scratch/probe-t38-run/{ud,data}`；真实数据根 `C:/Users/Administrator/.septcats` mtime **前后一致**（未被触碰）✓
+
+关键原始数值（节选）：
+
+| 断言 | 实测 |
+|---|---|
+| 面板展开宽度 / 主编辑列 | `panelW=320px`；主列 `944 → 624px`（**delta=320** 精确等于面板宽） |
+| 收起态复原 | 主列 `944px = 基线`；`panelCount=0`；`septcats.aichat.panel="0"` |
+| **重启后面板态还原** | `panelRaw="0"` 仍为收起 ✓ |
+| **重启后历史逐字还原** | `count=1`（退出前 1 条），原文一致 ✓；展开后气泡渲染回来、空态 false |
+| 引用 chip | 渲染「**T38 探针页 › 块9**」，点击 → Tiptap 选区落在被引用块（`selBlockId=01M2X4YB0Z…`），`scrollIntoView center` 后**中心偏差 38px**、块已入视口 |
+| 隐私（弱验证） | localStorage **无 `sk-`/`Bearer`**（键仅 4 个：tabs/history/panel/theme）；全程 **0 console error、0 pageerror** |
+| 回归红线 | 窗口 `overflow=0px`、侧栏**完全收起 0px**（复原 240px）、页签条 `.tabsbar=1`、长页 31 块下面板展开仍零滚动 |
+| 优雅退出 | `gracefulExited=true x2`（两次均优雅，无强杀） |
+
+### ⚠️ 未验证项（如实记录，不计入 PASS）
+
+1. **真实模型多轮对话**：机器上无可用端点（`E_AI_UNREACHABLE / ERR_CONNECTION_REFUSED`，探针端点 `127.0.0.1:45999` 未起）→ 仅验证「用户消息落盘 + 错误态可读 + 门控放行」，**未观测任何真实 assistant 回复**；多轮上下文（第 2 轮带第 1 轮）**未端到端跑通**。
+2. **模型自动产出引用**：⑨b 的 assistant 引用消息是**夹具注入**（非模型返回）→ chip 的解析/渲染/跳转链路已验证，但「模型返回 → citations → chip」端到端**未验证**。
+3. **隐私零外呼**：仅弱验证（localStorage 无密钥 + 0 pageerror/console error），**未做网络层抓包/net-log 断言**，不能证明主进程零外部请求（该项在自动化面有 `fetch 计数 = 0` 的打桩断言，见上文 §1.4）。
+4. 截图**未做视觉判读**（只记录尺寸/字节数）。
+
