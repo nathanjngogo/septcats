@@ -136,7 +136,8 @@ danger + danger-soft（AiActionPanel error 同构）；正式视觉由 PM 真机
 
 ```
 全仓 1125 无红（desktop 471→506 = +35：ai-chat 组件 + ai-chat-context 装配）；typecheck 9/9；no-magic ✓；build-tokens --check ✓
-重打包 0.3.0-rc.13（93,415,016 字节）
+重打包 0.3.0-rc.13（93,415,016 字节，sha256 `4cd963b039b3712344f6c989283821a5202962f930dbf86e33ff6f3adb3b21dc`）
+提交 `2707c69`；PM 真机三项已派独立工作流（探针 `docs/mockups/probe-t38-ai.mjs` + 截图 `docs/mockups/screens-t38/`）
 红线核对：改动仅在 renderer/src/**（ai/ 面板 + App + PageView + commands + i18n）+ apps/desktop/test/** ✓
 ```
 
