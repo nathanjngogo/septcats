@@ -51,6 +51,7 @@ import { patchAppSettings, readAppSettings } from './settings';
 import {
   PagesApiError,
   createPagesService,
+  defaultWorkspaceNameForLocale,
   toPagesError,
   type MovePageInput,
   type PagesService,
@@ -297,7 +298,13 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       syncLogger.error(`SyncRuntime 启动失败（同步停用）：${describeError(error)}`);
     }
 
-    const pages = createPagesService({ executor, actor });
+    // T27-01 §0.A：首次建库的默认工作区名按「创建时 locale」种子
+    // （zh* → 个人工作区，其余 → Personal Workspace；口径同 renderer i18n workspace.defaultName）
+    const pages = createPagesService({
+      executor,
+      actor,
+      defaultWorkspaceName: defaultWorkspaceNameForLocale(app.getLocale()),
+    });
     pagesRef = pages;
     return {
       pages,

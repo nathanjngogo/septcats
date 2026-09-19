@@ -33,6 +33,10 @@
   color: var(--sc-color-accent);
   font: var(--sc-text-ui-xs);
   cursor: pointer;
+  /* T27-01 §0.B：token 化短过渡（active 反转按压反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 .search-qchip-ic {
@@ -48,6 +52,12 @@
   color: var(--sc-color-danger);
 }
 
+/* T27-01 §0.B：实心胶囊按压 → 反转底色（on-accent 前景），双主题走 token */
+.search-qchip:active {
+  background: var(--sc-color-accent);
+  color: var(--sc-color-on-accent);
+}
+
 .search-chip {
   display: inline-flex;
   align-items: center;
@@ -59,10 +69,19 @@
   color: var(--sc-color-ink-secondary);
   font: var(--sc-text-ui-xs);
   cursor: pointer;
+  /* T27-01 §0.B：token 化短过渡（hover/active 背景反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 .search-chip:hover {
   background: var(--sc-color-surface);
+}
+
+/* T27-01 §0.B：按压反馈补缺（行口径 active → accent-soft） */
+.search-chip:active {
+  background: var(--sc-color-accent-soft);
 }
 
 .search-count {
@@ -157,9 +176,11 @@
   color: var(--sc-color-ink-faint);
 }
 
-/* T22-01 §0.C：reduced-motion 兜底（关掉本文件引入的过渡） */
+/* T22-01 §0.C：reduced-motion 兜底（关掉本文件引入的过渡；T27-01 扩到 chips） */
 @media (prefers-reduced-motion: reduce) {
-  .search-res {
+  .search-res,
+  .search-qchip,
+  .search-chip {
     transition: none;
   }
 }

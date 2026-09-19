@@ -91,6 +91,12 @@
   background: var(--sc-color-accent-soft);
 }
 
+/* T27-01 §0.B：按压反馈补缺（与行/回收站行同口径 active → accent-soft；
+   键位 --active 高亮即时切换，不加过渡，与面板即时响应口径一致） */
+.palette-row:active {
+  background: var(--sc-color-accent-soft);
+}
+
 .palette-row-ic {
   color: var(--sc-color-ink-secondary);
   flex: none;

@@ -19,6 +19,10 @@ export const zhCN = {
     settingsLabel: '设置',
     noWorkspaceToSwitch: '没有可切换的工作区',
   },
+  workspace: {
+    // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
+    defaultName: '个人工作区',
+  },
   errors: {
     E_CYCLE: '不能把页面移动到它自己的子页面下',
     E_PARENT_GONE: '目标父页面不存在，或仍在回收站',

@@ -18,6 +18,11 @@ export const enUS = {
     settingsLabel: 'Settings',
     noWorkspaceToSwitch: 'No workspace to switch to',
   },
+  workspace: {
+    // T27-01 §0.A: canonical seed name for the default workspace (main derives it
+    // from the locale at creation time; kept in sync with zh-CN via the i18n gate)
+    defaultName: 'Personal Workspace',
+  },
   errors: {
     E_CYCLE: 'A page cannot be moved under its own subpage',
     E_PARENT_GONE: 'The target parent page does not exist, or is still in the Trash',

@@ -45,6 +45,11 @@
   background: var(--sc-color-surface);
 }
 
+/* T27-01 §0.B：按压反馈补缺（与 .trash-row/.search-res 同口径：active → accent-soft） */
+.app-nav-row:active {
+  background: var(--sc-color-accent-soft);
+}
+
 .app-nav-row--active {
   background: var(--sc-color-accent-soft);
   font-weight: 500;
@@ -125,6 +130,11 @@
   color: var(--sc-color-ink);
 }
 
+/* T27-01 §0.B：图标钮按压反馈（hover 加深 → active 用 accent 收口） */
+.app-nav-suffix:active {
+  color: var(--sc-color-accent);
+}
+
 /* T24-01 §0.A：页面行「⋯」菜单（hover/选中/展开时露出；定位壳同 .tpl-menu-wrap） */
 .app-nav-more-wrap {
   margin-left: auto;
@@ -167,9 +177,19 @@
   color: var(--sc-color-accent);
 }
 
+/* T27-01 §0.B：底行（回收站入口）hover/active 补缺（行口径：surface → accent-soft） */
+.app-side-foot:hover {
+  background: var(--sc-color-surface);
+}
+
+.app-side-foot:active {
+  background: var(--sc-color-accent-soft);
+}
+
 /* T22-01 §0.C：reduced-motion 兜底（关掉本文件引入的过渡） */
 @media (prefers-reduced-motion: reduce) {
   .app-nav-row,
+  .app-nav-suffix,
   .app-side-foot {
     transition: none;
   }

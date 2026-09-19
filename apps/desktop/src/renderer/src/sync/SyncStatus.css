@@ -19,6 +19,20 @@
   color: var(--sc-color-ink-secondary);
   font: var(--sc-text-ui-xs);
   cursor: pointer;
+  /* T27-01 §0.B：token 化短过渡（hover 背景反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
+}
+
+/* T27-01 §0.B：顶栏状态钮 hover 补缺（行口径 surface） */
+.sc-sync-status__pill:hover {
+  background: var(--sc-color-surface);
+}
+
+/* T27-01 §0.B：按压反馈（active → accent-soft） */
+.sc-sync-status__pill:active {
+  background: var(--sc-color-accent-soft);
 }
 
 .sc-sync-status__pill:focus-visible {
@@ -87,6 +101,12 @@
   .sc-sync-status__pill--syncing .sc-sync-status__dot {
     animation: none;
     opacity: 0.8;
+  }
+
+  /* T27-01 §0.B：关掉本文件引入的过渡 */
+  .sc-sync-status__pill,
+  .sc-sync-status__button {
+    transition: none;
   }
 }
 
@@ -184,11 +204,21 @@
   color: var(--sc-color-ink);
   font: var(--sc-text-ui-xs);
   cursor: pointer;
+  /* T27-01 §0.B：token 化短过渡（hover/active 反馈） */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    border-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
 }
 
 .sc-sync-status__button:hover:not(:disabled) {
   border-color: var(--sc-color-accent);
   color: var(--sc-color-accent);
+}
+
+/* T27-01 §0.B：按压反馈补缺（active → accent-soft 底） */
+.sc-sync-status__button:active:not(:disabled) {
+  background: var(--sc-color-accent-soft);
 }
 
 .sc-sync-status__button:disabled {

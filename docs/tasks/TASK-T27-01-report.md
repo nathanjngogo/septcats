@@ -78,3 +78,16 @@ CSS 交互态补缺（全部走 `var(--sc-*)`、过渡一律 `--sc-motion-fast`=
 ## 6. PM 复跑节
 
 （PM 补）：全仓 + selftest + 重打包 + 真机（English 全新库首次启动整页 CJK=0 含工作区名；交互态与空态双主题截图；存量库工作区名不动的确认）。
+
+## §6 PM 复跑（2026-09-19）
+
+```
+pnpm -r typecheck → 9/9 Done，0 错
+pnpm -r test      → 全仓 1004 无红（desktop 408→422 = +14：workspace-seed 5 + ui-interaction-audit 9）
+no-magic ✓ / build-tokens --check ✓
+红线核对：packages/** 与 shared/** 零改动；main 侧仅 D-1 声明的最小注入（PagesServiceOptions.defaultWorkspaceName + defaultWorkspaceNameForLocale）
+```
+
+**PM 真机复核口径（诚实说明）**：本单改动了 main 侧种子逻辑，**真机复核（English 首次启动整页 CJK=0，含工作区名）安排在 T28-01（P0）修完后的统一重建里一并执行**，届时用 `docs/mockups/cdp-e2e-t26-01.mjs` 复跑留证；层测已覆盖「英文 locale 种子 = Personal Workspace」。
+
+**DEVIATIONS 追认**：①D-1 main 侧一行最小注入（renderer 无法先于建库拦截）✓ 合理且已声明；②`.palette-row` 刻意不加过渡（键盘导航即时口径）、div 行 focus-visible N/A —— 接受（§发现 3/5）；③空态六类 font/color 同 token、页面级居中留白钉死 ✓。

@@ -51,6 +51,7 @@
 
 | └ T26-01 收尾：空库空态 + 同步状态英化 + i18n 门禁硬化 | 09-19 | ✅ **真机 ALL-PASS 7/7** | ①`DEMO_PAGE`/`buildDemoDoc` 整体移除（死代码）→ 无选中页走 `.pv-empty` 空态（真机：删唯一页出空态、无「暗物质探测」假内容）；②顶栏真凶=T13-01 的 `SyncStatusButton` **从未接线**、显示的是 `@septcats/ui` SyncPill 静态假态 → 换接真实组件（真机 `Synced · Just now`）；③**门禁硬化**：CJK 扫描扩到非注释/非日志字符串字面量，**修前复现 17 处红 → 修后绿**；全仓 990 无红（desktop 408）、typecheck 9/9、双门禁 ✓、SELFTEST OK；**登记 T26-01-1**（默认工作区名是建库时种下的中文数据，宜按创建时 locale 生成） || └ T12 打包（M10-A） | 09-14 | ✅ PM 复验通过 | electron-builder 26.15.3；`Septcats Setup 0.1.0.exe` 88.15MB（R7≤150 达标）；/S 静默装→启动 5s 树存活→卸载零残留；latest.yml sha512 与产物字节级一致；asar+locales 裁剪生效（仅 zh-CN.pak）；零新增依赖除 builder；mac 配置就位待 CI；CI package job 已加（无 remote 未跑） |
 
+| └ T27-01 收尾：工作区名按 locale 种子 + S4 批次 3 巡检 | 09-19 | ✅ 交付（层测 1004 无红；真机复核随 T28 重建） | 默认工作区名按创建时 locale 种子（main 侧最小注入 `defaultWorkspaceNameForLocale`，i18n 双词典 `workspace.defaultName` 互锁）+ 交互态巡检补缺（侧栏底行/nav-row/suffix/palette 行/wiz-drop/同步 pill 与按钮 active、chips 过渡 token 化 + reduced-motion 兜底）+ 空态六类 token 一致；新增 14 用例（desktop 422）；typecheck 9/9、双门禁 ✓、红线零越界；**§发现 7 条**（含「工作区改名入口缺失」仅登记未做） |
 ## PM 亲修的缺陷账（CodeBuddy 交付后审查发现，均已修+有回归测试）
 | # | 缺陷 | 严重度 | 修复 |
 |---|---|---|---|

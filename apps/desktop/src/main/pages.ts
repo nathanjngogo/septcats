@@ -102,11 +102,25 @@ export interface PagesServiceOptions {
   readonly now?: () => number;
   /** 覆盖 user_key（缺省取 meta.device_id，设备本地）。 */
   readonly userKey?: string;
+  /**
+   * 首次自动建工作区的种子名（T27-01 §0.A：按「创建时 locale」传入；
+   * 缺省回落 DEFAULT_WORKSPACE_NAME，既有调用方行为不变）。
+   */
+  readonly defaultWorkspaceName?: string;
 }
 
 const DEFAULT_WORKSPACE_NAME = '个人工作区';
 const ACTIVE_WORKSPACE_META_KEY = 'active_workspace_id';
 const DEVICE_ID_META_KEY = 'device_id';
+
+/**
+ * 创建时 locale → 默认工作区种子名（T27-01 §0.A）。与 renderer i18n 的
+ * `workspace.defaultName`（zh-CN=个人工作区 / en-US=Personal Workspace）同口径；
+ * zh* 一律中文，其余（含空串）回落英文。供 main/index.ts 接线 `app.getLocale()` 用。
+ */
+export function defaultWorkspaceNameForLocale(locale: string): string {
+  return locale.toLowerCase().startsWith('zh') ? '个人工作区' : 'Personal Workspace';
+}
 
 /** page 行（`SELECT *` 的列：schema-v1 §6.2 + v2 的 deleted_at）。 */
 interface PageRow {
@@ -243,13 +257,14 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
   }
 
   /**
-   * 解析活动工作区：没有工作区就建默认「个人工作区」（首次运行即开箱可用）；
+   * 解析活动工作区：没有工作区就建默认工作区（首次运行即开箱可用；种子名按
+   * T27-01 §0.A 取 options.defaultWorkspaceName，未注入时回落中文缺省）；
    * meta 里的活动 id 失效时回落到第一个。**这是唯一的读路径写入**，幂等。
    */
   async function requireActiveWorkspace(): Promise<string> {
     let items = await workspaceRows();
     if (items.length === 0) {
-      await createWorkspaceRow(DEFAULT_WORKSPACE_NAME);
+      await createWorkspaceRow(options.defaultWorkspaceName ?? DEFAULT_WORKSPACE_NAME);
       items = await workspaceRows();
     }
     const first = items[0];
