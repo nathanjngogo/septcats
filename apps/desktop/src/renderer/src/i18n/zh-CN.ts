@@ -48,6 +48,10 @@ export const zhCN = {
     linkPrompt: '链接地址（https:// / notion:// / page: / #锚点）',
     emptyPage: '还没有页面。在左侧栏「新建页面」，或从模板开始。',
   },
+  tabs: {
+    barLabel: '打开的页面标签',
+    close: '关闭标签页',
+  },
   pageDelete: {
     title: '删除页面',
     body: '「{name}」将移入回收站，可随时在回收站中恢复。',

@@ -3,7 +3,8 @@
  *
  * 主区列出待删页树（trashNodes 已在 store 裁好：alive=0 且 deletedAt>0；
  * 被删页的子页按 parentId/childIds 关系下钻，深度即相对回收站根的层级）。
- * 每行两个动作：「恢复」→ restorePage(id)（级联整棵子树，store 内已处理）；
+ * 每行两个动作：「恢复」→ restorePage(id)（级联整棵子树，store 内已处理；T37-01 起
+ * 恢复成功后 openInTab 打开该页）；
  * 「彻底删除」→ 复用 @septcats/ui 的 Dialog 做二次确认（renderer/src 内无既有
  * 确认组件，UI 包的 Dialog 带 focus trap / Esc / 遮罩关闭，直接复用）→
  * 确认后 purgePage(id)。空态与搜索页空态同一 token 组合（.trash-empty）。
@@ -117,7 +118,12 @@ export function TrashList() {
                   icon={ArrowClockwise}
                   data-testid={`trash-restore-${row.node.id}`}
                   onClick={() => {
-                    void pagesActions.restorePage(row.node.id);
+                    // T37-01 §0.1：恢复成功后打开该页（统一走 openInTab 落页签并回 pages 视图）
+                    void pagesActions.restorePage(row.node.id).then((ok) => {
+                      if (ok) {
+                        pagesActions.openInTab(row.node.id);
+                      }
+                    });
                   }}
                 >
                   {t('trash.restore')}

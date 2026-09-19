@@ -1,0 +1,100 @@
+/*
+ * TabsBar 样式（TASK-T37-01 §0.2；apps 侧，只用 var(--sc-*) token）。
+ * 视觉口径与侧栏行同构（Notion 式页签）：canvas 底 + hairline 分隔线 +
+ * hover=surface / 当前=surface-active；四态齐备（默认/hover/按压/当前，
+ * focus 环由全局 :focus-visible 兜底）。
+ */
+
+.tabsbar {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  /* 溢出横向滚动、不换行（§0.2） */
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: calc(var(--sc-size-control-sm) + var(--sc-space-sm));
+  padding: 0 var(--sc-space-sm);
+  background: var(--sc-color-canvas);
+  border-bottom: 1px solid var(--sc-color-hairline);
+  white-space: nowrap;
+}
+
+.tabsbar-tab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  height: var(--sc-size-control-sm);
+  max-width: calc(var(--sc-space-editor-measure) / 2);
+  padding: 0 var(--sc-space-xs) 0 var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm) var(--sc-radius-sm) 0 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  cursor: pointer;
+  user-select: none;
+  /* T27-01 §0.B 过渡纪律：token 化短过渡 */
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
+}
+
+.tabsbar-tab:hover {
+  background: var(--sc-color-surface);
+}
+
+.tabsbar-tab:active {
+  background: var(--sc-color-surface-active);
+}
+
+/* 当前标签：既有 surface-active token 高亮（与侧栏选中行同口径） */
+.tabsbar-tab--active,
+.tabsbar-tab--active:hover {
+  background: var(--sc-color-surface-active);
+  font-weight: 500;
+}
+
+.tabsbar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 拖拽落点指示：目标标签文字下加 accent 短线（token 色，无新组件） */
+.tabsbar-title--drop {
+  box-shadow: inset 0 -2px 0 0 var(--sc-color-accent);
+}
+
+.tabsbar-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--sc-space-lg);
+  height: var(--sc-space-lg);
+  padding: 0;
+  border: 0;
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-icon-faint);
+  cursor: pointer;
+  transition:
+    background-color var(--sc-motion-fast) ease-out,
+    color var(--sc-motion-fast) ease-out;
+}
+
+.tabsbar-close:hover {
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+}
+
+.tabsbar-close:active {
+  background: var(--sc-color-surface-active);
+  color: var(--sc-color-ink);
+}
+
+/* T27-01 §0.C：reduced-motion 兜底（本文件引入的过渡关掉） */
+@media (prefers-reduced-motion: reduce) {
+  .tabsbar-tab,
+  .tabsbar-close {
+    transition: none;
+  }
+}

@@ -48,6 +48,10 @@ export const enUS = {
     linkPrompt: 'Link URL (https:// / notion:// / page: / #anchor)',
     emptyPage: 'No pages yet. Use "New Page" in the sidebar, or start from a template.',
   },
+  tabs: {
+    barLabel: 'Open page tabs',
+    close: 'Close tab',
+  },
   pageDelete: {
     title: 'Delete Page',
     body: '"{name}" will be moved to the Trash. You can restore it from the Trash at any time.',

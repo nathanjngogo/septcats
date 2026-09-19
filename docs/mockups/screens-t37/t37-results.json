@@ -1,0 +1,42 @@
+[
+  {
+    "name": "§1.1 开 5 个标签 → 标签条 5 个页签",
+    "ok": true,
+    "detail": "count=5"
+  },
+  {
+    "name": "§0.2 标签标题=改名后的标题（改名实时刷新）",
+    "ok": true,
+    "detail": "[\"T37-甲\",\"T37-乙\",\"T37-丙\",\"T37-丁\",\"T37-戊\"]"
+  },
+  {
+    "name": "§1.1 乱序点击切换 → 选中项逐一跟随（4 次乱序）",
+    "ok": true,
+    "detail": "order=[3,0,4,1]"
+  },
+  {
+    "name": "§1.3 Ctrl+W 关当前 → 相邻回落（右优先）",
+    "ok": true,
+    "detail": "before(active=1, n=5) → after(active=1, n=4)"
+  },
+  {
+    "name": "回归·窗口零滚动（T30）",
+    "ok": true,
+    "detail": "overflow=0px, scrollY=0"
+  },
+  {
+    "name": "§1.1 重开应用 → 标签集合+顺序全部还原",
+    "ok": true,
+    "detail": "before=[\"T37-甲\",\"T37-丙\",\"T37-丁\",\"T37-戊\"] after=[\"T37-甲\",\"T37-丙\",\"T37-丁\",\"T37-戊\"]"
+  },
+  {
+    "name": "§1.1 重开应用 → 当前选中项还原",
+    "ok": true,
+    "detail": "active 1 → 1"
+  },
+  {
+    "name": "§1.3 全关 → 既有 .pv-empty 空态出现",
+    "ok": true,
+    "detail": "{\"tabs\":0,\"empty\":true}"
+  }
+]

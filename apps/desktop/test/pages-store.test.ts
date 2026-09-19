@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import type { SeptcatsApi } from '../src/types/window';
 import { pagesActions, pagesStore, type PagesState } from '../src/renderer/src/state/pages';
+import { writeTabs } from '../src/renderer/src/state/tabs';
 
 const WS_ID = 'ws-store-test-1';
 
@@ -76,6 +77,7 @@ function resetStore(): void {
     recentIds: [],
     toasts: [],
     deleteConfirmId: null,
+    tabs: [],
   };
   pagesStore.setState(() => base);
 }
@@ -164,13 +166,19 @@ describe('pages store / load 后初始化选中（TASK-T21-02 §0.2）', () => {
     expect(pagesStore.getState().selectedId).toBe('pg-root');
   });
 
-  it('已有选中页时 load() 不改写选中（对账不抢用户位置）', async () => {
-    pagesStore.setState((state) => ({ ...state, selectedId: 'pg-keep' }));
-    installBridgeWithNodes([pageNode({ id: 'pg-root', title: '研究' })]);
+  it('已有选中页时 load() 不改写选中（T37-01 起以持久化页签为准：选中=当前页签随快照还原）', async () => {
+    // T37-01 §0.4：选中项随页签快照持久化——load() 的选中真源从「内存不清场」改为
+    // 「localStorage 快照还原」（不同 workspace 各自还原、不串）；无记录才回落首屏自动选中。
+    writeTabs(WS_ID, ['pg-keep'], 'pg-keep');
+    installBridgeWithNodes([
+      pageNode({ id: 'pg-keep', title: '保留页', sortKey: 'A00000000' }),
+      pageNode({ id: 'pg-root', title: '研究', sortKey: 'A00000001' }),
+    ]);
 
     await pagesActions.load();
 
     expect(pagesStore.getState().selectedId).toBe('pg-keep');
+    expect(pagesStore.getState().tabs).toEqual(['pg-keep']);
   });
 
   it('空树 load() 后 selectedId 保持 null（无页可选，不误选）', async () => {

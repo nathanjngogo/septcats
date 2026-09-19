@@ -68,7 +68,8 @@
 | └ T34-01 设计对齐：侧栏/顶栏模仿 Notion | 09-19 | ✅ **token 真值核对 + 真机回归（rc.10）** | 配色取自老板 Notion 截图**逐像素采样**并落 `DESIGN.md`：canvas **#F9F8F7**（侧栏与**顶栏同色**）、surface #F1F0EF、surface-active **#EEECEB**、ink **#2C2C2B**、ink-secondary #5F5E59、hairline #EAE8E6、content **#FFFFFF**；深色 canvas #202020 / surface #252525 / content #191919；新增 token content/surface-active/icon-faint + 字阶 ui-md；对比度门禁 13→17 对（最差 4.82 ≥4.5）；**PM 独立核对 tokens.css 真值全对**；回归：手柄×文本 4/4 overlap=false（T33 成果保持）；全仓 ui 79 / desktop 449（perf 并发假红→隔离 13.0ms）、typecheck 9/9、双门禁 ✓ || 4 | Node/Electron 双 ABI → 15 测试静默 skip | 高（假绿） | ensure-abi 守卫脚本 |
 
 | └ T36-01 手柄首行对齐 + 换型不跳（老板实测） | 09-19 | ✅ **真机数值闭环（rc.11）** | ①手柄簇改「首行行框」锚定（补偿以 **Node 装饰**承载，inline style 会被协作回声抹掉——诊断探针取证）→ deltaCenterY **−3 → 0**；②换型全链路（P→H1→H2→H3→列表→引用→代码→P）dScroll **0**、首行中心位移 **0**、光标保持；③长页 34 块中段换型 0/0；④顺带修 **T35-01**（`/` 菜单键盘监听 bubble→capture，杜绝分块+应用双发残留）；⑤回归 gutter=12（T33）、斜杠 11 项；全仓 **1069 无红**（editor 182/desktop 450）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.11 || 5 | ui 测试 ../../test 断链 + ?raw stub 空串 | 高（24 测试全挂） | 路径修 + 磁盘读 helper |
-| 6 | build-tokens `--sc-font-font-ui` 双前缀漂移 | 中 | key.replace(/^font-/) |
+
+| └ T37-01 R1 多页签（分页显示 + 快速切换） | 09-19 | ✅ **真机 8/8 + 重开还原（rc.12）** | `state/tabs.ts`（同页去重/右优先回落/拖拽重排/存活裁剪/快捷键判定 + `septcats.tabs.<ws>` localStorage 按 workspace 隔离持久化）+ `pages.ts` 汇聚（`selectPage`→`openInTab`，侧栏/搜索/面板/模板/转库/回收站恢复全走同一入口）+ `TabsBar`（点击/×/中键/拖拽/横滚/标题实时）；**真机**：5 标签乱序切换 → 优雅重启还原集合+顺序+选中、`Ctrl+W` 右邻回落、全关 `.pv-empty`、窗口零滚动；**顺带闭环 Q-2**（重开恢复上次打开的页）；全仓 **1090 无红**（desktop 471）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.12 || 6 | build-tokens `--sc-font-font-ui` 双前缀漂移 | 中 | key.replace(/^font-/) |
 | 7 | **code node/mark 撞名**（PM RangeError） | 高（编辑器起不来） | 真相层不动，投影边界映射 codeBlock（单源双表） |
 | 8 | diff 重平衡回退键越过锚点 | 中（兄弟序错乱） | 无解→整层等间隔重建 |
 | 9 | history 冗余 delete 的逆 op 错误复活实体 | 高（撤销链被 fuzz 抓到） | 应用前已死→逆=null |
@@ -131,7 +132,8 @@
 - [x] ~~Q-6（P1 块编辑器可见性）~~：T32-01（斜杠菜单视口内）+ T32-01B（块身份 data-id 进 DOM）全部闭环；真机 rc.8：blockCount=2、hover 手柄 28×28 在视口内（新增块/块操作）、菜单 12 项、斜杠菜单 11 种块型且视口内
 - [ ] ~~原 Q-6 登记~~：斜杠菜单已修（视口内 ✅）；**块手柄仍未渲染**（`[data-id]`=0 → 块身份未进 DOM）→ **T32-01B** 修
 - [ ] ~~原 Q-6 登记~~：块手柄 `BlockControls` hover 时未渲染（DOM 无元素）+ 斜杠菜单在**视口外**（11 种块型齐全但看不见）→ **T32-01**
-- [ ] **Q-2（UX）**：重载不恢复上次打开的页（落到「未命名」）
+- [x] ~~Q-2（UX）~~：已由 T37-01 的标签快照还原顺带解决（重开恢复上次打开的页）
+- [ ] ~~原 Q-2~~：重载不恢复上次打开的页（落到「未命名」）
 - [x] ~~T26-01-1~~：已由 T27-01 修（种子按创建时 locale）
 - [ ] ~~原 T26-01-1~~：默认工作区名「个人工作区」为建库时中文种子（真机 English 模式残留 5 字）——宜按创建时 locale 生成；用户可改名，非 UI 文案缺陷
 - [x] ~~T24-01-1~~：已由 T26-01 修（真机空态 ✓）

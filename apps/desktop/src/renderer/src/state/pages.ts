@@ -18,6 +18,7 @@ import type { ToastTone } from '@septcats/ui';
 import type { SeptcatsApi, WorkspaceSummary } from '../../../types/window';
 import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
+import { closeTabFallback, moveTab, openInTabs, pruneTabs, readTabs, writeTabs } from './tabs';
 
 export type PagesStatus = 'loading' | 'ready' | 'error';
 export type TreeScope = 'all' | 'favorites' | 'recent';
@@ -46,6 +47,12 @@ export interface PagesState {
   toasts: ToastMessage[];
   /** 「删除页面」二次确认弹层的目标页 id（null = 关闭；T24-01 §0.A）。 */
   deleteConfirmId: string | null;
+  /**
+   * 编辑区多页签（TASK-T37-01 §0.1）：有序打开页 id；**当前选中项 = selectedId**。
+   * 不变式：pages 视图下 selectedId ∈ tabs（openInTab/closeTab 统一维护）；
+   * 持久化按 workspace 隔离写 localStorage（state/tabs.ts），不进账本。
+   */
+  tabs: string[];
 }
 
 const initialState: PagesState = {
@@ -63,6 +70,7 @@ const initialState: PagesState = {
   recentIds: [],
   toasts: [],
   deleteConfirmId: null,
+  tabs: [],
 };
 
 export const pagesStore = createStore<PagesState>(initialState);
@@ -206,7 +214,13 @@ async function refresh(): Promise<void> {
     return;
   }
   const data = await fetchAll(workspaceId);
-  pagesStore.setState((state) => ({ ...state, ...data }));
+  // T37-01：跨设备同步对账时页签随存活页裁剪（如他端删了已开标签的页）；
+  // 选中项被裁掉走相邻回落（§0.5 同口径）。
+  pagesStore.setState((state) => {
+    const validIds = new Set(data.nodes.filter((node) => node.alive === 1).map((node) => node.id));
+    const pruned = pruneTabs(state.tabs, validIds, state.selectedId);
+    return { ...state, ...data, tabs: pruned.tabs, selectedId: pruned.activeId };
+  });
 }
 
 interface Snapshot {
@@ -261,6 +275,12 @@ export const pagesActions = {
         throw new Error('E_NO_WORKSPACE');
       }
       const data = await fetchAll(activeId);
+      // T37-01 §0.4：按 workspace 恢复页签（集合+顺序+选中项）；损坏记录/已不存在的
+      // 页签裁剪到存活页（pruneTabs 内含选中项的相邻回落）。无记录 → 空集合走既有
+      // 首屏自动选中；有记录（含「全关」空集合）→ 以还原为准，不再自动开页。
+      const saved = readTabs(activeId);
+      const aliveIds = new Set(data.nodes.filter((node) => node.alive === 1).map((node) => node.id));
+      const restored = saved !== null ? pruneTabs(saved.tabs, aliveIds, saved.activeId) : null;
       pagesStore.setState((state) => ({
         ...state,
         status: 'ready',
@@ -268,9 +288,14 @@ export const pagesActions = {
         workspaces: listed.items,
         workspaceId: activeId,
         ...data,
+        tabs: restored !== null ? restored.tabs : [],
+        // 损坏记录兜底：activeId 缺失但集合非空 → 归位到第一个页签
+        selectedId: restored !== null ? (restored.activeId ?? restored.tabs[0] ?? null) : null,
       }));
-      // T21-02 §0.2：load 后仍无选中页则选中首个可达页（空树保持 null，走 PageView demo 兜底）
-      pagesActions.ensureSelection();
+      // T21-02 §0.2：无持久化页签记录时仍选中首个可达页（现经 openInTab 落一个标签）
+      if (restored === null) {
+        pagesActions.ensureSelection();
+      }
     } catch (error) {
       pagesStore.setState((state) => ({ ...state, status: 'error', error: describeError(error) }));
     }
@@ -293,19 +318,61 @@ export const pagesActions = {
     const alive = aliveNodes(state.nodes);
     const root = alive.find((node) => node.parentId === null) ?? alive[0];
     if (root !== undefined) {
-      pagesStore.setState((current) => ({ ...current, selectedId: root.id }));
+      // T37-01：首屏自动选中 = 打开页 → 统一走 openInTab（落一个标签并持久化）
+      pagesActions.openInTab(root.id);
     }
   },
 
-  selectPage(id: string): void {
+  /**
+   * T37-01 §0.1：**打开页面的统一入口**。侧栏行点击、搜索/命令面板命中跳转、
+   * 模板新建后选中、回收站恢复后打开、新建/转换落点——全部经此；页已打开 →
+   * 只切换选中（同页不重复开），未打开 → 追加为新标签（最右）。
+   * 附带既有副作用：祖先展开、touchRecent、回到 pages 视图；并持久化页签快照。
+   */
+  openInTab(id: string): void {
+    const before = pagesStore.getState();
+    const { tabs } = openInTabs(before.tabs, id);
     pagesStore.setState((state) => {
       const expanded = new Set(state.expanded);
       for (const ancestor of ancestorsOf(id, nodeMap(state.nodes))) {
         expanded.add(ancestor.id);
       }
-      return { ...state, selectedId: id, editingId: null, view: 'pages', expanded };
+      return { ...state, tabs, selectedId: id, editingId: null, view: 'pages', expanded };
     });
+    writeTabs(before.workspaceId, tabs, id);
     void pagesActions.touchRecent(id);
+  },
+
+  /**
+   * T37-01 §0.7：关闭标签 ≠ 删除页面——只改页签集合与选中项（§0.5 相邻回落），
+   * 绝不发起 pages.remove / 回收站逻辑。
+   */
+  closeTab(id: string): void {
+    const state = pagesStore.getState();
+    const next = closeTabFallback(state.tabs, id, state.selectedId);
+    pagesStore.setState((current) => ({
+      ...current,
+      tabs: next.tabs,
+      selectedId: next.activeId,
+      editingId: current.editingId === id ? null : current.editingId,
+    }));
+    writeTabs(state.workspaceId, next.tabs, next.activeId);
+  },
+
+  /** T37-01 §0.2：拖拽排序（选中项不变）；顺序持久化。 */
+  moveTabTo(id: string, toIndex: number): void {
+    const state = pagesStore.getState();
+    const tabs = moveTab(state.tabs, id, toIndex);
+    if (tabs.every((value, index) => value === state.tabs[index])) {
+      return;
+    }
+    pagesStore.setState((current) => ({ ...current, tabs }));
+    writeTabs(state.workspaceId, tabs, state.selectedId);
+  },
+
+  /** 页面选中（既有入口，T37-01 起委托 openInTab：选中即打开页签）。 */
+  selectPage(id: string): void {
+    pagesActions.openInTab(id);
   },
 
   setScope(scope: TreeScope): void {
@@ -376,10 +443,12 @@ export const pagesActions = {
     try {
       const created = await bridge().pages.create({ parentId });
       await refresh();
-      pagesStore.setState((state) => {
-        const expanded = parentId === null ? state.expanded : new Set([...state.expanded, parentId]);
-        return { ...state, expanded, selectedId: created.id, editingId: created.id, view: 'pages' };
-      });
+      // T37-01 §0.1：新建页 = 打开页 → 统一走 openInTab（页签落地+持久化+祖先展开）
+      pagesActions.openInTab(created.id);
+      // 既有行为保留：新建页进入行内重命名（openInTab 不设置 editingId）
+      pagesStore.setState((state) =>
+        state.selectedId === created.id ? { ...state, editingId: created.id } : state,
+      );
     } catch (error) {
       pushToast(describeError(error), 'danger');
     }
@@ -436,17 +505,29 @@ export const pagesActions = {
       success: t('pages.toastTrashed'),
     });
     if (ok) {
-      pagesStore.setState((state) =>
-        state.selectedId !== null && targets.has(state.selectedId)
-          ? { ...state, selectedId: null, editingId: null }
-          : state,
-      );
+      // T37-01 §0.6/§0.7：被删页（含子树）的标签随之移除；删的是当前标签 →
+      // 相邻回落（右优先/左邻），与关标签同口径。这不是「关标签删页」，
+      // 而是删页后清理指向它的标签。
+      pagesStore.setState((state) => {
+        const validIds = new Set(aliveNodes(state.nodes).map((node) => node.id));
+        const next = pruneTabs(state.tabs, validIds, state.selectedId);
+        return {
+          ...state,
+          tabs: next.tabs,
+          selectedId: next.activeId,
+          editingId:
+            state.editingId !== null && targets.has(state.editingId) ? null : state.editingId,
+        };
+      });
+      const settled = pagesStore.getState();
+      writeTabs(settled.workspaceId, settled.tabs, settled.selectedId);
     }
   },
 
-  async restorePage(id: string): Promise<void> {
+  /** T37-01 §0.1：恢复后打开该页（返回是否恢复成功，供调用方决定 openInTab）。 */
+  async restorePage(id: string): Promise<boolean> {
     const targets = subtreeIds(pagesStore.getState().nodes, id);
-    await optimistic({
+    const ok = await optimistic({
       apply: (state) => ({
         nodes: state.nodes.map((node) =>
           targets.has(node.id) && node.alive === 0
@@ -459,6 +540,7 @@ export const pagesActions = {
       },
       success: t('pages.toastRestored'),
     });
+    return ok;
   },
 
   /** 彻底删除（级联整棵 tombstone 子树；物理清除归 GC 任务）。 */

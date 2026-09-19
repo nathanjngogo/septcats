@@ -19,6 +19,24 @@ html, body {
   overflow: hidden;
 }
 
+/*
+ * T37-01：编辑列容器（标签条 + PageView 同列）。标签条定高 flex:none，
+ * PageView flex:1 吃剩余高度——总高恰为 100%，不撑出 .sc-shell__main 滚动
+ * （T30 窗口零滚动红线保持；回收站/搜索/设置/导入视图不经过此容器）。
+ */
+.app-editor-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-editor-col .pv-root {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
 .app-side {
   display: flex;
   flex-direction: column;

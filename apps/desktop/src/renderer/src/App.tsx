@@ -15,6 +15,8 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
+import { TabsBar } from './tabs/TabsBar';
+import { handleTabsKeydown } from './tabs/shortcuts';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { t, useLocale } from './i18n';
 import { SyncStatusButton } from './sync/SyncStatus';
@@ -125,6 +127,31 @@ export function App() {
     };
   }, []);
 
+  // T37-01 §0.3：页签键盘快捷键（编辑器视图内生效；键位与既有 Ctrl/Cmd+K 不相交）。
+  // Ctrl/Cmd+W 关当前（相邻回落）· Ctrl/Cmd+Tab 下一个（循环）· Ctrl/Cmd+1..9 跳第 N
+  // （超出页签数夹到最后一个）。settings/import/回收站/搜索页/命令面板打开时不劫持。
+  const inSettingsFlag = view === 'settings';
+  const inImportFlag = view === 'import';
+  const searchOpenFlag = usePalette((state) => state.searchOpen);
+  const paletteOpenFlag = usePalette((state) => state.open);
+  const pagesViewFlag = usePages((state) => state.view);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      handleTabsKeydown(event, {
+        editorVisible:
+          !inSettingsFlag &&
+          !inImportFlag &&
+          !searchOpenFlag &&
+          !paletteOpenFlag &&
+          pagesViewFlag === 'pages',
+      });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [inSettingsFlag, inImportFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag]);
+
   const inSettings = view === 'settings';
   const inImport = view === 'import';
 
@@ -193,7 +220,12 @@ export function App() {
         ) : searchOpen ? (
           <SearchPage />
         ) : (
-          <PageView />
+          // T37-01：编辑列容器闭合高度链（T30 零滚动红线）——标签条定高 flex:none，
+          // PageView flex:1 吃剩余高度，窗口滚动仍只发生在 .pv-root 内部。
+          <div className="app-editor-col">
+            <TabsBar />
+            <PageView />
+          </div>
         )}
       </AppShell>
       <CommandPalette />
