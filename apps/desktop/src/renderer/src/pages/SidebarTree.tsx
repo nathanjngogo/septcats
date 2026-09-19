@@ -301,6 +301,17 @@ export function SidebarTree() {
         : type === 'page'
           ? { id: 'convertToWiki', label: t('editor.convertToWiki') }
           : null;
+    // T41-01-1：全宽开关对 DB 页无视觉效果（DbPage 不吃 pageWidth 宽度口径），
+    // 按 convertItem 同款条件构造隐藏，不提供无效控件；普通页/wiki 页照常出现。
+    const fullWidthItem =
+      type === 'database'
+        ? null
+        : {
+            id: 'fullWidth',
+            label: fullWidthPages.has(node.id)
+              ? `\u2713 ${t('pageWidth.full')}`
+              : t('pageWidth.fixed'),
+          };
     return (
       <NavRow
         key={node.id}
@@ -346,13 +357,9 @@ export function SidebarTree() {
                 className="app-nav-menu"
                 label={t('sidebar.pageActions')}
                 items={[
-                  // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）
-                  {
-                    id: 'fullWidth',
-                    label: fullWidthPages.has(node.id)
-                      ? `\u2713 ${t('pageWidth.full')}`
-                      : t('pageWidth.fixed'),
-                  },
+                  // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）；
+                  // T41-01-1：DB 页为 null（不 spread），菜单不含全宽项
+                  ...(fullWidthItem !== null ? [fullWidthItem] : []),
                   ...(convertItem !== null ? [convertItem] : []),
                   { id: 'delete', label: t('common.delete'), danger: true },
                 ]}

@@ -27,7 +27,7 @@ import { CommandPalette } from './palette/CommandPalette';
 import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
 import { templatesActions } from './state/templates';
-import { pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
+import { pageTypeOf, pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
 import { pageWidthActions } from './state/pageWidth';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import './App.css';
@@ -41,6 +41,11 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
   const locale = useLocale();
   useEffect(() => {
     const configure = (): void => {
+      const state = pagesStore.getState();
+      // T41-01-1：「全宽 / 固定宽度」对 DB 页无视觉效果（同侧栏 ⋯ 菜单的隐藏口径）——
+      // 选中页为 database 时不注入 toggleFullWidth，命令不出现（不留「执行了没反应」路径）
+      const selectedNode = state.nodes.find((node) => node.id === state.selectedId);
+      const widthToggleable = selectedNode !== undefined && pageTypeOf(selectedNode) !== 'database';
       paletteActions.configureCommands(
         configurePaletteCommands(
           {
@@ -79,13 +84,18 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
                 pagesActions.requestDeletePage(id);
               }
             },
-            // T41-01：「全宽 / 固定宽度」条件命令（每页独立，toggle 写 pageWidth store+存储）
-            toggleFullWidth: (): void => {
-              const id = pagesStore.getState().selectedId;
-              if (id !== null) {
-                pageWidthActions.toggle(id);
-              }
-            },
+            // T41-01：「全宽 / 固定宽度」条件命令（每页独立，toggle 写 pageWidth store+存储）；
+            // T41-01-1：仅对非 DB 页注入（DB 页经条件 spread 摘除 → 命令不出现）
+            ...(widthToggleable
+              ? {
+                  toggleFullWidth: (): void => {
+                    const id = pagesStore.getState().selectedId;
+                    if (id !== null) {
+                      pageWidthActions.toggle(id);
+                    }
+                  },
+                }
+              : {}),
             notify: (message): void => {
               pushToast(message, 'info');
             },
@@ -105,7 +115,7 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
               setGlobalThemeMode(mode);
             },
           },
-          pagesStore.getState().selectedId !== null,
+          state.selectedId !== null,
         ),
       );
     };

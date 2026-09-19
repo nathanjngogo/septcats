@@ -12,7 +12,8 @@
  *   换页（pg-2 固定）互不串、**静态 CSS 契约**（只放开 .pv-body，标题行/其它规则
  *   不进 [data-measure='full'] 作用域；零量测零内联宽高）；
  * - 侧栏 ⋯ 菜单：菜单项显示当前页状态（固定宽度 / ✓ 全宽）、点击切换并落盘、
- *   每页各自显示各自状态；
+ *   每页各自显示各自状态；T41-01-1：DB 页菜单**不含**全宽项（无效控件隐藏），
+ *   wiki 页/普通页仍含；
  * - 命令面板：toggleFullWidth 注入 → 命令出现且 run 调用；无选中页 configure 摘除。
  * 纪律：window.septcats 用 vi.stubGlobal 假桥（pageview-blocks-ui.test.tsx 同款）；
  * clientWidth 数值验收（固定=measure 值、全宽=容器宽）属真机量化项，由 PM 复跑。
@@ -313,6 +314,33 @@ describe('侧栏行菜单（全宽 / 固定宽度）', () => {
     fireEvent.click(screen.getByTestId('side-more-pg-b'));
     expect(screen.getByRole('menuitem', { name: '固定宽度' })).not.toBeNull();
     expect(screen.queryByRole('menuitem', { name: '✓ 全宽' })).toBeNull();
+  });
+
+  // T41-01-1：全宽开关对 DB 页无视觉效果 → 菜单按 convertItem 同款条件构造隐藏
+  it('DB 页的 ⋯ 菜单不含全宽项（删除项仍在）；wiki 页/普通页仍含该项', () => {
+    seedPagesStore({
+      nodes: [
+        ...makeNodes(),
+        { ...pageNode({ id: 'pg-db', title: '多维数据', sortKey: 'A00000003' }), pageType: 'database' },
+        { ...pageNode({ id: 'pg-wiki', title: '研究 Wiki', sortKey: 'A00000004' }), pageType: 'wiki' },
+      ],
+    });
+    pageWidthActions.syncWorkspace(WS_ID);
+    render(<SidebarTree />);
+
+    // DB 页：无「固定宽度 / ✓ 全宽」，菜单本身未被破坏（删除项仍在）
+    fireEvent.click(screen.getByTestId('side-more-pg-db'));
+    expect(screen.queryByRole('menuitem', { name: '固定宽度' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: '✓ 全宽' })).toBeNull();
+    expect(screen.getByRole('menuitem', { name: '删除' })).not.toBeNull();
+
+    // wiki 页：仍含全宽项（菜单就地切换，DB 菜单已卸载）
+    fireEvent.click(screen.getByTestId('side-more-pg-wiki'));
+    expect(screen.getByRole('menuitem', { name: '固定宽度' })).not.toBeNull();
+
+    // 普通页：仍含全宽项
+    fireEvent.click(screen.getByTestId('side-more-pg-a'));
+    expect(screen.getByRole('menuitem', { name: '固定宽度' })).not.toBeNull();
   });
 });
 

@@ -220,3 +220,21 @@ measure=650；AI 关闭段容器内容宽 849px。
 3. T41-01-1（P3）DB 页开关视觉缺位，待老板定夺后立单。
 4. 导出差异、每页字体/行距：任务书 §1.6 明确不做（已确认未做）。
 5. git 提交：工程师未碰，由 PM 提交。
+
+---
+
+## §T41-01-1 修复闭环（2026-09-20，工程师追加；未改动上方既有章节）
+
+**任务**：DB 页侧栏 ⋯ 菜单「全宽 / 固定宽度」可见但无视觉效果（无效控件）——PM 裁决走「隐藏」方案，不改 DbView 宽度实现。完整报告见 `docs/tasks/TASK-T41-01-1-report.md`。
+
+**修法**：
+1. `SidebarTree.tsx`：⋯ 菜单全宽项照既有 `convertItem` 范式改条件构造，`pageTypeOf(node) === 'database'` 时为 null（不 spread）→ DB 页菜单不含该项；普通页/wiki 页不变。
+2. 命令面板同口径：`App.tsx` `useCommandWiring` 装配侧按选中页类型条件 spread `toggleFullWidth` dep（DB 页选中 → 命令不出现，不留「执行了没反应」路径）；`configurePaletteCommands` 既有 `hasSelection` 门控不动（避免误伤 DB 页「删除页面」）。
+
+**测试**：`page-width.test.tsx` 新增 1 用例覆盖两侧——DB 页菜单不含全宽项（删除项仍在）、wiki 页/普通页仍含。
+
+**自跑数值**：`pnpm -C apps/desktop test` → **55 文件 / 595 用例全绿**；`pnpm -r typecheck` → 9/9 Done；`no-magic.mjs` / `build-tokens.mjs --check` → ✓/✓（原始输出见 T41-01-1 报告 §4）。
+
+**DEVIATION**：3 条待追认（命令面板门控做在 App 装配侧、onSelect fullWidth 分支保留口径、App 级门控无直接单测），见 T41-01-1 报告 §5。
+
+**对应遗留销账**：本报告 §4.3（原「T41-01-1 待立单」）即本单；§4.1 窄窗口提示/禁用仍未做（本单任务书未含，待 PM 追加口径）。
