@@ -12,6 +12,7 @@ import {
 import { SyncErrorCodes } from '../src/errors';
 import { MemoryFs } from '../src/fs';
 import { mergeRemote } from '../src/merger';
+import { segmentFileName } from '../src/naming';
 import { InProcessProvider } from '../src/provider';
 import { buildSnapshotText, planSnapshot, publishSnapshot } from '../src/snapshot';
 import { publishSegment } from '../src/writer';
@@ -77,7 +78,7 @@ describe('fault 矩阵内存复现（S1–S6 / S8 / S9）', () => {
     // 注入半截写故障：坏段写一半（截断）
     fs.injectFailure = 'halfwrite';
     const badSeg = buildSegment(DEV_A, [badOp]);
-    const badName = `${badSeg.seg_id}.jsonl`;
+    const badName = segmentFileName(badSeg);
     await publishSegment(fs, ROOT, badSeg);
     fs.injectFailure = null;
 

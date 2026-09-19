@@ -94,8 +94,9 @@ export function decodeDek(text: string): Uint8Array {
   return new Uint8Array(raw);
 }
 
-/** 段/快照的明文逻辑名（加密时落盘为 `<名>.enc`）。 */
-const PAYLOAD_NAME_RE = /^(seg-[0-9a-f]{8}-[a-z0-9]{8,32}-[0-9a-f]{6}\.jsonl|snapshot-\d{6}\.json)$/;
+/** 段/快照的明文逻辑名（加密时落盘为 `<名>.enc`）。T29-01：兼容新命名的内容摘要后缀。 */
+const PAYLOAD_NAME_RE =
+  /^(seg-[0-9a-f]{8}-[a-z0-9]{8,32}-[0-9a-f]{6}(?:-[0-9a-f]{8,64})?\.jsonl|snapshot-\d{6}\.json)$/;
 
 /** 是否为需要加密的 payload 文件名（不含 .enc 后缀）。 */
 export function isSyncPayloadName(name: string): boolean {

@@ -75,4 +75,4 @@ E_SYNC_CYCLE_FAILED：同步轮失败：非法段：第 3 个 op 的设备 deskt
 **现象**：段名 `(dev, c_from, n)` 可碰撞——迟到低 `c` 的 op 之后的 flush 段与既有段同名；`publishSegment` 的 `ifAbsent` 返回 `'existed'` 被当作成功 → **该批 op 未落盘且无任何错误上报**（状态栏仍显示「已同步」）。
 **证据**：夹具账本 4 op / 盘上 2 op / `watermark=3`。
 **影响**：跨设备可见性丢失且**静默**，属数据完整性缺陷 → **必须先于 0.3.0 修掉**。
-**状态**：T29-01 已派发（修法：段名全局唯一化 + `publishSegment` 语义收紧 + 禁止静默）。
+**状态**：✅ 已闭环（T29-01，2026-09-19，rc.5 真机）。段名改为**内容寻址** `seg-<c_from>-<dev>-<n>-<digest8>.jsonl`（同 (dev,c_from,n) 不同内容得不同名，碰撞消解，`core` 零改动）；`publishSegment` 同名必读回比对：同内容幂等成功／异内容改名重写／全宽冲突抛错且 op 留 pending 重试；冲突入 `sync.status().errors` 不再静默。**真机双实例 ALL-PASS 10/10**，核心不变量 `ledger ⊆ disk`：盘上 4 op / 两端账本各 4 / **missing=0**。

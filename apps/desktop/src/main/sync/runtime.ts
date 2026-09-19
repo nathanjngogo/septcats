@@ -12,7 +12,7 @@
  *   旧段等 lamport 的 op_id 决胜漂移）→ ledger 计数校验，不一致 → 以段重建
  *   （log E_PROJECTION_REBUILT，不崩）；
  * - 写入：onCommitted（bridge 注入）→ SegmentBuilder → 满策略立即发，否则 15s 空闲
- *   flush → publishSegment（ifAbsent 幂等）；
+ *   flush → publishSegment（内容摘要命名，T29-01 语义：同名同内容幂等 / 异内容改新名）；
  * - 收：watch（fs.watch 去抖 2s）与 60s 定时双触发 → mergeRemote → commitOps 增量
  *   物化；坏段搬 quarantine/（自愈后不再重试）；
  * - 断链：probe 失败 → state=degraded，本地写入照常（红条由 UI 消费 state）；
@@ -124,6 +124,8 @@ export const SYNC_RUNTIME_ERRORS = {
   DIR_UNAVAILABLE: 'E_SYNC_DIR_UNAVAILABLE',
   CYCLE_FAILED: 'E_SYNC_CYCLE_FAILED',
   PUBLISH_FAILED: 'E_SYNC_PUBLISH_FAILED',
+  /** T29-01：段发布同名冲突（已改新名重写、数据未丢；留痕禁止静默）。 */
+  SEGMENT_CONFLICT: 'E_SYNC_SEGMENT_CONFLICT',
   MANIFEST_INVALID: SyncErrorCodes.MANIFEST_INVALID,
   PROJECTION_REBUILT: 'E_PROJECTION_REBUILT',
   KEY_MISMATCH: E_SYNC_KEY_MISMATCH,
@@ -411,7 +413,10 @@ export class SyncRuntime {
     }, this.idleFlushMs);
   }
 
-  /** 攒段 flush → publishSegment（ifAbsent 幂等；失败暂存下一轮重试，不丢数据）。 */
+  /**
+   * 攒段 flush → publishSegment（T29-01：首选名含内容摘要，同名同内容幂等 'existed'、
+   * 同名不同内容改新名重写 'rewritten'；失败暂存下一轮重试，不丢数据）。
+   */
   async flushAndPublish(): Promise<void> {
     const fresh = this.builder.flush();
     const queue: Segment[] = this.pendingPublish === null ? [] : [this.pendingPublish];
@@ -421,7 +426,15 @@ export class SyncRuntime {
     }
     for (const seg of queue) {
       try {
-        await publishSegment(this.encFs, '', seg);
+        const result = await publishSegment(this.encFs, '', seg);
+        if (result === 'rewritten') {
+          // T29-01：同名不同内容的冲突段已按更长内容摘要改新名重写——数据未丢，
+          // 但必须留痕（日志 + errors），禁止静默。
+          this.recordError(
+            SYNC_RUNTIME_ERRORS.SEGMENT_CONFLICT,
+            `段发布同名冲突：seg_id=${seg.seg_id} 已按内容摘要改新名重写（数据未丢失）`,
+          );
+        }
       } catch (error) {
         this.pendingPublish = seg;
         this.recordError(SYNC_RUNTIME_ERRORS.PUBLISH_FAILED, `段发布失败（下轮重试）：${describe(error)}`);

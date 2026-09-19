@@ -9,7 +9,7 @@ import {
   type Segment,
 } from '@septcats/core';
 import { SkipError } from './errors';
-import { segmentFileName } from './naming';
+import { contentFingerprint, segmentFileName } from './naming';
 import type { SyncFs } from './fs';
 
 /**
@@ -112,23 +112,69 @@ function segmentPath(prefix: string, name: string): string {
 }
 
 /**
- * 原子发布一个段：ifAbsent 写入；已存在（同名=同内容）→ 'existed'（幂等，S3/S6）。
+ * 原子发布一个段（TASK-T29-01 语义收紧）：
+ *
+ * - 首选名 = `seg-<seg_id>-<内容摘要 8hex>.jsonl`（全局唯一）：同 (dev,c_from,n) 不同
+ *   内容得到不同文件名，「迟到低 c op → 同名 flush 整批被吞」（T28-01 §4）不再可能；
+ * - ifAbsent 写入成功 → 'written'；
+ * - 同名命中：读回比对——同内容 = 幂等重复发布 → 'existed'（成功）；不同内容 = 冲突，
+ *   **绝不当作成功丢弃** → 加长内容摘要（16/32/64 hex）改新名重写 → 'rewritten'；
+ * - 全部摘要宽度的同名位均被不同内容占用（sha256 全宽碰撞，实际不可能）→ 抛
+ *   SegmentNameConflictError，由调用方留痕重试（op 仍在 pendingPublish，不丢）。
+ *
+ * 兼容：旧命名段（无摘要）只作为读取目标存在，本函数不写旧名、不覆盖旧名文件。
  * 写前先 encodeSegment 自校验（非法段会在此抛 SegmentValidationError）。
  */
+export type PublishResult = 'written' | 'existed' | 'rewritten';
+
+/** 段名冲突无法消解（全部摘要宽度的同名位均被不同内容占用）时抛出；数据未丢，可重试。 */
+export class SegmentNameConflictError extends Error {
+  readonly path: string;
+
+  constructor(path: string, detail: string) {
+    super(`段名冲突无法消解：'${path}' ${detail}`);
+    this.name = 'SegmentNameConflictError';
+    this.path = path;
+    Object.setPrototypeOf(this, SegmentNameConflictError.prototype);
+  }
+}
+
+/** 内容摘要递进宽度（hex 位数）；sha256 全宽 64 为终局。 */
+const DIGEST_WIDTHS = [8, 16, 32, 64] as const;
+
 export async function publishSegment(
   fs: SyncFs,
   providerPrefix: string,
   seg: Segment,
-): Promise<'written' | 'existed'> {
+): Promise<PublishResult> {
   const text = encodeSegment(seg);
-  const path = segmentPath(providerPrefix, segmentFileName(seg));
-  try {
-    await fs.write(path, text, { ifAbsent: true });
-    return 'written';
-  } catch (error) {
-    if (error instanceof SkipError) {
-      return 'existed';
+  const fingerprint = contentFingerprint(text);
+  let lastPath = segmentPath(providerPrefix, segmentFileName(seg, text));
+  let conflicted = false; // 曾命中「同名不同内容」→ 最终落位为改新名重写
+  for (const width of DIGEST_WIDTHS) {
+    const name = `${seg.seg_id}-${fingerprint.slice(0, width)}.jsonl`;
+    const path = segmentPath(providerPrefix, name);
+    lastPath = path;
+    try {
+      await fs.write(path, text, { ifAbsent: true });
+      return conflicted ? 'rewritten' : 'written';
+    } catch (error) {
+      if (!(error instanceof SkipError)) {
+        throw error;
+      }
     }
-    throw error;
+    // 同名命中：读回比对（加密场景经 SyncFs 已解密回明文，比对内容即比对身份）。
+    let existing: string | null = null;
+    try {
+      existing = await fs.read(path);
+    } catch {
+      existing = null; // 命中后又消失（网盘抖动）：换下一宽度新名重试
+    }
+    if (existing === text) {
+      return 'existed'; // 同名同内容：幂等重复发布（成功）
+    }
+    // 同名不同内容：冲突 → 加长摘要改新名重写（循环下一宽度）
+    conflicted = true;
   }
+  throw new SegmentNameConflictError(lastPath, '8..64 hex 全部摘要宽度的同名位均被不同内容占用');
 }

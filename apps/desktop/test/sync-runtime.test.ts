@@ -20,6 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildSegment,
   decodeOp,
+  decodeSegment,
   encodeOp,
   encodeSegment,
   opsToSnapshot,
@@ -28,7 +29,7 @@ import {
   type Op,
   type Segment,
 } from '@septcats/core';
-import { parseSegmentFileName, segmentFileName } from '@septcats/sync';
+import { decodeManifest, parseSegmentFileName } from '@septcats/sync';
 import type { CredentialStore } from '@septcats/platform';
 import type { AllData, BatchData, DbBatchStatement, GetData } from '../src/db/rpc';
 import { withSyncHook } from '../src/main/sync/bridge';
@@ -517,7 +518,8 @@ describe('sync/runtime 双实例集成', () => {
     const legacyOps = [upsertOp('aaaa0001', 'pg-legacy', '老段页', 1)];
     const legacySeg = buildSegment('aaaa0001', legacyOps, 1_700_000_000_000);
     const legacyText = encodeSegment(legacySeg);
-    const legacyName = segmentFileName(legacySeg); // seg-xxx.jsonl（naming 契约：加密落盘名 = 逻辑名 + .enc）
+    const legacyName = 'seg-00000001-aaaa0001-000001.jsonl'; // 旧版命名（无内容摘要；T29-01 兼容读取路径）
+    expect(legacySeg.seg_id).toBe('seg-00000001-aaaa0001-000001');
     writeFileSync(join(syncDir, `${legacyName}.enc`), encryptV1Text(oldDek, legacyName, legacyText), 'utf8');
 
     // ② v2 当前时代段（经 runtime 正常发布）
@@ -571,5 +573,51 @@ describe('sync/runtime 双实例集成', () => {
     expect(b.ledger.ops.size).toBe(2);
     expect(b.ledger.projection()).toBe(a.ledger.projection());
     b.runtime.stop();
+  });
+
+  // TASK-T29-01（P0-2）：段名 (dev,c_from,n) 碰撞 → publishSegment ifAbsent 把
+  // 「同名不同内容」当成功 → 迟到低 c op 批被静默吞掉（T28-01 报告 §4 夹具同构）。
+  it('L：迟到低 c op 批与既有段同名 → 盘上 op 数 == 账本 op 数、watermark 到账本末尾、errors 空', async () => {
+    const syncDir = tempDir('septcats-sync-collision-');
+    const a = makeRuntime({ syncDir, actor: 'aaaa0001' });
+    await a.runtime.start();
+
+    // 第一批（T28-01 §4 夹具同构）：c1 + c2 → 段 (c_from=1, n=2)
+    await commit(a, [upsertOp('aaaa0001', 'pg-a', '页A', 1), upsertOp('aaaa0001', 'pg-b', '页B', 2)]);
+    await a.runtime.flushAndPublish();
+    await a.runtime.runCycle();
+
+    // 迟到低 c op 批：c=1（早于已发布水位，与第一批同 c_from）+ c=3
+    // → 新段 (c_from=1, n=2)，旧命名规则下与既有段同名 → 修前整批被 'existed' 吞掉
+    await commit(a, [upsertOp('aaaa0001', 'pg-late', '迟到页', 1), upsertOp('aaaa0001', 'pg-c', '页C', 3)]);
+    await a.runtime.flushAndPublish();
+    await a.runtime.runCycle();
+
+    // 账本 4 op；盘上段内 op 总数必须一致（修前红：盘上仅 2，丢 2）
+    const ledgerOps = [...a.ledger.ops.values()];
+    expect(ledgerOps).toHaveLength(4);
+    const segNames = readdirSync(syncDir).filter((n) => n.startsWith('seg-'));
+    expect(segNames.length).toBeGreaterThan(0);
+    const diskIds = new Set<string>();
+    for (const name of segNames) {
+      for (const op of decodeSegment(readFileSync(join(syncDir, name), 'utf8')).ops) {
+        diskIds.add(op.op_id);
+      }
+    }
+    expect(diskIds.size).toBe(ledgerOps.length);
+    for (const op of ledgerOps) {
+      expect(diskIds.has(op.op_id), `op ${op.op_id} 已 flush 但盘上找不到`).toBe(true);
+    }
+
+    // watermark 推进到账本末尾（maxC=3），状态 ok、无错误、无滞留
+    const manifest = decodeManifest(readFileSync(join(syncDir, 'manifest.json'), 'utf8'));
+    expect(manifest).not.toBeNull();
+    expect(manifest?.segment_watermark).toBe(3);
+    const status = a.runtime.getStatus();
+    expect(status.state).toBe('ok');
+    expect(status.errors).toEqual([]);
+    expect(status.pendingOps).toBe(0);
+    expect(status.pendingSegs).toBe(0);
+    a.runtime.stop();
   });
 });

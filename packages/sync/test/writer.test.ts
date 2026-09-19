@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { encodeOp, encodeSegment, validateSegment, type Op, type Segment } from '@septcats/core';
 import { SegmentBuilder, publishSegment, type WritePolicy } from '../src/writer';
 import { MemoryFs } from '../src/fs';
+import { segmentFileName } from '../src/naming';
 import { DEV_A, makeOp } from './helpers';
 
 function ops(count: number, startC = 1): Op[] {
@@ -99,7 +100,7 @@ describe('publishSegment', () => {
   it('首写 written，重复写 existed（幂等，S3/S6）', async () => {
     const fs = new MemoryFs();
     const seg = buildSegmentWith(2);
-    const path = 'sync/yan/seg-00000001-aaaa0001-000002.jsonl';
+    const path = `sync/yan/${segmentFileName(seg)}`;
 
     expect(await publishSegment(fs, 'sync/yan', seg)).toBe('written');
     expect(await fs.exists(path)).toBe(true);
@@ -110,7 +111,7 @@ describe('publishSegment', () => {
     const fs = new MemoryFs();
     const seg = buildSegmentWith(2);
     await publishSegment(fs, 'yan', seg);
-    const onDisk = await fs.read('yan/seg-00000001-aaaa0001-000002.jsonl');
+    const onDisk = await fs.read(`yan/${segmentFileName(seg)}`);
     expect(onDisk).toBe(encodeSegment(seg));
   });
 
@@ -118,7 +119,7 @@ describe('publishSegment', () => {
     const fs = new MemoryFs();
     const seg = buildSegmentWith(1);
     await publishSegment(fs, '', seg);
-    expect(await fs.exists('seg-00000001-aaaa0001-000001.jsonl')).toBe(true);
+    expect(await fs.exists(segmentFileName(seg))).toBe(true);
   });
 });
 
