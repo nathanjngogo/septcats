@@ -18,6 +18,7 @@ export const zhCN = {
     searchLabel: '搜索（Ctrl+K）',
     settingsLabel: '设置',
     noWorkspaceToSwitch: '没有可切换的工作区',
+    aiChatLabel: 'AI 对话（Ctrl+J）',
   },
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
@@ -327,6 +328,28 @@ export const zhCN = {
     emptyText: '选中文本或把光标放进有内容的块后再试',
     applied: '已应用到编辑器',
   },
+  aiChat: {
+    title: 'AI 对话',
+    close: '关闭 AI 对话',
+    clear: '清空历史',
+    clearConfirm: '确定清空当前工作区的 AI 对话历史？',
+    inputPlaceholder: '输入消息，Enter 发送，Shift+Enter 换行',
+    send: '发送',
+    stop: '停止',
+    stopBusy: '生成中，点击停止',
+    includeSelection: '附带选中内容',
+    blockAnchor: '块{n}',
+    refAria: '跳转到出处',
+    stoppedNote: '已停止生成。',
+    emptyHistory: '还没有对话，问问当前页面的内容吧。',
+    contextUnavailable: '（当前没有可用的页面上下文）',
+    promptRole: '你是 Septcats 笔记应用内置的 AI 助手，回答简洁、准确，使用与用户相同的语言。',
+    promptContextHeader: '当前页面：',
+    promptBlocksHeader: '页面内容（块清单，[N] 为块编号）：',
+    promptSelectionHeader: '用户当前选中的内容：',
+    promptCitationRule:
+      '回答依据页面内容时，在相应句末追加出处标记 ⟦#N⟧（N 为块编号，可多次标注）；与页面内容无关的回答不要加标记。',
+  },
   db: {
     loadFailed: '数据库加载失败',
     empty: {
@@ -392,6 +415,7 @@ export const zhCN = {
       exportLater: '导出将在后续里程碑提供',
       syncLater: '同步面板将在后续里程碑提供',
       importLater: '导入将在后续里程碑提供',
+      aiChat: '打开 / 关闭 AI 对话',
     },
     theme: {
       light: '切换主题：浅色',
@@ -420,6 +444,7 @@ export const zhCN = {
       trash: '查看已删除页面',
       sync: '查看同步状态',
       import: '从 Notion 导出包 / Markdown / CSV 导入',
+      aiChat: '右侧 AI 对话面板（多轮对话，上下文取当前页）',
     },
     theme: {
       light: '界面主题',

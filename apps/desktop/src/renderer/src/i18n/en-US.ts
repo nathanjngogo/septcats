@@ -17,6 +17,7 @@ export const enUS = {
     searchLabel: 'Search (Ctrl+K)',
     settingsLabel: 'Settings',
     noWorkspaceToSwitch: 'No workspace to switch to',
+    aiChatLabel: 'AI chat (Ctrl+J)',
   },
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it
@@ -343,6 +344,29 @@ export const enUS = {
     emptyText: 'Select text or place the cursor in a non-empty block, then try again',
     applied: 'Applied to the editor',
   },
+  aiChat: {
+    title: 'AI Chat',
+    close: 'Close AI chat',
+    clear: 'Clear history',
+    clearConfirm: 'Clear the AI chat history for this workspace?',
+    inputPlaceholder: 'Type a message. Enter to send, Shift+Enter for a new line',
+    send: 'Send',
+    stop: 'Stop',
+    stopBusy: 'Generating — click to stop',
+    includeSelection: 'Include selection',
+    blockAnchor: 'Block {n}',
+    refAria: 'Jump to the source block',
+    stoppedNote: 'Generation stopped.',
+    emptyHistory: 'No conversation yet. Ask about the current page.',
+    contextUnavailable: '(No page context available for the current page)',
+    promptRole:
+      'You are the built-in AI assistant of the Septcats notes app. Answer concisely and accurately, in the same language as the user.',
+    promptContextHeader: 'Current page: ',
+    promptBlocksHeader: 'Page content (block list, [N] = block number): ',
+    promptSelectionHeader: "The user's current selection: ",
+    promptCitationRule:
+      'When an answer relies on page content, append a citation marker ⟦#N⟧ at the end of the relevant sentence (N = block number, repeatable); do not add markers for answers unrelated to the page content.',
+  },
   db: {
     loadFailed: 'Failed to load database',
     empty: {
@@ -411,6 +435,7 @@ export const enUS = {
       exportLater: 'Export will arrive in a later milestone',
       syncLater: 'The sync panel will arrive in a later milestone',
       importLater: 'Import will arrive in a later milestone',
+      aiChat: 'Open / close AI chat',
     },
     theme: {
       light: 'Switch Theme: Light',
@@ -439,6 +464,7 @@ export const enUS = {
       trash: 'View deleted pages',
       sync: 'View sync status',
       import: 'Import from a Notion export / Markdown / CSV',
+      aiChat: 'Right-side AI chat panel (multi-turn, context from the current page)',
     },
     theme: {
       light: 'Interface theme',

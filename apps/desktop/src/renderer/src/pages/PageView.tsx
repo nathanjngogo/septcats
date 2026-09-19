@@ -40,6 +40,8 @@ import {
   type SelectionRect,
 } from '@septcats/editor/react';
 import { Button, ErrorPanel, Skeleton } from '@septcats/ui';
+import { consumePendingJump, setEditorChatProvider } from '../ai/chatBridge';
+import type { PageChatContext } from '../ai/chatContext';
 import { AI_BLOCK_ACTIONS, buildAiMessages } from '../../../shared/aiPrompts';
 import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
@@ -330,6 +332,64 @@ export function PageView({ page }: PageViewProps) {
       editor.off('blur', flush);
     };
   }, [editor, session]);
+
+  /**
+   * T38-01：AI 对话侧栏的编辑器桥 —— 注册当前页上下文提供者与引用块跳转。
+   * 编辑器未就绪/数据库页 → 注销（聊天侧回落到无上下文）。provider 闭包经
+   * editor.state 现读，无陈旧文档问题；标题/页 id 变化时重注册。
+   */
+  const jumpToBlockId = useCallback((target: EditorHandle, blockId: string): void => {
+    const pos = blockPosById(target, blockId);
+    if (pos === null) {
+      return;
+    }
+    target.commands.setTextSelection(pos + 1);
+    window.requestAnimationFrame(() => {
+      document.querySelector(`[data-id="${blockId}"]`)?.scrollIntoView({ block: 'center' });
+    });
+  }, []);
+
+  const chatPageTitle = activePage?.title ?? null;
+  const chatPageIsDb = activePage?.kind === 'database';
+  useEffect(() => {
+    if (editor === null || activePageId === null || chatPageTitle === null || chatPageIsDb) {
+      setEditorChatProvider(null);
+      return;
+    }
+    const pageTitle = chatPageTitle;
+    setEditorChatProvider({
+      pageId: activePageId,
+      getPageContext: (): PageChatContext | null => {
+        const blocks: Array<{ id: string; text: string }> = [];
+        editor.state.doc.forEach((node) => {
+          const id = node.attrs['id'];
+          if (typeof id === 'string' && node.textContent.trim().length > 0) {
+            blocks.push({ id, text: node.textContent });
+          }
+        });
+        const { from, to } = editor.state.selection;
+        const selectedText = from !== to ? editor.state.doc.textBetween(from, to, '\n') : null;
+        return { pageId: activePageId, pageTitle, blocks, selectedText };
+      },
+      jumpToBlock: (blockId) => {
+        jumpToBlockId(editor, blockId);
+      },
+    });
+    return () => {
+      setEditorChatProvider(null);
+    };
+  }, [editor, activePageId, chatPageTitle, chatPageIsDb, jumpToBlockId]);
+
+  // T38-01：跨页引用跳转 —— 编辑器就绪（key=pageId 重建后）消费 pending 跳转
+  useEffect(() => {
+    if (editor === null || activePageId === null || chatPageIsDb) {
+      return;
+    }
+    const pending = consumePendingJump(activePageId);
+    if (pending !== null) {
+      jumpToBlockId(editor, pending.blockId);
+    }
+  }, [editor, activePageId, chatPageIsDb, jumpToBlockId]);
 
   /**
    * 手柄定位（T36-01 §1.1）：簇垂直中心 = 归属块**首行行框**的垂直中心（偏差 ≤1px）。

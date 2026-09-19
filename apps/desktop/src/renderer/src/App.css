@@ -29,6 +29,19 @@ html, body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  /* T38-01：编辑列在主行内吃剩余宽度（AI 对话侧栏打开时主区自动变窄，收起即变宽） */
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * T38-01：编辑列 + AI 对话侧栏的主行（仅编辑器视图）。高度链闭合于
+ * .sc-shell__main（grid 1fr 定高），侧栏收起 = 不渲染 → 编辑列占满整行。
+ */
+.app-main-row {
+  display: flex;
+  height: 100%;
+  min-height: 0;
 }
 
 .app-editor-col .pv-root {

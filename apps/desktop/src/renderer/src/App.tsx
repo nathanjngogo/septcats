@@ -7,7 +7,10 @@ import {
   IconButton,
   MagnifyingGlass,
   Plus,
+  Sparkle,
 } from '@septcats/ui';
+import { AiChatPanel } from './ai/AiChatPanel';
+import { aiChatActions, useAiChat } from './ai/chatState';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { SearchPage } from './pages/SearchPage';
@@ -77,6 +80,10 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
             notify: (message): void => {
               pushToast(message, 'info');
             },
+            // T38-01：AI 对话面板开合（命令面板命令）
+            openAiChat: (): void => {
+              aiChatActions.togglePanel();
+            },
             setThemeMode: (mode): void => {
               setGlobalThemeMode(mode);
             },
@@ -116,6 +123,35 @@ export function App() {
     void pagesActions.load();
   }, []);
 
+  // T38-01 §0.1/§1.5：面板开合状态恢复（收起 → 重启 → 仍收起）
+  useEffect(() => {
+    aiChatActions.initPanel();
+  }, []);
+
+  // T38-01 §0.6：Ctrl/Cmd+J 开合 AI 对话（与 Ctrl+K/W/Tab/1..9 不相交；
+  // 命令面板打开时不劫持——输入焦点在 palette 输入框）
+  const paletteOpenForHotkey = usePalette((state) => state.open);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        (event.key === 'j' || event.key === 'J')
+      ) {
+        if (paletteOpenForHotkey) {
+          return;
+        }
+        event.preventDefault();
+        aiChatActions.togglePanel();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [paletteOpenForHotkey]);
+
   // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
   useEffect(() => {
     const onOpenSettings = (): void => {
@@ -135,6 +171,8 @@ export function App() {
   const searchOpenFlag = usePalette((state) => state.searchOpen);
   const paletteOpenFlag = usePalette((state) => state.open);
   const pagesViewFlag = usePages((state) => state.view);
+  // T38-01：AI 对话面板开合（顶栏按钮 aria-pressed + 编辑列旁的侧栏渲染）
+  const chatOpen = useAiChat((state) => state.open);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       handleTabsKeydown(event, {
@@ -186,6 +224,15 @@ export function App() {
                 paletteActions.open();
               }}
             />
+            {/* T38-01 §0.6：顶栏 AI 对话入口（可收起右侧面板的开关，Ctrl+J 同效） */}
+            <IconButton
+              icon={Sparkle}
+              label={t('app.aiChatLabel')}
+              aria-pressed={chatOpen}
+              onClick={() => {
+                aiChatActions.togglePanel();
+              }}
+            />
             {/* T26-01 §0.B：顶栏同步状态走 SyncStatusButton（T13-01 六态、全 i18n）。
                 原 SyncPill 的 STATE_LABEL 硬编码在 @septcats/ui（packages/** 红线禁碰）
                 且 state="idle" 是静态假态，切 English 后仍显示「已同步」——换真钮后
@@ -222,9 +269,13 @@ export function App() {
         ) : (
           // T37-01：编辑列容器闭合高度链（T30 零滚动红线）——标签条定高 flex:none，
           // PageView flex:1 吃剩余高度，窗口滚动仍只发生在 .pv-root 内部。
-          <div className="app-editor-col">
-            <TabsBar />
-            <PageView />
+          // T38-01：编辑列 + AI 对话侧栏同行（收起 = 不渲染，主区自动变宽）。
+          <div className="app-main-row">
+            <div className="app-editor-col">
+              <TabsBar />
+              <PageView />
+            </div>
+            {chatOpen ? <AiChatPanel /> : null}
           </div>
         )}
       </AppShell>

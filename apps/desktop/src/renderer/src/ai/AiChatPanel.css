@@ -1,0 +1,205 @@
+/*
+ * AiChatPanel.css —— 右侧 AI 对话面板（TASK-T38-01）。
+ * 只用 var(--sc-*)（no-magic 门禁）：颜色/字阶/圆角/间距/运动全走 token；
+ * 面板宽度为本文件唯一布局决策值（单处裸 px，§2 红线口径内）。
+ * 本文件不引入 transition —— 无需 prefers-reduced-motion 兜底块
+ * （ui-interaction-audit 门禁只对含 transition 的文件要求）。
+ */
+
+.ai-chat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  height: 100%;
+  min-height: 0;
+  border-left: 1px solid var(--sc-color-hairline);
+  background: var(--sc-color-content);
+}
+
+/* 标题栏 */
+.ai-chat__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  height: var(--sc-layout-head-h);
+  padding: 0 var(--sc-space-sm);
+  border-bottom: 1px solid var(--sc-color-hairline);
+}
+
+.ai-chat__head-icon {
+  display: grid;
+  place-items: center;
+  color: var(--sc-color-icon-faint);
+}
+
+.ai-chat__head-title {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chat__head-spacer {
+  flex: 1;
+}
+
+/* 消息列表（面板内滚动；窗口零滚动红线不受影响） */
+.ai-chat__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sc-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-md);
+}
+
+.ai-chat__empty {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+  text-align: center;
+  padding: var(--sc-space-xxl) 0;
+}
+
+.ai-chat__msg {
+  display: flex;
+}
+
+.ai-chat__msg--user {
+  justify-content: flex-end;
+}
+
+.ai-chat__msg--assistant {
+  justify-content: flex-start;
+}
+
+.ai-chat__bubble {
+  max-width: 85%;
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-radius: var(--sc-radius-lg);
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* 结果文本可选中复制（不被 user-select:none 族继承破坏，AiActionPanel 同口径） */
+  user-select: text;
+}
+
+.ai-chat__bubble--user {
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-ink);
+}
+
+.ai-chat__bubble--assistant {
+  background: var(--sc-color-surface);
+}
+
+.ai-chat__bubble-text {
+  white-space: pre-wrap;
+}
+
+.ai-chat__stopped {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  margin-bottom: var(--sc-space-xs);
+}
+
+/* 引用 chip：「页名 › 块锚点」，可点击跳转 */
+.ai-chat__ref {
+  display: inline;
+  font: inherit;
+  color: var(--sc-color-accent);
+  text-decoration: underline;
+  text-underline-offset: var(--sc-space-xxs);
+  border-radius: var(--sc-radius-xs);
+  padding: 0;
+  cursor: pointer;
+}
+
+.ai-chat__ref:hover {
+  color: var(--sc-color-accent);
+  background: var(--sc-color-accent-soft);
+}
+
+.ai-chat__ref:active {
+  color: var(--sc-color-accent);
+  background: var(--sc-color-accent-soft);
+}
+
+/* 生成中行（Spinner + 停止键） */
+.ai-chat__busy-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+.ai-chat__busy-text {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* 门控引导（未启用/无 provider）：空态口径 = ui-sm + ink-faint */
+.ai-chat__gate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sc-space-sm);
+}
+
+.ai-chat__gate-text {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* 错误（E_AI_* 经 errorText 呈现，role=alert，AiActionPanel 同口径） */
+.ai-chat__error {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-danger);
+  background: var(--sc-color-danger-soft);
+  border-radius: var(--sc-radius-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  overflow-wrap: anywhere;
+}
+
+/* 输入区 */
+.ai-chat__composer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-md);
+  border-top: 1px solid var(--sc-color-hairline);
+}
+
+.ai-chat__selection-toggle {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.ai-chat__input {
+  resize: none;
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-md);
+  padding: var(--sc-space-sm);
+  outline: none;
+  min-height: 0;
+}
+
+.ai-chat__input:focus-visible {
+  border-color: var(--sc-color-focus-ring);
+}
+
+.ai-chat__composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

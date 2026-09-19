@@ -67,6 +67,11 @@ export interface CommandDeps {
    * 口径同 saveAsTemplate：无选中页经 configurePaletteCommands 摘除（不出现、不抛错）。
    */
   deletePage?(): void;
+  /**
+   * T38-01：AI 对话面板开合（App 恒注入 → 命令恒出现；测试 spy deps 不注入 → 不出现，
+   * 静态清单/别名基线不受影响）。
+   */
+  openAiChat?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -91,6 +96,18 @@ export const DELETE_PAGE_DEF: PaletteCommandDef = {
   label: t('commands.page.delete'),
   hint: t('commandHints.page.delete'),
   aliases: ['shanchuyemian', 'shanchu', 'scym', 'sc', 'delete page', 'delete'],
+};
+
+/**
+ * T38-01：「打开 / 关闭 AI 对话」命令定义。**不在静态 COMMAND_DEFS 里**——
+ * 与 saveAsTemplate/deletePage 同走 deps 门（App 恒注入 openAiChat → 恒出现；
+ * palette 基线测试的 spy deps 不注入 → 静态清单/别名基线不受影响）。
+ */
+export const AI_CHAT_DEF: PaletteCommandDef = {
+  id: 'app.aiChat',
+  label: t('commands.app.aiChat'),
+  hint: t('commandHints.app.aiChat'),
+  aliases: ['aiduihua', 'duihua', 'aichat', 'chat', 'ai chat'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -167,6 +184,14 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.page.delete'),
       hint: t('commandHints.page.delete'),
       run: deps.deletePage,
+    });
+  }
+  if (deps.openAiChat !== undefined) {
+    commands.push({
+      ...AI_CHAT_DEF,
+      label: t('commands.app.aiChat'),
+      hint: t('commandHints.app.aiChat'),
+      run: deps.openAiChat,
     });
   }
   return commands;
