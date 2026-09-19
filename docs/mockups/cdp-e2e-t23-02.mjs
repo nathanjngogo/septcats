@@ -105,8 +105,8 @@ await rows.first().click().catch(() => {});
 await wait(2500);
 check('④b 面板回车/点击即建页（编辑器有内容）', (await editorText()).includes(BODY_TXT) || (await body()).length !== before, (await editorText()).slice(0, 60));
 
-// ⑤ 数据库模板：转为数据库 → 另存为模板 → kind=database
-const conv = page.getByText('转为数据库').first();
+// ⑤ 数据库模板：转为多维数据 → 另存为模板 → kind=database
+const conv = page.getByText('转为多维数据').first();
 const hasConv = await conv.waitFor({ state: 'visible', timeout: 6000 }).then(() => true).catch(() => false);
 const logs = [];
 const onLog = (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text()}`.slice(0, 160)); };
@@ -123,7 +123,7 @@ const dbUi = await page.evaluate(() => {
   const dlg = document.querySelector('[role="dialog"]');
   return { markers: has.join('/'), dialog: dlg ? dlg.innerText.replace(/\s+/g, ' ').slice(0, 80) : '', view: t.slice(0, 120) };
 });
-check('⑤a 「转为数据库」已生效（出现库 UI 标记）', dbUi.markers.length > 0, `markers=${dbUi.markers || '(无)'} console=${logs.join(' ;; ').slice(0, 200)} | view=${dbUi.view}`);
+check('⑤a 「转为多维数据」已生效（出现库 UI 标记）', dbUi.markers.length > 0, `markers=${dbUi.markers || '(无)'} console=${logs.join(' ;; ').slice(0, 200)} | view=${dbUi.view}`);
 rows = await paletteOpen('另存为');
 await rows.filter({ hasText: '另存为模板' }).first().click().catch(() => {});
 await wait(1000);

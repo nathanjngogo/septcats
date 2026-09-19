@@ -304,10 +304,10 @@ check('A1 建库成功（11 字段 + 标题）', setup.propOrder.length === 12, 
 // BOOT2/BOOT3 的截图导航用（该页是 db.create 产物，界面态为普通文档页 —— 见下方根因备注）
 const nodeSel = `[data-testid="side-node-${setup.pageId}"]`;
 
-// ---------- 界面面：走产品真实路径（新建页 → 转为数据库 → 新属性），同会话 ----------
+// ---------- 界面面：走产品真实路径（新建页 → 转为多维数据 → 新属性），同会话 ----------
 // 根因备注（PM 侦察）：page 表**无 kind 列** → `activePage.kind==='database'` 永不成立，
-// DbPage 只能由「转为数据库」写入的本地态 dbPageId 承载。故界面验收必须走该真实路径，
-// 不能靠 db.create 后重载（那样只会得到普通文档页 + 「转为数据库」按钮）。
+// DbPage 只能由「转为多维数据」写入的本地态 dbPageId 承载。故界面验收必须走该真实路径，
+// 不能靠 db.create 后重载（那样只会得到普通文档页 + 「转为多维数据」按钮）。
 await page.reload({ waitUntil: 'domcontentloaded' });
 await waitFor(async () => page.evaluate(() => typeof window.septcats?.db?.load === 'function'), 20000);
 await wait(1200);
@@ -320,10 +320,10 @@ await nameInput.fill('T40界面验收页');
 await nameInput.press('Enter');
 await wait(1300);
 
-// 2) 转为数据库
-const convBtn = page.locator('button', { hasText: '转为数据库' }).first();
+// 2) 转为多维数据
+const convBtn = page.locator('button', { hasText: '转为多维数据' }).first();
 const convVisible = await waitFor(async () => ((await convBtn.count()) > 0 ? true : false), 15000);
-check('B0 「转为数据库」入口存在（界面验收的真实入口）', convVisible === true, `visible=${String(convVisible)}`);
+check('B0 「转为多维数据」入口存在（界面验收的真实入口）', convVisible === true, `visible=${String(convVisible)}`);
 if (convVisible) await convBtn.click();
 // 实测：转换后 DbPage 是**整页空态**（"还没有记录"），PropBar/表格要**先建一条记录**才挂载
 await wait(2000);
@@ -335,7 +335,7 @@ if (hadEmpty) {
 }
 info('转换后空态', `空态按钮存在=${String(hadEmpty)}`);
 const dbUp = await waitFor(async () => page.evaluate(() => document.querySelector('.sc-propbar') !== null), 20000);
-check('B1 转为数据库后 DbPage 渲染（属性条出现）', dbUp === true, `propbar=${String(dbUp)}`);
+check('B1 转为多维数据后 DbPage 渲染（属性条出现）', dbUp === true, `propbar=${String(dbUp)}`);
 await wait(900);
 
 // 3) 通过 UI 新属性 ×3（单选 / 勾选 / 数字）
@@ -395,7 +395,7 @@ try {
   checkToggle = { err: String(e?.message ?? e) };
 }
 info('勾选格焦点取证', JSON.stringify(checkToggle));
-check('B3 勾选列 Enter 直接切换（**缺陷 T40-01-1：键盘路径不可达**，断言有意保留为红）', checkToggle !== null && checkToggle.on > 0, JSON.stringify(checkToggle));
+check('B3 勾选列 Enter 直接切换（T40-01-1 已修：修复前此断言为红，修复后转绿）', checkToggle !== null && checkToggle.on > 0, JSON.stringify(checkToggle));
 
 // B4/B5：单选列点击进编辑 → SinglePicker（含 T40 新增「新建选项」行）
 let pickerState = null;
@@ -781,7 +781,7 @@ try {
   await ni.fill('T40深色验收页');
   await ni.press('Enter');
   await wait(1300);
-  const cb = page3.locator('button', { hasText: '转为数据库' }).first();
+  const cb = page3.locator('button', { hasText: '转为多维数据' }).first();
   if ((await cb.count()) > 0) await cb.click();
   await wait(2000);
   const nr = page3.locator('button', { hasText: '新建记录' }).first();

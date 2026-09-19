@@ -15,9 +15,9 @@ import { initLocale } from './i18n';
  * 判定必须在挂载前完成——Provider 挂载即写回默认 'system'，挂载后判定恒真。
  * 读取失败不拦路——退 localStorage/system。
  *
- * locale 种子（TASK-T25-01 §0.A）：回落顺序 settings.locale → 系统语言 → zh-CN；
- * 「跟随系统」以 renderer localStorage 标记表达（见 i18n/index.ts），标记存在时
- * 直接按 navigator.language 解析。settings 未就绪（catch）→ 系统语言兜底。
+ * locale 种子（TASK-T25-01 §0.A；T43-01-1）：localePref 标记显式为 'system' → 系统
+ * 语言；无标记或标记为显式 locale → settings.locale（显式选择重启后经 settings 恢复）。
+ * settings 未就绪（catch）→ 系统语言兜底。
  */
 const container = document.getElementById('root');
 if (container === null) {

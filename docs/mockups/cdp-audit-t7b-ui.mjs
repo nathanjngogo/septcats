@@ -7,8 +7,8 @@ const page = ctx.pages().find((p) => p.url().includes('index.html')) ?? ctx.page
 await page.reload({ waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1200);
 
-// 进 DbPage：点「转为数据库」
-await page.locator('button', { hasText: '转为数据库' }).first().click();
+// 进 DbPage：点「转为多维数据」
+await page.locator('button', { hasText: '转为多维数据' }).first().click();
 await page.waitForTimeout(1000);
 // 建两条记录让表格出来
 await page.evaluate(async () => {

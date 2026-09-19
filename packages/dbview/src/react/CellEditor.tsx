@@ -659,7 +659,16 @@ export function CellEditor({
       data-type={type}
       onKeyDown={onCellKeyDown}
       onClick={() => {
-        if (disabled || type === 'checkbox' || type === 'file') {
+        if (disabled) {
+          return;
+        }
+        // checkbox：单击直接切换，不进编辑态（T40-01-1：原先在此早退，但内层
+        // 元素永不获焦、键盘分支同样收不到事件，导致勾选值两条路径都写不进去）
+        if (type === 'checkbox') {
+          onCommit(value === true ? null : true);
+          return;
+        }
+        if (type === 'file') {
           return;
         }
         if (!editing) {

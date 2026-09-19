@@ -213,7 +213,7 @@ if (PHASE === 'B') {
   check('B3', '从模板建页：内容继承', inst.includes('模板结构正文'), 'High', inst.slice(0, 80));
 
   // B4 库模板：转换 → 另存 → kind=database → 实例化 0 记录
-  await page.getByText('转为数据库').first().click({ force: true }).catch(() => {});
+  await page.getByText('转为多维数据').first().click({ force: true }).catch(() => {});
   await wait(2800);
   await paletteSearch('另存为');
   await page.locator('.palette-list [role="option"]').filter({ hasText: '另存为模板' }).first().click().catch(() => {});

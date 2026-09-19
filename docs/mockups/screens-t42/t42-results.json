@@ -5,12 +5,12 @@
     {
       "name": "[info] 新建普通页 id",
       "ok": null,
-      "raw": "01M2XP0SS14EPFJNSPR9A4YMC7"
+      "raw": "01M2XQBACHH883KJ5ESPF77JBQ"
     },
     {
       "name": "T1 新建页面成功",
       "ok": true,
-      "raw": "id=01M2XP0SS14EPFJNSPR9A4YMC7"
+      "raw": "id=01M2XQBACHH883KJ5ESPF77JBQ"
     },
     {
       "name": "[info] 转换前状态",
@@ -25,7 +25,7 @@
     {
       "name": "[info] P1 库页 id",
       "ok": null,
-      "raw": "pg-01M2XP0X8C4DDQMHNNSD15R2WZ"
+      "raw": "pg-01M2XQBDW8AGKGB4QDFNP8RNAP"
     },
     {
       "name": "[info] 转为 Wiki 结果",
@@ -158,12 +158,7 @@
       "raw": "theme=dark editor=true"
     }
   ],
-  "consoleErrors": [
-    "[b1|新建子页 子页甲] [YjsEditor] Y→PM 初始投影失败（pageId=01M2XP0SS14EPFJNSPR9A4YMC7） TypeError: Cannot read properties of null (reading 'topNodeType')\n    at yXmlFragmentToProseMirrorRootNode (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44471:76)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44611:23)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
-    "[b1|新建子页 子页甲] [PageView] 协作层接入失败（不阻断编辑） RangeError: Adding different instances of a keyed plugin (y-sync$)\n    at file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22407:17\n    at Array.forEach (<anonymous>)\n    at new Configuration (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22405:15)\n    at EditorState.reconfigure (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22527:19)\n    at Editor.registerPlugin (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:32816:30)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44630:12)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
-    "[b1|新建子页 子页乙] [YjsEditor] Y→PM 初始投影失败（pageId=01M2XP0SS14EPFJNSPR9A4YMC7） TypeError: Cannot read properties of null (reading 'topNodeType')\n    at yXmlFragmentToProseMirrorRootNode (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44471:76)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44611:23)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)",
-    "[b1|新建子页 子页乙] [PageView] 协作层接入失败（不阻断编辑） RangeError: Adding different instances of a keyed plugin (y-sync$)\n    at file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22407:17\n    at Array.forEach (<anonymous>)\n    at new Configuration (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22405:15)\n    at EditorState.reconfigure (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:22527:19)\n    at Editor.registerPlugin (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:32816:30)\n    at YjsEditor.attach (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:44630:12)\n    at attachCollab (file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/index-Vt9297k8.js:46745:7)"
-  ],
+  "consoleErrors": [],
   "pageErrors": [],
   "shots": [
     "dark-01-page.png",
@@ -173,6 +168,6 @@
     "light-04-dbpage-after-restart.png",
     "light-05-converted-back.png"
   ],
-  "wikiId": "01M2XP0SS14EPFJNSPR9A4YMC7",
-  "dbPageId": "pg-01M2XP0X8C4DDQMHNNSD15R2WZ"
+  "wikiId": "01M2XQBACHH883KJ5ESPF77JBQ",
+  "dbPageId": "pg-01M2XQBDW8AGKGB4QDFNP8RNAP"
 }

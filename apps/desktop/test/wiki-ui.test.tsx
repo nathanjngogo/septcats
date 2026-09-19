@@ -188,6 +188,39 @@ describe('PageView 承载判定（T42-01 §0 + T40-01-2 闭环）', () => {
   });
 });
 
+describe('协作层接入承载门控（T42-01-1）', () => {
+  it('普通页 → wiki 页：释放原页协作后，不得用残留编辑器给 wiki 页接协作层', async () => {
+    // 复现原缺陷路径：在 wiki 落地页「新建子页」进入普通页（编辑器 + 协作接入），
+    // 再返回 wiki 落地页 —— 原缺陷在返回时用残留编辑器实例 + wiki 页 id 调
+    // attachCollab（Y→PM 投影失败 + y-sync$ 插件重复注册两条 console 错误）。
+    seedStore(makeNodes(), 'pg-normal');
+    render(<PageView />);
+    await screen.findByTestId('septcats-editor');
+    await waitFor(() => {
+      expect(bridge.collab.attach).toHaveBeenCalledWith({ pageId: 'pg-normal' });
+    });
+
+    // 返回 wiki 落地页（store 驱动重渲染，与真实「点击索引行返回」同构）
+    seedStore(makeNodes(), 'pg-wiki');
+    await screen.findByTestId('wiki-index');
+    // 原页协作先释放
+    await waitFor(() => {
+      expect(bridge.collab.detach).toHaveBeenCalledWith({ pageId: 'pg-normal' });
+    });
+    // 关键断言：wiki 页自身（无编辑器承载）不接协作层
+    expect(bridge.collab.attach).not.toHaveBeenCalledWith({ pageId: 'pg-wiki' });
+    expect(bridge.collab.attach).toHaveBeenCalledTimes(1);
+  });
+
+  it('pageType=database 页同样不接协作层（承载判定同构）', async () => {
+    seedStore([viewNode({ id: 'pg-db', title: '任务追踪', pageType: 'database' })], 'pg-db');
+    render(<PageView />);
+    await screen.findByTestId('db-page-stub');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(bridge.collab.attach).not.toHaveBeenCalled();
+  });
+});
+
 describe('WikiLanding 落地页（T42-01 §1.3/§1.4）', () => {
   it('简介失焦保存 → setSummary；「转为普通页」→ convert({to:"page"})', async () => {
     seedStore(makeNodes(), 'pg-wiki');

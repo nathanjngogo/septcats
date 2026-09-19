@@ -729,3 +729,115 @@ describe('标题双击改名（T18-05 回归）', () => {
     expect(screen.getByText('哥德尔、艾舍尔、巴赫')).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// 勾选列值写入（T40-01-1 修复）
+//
+// 根因：checkbox 单元格内层 .sc-dbc 为 role="presentation" 且无 tabIndex、
+// 永不获焦，焦点只落在外层 gridcell（TableGrid cellRefs 注册处）——
+// CellEditor 的 onKeyDown（checkbox Enter/Space → 切换）收不到事件；
+// 其 onClick 又对 checkbox 早退 → 点击与键盘两条路径都写不进值。
+// 修复：onClick 的 checkbox 分支改直切（onCommit）；onGridKeyDown 追加
+// Enter/Space 的 checkbox 分支（经既有 onChangeCell 通道提交）。
+// 焦点模型（cellRefs / moveFocus / tabIndex）零改动。
+// focusedCell 非空时焦点 effect 会调 scrollIntoView（jsdom 未实现），局部桩掉。
+// ---------------------------------------------------------------------------
+
+const P_CHECK = propertySchema.parse({ id: 'p_check', name: '已读', type: 'checkbox' });
+const P_NOTE = propertySchema.parse({ id: 'p_note', name: '笔记', type: 'text' });
+const CHECK_SCHEMA = collectionSchemaSchema.parse({
+  properties: { p_title: P_TITLE, p_check: P_CHECK, p_note: P_NOTE },
+  title_pid: 'p_title',
+});
+
+describe('勾选列值写入（T40-01-1）', () => {
+  const scrollIntoViewStub = vi.fn();
+  const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
+  beforeAll(() => {
+    HTMLElement.prototype.scrollIntoView = scrollIntoViewStub;
+  });
+  afterAll(() => {
+    HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
+  function renderGrid(rows: RecordEntity[], handlers: { onChangeCell: ReturnType<typeof vi.fn>; onBeginEdit?: ReturnType<typeof vi.fn> }, focusedCell: { rowIndex: number; prop: string } | null) {
+    return render(
+      <TableGrid
+        schema={CHECK_SCHEMA}
+        rows={rows}
+        widths={{}}
+        status="ready"
+        selectedIds={new Set()}
+        focusedCell={focusedCell}
+        editingCell={null}
+        onChangeCell={handlers.onChangeCell}
+        onBeginEdit={handlers.onBeginEdit}
+        onCreateRecord={NOOP}
+      />,
+    );
+  }
+
+  it('点击 checkbox 格：空值 → onChangeCell(rowId, pid, true)（既有存盘通道），不进编辑态', () => {
+    const onChangeCell = vi.fn();
+    const onBeginEdit = vi.fn();
+    renderGrid([makeRecord('rec-1', { p_title: '时间简史' }, 'A1')], { onChangeCell, onBeginEdit }, null);
+
+    const dbc = document.querySelector('.sc-dbc[data-type="checkbox"]') as HTMLElement;
+    expect(dbc).not.toBeNull();
+    fireEvent.click(dbc);
+
+    expect(onChangeCell).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).toHaveBeenCalledWith('rec-1', 'p_check', true);
+    expect(onBeginEdit).not.toHaveBeenCalled();
+  });
+
+  it('聚焦 checkbox 格按 Enter / Space → toggle（true→null、null→true）', () => {
+    const onChangeCell = vi.fn();
+    const { rerender } = renderGrid(
+      [makeRecord('rec-1', { p_title: '时间简史', p_check: true }, 'A1')],
+      { onChangeCell },
+      { rowIndex: 0, prop: 'p_check' },
+    );
+
+    const body = document.querySelector('.sc-dbgrid__body') as HTMLElement;
+    fireEvent.keyDown(body, { key: 'Enter' });
+    expect(onChangeCell).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).toHaveBeenCalledWith('rec-1', 'p_check', null);
+
+    // 数据回写后（true → null），Space 再切回 true
+    onChangeCell.mockClear();
+    rerender(
+      <TableGrid
+        schema={CHECK_SCHEMA}
+        rows={[makeRecord('rec-1', { p_title: '时间简史' }, 'A1')]}
+        widths={{}}
+        status="ready"
+        selectedIds={new Set()}
+        focusedCell={{ rowIndex: 0, prop: 'p_check' }}
+        editingCell={null}
+        onChangeCell={onChangeCell}
+        onCreateRecord={NOOP}
+      />,
+    );
+    fireEvent.keyDown(body, { key: ' ' });
+    expect(onChangeCell).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).toHaveBeenCalledWith('rec-1', 'p_check', true);
+  });
+
+  it('非 checkbox 行为不变：聚焦 text 格按 Enter 仍走 onBeginEdit，不经 onChangeCell', () => {
+    const onChangeCell = vi.fn();
+    const onBeginEdit = vi.fn();
+    renderGrid([makeRecord('rec-1', { p_title: '时间简史' }, 'A1')], { onChangeCell, onBeginEdit }, {
+      rowIndex: 0,
+      prop: 'p_note',
+    });
+
+    const dbc = document.querySelector('.sc-dbc[data-type="text"]') as HTMLElement;
+    expect(dbc).not.toBeNull();
+    fireEvent.keyDown(dbc, { key: 'Enter' });
+
+    expect(onBeginEdit).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).not.toHaveBeenCalled();
+  });
+});

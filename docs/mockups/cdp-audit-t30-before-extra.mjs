@@ -43,7 +43,7 @@ await input.waitFor({ state: 'visible', timeout: 10000 });
 await input.fill('T30小窗转库');
 await input.press('Enter');
 await wait(2000);
-await page.getByRole('button', { name: /转为数据库|Convert to Database/ }).click();
+await page.getByRole('button', { name: /转为多维数据|Convert to Database/ }).click();
 await wait(1800);
 for (let i = 0; i < 12; i++) {
   await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('新建记录')); if (b) b.click(); });

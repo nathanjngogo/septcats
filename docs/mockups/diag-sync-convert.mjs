@@ -1,4 +1,4 @@
-/* 针对性诊断：①「同步错误」何时出现、详情是什么 ②「转为数据库」在此序列下为何不生效
+/* 针对性诊断：①「同步错误」何时出现、详情是什么 ②「转为多维数据」在此序列下为何不生效
  * 独立夹具根。 */
 import { chromium } from 'playwright-core';
 import { spawn, execSync } from 'node:child_process';
@@ -68,13 +68,13 @@ await page.locator('[data-testid="template-save-confirm"]').first().click().catc
 await wait(1800);
 await step('after-save-template');
 
-// 转为数据库（先记录按钮存在性与可见性）
+// 转为多维数据（先记录按钮存在性与可见性）
 const btnInfo = await page.evaluate(() => {
-  const els = [...document.querySelectorAll('*')].filter((e) => e.children.length === 0 && (e.textContent ?? '').trim() === '转为数据库');
+  const els = [...document.querySelectorAll('*')].filter((e) => e.children.length === 0 && (e.textContent ?? '').trim() === '转为多维数据');
   return els.map((e) => { const b = e.closest('button,[role="button"]') ?? e; const r = b.getBoundingClientRect(); return { tag: b.tagName, cls: b.className?.toString().slice(0, 60), w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.x), y: Math.round(r.y), disabled: b.disabled ?? null }; });
 });
 log('CONV-BUTTON:', JSON.stringify(btnInfo));
-await page.getByText('转为数据库').first().click({ force: true }).catch(() => {});
+await page.getByText('转为多维数据').first().click({ force: true }).catch(() => {});
 await wait(3000);
 await step('after-convert-click');
 const afterConv = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').slice(0, 200));

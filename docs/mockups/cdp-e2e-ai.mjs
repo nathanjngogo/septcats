@@ -9,7 +9,7 @@
  * 断言项对齐 TASK-T18-03 §4：设置页 AI 区块渲染/开关/provider 测试连接、面板出现→
  * 结果非空→应用→块文本变化、未配置空态引导 + 「打开设置」可点、pageerror 计数 0、
  * 截图双主题各 1 张（设置页 + 面板）→ docs/mockups/screens-ai/。
- * T18-04 追加「AI 属性」节：转为数据库（建库）→ UI 建记录 → 新属性菜单加 AI 列 →
+ * T18-04 追加「AI 属性」节：转为多维数据（建库）→ UI 建记录 → 新属性菜单加 AI 列 →
  * 配 prompt → 单行生成 → 断言单元格值 + IPC 读回持久化（离线/真机层共用同一流程）。
  * 用法：node docs/mockups/cdp-e2e-ai.mjs            （离线层）
  *       SEPTCATS_AI_REAL=1 node docs/mockups/cdp-e2e-ai.mjs （离线层 + 真机层）
@@ -268,7 +268,7 @@ if (REAL) {
 }
 
 // ── AI 属性列（TASK-T18-04 追加节；离线层走 mock provider，真机层复用同一流程）──
-// 流程：转为数据库（建库）→ UI 建记录/改标题 → 「新属性」菜单加 AI 列（走真 UI 路径，
+// 流程：转为多维数据（建库）→ UI 建记录/改标题 → 「新属性」菜单加 AI 列（走真 UI 路径，
 // 自带 hook 重载，无需 reload）→ 列头菜单配 prompt → 单行「AI 生成」→ 断言单元格值
 // + IPC 读回持久化（schema.ai.prompt / record.values[aiPid]）。
 if (!REAL) {
@@ -276,16 +276,16 @@ if (!REAL) {
   await configureAi(page, MOCK_BASE, 'mock-model');
 }
 await page.evaluate(() => window.dispatchEvent(new CustomEvent('septcats:theme-mode', { detail: { mode: 'light' } })));
-// 流程复位：上一节最后一步跳到设置页，「转为数据库」只存在于页面视图。
+// 流程复位：上一节最后一步跳到设置页，「转为多维数据」只存在于页面视图。
 // reload 回默认视图（settings 已持久化，configureAi 配置不受影响）。
 // —— 与 T18-03 真机层同类的「脚本流程态未复位」缺陷（本次第 3 例）。
 await page.reload();
 await bridgeReady(br);
 const pageViewBack = await waitFor(async () => page.evaluate(() => document.querySelector('.pv-body, .dbpage') !== null), 20_000);
 check('AI属性：reload 回到页面视图（流程复位）', pageViewBack);
-const converted = await clickButtonByText(page, '转为数据库');
+const converted = await clickButtonByText(page, '转为多维数据');
 const dbMounted = await waitFor(async () => page.evaluate(() => document.querySelector('.sc-dbgrid, .sc-empty') !== null), 10_000);
-check('AI属性：转为数据库 → DbPage 挂载', converted && dbMounted);
+check('AI属性：转为多维数据 → DbPage 挂载', converted && dbMounted);
 
 // 建库（UI 全路径：DbPage 既有 hook 写后自动重载）
 await clickButtonByText(page, '新建记录');

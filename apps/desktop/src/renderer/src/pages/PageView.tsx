@@ -157,6 +157,19 @@ export function PageView({ page }: PageViewProps) {
         ? pageTypeOf(selectedNode)
         : 'page';
 
+  /**
+   * T42-01-1：与下方渲染分派严格同构的「本渲染是否真正承载编辑器」判定。
+   * wiki 落地页 / 数据库页走 WikiLanding / DbPage（无编辑器实例挂载）。协作接入
+   * 必须以此为门——否则「新建子页 → 返回 wiki 落地页」时，Editor 卸载与
+   * setEditor(null) 重渲染之间的残留编辑器实例会带着 wiki 页 id 去接协作层
+   * （Y→PM 初始投影失败 + y-sync$ 插件重复注册，两条 console 错误）。
+   */
+  const rendersEditor =
+    activePage !== null &&
+    !(activePage.kind === 'database' || activeNodeType === 'database') &&
+    !(activeNodeType === 'wiki' && selectedNode !== null) &&
+    dbPageId === null;
+
   // T41-01：页面级「全宽 / 固定宽度」开关（Notion 式）。只读状态切片（toggle 在
   // 侧栏 ⋯ 菜单 / 命令面板），宽度表现由 .pv-root[data-measure='full'] CSS 承载，
   // 这里不量测、不内联改宽高；页面级开关优先于 T39-01 的全局 measure 默认。
@@ -282,12 +295,23 @@ export function PageView({ page }: PageViewProps) {
   );
 
   /**
-   * 协作层接线（TASK-T19-05 §1 renderer 面）：编辑器就绪后接入（无可见控件，UI 零
-   * 视觉变化）；编辑器销毁/换页时释放。IPC 失败只记录，不阻断编辑（collabClient 内
-   * 已 catch，这里是 attach 往返本身的兜底）。
+   * T42-01-1：分派到非编辑器承载（wiki 落地页 / 数据库页）时清掉残留编辑器实例，
+   * 防止残留实例继续被选中同步 / AI 桥 / 协作接入等 editor 消费方误用。
    */
   useEffect(() => {
-    if (editor === null || activePageId === null) {
+    if (!rendersEditor && editor !== null) {
+      setEditor(null);
+    }
+  }, [rendersEditor, editor]);
+
+  /**
+   * 协作层接线（TASK-T19-05 §1 renderer 面）：编辑器就绪后接入（无可见控件，UI 零
+   * 视觉变化）；编辑器销毁/换页时释放。IPC 失败只记录，不阻断编辑（collabClient 内
+   * 已 catch，这里是 attach 往返本身的兜底）。T42-01-1：门控加「本渲染真正承载
+   * 编辑器」——wiki/database 页不接协作层（渲染分派不产出编辑器实例）。
+   */
+  useEffect(() => {
+    if (editor === null || activePageId === null || !rendersEditor) {
       return;
     }
     let cancelled = false;
@@ -298,7 +322,7 @@ export function PageView({ page }: PageViewProps) {
       cancelled = true;
       detachCollab(activePageId);
     };
-  }, [editor, activePageId]);
+  }, [editor, activePageId, rendersEditor]);
 
   useEffect(() => {
     if (editor === null) {

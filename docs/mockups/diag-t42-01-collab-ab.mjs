@@ -1,6 +1,6 @@
 /* 归因 A/B：协作层报错是否只发生在「无编辑器的页被重新进入」这个既有模式？
  场景：打开 X（无编辑器页）→ 打开另一个普通页 → 回到 X → 看 console 错误。
- A：X = 转为数据库的页（既有路径，T7b）
+ A：X = 转为多维数据的页（既有路径，T7b）
  B：X = 转为 Wiki 的页（T42-01 新路径）
  若 A 也报错 → 属既有模式通病（非 T42-01 引入）。 */
 import { chromium } from 'playwright-core';
@@ -114,7 +114,7 @@ async function runCase(kind, port) {
 }
 
 const a = await runCase('db', 9451);
-console.log('=== A：X = 转为数据库的页（既有路径）===');
+console.log('=== A：X = 转为多维数据的页（既有路径）===');
 console.log(`  converted=${a.converted} state=${JSON.stringify(a.xState)}`);
 console.log(`  错误累计：转换后 ${a.errAtConvert} / 去 Y 后 ${a.errAtY} / **回到 X 后 ${a.errAtBack}**`);
 for (const e of a.errs) console.log('   ', e);

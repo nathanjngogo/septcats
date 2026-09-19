@@ -22,7 +22,8 @@ import { act, createElement } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { setLocale, systemLocale, t, useLocale } from '../src/renderer/src/i18n';
+import { setLocale, setLocalePref, systemLocale, t, useLocale } from '../src/renderer/src/i18n';
+import { initLocale, getLocale } from '../src/renderer/src/i18n';
 import { enUS } from '../src/renderer/src/i18n/en-US';
 import { zhCN } from '../src/renderer/src/i18n/zh-CN';
 
@@ -320,5 +321,70 @@ describe('门禁④ 切换 locale 后五处关键文案', () => {
     Object.defineProperty(window.navigator, 'language', { value: 'fr-FR', configurable: true });
     expect(systemLocale()).toBe('en-US');
     Object.defineProperty(window.navigator, 'language', { value: original, configurable: true });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ⑧ 启动种子 locale 组合（T43-01-1：显式选择重启后不丢）
+// ---------------------------------------------------------------------------
+
+describe('initLocale 启动组合（T43-01-1）', () => {
+  const KEY = 'septcats.localePref';
+
+  afterEach(() => {
+    window.localStorage.removeItem(KEY);
+    setLocale('zh-CN');
+  });
+
+  it('组合 B：无标记（zh 系统）+ settings.locale=en-US → en-US（原缺陷：回中文）', () => {
+    // jsdom navigator.language 缺省 en-US，钉成中文系统复现 PM 真机组合 B
+    const original = window.navigator.language;
+    Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', configurable: true });
+    try {
+      window.localStorage.removeItem(KEY);
+      initLocale('en-US');
+      expect(getLocale()).toBe('en-US');
+    } finally {
+      Object.defineProperty(window.navigator, 'language', { value: original, configurable: true });
+    }
+  });
+
+  it('组合 A：无标记（zh 系统）+ settings.locale=zh-CN → zh-CN（保持）', () => {
+    const original = window.navigator.language;
+    Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', configurable: true });
+    try {
+      window.localStorage.removeItem(KEY);
+      initLocale('zh-CN');
+      expect(getLocale()).toBe('zh-CN');
+    } finally {
+      Object.defineProperty(window.navigator, 'language', { value: original, configurable: true });
+    }
+  });
+
+  it('组合 C：显式 en-US 标记 + settings=en-US → en-US（保持）', () => {
+    window.localStorage.setItem(KEY, 'en-US');
+    initLocale('en-US');
+    expect(getLocale()).toBe('en-US');
+  });
+
+  it('组合 D：显式 system 标记 + settings=en-US → 跟随系统（保持）', () => {
+    window.localStorage.setItem(KEY, 'system');
+    initLocale('en-US');
+    expect(getLocale()).toBe(systemLocale());
+  });
+
+  it('setLocalePref 显式选择写 locale 标记；模拟重启 initLocale 可恢复', () => {
+    window.localStorage.removeItem(KEY);
+    setLocalePref('en-US');
+    expect(window.localStorage.getItem(KEY)).toBe('en-US');
+    setLocale('zh-CN'); // 模拟重启后的初始态
+    initLocale('en-US');
+    expect(getLocale()).toBe('en-US');
+  });
+
+  it('settings 未就绪（storedLocale=undefined）且无标记 → 系统语言兜底', () => {
+    window.localStorage.removeItem(KEY);
+    initLocale(undefined);
+    expect(getLocale()).toBe(systemLocale());
   });
 });

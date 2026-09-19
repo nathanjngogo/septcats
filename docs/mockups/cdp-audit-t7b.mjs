@@ -1,4 +1,4 @@
-/* PM 真机验收 T7b：转为数据库 → DbView 渲染 → 真 IPC 建记录/改值（含 relation 双写落库） */
+/* PM 真机验收 T7b：转为多维数据 → DbView 渲染 → 真 IPC 建记录/改值（含 relation 双写落库） */
 import { chromium } from 'playwright-core';
 
 const browser = await chromium.connectOverCDP('http://127.0.0.1:9223');
@@ -24,10 +24,10 @@ const hasDb = await page.evaluate(() => typeof window.septcats?.db?.create === '
   && typeof window.septcats?.db?.recordCreate === 'function');
 check('septcats.db 桥注入（12 通道抽查 3）', hasDb);
 
-// 2) UI：顶栏「转为数据库」存在
-const convertBtn = page.locator('button', { hasText: '转为数据库' }).first();
+// 2) UI：顶栏「转为多维数据」存在
+const convertBtn = page.locator('button', { hasText: '转为多维数据' }).first();
 const btnVisible = await convertBtn.isVisible().catch(() => false);
-check('PageView 顶栏「转为数据库」按钮可见', btnVisible);
+check('PageView 顶栏「转为多维数据」按钮可见', btnVisible);
 
 // 3) 点击 → DbPage 挂载 → 空态或表头出现（新库 0 记录 → EmptyState）
 if (btnVisible) {

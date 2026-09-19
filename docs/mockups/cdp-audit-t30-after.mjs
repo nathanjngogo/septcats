@@ -110,7 +110,7 @@ check('① 再点按钮可展开（恢复宽度>0）', expandedW > 100, `width=$
 const cdp = await page.context().newCDPSession(page);
 await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1184, height: 560, deviceScaleFactor: 0, mobile: false });
 await wait(600);
-await page.getByRole('button', { name: /转为数据库|Convert to Database/ }).click();
+await page.getByRole('button', { name: /转为多维数据|Convert to Database/ }).click();
 await wait(2000);
 for (let i = 0; i < 12; i++) {
   await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.includes('新建记录')); if (b) b.click(); });

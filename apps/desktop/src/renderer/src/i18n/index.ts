@@ -6,9 +6,10 @@
  * - `setLocale(locale)`：切换生效 locale 并通知订阅者（与 theme 的 setGlobalThemeMode
  *   同范式：订阅者集合 + `septcats:locale-changed` 事件广播）。
  * - `useLocale()`：React 订阅（useSyncExternalStore），locale 切换触发重渲染。
- * - 回落顺序（T25-01 §0.A）：settings.locale → 系统语言（navigator.language，
- *   zh*→zh-CN，其余→en-US）→ zh-CN。「跟随系统」以 renderer localStorage 标记表达
- *   （platform schema 的 locale enum 只收 zh-CN/en-US，'system' 无法落库）。
+ * - 回落顺序（T25-01 §0.A；T43-01-1 修订）：localePref 标记显式为 'system' → 系统
+ *   语言（navigator.language，zh*→zh-CN，其余→en-US）；无标记或标记为显式 locale
+ *   → settings.locale → 系统语言 → zh-CN。「跟随系统」以 renderer localStorage
+ *   标记表达（platform schema 的 locale enum 只收 zh-CN/en-US，'system' 无法落库）。
  * - `errorText(error)`：错误码（E_*）→ t() 键映射表（T25-01 §0.B：main 侧文案不动，
  *   renderer 按 错误码→键 呈现用户可见错误；未知码回落原文）。
  */
@@ -98,8 +99,8 @@ export function systemLocale(): Locale {
   return 'zh-CN';
 }
 
-/** 读取语言偏好标记（无标记 = 跟随 settings.locale）。 */
-export function getLocalePref(): 'system' | Locale {
+/** 原始读取标记（T43-01-1）：区分「无标记」（null = 跟随 settings.locale）与「显式 'system'」。 */
+function readLocalePrefRaw(): 'system' | Locale | null {
   try {
     const raw = window.localStorage.getItem(LOCALE_PREF_KEY);
     if (raw === 'system' || raw === 'zh-CN' || raw === 'en-US') {
@@ -108,20 +109,23 @@ export function getLocalePref(): 'system' | Locale {
   } catch {
     /* localStorage 不可用 */
   }
-  return 'system';
+  return null;
+}
+
+/** 读取语言偏好标记（无标记 = 跟随 settings.locale，见 initLocale）。 */
+export function getLocalePref(): 'system' | Locale {
+  return readLocalePrefRaw() ?? 'system';
 }
 
 /**
- * 「跟随系统」标记：写标记 + 立即按系统语言生效（调用方自行 settings.patch 最近解析值）。
- * 显式选择 zh-CN/en-US：清标记 + setLocale（调用方自行 patch settings.locale）。
+ * 「跟随系统」标记：写 'system' 标记 + 立即按系统语言生效（调用方自行 settings.patch
+ * 最近解析值）。显式选择 zh-CN/en-US：把标记写成所选 locale（T43-01-1：重启后
+ * initLocale 靠该标记区分「显式 system」与「无标记」）+ setLocale（调用方自行
+ * patch settings.locale）。
  */
 export function setLocalePref(pref: 'system' | Locale): void {
   try {
-    if (pref === 'system') {
-      window.localStorage.setItem(LOCALE_PREF_KEY, 'system');
-    } else {
-      window.localStorage.removeItem(LOCALE_PREF_KEY);
-    }
+    window.localStorage.setItem(LOCALE_PREF_KEY, pref);
   } catch {
     /* localStorage 不可用：仅本会话生效 */
   }
@@ -129,11 +133,13 @@ export function setLocalePref(pref: 'system' | Locale): void {
 }
 
 /**
- * 启动种子（renderer main.tsx 在挂载前调一次）：标记为 system → 按系统语言；
- * 否则用 settings.locale；settings 未就绪（catch 分支）→ 系统语言。
+ * 启动种子（renderer main.tsx 在挂载前调一次）：标记显式为 'system' → 按系统语言；
+ * 无标记（跟随 settings.locale——T43-01-1：显式选择重启后经 settings.locale 恢复，
+ * 不再被系统语言抢先）或标记为显式 locale → 用 settings.locale；settings 未就绪
+ * （storedLocale 为空，catch 分支）→ 系统语言兜底。
  */
 export function initLocale(storedLocale: Locale | undefined): void {
-  if (getLocalePref() === 'system') {
+  if (readLocalePrefRaw() === 'system') {
     setLocale(systemLocale());
     return;
   }

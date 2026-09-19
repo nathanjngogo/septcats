@@ -96,8 +96,8 @@ await shot('before-2-collapsed');
 await page.getByRole('button', { name: /展开侧栏|Expand/ }).click();
 await wait(300);
 
-// ---------- 症状③：转为数据库 → 建记录 → 编辑单元格，采样遮挡 ----------
-await page.getByRole('button', { name: /转为数据库|Convert to Database/ }).click();
+// ---------- 症状③：转为多维数据 → 建记录 → 编辑单元格，采样遮挡 ----------
+await page.getByRole('button', { name: /转为多维数据|Convert to Database/ }).click();
 await wait(2000);
 out.dbEmpty = await page.evaluate(() => document.querySelector('.dbpage')?.innerText.slice(0, 120) ?? null);
 await shot('before-3-db-empty');

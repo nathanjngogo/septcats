@@ -181,7 +181,8 @@ export function SettingsPage() {
 
   // T25-01 §0.A：语言三选。「跟随系统」无法以 'system' 落 settings（platform schema
   // 的 locale enum 只收 zh-CN/en-US）——标记存 renderer localStorage（setLocalePref），
-  // settings.locale 写入最近一次解析值；显式选择则清标记并 patch settings.locale。
+  // settings.locale 写入最近一次解析值；显式选择则把标记写成所选 locale 并 patch
+  // settings.locale（T43-01-1：重启后 initLocale 靠标记区分「显式 system」与「无标记」）。
   const handleLanguage = (pref: LocalePref): void => {
     setLocalePref(pref);
     if (pref !== 'system') {

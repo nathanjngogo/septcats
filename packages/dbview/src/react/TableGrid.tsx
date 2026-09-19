@@ -350,11 +350,29 @@ export function TableGrid(props: TableGridProps) {
           event.preventDefault();
           moveFocus(focusedCell.rowIndex, focusedCell.prop, 0, -1);
           return;
+        case 'Enter':
+        case ' ': {
+          // checkbox 格（T40-01-1）：焦点只落在外层 gridcell（内层 .sc-dbc 无
+          // tabIndex），CellEditor 的 Enter 分支收不到事件 → 在网格层补切换，
+          // 经既有 onChangeCell 通道提交。仅 checkbox 生效；其余类型不加任何
+          // 行为（text 等的 Enter 进编辑仍由 CellEditor 在内层收敛，不受影响）。
+          if (onChangeCell === undefined || focusedCell.prop === schema.title_pid) {
+            return;
+          }
+          const property = properties.find((item) => item.id === focusedCell.prop);
+          const row = rows[focusedCell.rowIndex];
+          if (property === undefined || property.type !== 'checkbox' || row === undefined) {
+            return;
+          }
+          event.preventDefault();
+          onChangeCell(row.id, property.id, row.values[property.id] === true ? null : true);
+          return;
+        }
         default:
           return;
       }
     },
-    [editingCell, focusedCell, moveFocus],
+    [editingCell, focusedCell, moveFocus, onChangeCell, properties, rows, schema.title_pid],
   );
 
   const onPaste = useCallback(

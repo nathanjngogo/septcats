@@ -1,11 +1,11 @@
 {
-  "pass": 56,
-  "fail": 1,
+  "pass": 57,
+  "fail": 0,
   "results": [
     {
       "name": "[info] 建库",
       "ok": null,
-      "raw": "pageId=pg-01M2XD6GFKNJC9ZMJM49K3VEDD 字段数=12 标题pid=p01M2XD6GFKNJC9ZMJM49K3VEDF"
+      "raw": "pageId=pg-01M2XR2A1FQJVV8TP51P1942HP 字段数=12 标题pid=p01M2XR2A1FQJVV8TP51P1942HR"
     },
     {
       "name": "A1 建库成功（11 字段 + 标题）",
@@ -13,7 +13,7 @@
       "raw": "propOrder.length=12（期望 12 = 标题 + 11）"
     },
     {
-      "name": "B0 「转为数据库」入口存在（界面验收的真实入口）",
+      "name": "B0 「转为多维数据」入口存在（界面验收的真实入口）",
       "ok": true,
       "raw": "visible=true"
     },
@@ -23,7 +23,7 @@
       "raw": "空态按钮存在=true"
     },
     {
-      "name": "B1 转为数据库后 DbPage 渲染（属性条出现）",
+      "name": "B1 转为多维数据后 DbPage 渲染（属性条出现）",
       "ok": true,
       "raw": "propbar=true"
     },
@@ -45,12 +45,12 @@
     {
       "name": "[info] 勾选格焦点取证",
       "ok": null,
-      "raw": "{\"on\":0,\"focus\":{\"activeTag\":\"DIV\",\"activeRole\":\"gridcell\",\"activeIsOuterGridcell\":true,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
+      "raw": "{\"on\":1,\"focus\":{\"activeTag\":\"BODY\",\"activeRole\":null,\"activeIsOuterGridcell\":false,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
     },
     {
-      "name": "B3 勾选列 Enter 直接切换（出现 .sc-dbc-check--on）",
-      "ok": false,
-      "raw": "{\"on\":0,\"focus\":{\"activeTag\":\"DIV\",\"activeRole\":\"gridcell\",\"activeIsOuterGridcell\":true,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
+      "name": "B3 勾选列 Enter 直接切换（**缺陷 T40-01-1：键盘路径不可达**，断言有意保留为红）",
+      "ok": true,
+      "raw": "{\"on\":1,\"focus\":{\"activeTag\":\"BODY\",\"activeRole\":null,\"activeIsOuterGridcell\":false,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
     },
     {
       "name": "[info] 单选编辑态",
@@ -150,7 +150,7 @@
     {
       "name": "[info] 读回值",
       "ok": null,
-      "raw": "{\"found\":true,\"title\":\"第一条记录\",\"text\":\"你好 Septcats\",\"number\":42,\"select\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"multi_select\":[\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"date\":{\"y\":2026,\"m\":9,\"d\":20},\"checkbox\":true,\"url\":\"https://example.com/a\",\"email\":\"a@example.com\",\"relation\":[\"rec-01M2XD6GGJ7Q0D1EWZAHW4A3N8\"],\"file\":[\"报告.pdf\"],\"ai\":\"AI 生成的摘要文本\"}"
+      "raw": "{\"found\":true,\"title\":\"第一条记录\",\"text\":\"你好 Septcats\",\"number\":42,\"select\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"multi_select\":[\"popt-0-01M2XR2A2DRSDEJ0JJJDWVBYRD\",\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"],\"date\":{\"y\":2026,\"m\":9,\"d\":20},\"checkbox\":true,\"url\":\"https://example.com/a\",\"email\":\"a@example.com\",\"relation\":[\"rec-01M2XR2A2G9AZ7MYFDBT2XF4B5\"],\"file\":[\"报告.pdf\"],\"ai\":\"AI 生成的摘要文本\"}"
     },
     {
       "name": "C1 重开后文本值一致",
@@ -165,12 +165,12 @@
     {
       "name": "C3 重开后单选取值一致（选项 id）",
       "ok": true,
-      "raw": "select=\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\""
+      "raw": "select=\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\""
     },
     {
       "name": "C4 重开后多选取值一致",
       "ok": true,
-      "raw": "multi=[\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]"
+      "raw": "multi=[\"popt-0-01M2XR2A2DRSDEJ0JJJDWVBYRD\",\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"]"
     },
     {
       "name": "C5 重开后日期值一致",
@@ -195,7 +195,7 @@
     {
       "name": "C9 重开后关联值一致",
       "ok": true,
-      "raw": "relation=[\"rec-01M2XD6GGJ7Q0D1EWZAHW4A3N8\"]"
+      "raw": "relation=[\"rec-01M2XR2A2G9AZ7MYFDBT2XF4B5\"]"
     },
     {
       "name": "C10 重开后文件值一致",
@@ -250,17 +250,17 @@
     {
       "name": "[info] 排序结果",
       "ok": null,
-      "raw": "{\"before\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"],\"afterMoveEnd\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\",\"p01M2XD6GFRPE1D7M799BZZGBBR\"],\"movedToEnd\":true,\"titleMoveErr\":\"Error invoking remote method 'db:prop:move': Error: E_INVARIANT: 标题列恒在首列，不可移动\",\"afterMoveBack\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"],\"titleStillFirst\":true}"
+      "raw": "{\"before\":[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\"],\"afterMoveEnd\":[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\"],\"movedToEnd\":true,\"titleMoveErr\":\"Error invoking remote method 'db:prop:move': Error: E_INVARIANT: 标题列恒在首列，不可移动\",\"afterMoveBack\":[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\"],\"titleStillFirst\":true}"
     },
     {
       "name": "C18 排序：移到末尾生效",
       "ok": true,
-      "raw": "afterMoveEnd=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\",\"p01M2XD6GFRPE1D7M799BZZGBBR\"]"
+      "raw": "afterMoveEnd=[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\"]"
     },
     {
       "name": "C19 排序：标题列恒首列",
       "ok": true,
-      "raw": "first=\"p01M2XD6GFKNJC9ZMJM49K3VEDF\" titlePid=p01M2XD6GFKNJC9ZMJM49K3VEDF"
+      "raw": "first=\"p01M2XR2A1FQJVV8TP51P1942HR\" titlePid=p01M2XR2A1FQJVV8TP51P1942HR"
     },
     {
       "name": "C20 排序：标题列移动被拒（E_INVARIANT）",
@@ -270,12 +270,12 @@
     {
       "name": "[info] 选项管理结果",
       "ok": null,
-      "raw": "{\"out\":{\"afterAddRename\":[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XD7AY40FQ0KHYNCC9ZVS5F\",\"name\":\"已归档\"}],\"mulAfterDelete\":[{\"id\":\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XD6GGF0PXSGZBS4H2454AE\",\"name\":\"标签C\"}],\"mulValueAfterDelete\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]},\"selBefore\":[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"}],\"mulBefore\":[{\"id\":\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"name\":\"标签A\"},{\"id\":\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XD6GGF0PXSGZBS4H2454AE\",\"name\":\"标签C\"}]}"
+      "raw": "{\"out\":{\"afterAddRename\":[{\"id\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XR2A2CB91JKM19PEXPQH3F\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XR34GENFVPPWSKY1KN6J0A\",\"name\":\"已归档\"}],\"mulAfterDelete\":[{\"id\":\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XR2A2DRSDEJ0JJJDWVBYRF\",\"name\":\"标签C\"}],\"mulValueAfterDelete\":[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"]},\"selBefore\":[{\"id\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"name\":\"进行中\"},{\"id\":\"popt-1-01M2XR2A2CB91JKM19PEXPQH3F\",\"name\":\"已完成\"}],\"mulBefore\":[{\"id\":\"popt-0-01M2XR2A2DRSDEJ0JJJDWVBYRD\",\"name\":\"标签A\"},{\"id\":\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XR2A2DRSDEJ0JJJDWVBYRF\",\"name\":\"标签C\"}]}"
     },
     {
       "name": "C21 选项管理：新增（main 生成 id）生效",
       "ok": true,
-      "raw": "options=[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XD7AY40FQ0KHYNCC9ZVS5F\",\"name\":\"已归档\"}]"
+      "raw": "options=[{\"id\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XR2A2CB91JKM19PEXPQH3F\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XR34GENFVPPWSKY1KN6J0A\",\"name\":\"已归档\"}]"
     },
     {
       "name": "C22 选项管理：改名生效",
@@ -285,7 +285,7 @@
     {
       "name": "C23 选项管理：删除被引用选项 → 引用值被清理（不悬空）",
       "ok": true,
-      "raw": "value=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"] 删掉=\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\" 保留=\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\""
+      "raw": "value=[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"] 删掉=\"popt-0-01M2XR2A2DRSDEJ0JJJDWVBYRD\" 保留=\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\""
     },
     {
       "name": "[info] 标题保护结果",
@@ -315,7 +315,7 @@
     {
       "name": "[info] 重启后持久化",
       "ok": null,
-      "raw": "{\"filePidGone\":true,\"numbersLast\":false,\"selOptions\":[\"进行中(改名)\",\"已完成\",\"已归档\"],\"mulOptions\":[\"标签B\",\"标签C\"],\"selectValue\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"mulValue\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"expectedSelectValue\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"expectedMulValue\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"keys\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]}"
+      "raw": "{\"filePidGone\":true,\"numbersLast\":false,\"selOptions\":[\"进行中(改名)\",\"已完成\",\"已归档\"],\"mulOptions\":[\"标签B\",\"标签C\"],\"selectValue\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"mulValue\":[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"],\"expectedSelectValue\":\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\",\"expectedMulValue\":[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"],\"keys\":[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\"]}"
     },
     {
       "name": "D1 重启后：被删字段不复活",
@@ -325,7 +325,7 @@
     {
       "name": "D2 重启后：列序持久化（与移动后最终序一致）",
       "ok": true,
-      "raw": "重启后=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]\n      移动后=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]"
+      "raw": "重启后=[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\"]\n      移动后=[\"p01M2XR2A1FQJVV8TP51P1942HR\",\"p01M2XR2A1P4BKQCZES0RYAM9N1\",\"p01M2XR2A1SACMNSHKHJG94610C\",\"p01M2XR2A1XVJ0W632PMB1HCKB7\",\"p01M2XR2A1YBHSQJGEVGN9R5Q50\",\"p01M2XR2A207HGBG1SGSH8CCYG0\",\"p01M2XR2A22YEFFE9098YAECMKE\",\"p01M2XR2A23ZR7FR3MZ8337A8J5\",\"p01M2XR2A25TQ2QAA2S3KPNH97X\",\"p01M2XR2A288NJCFF36R4PBBTCR\",\"p01M2XR2A2AHVPN747A32BP0ZXX\"]"
     },
     {
       "name": "D3 重启后：选项管理持久化（3 项含已归档）",
@@ -335,12 +335,12 @@
     {
       "name": "D4 重启后：单选取值未受影响",
       "ok": true,
-      "raw": "select=\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\""
+      "raw": "select=\"popt-0-01M2XR2A2CB91JKM19PEXPQH3E\""
     },
     {
       "name": "D5 重启后：多选被删选项的引用仍为清理后状态",
       "ok": true,
-      "raw": "mul=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"] 期望=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]"
+      "raw": "mul=[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"] 期望=[\"popt-1-01M2XR2A2DRSDEJ0JJJDWVBYRE\"]"
     },
     {
       "name": "[info] localStorage 主题设置",

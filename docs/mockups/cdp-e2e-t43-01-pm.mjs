@@ -124,13 +124,13 @@ try {
     const btns = [...document.querySelectorAll('button')].map((b) => b.textContent ?? '');
     return {
       hasConvertNew: btns.some((t) => t.includes('转为多维数据')),
-      hasConvertOld: btns.some((t) => t.includes('转为数据库')),
+      hasConvertOld: btns.some((t) => t.includes('转为多维数据')),
       buttons: btns.filter((t) => t.includes('多维') || t.includes('数据库')).slice(0, 5),
     };
   });
   info('页面编辑器按钮', JSON.stringify(conv));
   check('§2.2a 页面渲染「转为多维数据」按钮', conv.hasConvertNew === true, JSON.stringify(conv));
-  check('§2.2b 旧文案「转为数据库」未出现', conv.hasConvertOld === false, `hasOld=${String(conv.hasConvertOld)}`);
+  check('§2.2b 旧文案「转为多维数据」未出现', conv.hasConvertOld === false, `hasOld=${String(conv.hasConvertOld)}`);
   await page.screenshot({ path: join(SHOTS, 'light-01-convert-btn.png') }).catch(() => {});
 
   // 2) 命令面板：placeholder + 分组

@@ -1,4 +1,4 @@
-/* T24-01 真机验收：①删除页面鼠标链路（面板+回收站恢复）②转为数据库后另存=kind=database ③toast 可见
+/* T24-01 真机验收：①删除页面鼠标链路（面板+回收站恢复）②转为多维数据后另存=kind=database ③toast 可见
  * 独立夹具根；不触碰默认根/真实数据。 */
 import { chromium } from 'playwright-core';
 import { spawn, execSync } from 'node:child_process';
@@ -87,12 +87,12 @@ check('①f 鼠标恢复成功', !st.includes('彻底删除'), st.slice(0, 140))
 await page.locator('.app-side-foot').first().click();
 await wait(1200);
 
-// ② 转为数据库 → 另存模板必须 kind=database → 实例化是库且 0 记录
+// ② 转为多维数据 → 另存模板必须 kind=database → 实例化是库且 0 记录
 await newPage('库源页T24');
 await page.locator('.pv-body .ProseMirror p').first().click();
 await page.keyboard.type('库源正文丁', { delay: 20 });
 await wait(1500);
-await page.getByText('转为数据库').first().click({ force: true }).catch(() => {});
+await page.getByText('转为多维数据').first().click({ force: true }).catch(() => {});
 await wait(2800);
 const dbView = (await body()).replace(/\s+/g, ' ');
 check('②a 转换生效（出现库 UI）', dbView.includes('新建记录') || dbView.includes('还没有记录'), dbView.slice(0, 140));
