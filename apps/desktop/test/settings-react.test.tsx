@@ -140,7 +140,14 @@ describe('SettingsPage（三区块 + 无障碍）', () => {
     expect(screen.getByText('数据与隐私')).toBeDefined();
     expect(screen.getByText('诊断')).toBeDefined();
 
-    const group = await screen.findByRole('radiogroup', { name: '主题' });
+    // T39-01：设置页新增「布局」区块后存在两个「主题」radiogroup（外观/布局同名词），
+    // DOM 序外观在前 → 取第一组；断言语义不变（主题组的 3 个选项）
+    const groups = await screen.findAllByRole('radiogroup', { name: '主题' });
+    expect(groups.length).toBeGreaterThanOrEqual(1);
+    const group = groups[0];
+    if (group === undefined) {
+      throw new Error('appearance theme radiogroup not found');
+    }
     expect(group).toBeDefined();
     // 作用域收窄到主题组内：AI 助手区块（T18-02）加载后会追加自己的 radio，
     // 全局计数会随异步时序漂移（flaky）——这里只断言主题组的 3 个选项。
@@ -153,7 +160,12 @@ describe('SettingsPage（三区块 + 无障碍）', () => {
 
     render(<SettingsPage />);
     await screen.findByTestId('settings-page');
-    fireEvent.click(screen.getByText('深色'));
+    // T39-01：布局区块也有「主题」radiogroup → 收窄到外观主题组（DOM 序第一）内点「深色」
+    const themeGroup = (await screen.findAllByRole('radiogroup', { name: '主题' }))[0];
+    if (themeGroup === undefined) {
+      throw new Error('appearance theme radiogroup not found');
+    }
+    fireEvent.click(within(themeGroup).getByText('深色'));
 
     await waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith(

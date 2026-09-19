@@ -12,7 +12,9 @@
 }
 
 .pv-title-row {
-  max-width: var(--sc-space-editor-measure);
+  /* T39-01：measure 由布局设计器注入 --sc-layout-measure（560–1000 夹紧）；
+     未注入时回退既有 token 值（组件级测试/兜底口径不变） */
+  max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
   margin: 0 auto var(--sc-space-md);
 }
 
@@ -29,7 +31,8 @@
 
 .pv-body {
   position: relative;
-  max-width: var(--sc-space-editor-measure);
+  /* T39-01：同 .pv-title-row，消费布局设计器注入的 --sc-layout-measure */
+  max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
   margin: 0 auto;
   /* T33-01 左侧装订线：手柄整簇（＋ 28 + 间距 2 + ⋮⋮ 28，均 --sc-size-control-sm）+
      右侧呼吸 12 全部预留进列内，簇右缘恒在文本左缘外 gutter = var(--sc-space-md)

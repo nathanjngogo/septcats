@@ -1,0 +1,203 @@
+{
+  "pass": 21,
+  "fail": 3,
+  "results": [
+    {
+      "name": "[info] 启动",
+      "ok": null,
+      "raw": "pid=24672"
+    },
+    {
+      "name": "A1 命令面板可进入设置页且「布局」区块存在",
+      "ok": true,
+      "raw": "layoutSection=true"
+    },
+    {
+      "name": "[info] notion",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"notion\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"},\"editor\":{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"notion\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}}"
+    },
+    {
+      "name": "[info] focus",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"900px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":true,\"sidebarW\":0,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"focus\",\"sidebar\":{\"position\":\"collapsed\",\"width\":240},\"content\":{\"measure\":900},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"},\"editor\":{\"varSidebar\":\"240px\",\"varMeasure\":\"900px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":true,\"sidebarW\":0,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"focus\",\"sidebar\":{\"position\":\"collapsed\",\"width\":240},\"content\":{\"measure\":900},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}}"
+    },
+    {
+      "name": "[info] workbench",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"},\"editor\":{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}}"
+    },
+    {
+      "name": "B1 预设 notion：侧栏左(240 可见) · measure 650 · AI 面板收起",
+      "ok": true,
+      "raw": "sidebar=239px measure=650px collapsed=false ai=false"
+    },
+    {
+      "name": "B2 预设 focus：侧栏**完全收起** · measure 900 · AI 面板收起",
+      "ok": true,
+      "raw": "sidebar=0px measure=900px collapsed=true ai=false"
+    },
+    {
+      "name": "B3 预设 workbench：侧栏左 · AI 面板右侧**展开**（缺陷 T39-01-1：切换不即时生效）",
+      "ok": false,
+      "raw": "sidebar=239px measure=650px collapsed=false ai=false"
+    },
+    {
+      "name": "B4 三预设呈真实差异（measure 随预设变；AI 面板见 T39-01-1）",
+      "ok": false,
+      "raw": "measure: 650px/900px/650px · ai: false/false"
+    },
+    {
+      "name": "B5 预设写入 localStorage「septcats.layout」",
+      "ok": true,
+      "raw": "preset=workbench"
+    },
+    {
+      "name": "C1 侧栏宽度输入 100 → 实际 200（变量 + 存储 + 回显三面）",
+      "ok": true,
+      "raw": "var=200px store=200 echo=\"200\""
+    },
+    {
+      "name": "C2 侧栏宽度输入 999 → 实际 320（变量 + 存储 + 回显三面）",
+      "ok": true,
+      "raw": "var=320px store=320 echo=\"320\""
+    },
+    {
+      "name": "C3 夹紧后的侧栏**真实渲染宽度**与变量一致（几何面）",
+      "ok": true,
+      "raw": "实测=319px 变量=320px"
+    },
+    {
+      "name": "C4 内容最大宽度输入 9999 → 实际 1000",
+      "ok": true,
+      "raw": "var=1000px store=1000"
+    },
+    {
+      "name": "[info] D0 已知态 JSON",
+      "ok": null,
+      "raw": "{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":800},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}"
+    },
+    {
+      "name": "[info] 导出反馈",
+      "ok": null,
+      "raw": "note=\"布局 JSON 已复制到剪贴板\" clipboard={\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"m"
+    },
+    {
+      "name": "D1 导出给出可读反馈（已复制 / 兜底手动复制）",
+      "ok": true,
+      "raw": "note=\"布局 JSON 已复制到剪贴板\""
+    },
+    {
+      "name": "D2 导出的 JSON 与存储快照逐字段等价（theme 除外：导出按真相源规范化，DEVIATION-2）",
+      "ok": true,
+      "raw": "equal=true clipboard={\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":80"
+    },
+    {
+      "name": "[info] D3 改动后",
+      "ok": null,
+      "raw": "{\"v\":1,\"preset\":\"notion\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}"
+    },
+    {
+      "name": "D3 改布局→导入原 JSON：布局逐字段深比较等价",
+      "ok": true,
+      "raw": "改到=notion 还原后={\"ai\":{\"expanded\":true,\"position\":\"right\"},\"content\":{\"measure\":800},\"density\":\"comfortable\",\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"tabsVisible\":true,\"theme\":\"system\",\"v\":1} 提示=\"布局已导入并应用\""
+    },
+    {
+      "name": "E1 非法导入 `{bad json` → 可读错误提示",
+      "ok": true,
+      "raw": "err=\"不是有效的 JSON：请粘贴完整的布局 JSON 文本，当前布局未改动\""
+    },
+    {
+      "name": "E2 非法导入后**布局逐字段不变**",
+      "ok": true,
+      "raw": "before={\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":800},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"} after={\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":800},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}"
+    },
+    {
+      "name": "[info] BOOT1 收尾态",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"280px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":279,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}"
+    },
+    {
+      "name": "F1 红线①：窗口零滚动（scrollWidth ≤ clientWidth）",
+      "ok": true,
+      "raw": "overflow=0px"
+    },
+    {
+      "name": "[info] 重开后",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"280px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":279,\"aiPanel\":true,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}}"
+    },
+    {
+      "name": "G1 重开后布局**逐字段**与重启前等价（含预设/参数/AI 展开态）",
+      "ok": true,
+      "raw": "重启后={\"ai\":{\"expanded\":true,\"position\":\"right\"},\"content\":{\"measure\":650},\"density\":\"comfortable\",\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"tabsVisible\":true,\"theme\":\"system\",\"v\":1}｜重启前={\"ai\":{\"expanded\":true,\"position\":\"right\"},\"content\":{\"measure\":650},\"density\":\"comfortable\",\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":280},\"tabsVisible\":true,\"theme\":\"system\",\"v\":1}"
+    },
+    {
+      "name": "G2 重开后参数保持（侧栏宽 280 变量 + 几何一致）",
+      "ok": true,
+      "raw": "var=280px 实测=279px"
+    },
+    {
+      "name": "[info] focus 真机几何",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"900px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":true,\"sidebarW\":0,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"focus\",\"sidebar\":{\"position\":\"collapsed\",\"width\":240},\"content\":{\"measure\":900},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}"
+    },
+    {
+      "name": "F2 红线②：侧栏**完全收起**（实测渲染宽 = 0，非窄轨）",
+      "ok": true,
+      "raw": "collapsed=true 实测宽=0px"
+    },
+    {
+      "name": "[info] 深色态",
+      "ok": null,
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"900px\",\"density\":\"comfortable\",\"theme\":\"dark\",\"collapsed\":true,\"sidebarW\":0,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"focus\",\"sidebar\":{\"position\":\"collapsed\",\"width\":240},\"content\":{\"measure\":900},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}}"
+    },
+    {
+      "name": "H1 深色主题生效（data-theme=dark）",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "name": "H2 深色下窗口仍零滚动",
+      "ok": true,
+      "raw": "overflow=0px"
+    },
+    {
+      "name": "[info] 建页前布局态",
+      "ok": null,
+      "raw": "{\"collapsed\":false,\"sidebarW\":239}"
+    },
+    {
+      "name": "[info] 装订线前置态",
+      "ok": null,
+      "raw": "{\"bodyOk\":true,\"pmOk\":true,\"blocks\":1,\"text\":\"装订线校验正文一行\",\"handles\":1}"
+    },
+    {
+      "name": "[info] 装订线量测",
+      "ok": null,
+      "raw": "{\"gutter\":12,\"clusterW\":58,\"clusterH\":28}"
+    },
+    {
+      "name": "F3 红线③：块手柄装订线 gutter ≥ 8（真机矩形量测）",
+      "ok": true,
+      "raw": "{\"gutter\":12,\"clusterW\":58,\"clusterH\":28}"
+    },
+    {
+      "name": "[info] 红线⑤ 现场",
+      "ok": null,
+      "raw": "{\"tabsBar\":true,\"aiPanel\":false,\"aiBottom\":false,\"scrollLeft\":0,\"theme\":\"dark\",\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}"
+    },
+    {
+      "name": "F4 红线⑤：多页签(T37) 结构在（标签条已渲染）",
+      "ok": true,
+      "raw": "tabsBar=true"
+    },
+    {
+      "name": "F5 红线⑤：AI 面板(T38) 可见性**随布局**（实测 vs 由布局推出的期望一致）",
+      "ok": false,
+      "raw": "实测=false 期望=true 布局ai={\"position\":\"right\",\"expanded\":true}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

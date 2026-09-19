@@ -20,6 +20,37 @@ html, body {
 }
 
 /*
+ * T39-01 布局设计器 · 密度档位（token 派生，不写死数值）：
+ * 舒适 = T34-01 基准（行高 xxl+xs = 28、pad md = 12）；紧凑各降一档。
+ * 档位由布局状态在根节点注入 data-sc-density 属性切换（layoutState.applyLayoutToRoot）。
+ */
+:root {
+  --sc-layout-density-row-h: calc(var(--sc-space-xxl) + var(--sc-space-xs));
+  --sc-layout-density-pad: var(--sc-space-md);
+}
+
+:root[data-sc-density='compact'] {
+  --sc-layout-density-row-h: calc(var(--sc-space-xl) + var(--sc-space-xxs));
+  --sc-layout-density-pad: var(--sc-space-sm);
+}
+
+/*
+ * T39-01 §0.2：AI 面板位置=底部时主行转纵向；面板定高（token 派生，
+ * --sc-layout-row-h 8 行 ≈ 288px），编辑列 flex:1 吃剩余高度——高度链仍闭合于
+ * .sc-shell__main，窗口零滚动红线不变。
+ */
+.app-main-row--ai-bottom {
+  flex-direction: column;
+}
+
+.app-main-row--ai-bottom .ai-chat {
+  width: auto;
+  height: calc(var(--sc-layout-row-h) * 8);
+  border-left: 0;
+  border-top: 1px solid var(--sc-color-hairline);
+}
+
+/*
  * T37-01：编辑列容器（标签条 + PageView 同列）。标签条定高 flex:none，
  * PageView flex:1 吃剩余高度——总高恰为 100%，不撑出 .sc-shell__main 滚动
  * （T30 窗口零滚动红线保持；回收站/搜索/设置/导入视图不经过此容器）。
@@ -62,7 +93,7 @@ html, body {
   align-items: center;
   gap: var(--sc-space-sm);
   height: 36px;
-  padding: 0 var(--sc-space-md);
+  padding: 0 var(--sc-layout-density-pad);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-secondary);
 }
@@ -77,8 +108,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: var(--sc-space-block-gap);
-  /* T34-01：行高 28px（Notion 量级 = xxl+xs），行内左右内边距 8px */
-  height: calc(var(--sc-space-xxl) + var(--sc-space-xs));
+  /* T39-01：行高走密度档位（舒适 = T34 基准 xxl+xs，紧凑降一档） */
+  height: var(--sc-layout-density-row-h);
   padding: 0 var(--sc-space-sm);
   border-radius: var(--sc-radius-sm);
   font: var(--sc-text-ui-sm);

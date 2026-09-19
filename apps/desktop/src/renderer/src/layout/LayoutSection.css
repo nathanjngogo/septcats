@@ -1,0 +1,92 @@
+/*
+ * LayoutSection.css —— 设置页「布局」区块（TASK-T39-01）。
+ * 只用 var(--sc-*) token（no-magic 门禁：无字面 hex、无非 1px 重复裸 px、无 transition
+ * —— 后者免去 reduced-motion 兜底块，与 AiChatPanel.css 同口径）。
+ */
+
+.layout-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) 0 var(--sc-space-md);
+  border-bottom: 1px solid var(--sc-color-hairline);
+}
+
+.layout-preset-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-content);
+  text-align: left;
+  cursor: pointer;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.layout-preset-card:hover {
+  background: var(--sc-color-surface);
+}
+
+.layout-preset-card:active {
+  background: var(--sc-color-surface-active);
+}
+
+.layout-preset-card--active,
+.layout-preset-card--active:hover {
+  border-color: var(--sc-color-accent);
+  background: var(--sc-color-surface-active);
+}
+
+.layout-preset-name {
+  font-weight: 500;
+}
+
+.layout-preset-desc {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.layout-number-ctl {
+  width: var(--sc-space-gutter);
+}
+
+.layout-note {
+  padding: var(--sc-space-xs) 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.layout-json {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--sc-space-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  font: var(--sc-text-ui-xs);
+  font-family: var(--sc-font-mono);
+  color: var(--sc-color-ink-secondary);
+  resize: vertical;
+}
+
+.layout-dialog-body {
+  margin: 0 0 var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.layout-dialog-actions {
+  display: flex;
+  gap: var(--sc-space-sm);
+}
+
+.layout-import-error {
+  margin: var(--sc-space-sm) 0 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-danger);
+}

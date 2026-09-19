@@ -152,9 +152,21 @@ export function clearChatHistoryStorage(workspaceId: string | null): void {
   }
 }
 
+/** 面板开合的**手动记录**（无记录 → null，供布局「默认展开」接管）。 */
+export function readStoredPanelOpen(): boolean | null {
+  const raw = safeGetItem(PANEL_OPEN_KEY);
+  if (raw === '1') {
+    return true;
+  }
+  if (raw === '0') {
+    return false;
+  }
+  return null;
+}
+
 /** 面板开合状态（全局，非按 ws）：损坏/缺失 → false（收起）。 */
 export function readPanelOpen(): boolean {
-  return safeGetItem(PANEL_OPEN_KEY) === '1';
+  return readStoredPanelOpen() ?? false;
 }
 
 export function writePanelOpen(open: boolean): void {
@@ -208,9 +220,13 @@ export function useAiChat<T>(selector: (state: AiChatState) => T): T {
 }
 
 export const aiChatActions = {
-  /** App 挂载时调一次：恢复面板开合（收起 → 重启 → 仍收起）。 */
-  initPanel(): void {
-    aiChatStore.setState((state) => (state.open === readPanelOpen() ? state : { ...state, open: readPanelOpen() }));
+  /**
+   * App 挂载时调一次：恢复面板开合。有手动记录（含显式收起 '0'）以记录为准；
+   * 无记录时以 `defaultExpanded`（T39-01 布局「AI 面板默认展开」）为准，缺省 false。
+   */
+  initPanel(defaultExpanded: boolean = false): void {
+    const open = readStoredPanelOpen() ?? defaultExpanded;
+    aiChatStore.setState((state) => (state.open === open ? state : { ...state, open }));
   },
   setOpen(open: boolean): void {
     writePanelOpen(open);

@@ -72,6 +72,11 @@ export interface CommandDeps {
    * 静态清单/别名基线不受影响）。
    */
   openAiChat?(): void;
+  /**
+   * T39-01：切换布局预设（循环 notion→focus→workbench）。App 恒注入 → 命令恒出现；
+   * 测试 spy deps 不注入 → 不出现（静态清单基线不受影响）。
+   */
+  cycleLayoutPreset?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -108,6 +113,18 @@ export const AI_CHAT_DEF: PaletteCommandDef = {
   label: t('commands.app.aiChat'),
   hint: t('commandHints.app.aiChat'),
   aliases: ['aiduihua', 'duihua', 'aichat', 'chat', 'ai chat'],
+};
+
+/**
+ * T39-01：「切换布局预设」命令定义。**不在静态 COMMAND_DEFS 里**——同 openAiChat
+ * 走 deps 门（App 恒注入 cycleLayoutPreset → 恒出现；palette 基线测试的 spy deps
+ * 不注入 → 静态清单/别名基线不受影响）。
+ */
+export const LAYOUT_PRESET_DEF: PaletteCommandDef = {
+  id: 'app.layoutPreset',
+  label: t('commands.app.layoutPreset'),
+  hint: t('commandHints.app.layoutPreset'),
+  aliases: ['bujuyshezhi', 'bujuys', 'buju', 'qiehuanbuju', 'layout preset', 'layout', 'preset'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -192,6 +209,14 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.app.aiChat'),
       hint: t('commandHints.app.aiChat'),
       run: deps.openAiChat,
+    });
+  }
+  if (deps.cycleLayoutPreset !== undefined) {
+    commands.push({
+      ...LAYOUT_PRESET_DEF,
+      label: t('commands.app.layoutPreset'),
+      hint: t('commandHints.app.layoutPreset'),
+      run: deps.cycleLayoutPreset,
     });
   }
   return commands;

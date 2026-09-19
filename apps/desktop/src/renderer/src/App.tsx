@@ -28,6 +28,7 @@ import { configurePaletteCommands } from './palette/commands';
 import { paletteActions, usePalette } from './state/palette';
 import { templatesActions } from './state/templates';
 import { pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
+import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import './App.css';
 
 /**
@@ -80,9 +81,17 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
             notify: (message): void => {
               pushToast(message, 'info');
             },
-            // T38-01：AI 对话面板开合（命令面板命令）
+            // T38-01：AI 对话面板开合（命令面板命令）；T39-01：AI 面板位置=隐藏时开合无效
             openAiChat: (): void => {
-              aiChatActions.togglePanel();
+              if (layoutStore.getState().layout.ai.position !== 'hidden') {
+                aiChatActions.togglePanel();
+              }
+            },
+            // T39-01 §0.5：「切换布局预设」命令（循环 notion→focus→workbench，toast 反馈）
+            cycleLayoutPreset: (): void => {
+              const next = nextLayoutPreset(layoutStore.getState().layout.preset);
+              layoutActions.applyPreset(next);
+              pushToast(t('settings.layout.presetSwitched').replace('{name}', t(`settings.layout.presetName.${next}`)), 'info');
             },
             setThemeMode: (mode): void => {
               setGlobalThemeMode(mode);
@@ -106,7 +115,9 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
  * 正式视觉由 PM 真机截图复审。
  */
 export function App() {
-  const [collapsed, setCollapsed] = useState(false);
+  // T39-01 §0.2：侧栏收起态由布局状态持有（持久化）；顶栏开合钮写入布局状态
+  const sidebarPosition = useLayout((state) => state.layout.sidebar.position);
+  const [collapsed, setCollapsed] = useState(sidebarPosition === 'collapsed');
   const [view, setView] = useState<'editor' | 'settings' | 'import'>('editor');
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
@@ -123,14 +134,38 @@ export function App() {
     void pagesActions.load();
   }, []);
 
-  // T38-01 §0.1/§1.5：面板开合状态恢复（收起 → 重启 → 仍收起）
+  // T39-01 §0.2/§0.3：挂载时读布局存储（损坏回退默认）+ 注入根节点 CSS 变量
   useEffect(() => {
-    aiChatActions.initPanel();
+    layoutActions.init();
+  }, []);
+
+  // T39-01：侧栏位置随布局状态同步（预设切换/导入布局后生效）
+  useEffect(() => {
+    setCollapsed(sidebarPosition === 'collapsed');
+  }, [sidebarPosition]);
+
+  // T38-01 §0.1/§1.5：面板开合状态恢复（收起 → 重启 → 仍收起）。
+  // T39-01：无手动开合记录时以布局「默认展开」为准（AI 面板隐藏时恒收起）。
+  useEffect(() => {
+    const layout = layoutStore.getState().layout;
+    aiChatActions.initPanel(layout.ai.expanded && layout.ai.position !== 'hidden');
   }, []);
 
   // T38-01 §0.6：Ctrl/Cmd+J 开合 AI 对话（与 Ctrl+K/W/Tab/1..9 不相交；
-  // 命令面板打开时不劫持——输入焦点在 palette 输入框）
+  // 命令面板打开时不劫持——输入焦点在 palette 输入框）。
+  // T39-01：AI 面板位置=隐藏 → 开合无效（toggleAiPanel 统一出口，见下方声明）。
   const paletteOpenForHotkey = usePalette((state) => state.open);
+  // T38-01：AI 对话面板开合（顶栏按钮 aria-pressed + 编辑列旁的侧栏渲染）。
+  // T39-01：位置=隐藏 → 面板不渲染、顶栏入口隐藏、Ctrl+J/命令开合无效。
+  const chatOpen = useAiChat((state) => state.open);
+  const aiPosition = useLayout((state) => state.layout.ai.position);
+  const aiHidden = aiPosition === 'hidden';
+  const tabsVisible = useLayout((state) => state.layout.tabsVisible);
+  const toggleAiPanel = useCallback((): void => {
+    if (!aiHidden) {
+      aiChatActions.togglePanel();
+    }
+  }, [aiHidden]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (
@@ -143,14 +178,14 @@ export function App() {
           return;
         }
         event.preventDefault();
-        aiChatActions.togglePanel();
+        toggleAiPanel();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [paletteOpenForHotkey]);
+  }, [paletteOpenForHotkey, toggleAiPanel]);
 
   // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
   useEffect(() => {
@@ -171,8 +206,6 @@ export function App() {
   const searchOpenFlag = usePalette((state) => state.searchOpen);
   const paletteOpenFlag = usePalette((state) => state.open);
   const pagesViewFlag = usePages((state) => state.view);
-  // T38-01：AI 对话面板开合（顶栏按钮 aria-pressed + 编辑列旁的侧栏渲染）
-  const chatOpen = useAiChat((state) => state.open);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       handleTabsKeydown(event, {
@@ -212,7 +245,10 @@ export function App() {
       <AppShell
         sidebarCollapsed={collapsed}
         onToggleSidebar={() => {
-          setCollapsed((current) => !current);
+          // T39-01：开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致
+          const next = !collapsed;
+          setCollapsed(next);
+          layoutActions.setSidebarPosition(next ? 'collapsed' : 'left');
         }}
         breadcrumb={breadcrumb}
         actions={
@@ -224,15 +260,16 @@ export function App() {
                 paletteActions.open();
               }}
             />
-            {/* T38-01 §0.6：顶栏 AI 对话入口（可收起右侧面板的开关，Ctrl+J 同效） */}
-            <IconButton
-              icon={Sparkle}
-              label={t('app.aiChatLabel')}
-              aria-pressed={chatOpen}
-              onClick={() => {
-                aiChatActions.togglePanel();
-              }}
-            />
+            {/* T38-01 §0.6：顶栏 AI 对话入口（可收起右侧面板的开关，Ctrl+J 同效）；
+                T39-01：AI 面板位置=隐藏时不渲染入口 */}
+            {aiHidden ? null : (
+              <IconButton
+                icon={Sparkle}
+                label={t('app.aiChatLabel')}
+                aria-pressed={chatOpen}
+                onClick={toggleAiPanel}
+              />
+            )}
             {/* T26-01 §0.B：顶栏同步状态走 SyncStatusButton（T13-01 六态、全 i18n）。
                 原 SyncPill 的 STATE_LABEL 硬编码在 @septcats/ui（packages/** 红线禁碰）
                 且 state="idle" 是静态假态，切 English 后仍显示「已同步」——换真钮后
@@ -270,12 +307,13 @@ export function App() {
           // T37-01：编辑列容器闭合高度链（T30 零滚动红线）——标签条定高 flex:none，
           // PageView flex:1 吃剩余高度，窗口滚动仍只发生在 .pv-root 内部。
           // T38-01：编辑列 + AI 对话侧栏同行（收起 = 不渲染，主区自动变宽）。
-          <div className="app-main-row">
+          // T39-01：AI 面板位置=底部 → 主行转纵向（面板定高在下）；隐藏 → 不渲染。
+          <div className={`app-main-row${aiPosition === 'bottom' ? ' app-main-row--ai-bottom' : ''}`}>
             <div className="app-editor-col">
-              <TabsBar />
+              {tabsVisible ? <TabsBar /> : null}
               <PageView />
             </div>
-            {chatOpen ? <AiChatPanel /> : null}
+            {chatOpen && !aiHidden ? <AiChatPanel /> : null}
           </div>
         )}
       </AppShell>

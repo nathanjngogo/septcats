@@ -11,7 +11,7 @@
  * 各带确认弹窗；恢复码一次性明文，只在弹窗内存中存在，关窗即清）。
  * T18-02：「同步密钥」之后插入「AI 助手」区块（fieldset 壳；内容/弹窗/i18n/busy
  * 由 AiSection 自管，见 settings/AiSection.tsx）。区块列表：
- *  - 外观 / 数据与隐私 / 同步密钥 / AI 助手（T18-02）/ 诊断 / 关于。
+ *  - 外观 / 布局（T39-01 布局设计器，LayoutSection 自管）/ 数据与隐私 / 同步密钥 / AI 助手（T18-02）/ 诊断 / 关于。
  */
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -21,6 +21,7 @@ import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
 import { AiSection } from '../settings/AiSection';
+import { LayoutSection } from '../layout/LayoutSection';
 import { TemplatesSection } from '../templates/TemplatesSection';
 import './SettingsPage.css';
 
@@ -358,6 +359,12 @@ export function SettingsPage() {
                 />
               }
             />
+          </fieldset>
+
+          {/* T39-01 §0.5：布局设计器区块（预设卡片 + 参数微调 + 导出/导入，LayoutSection 自管） */}
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.layout.title')}</legend>
+            <LayoutSection />
           </fieldset>
 
           <fieldset className="settings-section">
