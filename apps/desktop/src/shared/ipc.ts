@@ -98,6 +98,8 @@ export const CHANNEL_DB_RECORD_DELETE = 'db:record:delete';
 export const CHANNEL_DB_PROP_ADD = 'db:prop:add';
 export const CHANNEL_DB_PROP_UPDATE = 'db:prop:update';
 export const CHANNEL_DB_PROP_REMOVE = 'db:prop:remove';
+/** TASK-T40-01 §B2：字段左右排序（beforePid=null = 移到末尾；标题列由 service 强制恒首）。 */
+export const CHANNEL_DB_PROP_MOVE = 'db:prop:move';
 export const CHANNEL_DB_VIEW_SAVE = 'db:view:save';
 export const CHANNEL_DB_RELATION_SEARCH = 'db:relation:search';
 export const CHANNEL_DB_EXPORT_CSV = 'db:export:csv';
@@ -112,6 +114,7 @@ export const DB_CHANNELS = {
   propAdd: CHANNEL_DB_PROP_ADD,
   propUpdate: CHANNEL_DB_PROP_UPDATE,
   propRemove: CHANNEL_DB_PROP_REMOVE,
+  propMove: CHANNEL_DB_PROP_MOVE,
   viewSave: CHANNEL_DB_VIEW_SAVE,
   relationSearch: CHANNEL_DB_RELATION_SEARCH,
   exportCsv: CHANNEL_DB_EXPORT_CSV,

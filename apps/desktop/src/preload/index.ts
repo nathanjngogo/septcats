@@ -98,6 +98,8 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(DB_CHANNELS.propUpdate, input) as ReturnType<SeptcatsApi['db']['propUpdate']>,
     propRemove: (input) =>
       ipcRenderer.invoke(DB_CHANNELS.propRemove, input) as ReturnType<SeptcatsApi['db']['propRemove']>,
+    propMove: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.propMove, input) as ReturnType<SeptcatsApi['db']['propMove']>,
     viewSave: (input) =>
       ipcRenderer.invoke(DB_CHANNELS.viewSave, input) as ReturnType<SeptcatsApi['db']['viewSave']>,
     relationSearch: (input) =>

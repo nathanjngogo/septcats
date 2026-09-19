@@ -22,17 +22,22 @@ import {
   coerceValue,
   decodeValuesJson,
   defaultView,
+  formatDate,
   formatValue,
   normalizeView,
   parseCollectionSchema,
+  parseDateText,
   parseViews,
   recordTitle,
   relationWritePlan,
   toCsv,
+  dateValueSchema,
   type CollectionEntity,
   type CollectionSchema,
   type DbView,
   type FieldType,
+  type Property,
+  type PropertyOption,
   type RecordEntity,
 } from '@septcats/dbview';
 import { z } from 'zod';
@@ -41,6 +46,7 @@ import {
   CHANNEL_DB_EXPORT_CSV,
   CHANNEL_DB_LOAD,
   CHANNEL_DB_PROP_ADD,
+  CHANNEL_DB_PROP_MOVE,
   CHANNEL_DB_PROP_REMOVE,
   CHANNEL_DB_PROP_UPDATE,
   CHANNEL_DB_RECORD_CREATE,
@@ -107,9 +113,16 @@ export interface DbViewService {
   updateProperty(input: {
     pageId: string;
     pid: string;
-    patch: { name?: string; type?: FieldType; ai?: { prompt: string } };
+    patch: {
+      name?: string;
+      type?: FieldType;
+      ai?: { prompt: string };
+      options?: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>;
+    };
   }): Promise<{ collection: CollectionEntity }>;
   removeProperty(input: { pageId: string; pid: string }): Promise<{ collection: CollectionEntity }>;
+  /** 字段左右排序（TASK-T40-01 §B2）：`beforePid=null` = 移到末尾；标题列恒首列不可移动。 */
+  moveProperty(input: { pageId: string; pid: string; beforePid: string | null }): Promise<{ collection: CollectionEntity }>;
   saveView(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;
@@ -287,6 +300,166 @@ const PROPERTY_DEFAULT_NAME: Readonly<Record<FieldType, string>> = {
 
 /** 关系候选上限（§1：≤50 条）。 */
 export const RELATION_SEARCH_LIMIT = 50;
+
+// ---------------------------------------------------------------------------
+// 值迁移（TASK-T40-01 §B2：字段改类型的值迁移策略）
+//
+// 策略：能无损映射的值自动迁移；不能映射的值**原样保留**（不删除、不静默丢——
+// 该列换型后这些值不再显示，但仍在 record.values 里，改回原类型即复原）。
+// 迁移是否成功的口径由本模块唯一定义；渲染层预检提示与 service 落库共用同一函数。
+// ---------------------------------------------------------------------------
+
+/** 单个值的迁移结果：`migrated=false` = 无法无损映射，原值保留。 */
+export interface ValueMigration {
+  value: unknown;
+  migrated: boolean;
+}
+
+/** 链接值口径（展示层 `<a>` 渲染与校验共用；只放行 http(s)/www. 前缀，防 javascript: 注入）。 */
+export const URL_VALUE_RE = /^(https?:\/\/|www\.)\S+$/i;
+/** 邮箱值口径（宽松：非空白@非空白.非空白）。 */
+export const EMAIL_VALUE_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** 文本族类型（值同为 JSON 字符串，互换无损）。 */
+const TEXTUAL_TYPES: ReadonlySet<string> = new Set(['text', 'url', 'email', 'ai']);
+
+export interface ValueMigrationContext {
+  /** 文本 → select/multi_select 时按名取/建选项 id；未提供则无法迁移（原值保留）。 */
+  ensureOption?: ((name: string) => string) | undefined;
+  /** select/multi_select → 文本时按 id 取选项名；未提供或找不到 → 原值保留。 */
+  optionName?: ((id: string) => string | null) | undefined;
+}
+
+/**
+ * 单值迁移。`from === to` 或空值恒迁移成功（空值规范形态 `null`）。
+ * 纯函数：不碰 IO，同输入同输出。
+ */
+export function migrateValueForType(
+  from: FieldType,
+  to: FieldType,
+  value: unknown,
+  ctx: ValueMigrationContext = {},
+): ValueMigration {
+  if (value === undefined || value === null) {
+    return { value: null, migrated: true };
+  }
+  if (from === to) {
+    return { value, migrated: true };
+  }
+
+  // 文本族（text/url/email/ai）→ 任意
+  if (TEXTUAL_TYPES.has(from)) {
+    const text = String(value);
+    if (TEXTUAL_TYPES.has(to)) {
+      return { value: text, migrated: true };
+    }
+    const trimmed = text.trim();
+    if (trimmed.length === 0) {
+      return { value: null, migrated: true };
+    }
+    if (to === 'number') {
+      const parsed = Number(trimmed);
+      return Number.isFinite(parsed)
+        ? { value: parsed, migrated: true }
+        : { value, migrated: false };
+    }
+    if (to === 'checkbox') {
+      return /^(true|false)$/i.test(trimmed)
+        ? { value: trimmed.toLowerCase() === 'true', migrated: true }
+        : { value, migrated: false };
+    }
+    if (to === 'date') {
+      const parsed = parseDateText(trimmed);
+      return parsed !== null ? { value: parsed, migrated: true } : { value, migrated: false };
+    }
+    if (to === 'file') {
+      return { value: [text], migrated: true };
+    }
+    if (to === 'select') {
+      if (ctx.ensureOption === undefined) {
+        return { value, migrated: false };
+      }
+      return { value: ctx.ensureOption(trimmed), migrated: true };
+    }
+    if (to === 'multi_select') {
+      if (ctx.ensureOption === undefined) {
+        return { value, migrated: false };
+      }
+      const parts = trimmed.split(',').map((part) => part.trim()).filter((part) => part.length > 0);
+      const ids: string[] = [];
+      for (const part of parts) {
+        ids.push(ctx.ensureOption(part));
+      }
+      return ids.length === 0 ? { value: null, migrated: true } : { value: ids, migrated: true };
+    }
+    // → relation：文本无从映射成目标记录 id
+    return { value, migrated: false };
+  }
+
+  // number → 文本族
+  if (from === 'number') {
+    if (TEXTUAL_TYPES.has(to)) {
+      return { value: String(value), migrated: true };
+    }
+    return { value, migrated: false };
+  }
+
+  // checkbox → 文本族（'true'/'false'）
+  if (from === 'checkbox') {
+    if (TEXTUAL_TYPES.has(to)) {
+      return { value: value === true ? 'true' : 'false', migrated: true };
+    }
+    return { value, migrated: false };
+  }
+
+  // date → 文本族（`YYYY-MM-DD`）
+  if (from === 'date') {
+    if (TEXTUAL_TYPES.has(to)) {
+      const parsed = dateValueSchema.safeParse(value);
+      return parsed.success
+        ? { value: formatDate(parsed.data), migrated: true }
+        : { value, migrated: false };
+    }
+    return { value, migrated: false };
+  }
+
+  // select → multi_select（单 id 包数组，选项集共享）
+  if (from === 'select' && to === 'multi_select') {
+    return { value: [value], migrated: true };
+  }
+
+  // select → 文本族（选项名；找不到名的孤儿 id 原值保留）
+  if (from === 'select' && TEXTUAL_TYPES.has(to)) {
+    const name = ctx.optionName?.(String(value)) ?? null;
+    return name === null ? { value, migrated: false } : { value: name, migrated: true };
+  }
+
+  // multi_select → select：仅单值可无损（多值保留原数组并提示，绝不静默丢）
+  if (from === 'multi_select' && to === 'select') {
+    return Array.isArray(value) && value.length === 1
+      ? { value: value[0], migrated: true }
+      : { value, migrated: false };
+  }
+
+  // multi_select → 文本族（全部 id 都能解析出选项名才迁移）
+  if (from === 'multi_select' && TEXTUAL_TYPES.has(to)) {
+    const ids = Array.isArray(value) ? value.map(String) : [];
+    const names = ids.map((id) => ctx.optionName?.(id) ?? null);
+    if (names.some((name) => name === null)) {
+      return { value, migrated: false };
+    }
+    return { value: names.join(', '), migrated: true };
+  }
+
+  // file → 文本族（文件名逗号连接）
+  if (from === 'file' && TEXTUAL_TYPES.has(to)) {
+    const names = Array.isArray(value) ? value.map((item) => String(item)) : [];
+    return { value: names.join(', '), migrated: true };
+  }
+
+  // relation / 其余组合：无从无损映射，原值保留
+  return { value, migrated: false };
+}
 
 export function createDbViewService(options: DbViewServiceOptions): DbViewService {
   const { executor, actor } = options;
@@ -695,11 +868,150 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       if (property === undefined) {
         throw new DbViewApiError('E_NOT_FOUND', `属性不存在：${input.pid}`);
       }
-      // 一期只允许 rename + ai.prompt；type 变更需值迁移 → E_UNSUPPORTED（写死在任务书 §1）
-      if (input.patch.type !== undefined && input.patch.type !== property.type) {
-        throw new DbViewApiError('E_UNSUPPORTED', '属性类型变更一期不支持（需值迁移）');
+      // 标题列保护（TASK-T40-01 §B4）：不可改类型（重命名/AI 指令仍允许）
+      if (schema.title_pid === input.pid && input.patch.type !== undefined && input.patch.type !== property.type) {
+        throw new DbViewApiError('E_INVARIANT', '标题列类型不可变更');
+      }
+      if (input.patch.options !== undefined && property.type !== 'select' && property.type !== 'multi_select') {
+        throw new DbViewApiError('E_MALFORMED', `该属性类型不支持选项：${property.type}`);
+      }
+      if (input.patch.type !== undefined && input.patch.options !== undefined) {
+        throw new DbViewApiError('E_MALFORMED', '类型变更与选项变更请分开提交');
       }
       const at = meta();
+
+      // ---- 分支一：改类型（值迁移）----
+      if (input.patch.type !== undefined && input.patch.type !== property.type) {
+        const to = input.patch.type;
+        const recordsData = await executor.all('record.listByCollection', { collection_id: row.id });
+
+        // 文本 → select/multi_select 时按名取/建选项（Notion 语义：文本逐个成选项）
+        const newOptions: PropertyOption[] = [...(property.options ?? [])];
+        const optionIdByName = new Map(newOptions.map((option) => [option.name, option.id]));
+        const ensureOption = (name: string): string => {
+          const existing = optionIdByName.get(name);
+          if (existing !== undefined) {
+            return existing;
+          }
+          const id = nextId('popt-', at);
+          optionIdByName.set(name, id);
+          newOptions.push({ id, name });
+          return id;
+        };
+        const optionNameById = new Map((property.options ?? []).map((option) => [option.id, option.name]));
+        const ctx = {
+          ensureOption,
+          optionName: (id: string): string | null => optionNameById.get(id) ?? null,
+        };
+
+        const ops: Op[] = [];
+        for (const entry of recordsData.rows) {
+          const record = toRecordRow(entry);
+          if (record.alive === 0) {
+            continue;
+          }
+          const oldValues = decodeValuesJson(record.values_json);
+          const migrated = migrateValueForType(property.type, to, oldValues[input.pid], ctx);
+          if (JSON.stringify(migrated.value) === JSON.stringify(oldValues[input.pid])) {
+            continue;
+          }
+          ops.push(
+            recordUpsertOp(
+              record.id,
+              record.collection_id,
+              { ...oldValues, [input.pid]: migrated.value },
+              record.sort_key,
+              record.version,
+              at,
+            ),
+          );
+        }
+
+        const nextProperty: Property = {
+          ...property,
+          type: to,
+          options: to === 'select' || to === 'multi_select' ? newOptions : property.options,
+        };
+        const nextSchema: CollectionSchema = {
+          properties: { ...schema.properties, [input.pid]: nextProperty },
+          title_pid: schema.title_pid,
+        };
+        const collectionOp = collectionUpsertOp(row, row.name, nextSchema, decodeViews(row.views_json), at);
+        // collection 换型 + 逐记录迁移值：同一 batch（一个事务，中途失败全回滚）
+        await commitOps(executor, [collectionOp, ...ops], { workspaceId: row.workspace_id });
+        return { collection: await reloadCollection(row.id) };
+      }
+
+      // ---- 分支二：选项管理（全量替换 + 被删选项的引用值清理）----
+      if (input.patch.options !== undefined) {
+        const oldOptions = property.options ?? [];
+        const oldIds = new Set(oldOptions.map((option) => option.id));
+        const nextOptions: PropertyOption[] = [];
+        let seq = 0;
+        for (const option of input.patch.options) {
+          const id =
+            option.id !== undefined && option.id.length > 0
+              ? option.id
+              : nextId(`popt-${String(seq)}-`, at);
+          seq += 1;
+          nextOptions.push(
+            option.tone === undefined
+              ? { id, name: option.name }
+              : { id, name: option.name, tone: option.tone },
+          );
+        }
+        const nextIds = new Set(nextOptions.map((option) => option.id));
+        const removedIds = [...oldIds].filter((id) => !nextIds.has(id));
+
+        const ops: Op[] = [];
+        if (removedIds.length > 0) {
+          const removedSet = new Set(removedIds);
+          const recordsData = await executor.all('record.listByCollection', { collection_id: row.id });
+          for (const entry of recordsData.rows) {
+            const record = toRecordRow(entry);
+            if (record.alive === 0) {
+              continue;
+            }
+            const oldValues = decodeValuesJson(record.values_json);
+            const raw = oldValues[input.pid];
+            let nextValue: unknown;
+            if (property.type === 'select') {
+              if (typeof raw === 'string' && removedSet.has(raw)) {
+                nextValue = null;
+              } else {
+                continue;
+              }
+            } else {
+              if (!Array.isArray(raw) || !raw.some((item) => removedSet.has(String(item)))) {
+                continue;
+              }
+              const remaining = raw.map(String).filter((item) => !removedSet.has(item));
+              nextValue = remaining.length === 0 ? null : remaining;
+            }
+            ops.push(
+              recordUpsertOp(
+                record.id,
+                record.collection_id,
+                { ...oldValues, [input.pid]: nextValue },
+                record.sort_key,
+                record.version,
+                at,
+              ),
+            );
+          }
+        }
+
+        const nextProperty: Property = { ...property, options: nextOptions };
+        const nextSchema: CollectionSchema = {
+          properties: { ...schema.properties, [input.pid]: nextProperty },
+          title_pid: schema.title_pid,
+        };
+        const collectionOp = collectionUpsertOp(row, row.name, nextSchema, decodeViews(row.views_json), at);
+        await commitOps(executor, [collectionOp, ...ops], { workspaceId: row.workspace_id });
+        return { collection: await reloadCollection(row.id) };
+      }
+
+      // ---- 分支三：重命名 / AI 指令（既有语义不变）----
       const nextProperty = {
         ...property,
         name: input.patch.name ?? property.name,
@@ -721,13 +1033,71 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       if (schema.properties[input.pid] === undefined) {
         throw new DbViewApiError('E_NOT_FOUND', `属性不存在：${input.pid}`);
       }
+      // 标题列保护（TASK-T40-01 §B4）：不可删（原语义「可删 + title_pid 顺延」关闭，DEVIATION-3）
+      if (schema.title_pid === input.pid) {
+        throw new DbViewApiError('E_INVARIANT', '标题列不可删除');
+      }
       const at = meta();
       const properties = { ...schema.properties };
       delete properties[input.pid];
-      const remaining = Object.keys(properties);
-      const titlePid =
-        schema.title_pid === input.pid ? (remaining[0] ?? '') : schema.title_pid;
-      const nextSchema: CollectionSchema = { properties, title_pid: titlePid };
+      const nextSchema: CollectionSchema = { properties, title_pid: schema.title_pid };
+      // 该列值一并清理（§2 验收 3）：把记录 values 里的该 pid 键删掉（同 batch）
+      const recordsData = await executor.all('record.listByCollection', { collection_id: row.id });
+      const ops: Op[] = [];
+      for (const entry of recordsData.rows) {
+        const record = toRecordRow(entry);
+        if (record.alive === 0) {
+          continue;
+        }
+        const oldValues = decodeValuesJson(record.values_json);
+        if (!(input.pid in oldValues)) {
+          continue;
+        }
+        const nextValues = { ...oldValues };
+        delete nextValues[input.pid];
+        ops.push(
+          recordUpsertOp(record.id, record.collection_id, nextValues, record.sort_key, record.version, at),
+        );
+      }
+      const op = collectionUpsertOp(row, row.name, nextSchema, decodeViews(row.views_json), at);
+      await commitOps(executor, [op, ...ops], { workspaceId: row.workspace_id });
+      return { collection: await reloadCollection(row.id) };
+    },
+
+    async moveProperty(input) {
+      const row = await collectionRow(input.pageId);
+      const schema = decodeSchema(row.schema_json);
+      const property = schema.properties[input.pid];
+      if (property === undefined) {
+        throw new DbViewApiError('E_NOT_FOUND', `属性不存在：${input.pid}`);
+      }
+      // 标题列恒首列（§B4）：不可移动
+      if (schema.title_pid === input.pid) {
+        throw new DbViewApiError('E_INVARIANT', '标题列恒在首列，不可移动');
+      }
+      if (input.beforePid !== null && input.beforePid === input.pid) {
+        throw new DbViewApiError('E_MALFORMED', '移动目标不能是自身');
+      }
+      const at = meta();
+      const order = Object.keys(schema.properties).filter((key) => key !== input.pid);
+      let index =
+        input.beforePid === null ? order.length : order.indexOf(input.beforePid);
+      if (index < 0) {
+        index = order.length;
+      }
+      // 标题已在首列时，任何属性都不得插到它前面
+      if (order[0] === schema.title_pid && index === 0) {
+        index = 1;
+      }
+      order.splice(index, 0, input.pid);
+      const properties: Record<string, Property> = {};
+      for (const key of order) {
+        const entry = schema.properties[key];
+        if (entry !== undefined) {
+          properties[key] = entry;
+        }
+      }
+      const nextSchema: CollectionSchema = { properties, title_pid: schema.title_pid };
       const op = collectionUpsertOp(row, row.name, nextSchema, decodeViews(row.views_json), at);
       await commitOps(executor, [op], { workspaceId: row.workspace_id });
       return { collection: await reloadCollection(row.id) };
@@ -835,9 +1205,23 @@ const DB_INPUT_SCHEMAS = {
   [CHANNEL_DB_PROP_UPDATE]: z.object({
     pageId: zId,
     pid: zId,
-    patch: z.object({ name: z.string().optional(), type: z.string().min(1).optional(), ai: z.object({ prompt: z.string() }).optional() }),
+    patch: z.object({
+      name: z.string().optional(),
+      type: z.string().min(1).optional(),
+      ai: z.object({ prompt: z.string() }).optional(),
+      options: z
+        .array(
+          z.object({
+            id: z.string().max(128).optional(),
+            name: z.string(),
+            tone: z.enum(['neutral', 'amber', 'red']).optional(),
+          }),
+        )
+        .optional(),
+    }),
   }),
   [CHANNEL_DB_PROP_REMOVE]: z.object({ pageId: zId, pid: zId }),
+  [CHANNEL_DB_PROP_MOVE]: z.object({ pageId: zId, pid: zId, beforePid: zId.nullable() }),
   [CHANNEL_DB_VIEW_SAVE]: z.object({ pageId: zId, view: z.unknown() }),
   [CHANNEL_DB_RELATION_SEARCH]: z.object({
     pageId: zId,
@@ -981,8 +1365,18 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
 
   on(CHANNEL_DB_PROP_UPDATE, DB_INPUT_SCHEMAS[CHANNEL_DB_PROP_UPDATE], (svc, data) => {
     const input = asRecord(data);
-    const patch = input['patch'] as { name?: string; type?: string; ai?: { prompt: string } };
-    const typed: { name?: string; type?: FieldType; ai?: { prompt: string } } = {};
+    const patch = input['patch'] as {
+      name?: string;
+      type?: string;
+      ai?: { prompt: string };
+      options?: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>;
+    };
+    const typed: {
+      name?: string;
+      type?: FieldType;
+      ai?: { prompt: string };
+      options?: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>;
+    } = {};
     if (patch.name !== undefined) {
       typed.name = patch.name;
     }
@@ -992,12 +1386,29 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
     if (patch.ai !== undefined) {
       typed.ai = { prompt: String(patch.ai.prompt) };
     }
+    if (patch.options !== undefined) {
+      typed.options = patch.options.map((option) => ({
+        ...(option.id !== undefined ? { id: String(option.id) } : {}),
+        name: String(option.name),
+        ...(option.tone !== undefined ? { tone: option.tone } : {}),
+      }));
+    }
     return svc.updateProperty({ pageId: String(input['pageId']), pid: String(input['pid']), patch: typed });
   });
 
   on(CHANNEL_DB_PROP_REMOVE, DB_INPUT_SCHEMAS[CHANNEL_DB_PROP_REMOVE], (svc, data) => {
     const input = asRecord(data);
     return svc.removeProperty({ pageId: String(input['pageId']), pid: String(input['pid']) });
+  });
+
+  on(CHANNEL_DB_PROP_MOVE, DB_INPUT_SCHEMAS[CHANNEL_DB_PROP_MOVE], (svc, data) => {
+    const input = asRecord(data);
+    const beforePid = input['beforePid'];
+    return svc.moveProperty({
+      pageId: String(input['pageId']),
+      pid: String(input['pid']),
+      beforePid: typeof beforePid === 'string' ? beforePid : null,
+    });
   });
 
   on(CHANNEL_DB_VIEW_SAVE, DB_INPUT_SCHEMAS[CHANNEL_DB_VIEW_SAVE], (svc, data) => {

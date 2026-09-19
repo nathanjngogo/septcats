@@ -46,6 +46,16 @@ export interface DbViewProps {
   onAddProperty: (type: FieldType) => void;
   onRemoveProperty: (pid: string) => void;
   onRenameProperty: (pid: string, name: string) => void;
+  /** 改字段类型（title 列不可；确认与值迁移由调用方承担，TASK-T40-01 §B2）。 */
+  onChangePropertyType?: ((pid: string, type: FieldType) => void) | undefined;
+  /** select/multi_select 选项全量替换（TASK-T40-01 §B3）；缺 id 项（新建）由 main 侧生成。 */
+  onUpdatePropertyOptions?:
+    | ((pid: string, options: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>) => void)
+    | undefined;
+  /** 字段左右排序（beforePid=null = 末尾；title 恒首列）。 */
+  onMoveProperty?: ((pid: string, beforePid: string | null) => void) | undefined;
+  /** select/multi_select 单元格内新建选项：创建并返回选项 id（已存在同名返回既有 id）。 */
+  onCreateCellOption?: ((pid: string, name: string) => string | undefined) | undefined;
   onSaveView: (view: DbViewEntity) => void;
   onExportCsv: () => void;
   onOpenRelation?: ((recordId: string) => void) | undefined;
@@ -77,6 +87,10 @@ export function DbView(props: DbViewProps) {
     onAddProperty,
     onRemoveProperty,
     onRenameProperty,
+    onChangePropertyType,
+    onUpdatePropertyOptions,
+    onMoveProperty,
+    onCreateCellOption,
     onSaveView,
     onExportCsv,
     onOpenRelation,
@@ -228,6 +242,9 @@ export function DbView(props: DbViewProps) {
         onAddProperty={onAddProperty}
         onRemoveProperty={onRemoveProperty}
         onRenameProperty={onRenameProperty}
+        onChangePropertyType={onChangePropertyType}
+        onUpdatePropertyOptions={onUpdatePropertyOptions}
+        onMoveProperty={onMoveProperty}
         onAiBatchGenerate={onAiBatchGenerate === undefined ? undefined : handleAiBatchGenerate}
         onUpdateAiPrompt={onUpdateAiPrompt}
         onCreateRecord={createRecord}
@@ -253,6 +270,7 @@ export function DbView(props: DbViewProps) {
         relationCandidates={relationCandidates}
         relationTitle={relationTitle}
         onClickRelation={onOpenRelation}
+        onCreateCellOption={onCreateCellOption}
         onRetry={onRetry}
         onCreateRecord={createRecord}
         onDeleteSelected={(ids) => {

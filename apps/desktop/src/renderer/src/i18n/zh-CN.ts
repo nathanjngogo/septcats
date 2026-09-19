@@ -375,6 +375,15 @@ export const zhCN = {
       defaultPrompt: '根据该记录各列的内容，用简洁的中文给出这一列的值；只输出结果本身。',
       failed: '生成失败：{msg}',
     },
+    prop: {
+      deleteTitle: '删除字段',
+      deleteBody: '将删除字段「{name}」，该列的所有值将一并清理且不可恢复。确定删除？',
+      deleteConfirm: '删除',
+      typeTitle: '更改字段类型',
+      typeBody:
+        '将把字段「{name}」从 {from} 改为 {to}。能自动迁移的值会转换；无法迁移的值原样保留（该列不再显示，但不丢失，改回原类型即可恢复）。继续？',
+      typeConfirm: '确认更改',
+    },
   },
   templates: {
     group: '模板',

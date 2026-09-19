@@ -394,6 +394,16 @@ export const enUS = {
         'Based on the values of each property in this record, give the value for this property in concise English; output only the result itself.',
       failed: 'Generation failed: {msg}',
     },
+    prop: {
+      deleteTitle: 'Delete field',
+      deleteBody:
+        'Field "{name}" will be deleted, and all values in this column will be cleared permanently. Delete?',
+      deleteConfirm: 'Delete',
+      typeTitle: 'Change field type',
+      typeBody:
+        'Field "{name}" will change from {from} to {to}. Values that can be migrated automatically will be converted; values that cannot will be kept as-is (hidden in the new column type, not lost — switch back to restore). Continue?',
+      typeConfirm: 'Change type',
+    },
   },
   templates: {
     group: 'Templates',

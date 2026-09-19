@@ -62,7 +62,17 @@ export interface CellEditorProps extends CellDisplayDeps {
   aiBusy?: boolean | undefined;
   /** AI 列：单行生成回调；未提供则「AI 生成」按钮不渲染。 */
   onAiGenerate?: (() => void) | undefined;
+  /**
+   * select/multi_select 单元格内新建选项（TASK-T40-01 §B3）：传入名称 → 创建并返回新选项 id
+   * （已存在同名选项时返回既有 id）；未提供则 picker 不渲染新建入口。
+   */
+  onCreateOption?: ((name: string) => string | undefined) | undefined;
 }
+
+/** 链接值口径（与 main 侧 migrateValueForType 的 URL_VALUE_RE 同语义；只放行 http(s)/www.）。 */
+const CELL_URL_RE = /^(https?:\/\/|www\.)\S+$/i;
+/** 邮箱值口径（宽松：非空白@非空白.非空白）。 */
+const CELL_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function optionTone(option: PropertyOption): 'neutral' | 'amber' | 'red' {
   return option.tone ?? 'neutral';
@@ -171,7 +181,39 @@ function CellDisplay({
     return <span className="sc-dbc-date">{text}</span>;
   }
   if (property.type === 'url' || property.type === 'email') {
-    return <span className="sc-dbc-text sc-dbc-text--link">{text}</span>;
+    const raw = typeof value === 'string' ? value.trim() : '';
+    // 链接只放行 http(s)/www.（防 javascript: 注入）；邮箱走 mailto:
+    if (property.type === 'url' && CELL_URL_RE.test(raw)) {
+      const href = raw.toLowerCase().startsWith('www.') ? `https://${raw}` : raw;
+      return (
+        <a
+          className="sc-dbc-text sc-dbc-text--link"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(event) => {
+            // 不冒泡：点击打开链接 ≠ 进入单元格编辑态
+            event.stopPropagation();
+          }}
+        >
+          {text}
+        </a>
+      );
+    }
+    if (property.type === 'email' && CELL_EMAIL_RE.test(raw)) {
+      return (
+        <a
+          className="sc-dbc-text sc-dbc-text--link"
+          href={`mailto:${raw}`}
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          {text}
+        </a>
+      );
+    }
+    return <span className="sc-dbc-text">{text}</span>;
   }
   return <span className="sc-dbc-text">{text}</span>;
 }
@@ -183,12 +225,15 @@ function MultiPicker({
   searchable,
   onToggle,
   onClose,
+  onCreateOption,
 }: {
   candidates: readonly RelationCandidate[];
   selected: readonly string[];
   searchable: boolean;
   onToggle: (id: string) => void;
   onClose: () => void;
+  /** 仅 multi_select 提供（relation 不新建记录）。 */
+  onCreateOption?: ((name: string) => string | undefined) | undefined;
 }) {
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -263,6 +308,56 @@ function MultiPicker({
           })
         )}
       </ul>
+      {onCreateOption !== undefined ? (
+        <CreateOptionRow
+          onCreate={(name) => {
+            const id = onCreateOption(name);
+            if (id !== undefined) {
+              onToggle(id);
+            }
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** picker 底部的「新建选项」输入（select/multi_select 共用；TASK-T40-01 §B3）。 */
+function CreateOptionRow({ onCreate }: { onCreate: (name: string) => void }) {
+  const [name, setName] = useState('');
+  const submit = (): void => {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+    onCreate(trimmed);
+    setName('');
+  };
+  return (
+    <div className="sc-dbc-picker__create">
+      <input
+        className="sc-dbc-picker__create-input"
+        value={name}
+        placeholder="新建选项…"
+        aria-label="新建选项"
+        onChange={(event) => {
+          setName(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.stopPropagation();
+            submit();
+            return;
+          }
+          if (event.key === 'Escape') {
+            event.stopPropagation();
+          }
+        }}
+      />
+      <button type="button" className="sc-dbc-picker__create-btn" onClick={submit}>
+        添加
+      </button>
     </div>
   );
 }
@@ -273,11 +368,13 @@ function SinglePicker({
   selected,
   onPick,
   onClose,
+  onCreateOption,
 }: {
   options: readonly PropertyOption[];
   selected: string | null;
   onPick: (id: string | null) => void;
   onClose: () => void;
+  onCreateOption?: ((name: string) => string | undefined) | undefined;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -336,6 +433,17 @@ function SinglePicker({
           </li>
         )}
       </ul>
+      {onCreateOption !== undefined ? (
+        <CreateOptionRow
+          onCreate={(name) => {
+            const id = onCreateOption(name);
+            if (id !== undefined) {
+              onPick(id);
+              onClose();
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -353,6 +461,23 @@ function PlainEditor({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState(initial);
+  // url/email 格式校验（TASK-T40-01 §B1）：非法时 Enter 不提交、保持编辑态并标错
+  const [invalid, setInvalid] = useState(false);
+
+  const validOf = useCallback(
+    (text: string): boolean => {
+      if (type === 'url') {
+        const trimmed = text.trim();
+        return trimmed.length === 0 || CELL_URL_RE.test(trimmed);
+      }
+      if (type === 'email') {
+        const trimmed = text.trim();
+        return trimmed.length === 0 || CELL_EMAIL_RE.test(trimmed);
+      }
+      return true;
+    },
+    [type],
+  );
 
   const submit = useCallback((): void => {
     if (type === 'number') {
@@ -383,42 +508,70 @@ function PlainEditor({
       onCommit(parsed);
       return;
     }
+    if (!validOf(draft)) {
+      setInvalid(true);
+      return; // 校验不过：不提交（失焦时由外层 onCancel 收敛）
+    }
     onCommit(draft);
-  }, [draft, onCancel, onCommit, type]);
+  }, [draft, onCancel, onCommit, type, validOf]);
 
   const inputType =
     type === 'url' ? 'url' : type === 'email' ? 'email' : type === 'number' ? 'number' : type === 'date' ? 'date' : 'text';
 
   return (
-    <input
-      autoFocus
-      className={type === 'number' ? 'sc-dbc-input sc-dbc-input--num' : 'sc-dbc-input'}
-      type={inputType}
-      value={draft}
-      aria-label="单元格编辑"
-      onChange={(event) => {
-        setDraft(event.target.value);
-      }}
-      onFocus={(event) => {
-        if (type === 'text' || type === 'url' || type === 'email') {
-          event.currentTarget.select();
-        }
-      }}
-      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          event.stopPropagation();
-          submit();
-          return;
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          event.stopPropagation();
-          onCancel();
-        }
-      }}
-      onBlur={submit}
-    />
+    <span className={type === 'date' ? 'sc-dbc-dateedit' : undefined}>
+      <input
+        autoFocus
+        className={type === 'number' ? 'sc-dbc-input sc-dbc-input--num' : 'sc-dbc-input'}
+        type={inputType}
+        value={draft}
+        aria-label="单元格编辑"
+        aria-invalid={invalid || undefined}
+        data-invalid={invalid ? 'true' : undefined}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          if (invalid) {
+            setInvalid(!validOf(event.target.value));
+          }
+        }}
+        onFocus={(event) => {
+          if (type === 'text' || type === 'url' || type === 'email') {
+            event.currentTarget.select();
+          }
+        }}
+        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.stopPropagation();
+            submit();
+            return;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            onCancel();
+          }
+        }}
+        onBlur={submit}
+      />
+      {type === 'date' ? (
+        <button
+          type="button"
+          className="sc-dbc-dateedit__clear"
+          aria-label="清空日期"
+          onMouseDown={(event) => {
+            // 阻止 input 先失焦触发 submit 覆盖清空意图
+            event.preventDefault();
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCommit(null);
+          }}
+        >
+          清空
+        </button>
+      ) : null}
+    </span>
   );
 }
 
@@ -439,6 +592,7 @@ export function CellEditor({
   disabled = false,
   aiBusy = false,
   onAiGenerate,
+  onCreateOption,
 }: CellEditorProps) {
   const type: FieldType = property.type;
 
@@ -535,6 +689,7 @@ export function CellEditor({
             onEndEdit();
           }}
           onClose={onEndEdit}
+          onCreateOption={onCreateOption}
         />
       ) : null}
 
@@ -550,6 +705,7 @@ export function CellEditor({
             onCommit(next.length === 0 ? null : next);
           }}
           onClose={onEndEdit}
+          onCreateOption={type === 'multi_select' ? onCreateOption : undefined}
         />
       ) : null}
 

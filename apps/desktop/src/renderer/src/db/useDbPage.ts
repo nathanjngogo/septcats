@@ -52,6 +52,15 @@ export interface UseDbPage {
   addProperty(type: FieldType): Promise<void>;
   removeProperty(pid: string): Promise<void>;
   renameProperty(pid: string, name: string): Promise<void>;
+  /** 改字段类型（main 侧做值迁移；TASK-T40-01 §B2）。 */
+  updatePropertyType(pid: string, type: FieldType): Promise<void>;
+  /** select / multi_select 选项全量替换（缺 id 项由 main 生成）。 */
+  updatePropertyOptions(
+    pid: string,
+    options: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' | undefined }>,
+  ): Promise<void>;
+  /** 字段左右排序（`beforePid=null` = 移到末尾）。 */
+  moveProperty(pid: string, beforePid: string | null): Promise<void>;
   /** AI 列生成指令提交（空串 = 清除配置回落默认指令；TASK-T18-04 §2.2）。 */
   updatePropertyPrompt(pid: string, prompt: string): Promise<void>;
   saveView(view: DbView): Promise<void>;
@@ -143,6 +152,33 @@ export function useDbPage(pageId: string): UseDbPage {
     [pageId, reload],
   );
 
+  const updatePropertyType = useCallback(
+    async (pid: string, type: FieldType): Promise<void> => {
+      await dbApi().propUpdate({ pageId, pid, patch: { type } });
+      reload();
+    },
+    [pageId, reload],
+  );
+
+  const updatePropertyOptions = useCallback(
+    async (
+      pid: string,
+      options: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' | undefined }>,
+    ): Promise<void> => {
+      await dbApi().propUpdate({ pageId, pid, patch: { options } });
+      reload();
+    },
+    [pageId, reload],
+  );
+
+  const moveProperty = useCallback(
+    async (pid: string, beforePid: string | null): Promise<void> => {
+      await dbApi().propMove({ pageId, pid, beforePid });
+      reload();
+    },
+    [pageId, reload],
+  );
+
   const updatePropertyPrompt = useCallback(
     async (pid: string, prompt: string): Promise<void> => {
       // PM 收口：window.d.ts 的 propUpdate.patch 已声明 ai 键，原最小断言已移除。
@@ -185,6 +221,9 @@ export function useDbPage(pageId: string): UseDbPage {
     addProperty,
     removeProperty,
     renameProperty,
+    updatePropertyType,
+    updatePropertyOptions,
+    moveProperty,
     updatePropertyPrompt,
     saveView,
     renameCollection,

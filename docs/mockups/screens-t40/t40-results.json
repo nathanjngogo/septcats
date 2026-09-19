@@ -1,0 +1,396 @@
+{
+  "pass": 56,
+  "fail": 1,
+  "results": [
+    {
+      "name": "[info] 建库",
+      "ok": null,
+      "raw": "pageId=pg-01M2XD6GFKNJC9ZMJM49K3VEDD 字段数=12 标题pid=p01M2XD6GFKNJC9ZMJM49K3VEDF"
+    },
+    {
+      "name": "A1 建库成功（11 字段 + 标题）",
+      "ok": true,
+      "raw": "propOrder.length=12（期望 12 = 标题 + 11）"
+    },
+    {
+      "name": "B0 「转为数据库」入口存在（界面验收的真实入口）",
+      "ok": true,
+      "raw": "visible=true"
+    },
+    {
+      "name": "[info] 转换后空态",
+      "ok": null,
+      "raw": "空态按钮存在=true"
+    },
+    {
+      "name": "B1 转为数据库后 DbPage 渲染（属性条出现）",
+      "ok": true,
+      "raw": "propbar=true"
+    },
+    {
+      "name": "B2 UI 新属性生效（chip 数 = 4：标题 + 单选/勾选/数字）",
+      "ok": true,
+      "raw": "chips=4 err=null"
+    },
+    {
+      "name": "[info] 单元格（未编辑态，空值走 .sc-dbc-empty）",
+      "ok": null,
+      "raw": "{\"dbc\":3,\"grid\":1,\"byType\":{\"text\":0,\"number\":1,\"select\":1,\"multi_select\":0,\"date\":0,\"checkbox\":1,\"url\":0,\"email\":0,\"relation\":0,\"file\":0,\"ai\":0}}"
+    },
+    {
+      "name": "B3a 三列均有单元格节点（data-type 齐）",
+      "ok": true,
+      "raw": "{\"text\":0,\"number\":1,\"select\":1,\"multi_select\":0,\"date\":0,\"checkbox\":1,\"url\":0,\"email\":0,\"relation\":0,\"file\":0,\"ai\":0}"
+    },
+    {
+      "name": "[info] 勾选格焦点取证",
+      "ok": null,
+      "raw": "{\"on\":0,\"focus\":{\"activeTag\":\"DIV\",\"activeRole\":\"gridcell\",\"activeIsOuterGridcell\":true,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
+    },
+    {
+      "name": "B3 勾选列 Enter 直接切换（出现 .sc-dbc-check--on）",
+      "ok": false,
+      "raw": "{\"on\":0,\"focus\":{\"activeTag\":\"DIV\",\"activeRole\":\"gridcell\",\"activeIsOuterGridcell\":true,\"activeInsideCellEditor\":false,\"cellEditorHasTabIndex\":false}}"
+    },
+    {
+      "name": "[info] 单选编辑态",
+      "ok": null,
+      "raw": "{\"picker\":1,\"createBtn\":1,\"list\":1}"
+    },
+    {
+      "name": "B4 单选列点击进编辑渲染 .sc-dbc-picker",
+      "ok": true,
+      "raw": "{\"picker\":1,\"createBtn\":1,\"list\":1}"
+    },
+    {
+      "name": "B5 单选 picker 内含「新建选项」入口（T40 新增）",
+      "ok": true,
+      "raw": "{\"picker\":1,\"createBtn\":1,\"list\":1}"
+    },
+    {
+      "name": "[info] 标题列菜单",
+      "ok": null,
+      "raw": "[{\"label\":\"更改类型…\",\"disabled\":true},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":true}]"
+    },
+    {
+      "name": "B6 标题列「更改类型…」被禁用",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":true},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":true}]"
+    },
+    {
+      "name": "B7 标题列「删除属性」被禁用",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":true},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":true}]"
+    },
+    {
+      "name": "[info] 数据列菜单（单选列）",
+      "ok": null,
+      "raw": "[{\"label\":\"更改类型…\",\"disabled\":false},{\"label\":\"选项管理…\",\"disabled\":false},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":false}]"
+    },
+    {
+      "name": "B8 数据列「更改类型…」可用（未禁用）",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":false},{\"label\":\"选项管理…\",\"disabled\":false},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":false}]"
+    },
+    {
+      "name": "B9 数据列「删除属性」可用（未禁用）",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":false},{\"label\":\"选项管理…\",\"disabled\":false},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":false}]"
+    },
+    {
+      "name": "B10 单选列菜单含「选项管理…」（T40 新增）",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":false},{\"label\":\"选项管理…\",\"disabled\":false},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":false}]"
+    },
+    {
+      "name": "B11 数据列菜单含「左移 / 右移」（T40 新增）",
+      "ok": true,
+      "raw": "menu=[{\"label\":\"更改类型…\",\"disabled\":false},{\"label\":\"选项管理…\",\"disabled\":false},{\"label\":\"左移\",\"disabled\":true},{\"label\":\"右移\",\"disabled\":false},{\"label\":\"重命名属性\",\"disabled\":false},{\"label\":\"删除属性\",\"disabled\":false}]"
+    },
+    {
+      "name": "B12 「选项管理」面板可打开（T40 新增 UI）",
+      "ok": true,
+      "raw": "panel=true"
+    },
+    {
+      "name": "[info] 左移 UI 结果",
+      "ok": null,
+      "raw": "{\"before\":[\"名称text\",\"单选select\",\"勾选checkbox\",\"数字number\"],\"after\":[\"名称text\",\"勾选checkbox\",\"单选select\",\"数字number\"],\"changed\":true}"
+    },
+    {
+      "name": "B13 「左移」真实点击触发列序变化（T40 新增 UI）",
+      "ok": true,
+      "raw": "{\"before\":[\"名称text\",\"单选select\",\"勾选checkbox\",\"数字number\"],\"after\":[\"名称text\",\"勾选checkbox\",\"单选select\",\"数字number\"],\"changed\":true}"
+    },
+    {
+      "name": "[info] 回归探针 boot1",
+      "ok": null,
+      "raw": "{\"hScroll\":false,\"vScroll\":false,\"tabsbar\":true,\"aiPanelBtn\":true,\"side\":true}"
+    },
+    {
+      "name": "R1 窗口零滚动（横向）",
+      "ok": true,
+      "raw": "hScroll=false"
+    },
+    {
+      "name": "R2 多页签栏存在（T37 不回归）",
+      "ok": true,
+      "raw": "tabsbar=true"
+    },
+    {
+      "name": "R3 AI 面板入口存在（T38 不回归）",
+      "ok": true,
+      "raw": "aiPanel=true"
+    },
+    {
+      "name": "[info] boot1 退出",
+      "ok": null,
+      "raw": "优雅退出=true"
+    },
+    {
+      "name": "[info] 读回值",
+      "ok": null,
+      "raw": "{\"found\":true,\"title\":\"第一条记录\",\"text\":\"你好 Septcats\",\"number\":42,\"select\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"multi_select\":[\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"date\":{\"y\":2026,\"m\":9,\"d\":20},\"checkbox\":true,\"url\":\"https://example.com/a\",\"email\":\"a@example.com\",\"relation\":[\"rec-01M2XD6GGJ7Q0D1EWZAHW4A3N8\"],\"file\":[\"报告.pdf\"],\"ai\":\"AI 生成的摘要文本\"}"
+    },
+    {
+      "name": "C1 重开后文本值一致",
+      "ok": true,
+      "raw": "text=\"你好 Septcats\""
+    },
+    {
+      "name": "C2 重开后数字值一致",
+      "ok": true,
+      "raw": "number=42"
+    },
+    {
+      "name": "C3 重开后单选取值一致（选项 id）",
+      "ok": true,
+      "raw": "select=\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\""
+    },
+    {
+      "name": "C4 重开后多选取值一致",
+      "ok": true,
+      "raw": "multi=[\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]"
+    },
+    {
+      "name": "C5 重开后日期值一致",
+      "ok": true,
+      "raw": "date={\"y\":2026,\"m\":9,\"d\":20}"
+    },
+    {
+      "name": "C6 重开后勾选值一致",
+      "ok": true,
+      "raw": "checkbox=true"
+    },
+    {
+      "name": "C7 重开后链接值一致",
+      "ok": true,
+      "raw": "url=\"https://example.com/a\""
+    },
+    {
+      "name": "C8 重开后邮箱值一致",
+      "ok": true,
+      "raw": "email=\"a@example.com\""
+    },
+    {
+      "name": "C9 重开后关联值一致",
+      "ok": true,
+      "raw": "relation=[\"rec-01M2XD6GGJ7Q0D1EWZAHW4A3N8\"]"
+    },
+    {
+      "name": "C10 重开后文件值一致",
+      "ok": true,
+      "raw": "file=[\"报告.pdf\"]"
+    },
+    {
+      "name": "C11 重开后 AI 列值一致",
+      "ok": true,
+      "raw": "ai=\"AI 生成的摘要文本\""
+    },
+    {
+      "name": "C12 重开后标题值一致",
+      "ok": true,
+      "raw": "title=\"第一条记录\""
+    },
+    {
+      "name": "[info] 迁移结果",
+      "ok": null,
+      "raw": "{\"migratedType\":\"number\",\"afterMigrate\":42,\"afterUncoercible\":\"不是数字\",\"afterRevert\":\"不是数字\"}"
+    },
+    {
+      "name": "C13 改类型 text→number：数字串被迁移为 number 42",
+      "ok": true,
+      "raw": "type=number value=42"
+    },
+    {
+      "name": "C14 改类型不静默丢值：非数字原样保留",
+      "ok": true,
+      "raw": "value=\"不是数字\"（期望字符串原样保留，不得为 null）"
+    },
+    {
+      "name": "C15 改回原类型后值可恢复（迁移不落刀）",
+      "ok": true,
+      "raw": "value=\"不是数字\""
+    },
+    {
+      "name": "[info] 删除字段结果",
+      "ok": null,
+      "raw": "{\"hadValue\":true,\"pidGone\":true,\"valueGone\":true,\"schemaKeys\":11}"
+    },
+    {
+      "name": "C16 删除字段：schema 中该列消失",
+      "ok": true,
+      "raw": "pidGone=true"
+    },
+    {
+      "name": "C17 删除字段：该列值被一并清理",
+      "ok": true,
+      "raw": "valueGone=true（原 hadValue=true）"
+    },
+    {
+      "name": "[info] 排序结果",
+      "ok": null,
+      "raw": "{\"before\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"],\"afterMoveEnd\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\",\"p01M2XD6GFRPE1D7M799BZZGBBR\"],\"movedToEnd\":true,\"titleMoveErr\":\"Error invoking remote method 'db:prop:move': Error: E_INVARIANT: 标题列恒在首列，不可移动\",\"afterMoveBack\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"],\"titleStillFirst\":true}"
+    },
+    {
+      "name": "C18 排序：移到末尾生效",
+      "ok": true,
+      "raw": "afterMoveEnd=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\",\"p01M2XD6GFRPE1D7M799BZZGBBR\"]"
+    },
+    {
+      "name": "C19 排序：标题列恒首列",
+      "ok": true,
+      "raw": "first=\"p01M2XD6GFKNJC9ZMJM49K3VEDF\" titlePid=p01M2XD6GFKNJC9ZMJM49K3VEDF"
+    },
+    {
+      "name": "C20 排序：标题列移动被拒（E_INVARIANT）",
+      "ok": true,
+      "raw": "err=\"Error invoking remote method 'db:prop:move': Error: E_INVARIANT: 标题列恒在首列，不可移动\""
+    },
+    {
+      "name": "[info] 选项管理结果",
+      "ok": null,
+      "raw": "{\"out\":{\"afterAddRename\":[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XD7AY40FQ0KHYNCC9ZVS5F\",\"name\":\"已归档\"}],\"mulAfterDelete\":[{\"id\":\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XD6GGF0PXSGZBS4H2454AE\",\"name\":\"标签C\"}],\"mulValueAfterDelete\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]},\"selBefore\":[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"}],\"mulBefore\":[{\"id\":\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\",\"name\":\"标签A\"},{\"id\":\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\",\"name\":\"标签B\"},{\"id\":\"popt-2-01M2XD6GGF0PXSGZBS4H2454AE\",\"name\":\"标签C\"}]}"
+    },
+    {
+      "name": "C21 选项管理：新增（main 生成 id）生效",
+      "ok": true,
+      "raw": "options=[{\"id\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"name\":\"进行中(改名)\"},{\"id\":\"popt-1-01M2XD6GGEC68H1462E0RPF4AD\",\"name\":\"已完成\"},{\"id\":\"popt-2-01M2XD7AY40FQ0KHYNCC9ZVS5F\",\"name\":\"已归档\"}]"
+    },
+    {
+      "name": "C22 选项管理：改名生效",
+      "ok": true,
+      "raw": "names=[\"进行中(改名)\",\"已完成\",\"已归档\"]"
+    },
+    {
+      "name": "C23 选项管理：删除被引用选项 → 引用值被清理（不悬空）",
+      "ok": true,
+      "raw": "value=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"] 删掉=\"popt-0-01M2XD6GGF0PXSGZBS4H2454AC\" 保留=\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\""
+    },
+    {
+      "name": "[info] 标题保护结果",
+      "ok": null,
+      "raw": "{\"typeErr\":\"Error invoking remote method 'db:prop:update': Error: E_INVARIANT: 标题列类型不可变更\",\"removeErr\":\"Error invoking remote method 'db:prop:remove': Error: E_INVARIANT: 标题列不可删除\",\"stillThere\":true,\"stillText\":\"text\"}"
+    },
+    {
+      "name": "C24 标题列改类型被拒（E_INVARIANT）",
+      "ok": true,
+      "raw": "err=\"Error invoking remote method 'db:prop:update': Error: E_INVARIANT: 标题列类型不可变更\""
+    },
+    {
+      "name": "C25 标题列删除被拒（E_INVARIANT）",
+      "ok": true,
+      "raw": "err=\"Error invoking remote method 'db:prop:remove': Error: E_INVARIANT: 标题列不可删除\""
+    },
+    {
+      "name": "C26 标题列仍在且仍为 text",
+      "ok": true,
+      "raw": "there=true type=text"
+    },
+    {
+      "name": "[info] boot2 退出",
+      "ok": null,
+      "raw": "优雅退出=true"
+    },
+    {
+      "name": "[info] 重启后持久化",
+      "ok": null,
+      "raw": "{\"filePidGone\":true,\"numbersLast\":false,\"selOptions\":[\"进行中(改名)\",\"已完成\",\"已归档\"],\"mulOptions\":[\"标签B\",\"标签C\"],\"selectValue\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"mulValue\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"expectedSelectValue\":\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\",\"expectedMulValue\":[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"],\"keys\":[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]}"
+    },
+    {
+      "name": "D1 重启后：被删字段不复活",
+      "ok": true,
+      "raw": "filePidGone=true"
+    },
+    {
+      "name": "D2 重启后：列序持久化（与移动后最终序一致）",
+      "ok": true,
+      "raw": "重启后=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]\n      移动后=[\"p01M2XD6GFKNJC9ZMJM49K3VEDF\",\"p01M2XD6GFRPE1D7M799BZZGBBR\",\"p01M2XD6GFWWB0H5WER7BPPMQX3\",\"p01M2XD6GFZ793NS5GM8GS8T4YY\",\"p01M2XD6GG17WN7AG1F1X09SCR3\",\"p01M2XD6GG22E25VNT95T4YY52M\",\"p01M2XD6GG4H7XAVXQGTHW6PADA\",\"p01M2XD6GG6MFNVKGY7PSZSXVNC\",\"p01M2XD6GG75ZDG9J7TMQ9YYCKK\",\"p01M2XD6GGB6NRKJZ7WBT5NVPZD\",\"p01M2XD6GGCKQ36GT09NHB10DEA\"]"
+    },
+    {
+      "name": "D3 重启后：选项管理持久化（3 项含已归档）",
+      "ok": true,
+      "raw": "selOptions=[\"进行中(改名)\",\"已完成\",\"已归档\"]"
+    },
+    {
+      "name": "D4 重启后：单选取值未受影响",
+      "ok": true,
+      "raw": "select=\"popt-0-01M2XD6GGEC68H1462E0RPF4AC\""
+    },
+    {
+      "name": "D5 重启后：多选被删选项的引用仍为清理后状态",
+      "ok": true,
+      "raw": "mul=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"] 期望=[\"popt-1-01M2XD6GGF0PXSGZBS4H2454AD\"]"
+    },
+    {
+      "name": "[info] localStorage 主题设置",
+      "ok": null,
+      "raw": "{\"ok\":true,\"stored\":\"dark\"}"
+    },
+    {
+      "name": "E1 深色主题生效（走设置页真实路径）",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "name": "[info] 深色库页",
+      "ok": null,
+      "raw": "{\"theme\":\"dark\",\"picker\":1,\"createBtn\":1,\"chips\":2}"
+    },
+    {
+      "name": "E4 深色主题下 DbPage 与单选 picker 正常（含新建选项入口）",
+      "ok": true,
+      "raw": "{\"theme\":\"dark\",\"picker\":1,\"createBtn\":1,\"chips\":2}"
+    },
+    {
+      "name": "E2 深色下仍零横向滚动",
+      "ok": true,
+      "raw": "hScroll=false"
+    },
+    {
+      "name": "E3 深色下应用正常渲染（无白屏；重载后库页不可达系既有 kind 缺陷，另立案）",
+      "ok": true,
+      "raw": "rendered=true grid=true"
+    },
+    {
+      "name": "[info] boot3 退出",
+      "ok": null,
+      "raw": "优雅退出=true"
+    },
+    {
+      "name": "F1 真实数据根未被触碰（双隔离生效）",
+      "ok": true,
+      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+    },
+    {
+      "name": "F2 无 pageerror",
+      "ok": true,
+      "raw": "pageErrors=[]"
+    },
+    {
+      "name": "F3 无 console error",
+      "ok": true,
+      "raw": "consoleErrors=[]"
+    }
+  ]
+}

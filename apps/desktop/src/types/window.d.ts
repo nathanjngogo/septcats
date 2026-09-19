@@ -230,7 +230,10 @@ export interface SeptcatsDbApi {
   }): Promise<{ record: RecordEntity }>;
   recordDelete(input: { pageId: string; ids: string[] }): Promise<{ ok: true }>;
   propAdd(input: { pageId: string; type: FieldType }): Promise<{ collection: CollectionEntity }>;
-  /** 一期只允许 rename；type 变更 → E_UNSUPPORTED（值迁移后续任务）。 */
+  /**
+   * 属性更新（TASK-T40-01）：name / type（含值迁移；title 列拒绝 E_INVARIANT）/
+   * ai.prompt / options（仅 select·multi_select 全量替换，被删选项的引用值同事务清理）。
+   */
   propUpdate(input: {
     pageId: string;
     pid: string;
@@ -239,9 +242,19 @@ export interface SeptcatsDbApi {
       type?: FieldType | undefined;
       /** `ai` 属性（type='ai'）的生成指令；空串 = 清除配置、回落默认指令（TASK-T18-04）。 */
       ai?: { prompt: string } | undefined;
+      /** select / multi_select 的选项全量列表；缺 id 项由 main 侧生成。 */
+      options?:
+        | Array<{ id?: string | undefined; name: string; tone?: 'neutral' | 'amber' | 'red' | undefined }>
+        | undefined;
     };
   }): Promise<{ collection: CollectionEntity }>;
   propRemove(input: { pageId: string; pid: string }): Promise<{ collection: CollectionEntity }>;
+  /** 字段左右排序（TASK-T40-01 §B2）：`beforePid=null` = 移到末尾；标题列恒首列（E_INVARIANT）。 */
+  propMove(input: {
+    pageId: string;
+    pid: string;
+    beforePid: string | null;
+  }): Promise<{ collection: CollectionEntity }>;
   viewSave(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;

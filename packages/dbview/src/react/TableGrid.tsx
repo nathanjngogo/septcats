@@ -58,6 +58,8 @@ export interface TableGridProps {
   relationCandidates?: readonly RelationCandidate[] | undefined;
   relationTitle?: ((id: string) => string | null) | undefined;
   onClickRelation?: ((id: string) => void) | undefined;
+  /** select/multi_select 单元格内新建选项：创建并返回选项 id（TASK-T40-01 §B3）。 */
+  onCreateCellOption?: ((pid: string, name: string) => string | undefined) | undefined;
   onRetry?: (() => void) | undefined;
   onCreateRecord?: (() => void) | undefined;
   /** 批量删除（批量条上的动作）。 */
@@ -248,6 +250,7 @@ export function TableGrid(props: TableGridProps) {
     relationCandidates = [],
     relationTitle,
     onClickRelation,
+    onCreateCellOption,
     onRetry,
     onCreateRecord,
     onDeleteSelected,
@@ -552,6 +555,13 @@ export function TableGrid(props: TableGridProps) {
                             relationCandidates={property.type === 'relation' ? relationCandidates : undefined}
                             relationTitle={relationTitle}
                             onClickRelation={onClickRelation}
+                            onCreateOption={
+                              property.type === 'select' || property.type === 'multi_select'
+                                ? onCreateCellOption === undefined
+                                  ? undefined
+                                  : (name: string) => onCreateCellOption(property.id, name)
+                                : undefined
+                            }
                             onCommit={(value) => {
                               onChangeCell?.(row.id, property.id, value);
                             }}

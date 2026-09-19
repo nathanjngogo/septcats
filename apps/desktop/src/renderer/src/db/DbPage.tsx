@@ -18,8 +18,8 @@
  */
 import { useCallback, useState } from 'react';
 import { DbView, type CreateRecordField } from '@septcats/dbview/react';
-import { EMPTY_DISPLAY, formatValue } from '@septcats/dbview';
-import type { CollectionEntity, RecordEntity } from '@septcats/dbview';
+import { EMPTY_DISPLAY, formatValue, recordTitle } from '@septcats/dbview';
+import type { CollectionEntity, FieldType, RecordEntity } from '@septcats/dbview';
 import { Button, Dialog, EmptyState, ErrorPanel, Skeleton } from '@septcats/ui';
 import { t } from '../i18n';
 import { pushToast } from '../state/pages';
@@ -71,8 +71,41 @@ export function DbPage({ pageId }: DbPageProps) {
   const { status, collection, records, error } = db;
   const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [batchConfirm, setBatchConfirm] = useState<{ pid: string; recordIds: string[] } | null>(null);
+  // 字段管理二次确认（TASK-T40-01 §B2）：删除（含该列值清理）/ 改类型（值迁移说明）
+  const [removeConfirm, setRemoveConfirm] = useState<{ pid: string } | null>(null);
+  const [typeConfirm, setTypeConfirm] = useState<{ pid: string; to: FieldType } | null>(null);
 
   const titlePid = collection?.schema.title_pid ?? '';
+
+  /** relation picker 候选：一期数据模型没有 target 字段（向后兼容，不扩 schema），
+   * 候选 = 本库全部存活记录（自关联口径，DEVIATION-5）；点击关系标签跳转留后续。 */
+  const relationCandidates = useCallback((): Array<{ id: string; title: string }> => {
+    if (collection === null) {
+      return [];
+    }
+    return records.map((record) => ({ id: record.id, title: recordTitle(collection.schema, record.values, record.id) }));
+  }, [collection, records]);
+
+  /** 单元格内新建选项：生成 id → 全量 options 落库 → 立即回填选中（TASK-T40-01 §B3）。 */
+  const handleCreateCellOption = useCallback(
+    (pid: string, name: string): string | undefined => {
+      if (collection === null) {
+        return undefined;
+      }
+      const property = collection.schema.properties[pid];
+      if (property === undefined || (property.type !== 'select' && property.type !== 'multi_select')) {
+        return undefined;
+      }
+      const existing = property.options?.find((option) => option.name === name);
+      if (existing !== undefined) {
+        return existing.id;
+      }
+      const id = `opt-${crypto.randomUUID()}`;
+      void db.updatePropertyOptions(pid, [...(property.options ?? []), { id, name }]);
+      return id;
+    },
+    [collection, db],
+  );
 
   const resolveProvider = useCallback(async (): Promise<AiGate> => {
     const st = await dbAiApi().state();
@@ -303,11 +336,24 @@ export function DbPage({ pageId }: DbPageProps) {
           void db.addProperty(type);
         }}
         onRemoveProperty={(pid) => {
-          void db.removeProperty(pid);
+          // 二次确认（§B2）：删除后该列值一并清理、不复活
+          setRemoveConfirm({ pid });
         }}
         onRenameProperty={(pid, name) => {
           void db.renameProperty(pid, name);
         }}
+        onChangePropertyType={(pid, to) => {
+          // 改类型确认（§B2）：明示迁移策略后再提交
+          setTypeConfirm({ pid, to });
+        }}
+        onUpdatePropertyOptions={(pid, options) => {
+          void db.updatePropertyOptions(pid, options);
+        }}
+        onMoveProperty={(pid, beforePid) => {
+          void db.moveProperty(pid, beforePid);
+        }}
+        onCreateCellOption={handleCreateCellOption}
+        relationCandidates={relationCandidates()}
         onSaveView={(view) => {
           void db.saveView(view);
         }}
@@ -346,6 +392,86 @@ export function DbPage({ pageId }: DbPageProps) {
       >
         <p className="dbpage__ai-dialog-body">
           {t('db.ai.batchConfirmBody').replace('{n}', String(batchConfirm?.recordIds.length ?? 0))}
+        </p>
+      </Dialog>
+
+      <Dialog
+        open={removeConfirm !== null}
+        onClose={() => {
+          setRemoveConfirm(null);
+        }}
+        title={t('db.prop.deleteTitle')}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setRemoveConfirm(null);
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const pid = removeConfirm?.pid;
+                setRemoveConfirm(null);
+                if (pid !== undefined) {
+                  void db.removeProperty(pid);
+                }
+              }}
+            >
+              {t('db.prop.deleteConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <p className="dbpage__ai-dialog-body">
+          {t('db.prop.deleteBody').replace(
+            '{name}',
+            collection?.schema.properties[removeConfirm?.pid ?? '']?.name ?? '',
+          )}
+        </p>
+      </Dialog>
+
+      <Dialog
+        open={typeConfirm !== null}
+        onClose={() => {
+          setTypeConfirm(null);
+        }}
+        title={t('db.prop.typeTitle')}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setTypeConfirm(null);
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const pending = typeConfirm;
+                setTypeConfirm(null);
+                if (pending !== null) {
+                  void db.updatePropertyType(pending.pid, pending.to);
+                }
+              }}
+            >
+              {t('db.prop.typeConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <p className="dbpage__ai-dialog-body">
+          {t('db.prop.typeBody')
+            .replace('{name}', collection?.schema.properties[typeConfirm?.pid ?? '']?.name ?? '')
+            .replace('{from}', collection?.schema.properties[typeConfirm?.pid ?? '']?.type ?? '')
+            .replace('{to}', typeConfirm?.to ?? '')}
         </p>
       </Dialog>
     </div>

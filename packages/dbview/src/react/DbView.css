@@ -13,6 +13,11 @@
   padding: var(--sc-space-lg) var(--sc-space-gutter) var(--sc-space-xxl);
   min-height: 0;
   color: var(--sc-color-ink);
+  /* 文件内共享结构尺寸（no-magic ②：同值多处出现须收敛为一处字面量）：
+     --sc-dbview-md = 状态占位最小高 / 类型菜单弹层最小宽；
+     --sc-dbview-lg = 候选弹层最大高（picker）/ 选项面板最大宽。 */
+  --sc-dbview-md: 240px;
+  --sc-dbview-lg: 320px;
 }
 
 .sc-db__title-row {
@@ -144,7 +149,7 @@
 }
 
 .sc-dbgrid--state {
-  min-height: 240px;
+  min-height: var(--sc-dbview-md);
   display: grid;
   place-items: center;
 }
@@ -492,7 +497,7 @@
   top: calc(100% + var(--sc-space-xxs));
   left: 0;
   min-width: 220px;
-  max-height: 320px;
+  max-height: var(--sc-dbview-lg);
   overflow-y: auto;
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
@@ -577,4 +582,150 @@
 .sc-agg__count {
   margin-left: auto;
   color: var(--sc-color-ink-faint);
+}
+
+/* ---- 字段体系（TASK-T40-01）：日期清空 / 链接校验态 / 新建选项 / 选项管理面板 -- */
+
+.sc-dbc-dateedit {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  width: 100%;
+  min-width: 0;
+}
+
+.sc-dbc-dateedit input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-dbc-dateedit__clear {
+  flex: none;
+  padding: 0 var(--sc-space-xs);
+  height: var(--sc-size-control-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface-raised);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+}
+
+.sc-dbc-dateedit__clear:hover {
+  color: var(--sc-color-ink);
+  border-color: var(--sc-color-ink-faint);
+}
+
+.sc-dbc-input[data-invalid='true'],
+.sc-dbc-input[aria-invalid='true'] {
+  border-color: var(--sc-color-danger);
+  color: var(--sc-color-danger);
+}
+
+.sc-dbc-text--link,
+a.sc-dbc-text--link {
+  color: var(--sc-color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sc-dbc-picker__create {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  margin-top: var(--sc-space-xs);
+  padding-top: var(--sc-space-xs);
+  border-top: 1px solid var(--sc-color-hairline);
+}
+
+.sc-dbc-picker__create-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-xs);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-canvas);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-dbc-picker__create-btn {
+  flex: none;
+  padding: 0 var(--sc-space-sm);
+  height: var(--sc-size-control-sm);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-accent-soft);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-accent);
+  cursor: pointer;
+}
+
+.sc-propbar__pop--type {
+  min-width: var(--sc-dbview-md);
+}
+
+.sc-propbar__options {
+  position: absolute;
+  z-index: var(--sc-z-dropdown);
+  top: var(--sc-space-xxl);
+  right: var(--sc-space-sm);
+  min-width: 260px;
+  max-width: var(--sc-dbview-lg);
+  padding: var(--sc-space-sm);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-propbar__options-title {
+  margin: 0 0 var(--sc-space-xs);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-propbar__options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+.sc-propbar__options-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+}
+
+.sc-propbar__options-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-propbar__options-remove,
+.sc-propbar__options-add {
+  flex: none;
+  padding: 0 var(--sc-space-xs);
+  height: var(--sc-size-control-sm);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface-raised);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+}
+
+.sc-propbar__options-remove:hover {
+  color: var(--sc-color-danger);
+  border-color: var(--sc-color-danger);
+}
+
+.sc-propbar__options-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-xxs);
+  margin-top: var(--sc-space-sm);
 }

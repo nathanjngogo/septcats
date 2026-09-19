@@ -16,8 +16,10 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { Button, CaretDown, Icon, Menu, Plus, X, type MenuEntry } from '@septcats/ui';
 import {
+  FIELD_TYPES,
   FILTER_KINDS,
   NEW_PROPERTY_TYPES,
+  isFieldType,
   type CollectionSchema,
   type DbView,
   type FieldType,
@@ -85,6 +87,14 @@ export interface PropBarProps {
   /** 属性表头下拉的「重命名/删除」在 DbView 的属性管理区触发；工具条只负责新属性。 */
   onRemoveProperty?: ((pid: string) => void) | undefined;
   onRenameProperty?: ((pid: string, name: string) => void) | undefined;
+  /** 改字段类型（title 列不可；值迁移由调用方确认后提交，TASK-T40-01 §B2）。 */
+  onChangePropertyType?: ((pid: string, type: FieldType) => void) | undefined;
+  /** select/multi_select 选项全量替换（TASK-T40-01 §B3）；缺 id 项（新建）由 main 侧生成。 */
+  onUpdatePropertyOptions?:
+    | ((pid: string, options: Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>) => void)
+    | undefined;
+  /** 字段左右排序：`beforePid=null` = 移到末尾（title 恒首列由 main 侧强制）。 */
+  onMoveProperty?: ((pid: string, beforePid: string | null) => void) | undefined;
   /** AI 列「批量生成」入口（仅 ai 列渲染；目标行集由 DbView 按当前视图计算）。 */
   onAiBatchGenerate?: ((pid: string) => void) | undefined;
   /** AI 列「编辑生成指令」提交（仅 ai 列渲染；空串 = 清除配置回落默认指令）。 */
@@ -163,6 +173,14 @@ const REMOVE_PROP_PREFIX = 'propmenu-remove:';
 const RENAME_PROP_PREFIX = 'propmenu-rename:';
 const AI_BATCH_PROP_PREFIX = 'propmenu-ai-batch:';
 const AI_PROMPT_PROP_PREFIX = 'propmenu-ai-prompt:';
+const TYPE_PROP_PREFIX = 'propmenu-type:';
+const OPTIONS_PROP_PREFIX = 'propmenu-options:';
+const MOVE_PROP_PREFIX = 'propmenu-move:';
+
+/** 属性菜单可改至的目标类型：全集去掉当前类型；title 列在菜单层整项禁用。 */
+function retargetableTypes(current: FieldType): FieldType[] {
+  return FIELD_TYPES.filter((type) => type !== current);
+}
 
 export function PropBar({
   schema,
@@ -176,6 +194,9 @@ export function PropBar({
   onAddProperty,
   onRemoveProperty,
   onRenameProperty,
+  onChangePropertyType,
+  onUpdatePropertyOptions,
+  onMoveProperty,
   onAiBatchGenerate,
   onUpdateAiPrompt,
   onCreateRecord,
@@ -190,6 +211,11 @@ export function PropBar({
   const [renameDraft, setRenameDraft] = useState('');
   const [promptPid, setPromptPid] = useState<string | null>(null);
   const [promptDraft, setPromptDraft] = useState('');
+  // 改类型二级菜单 / 选项管理面板（TASK-T40-01 §B2/§B3）
+  const [typePid, setTypePid] = useState<string | null>(null);
+  const [optionsPid, setOptionsPid] = useState<string | null>(null);
+  const [optionsDraft, setOptionsDraft] = useState<Array<{ id?: string; name: string; tone?: 'neutral' | 'amber' | 'red' }>>([]);
+  const [optionNewDraft, setOptionNewDraft] = useState('');
 
   const properties = Object.values(schema.properties);
   const chips = flattenClauses(filter);
@@ -420,7 +446,7 @@ export function PropBar({
       </div>
 
       <div className="sc-propbar__group sc-propbar__group--props">
-        {properties.map((property) => (
+        {properties.map((property, propIndex) => (
           <span key={property.id} className="sc-propbar__propwrap">
             <button
               type="button"
@@ -440,6 +466,36 @@ export function PropBar({
               <div className="sc-propbar__pop">
                 <Menu
                   items={[
+                    {
+                      id: `${TYPE_PROP_PREFIX}${property.id}`,
+                      label: '更改类型…',
+                      disabled:
+                        property.id === schema.title_pid ||
+                        onChangePropertyType === undefined,
+                    },
+                    ...(property.type === 'select' || property.type === 'multi_select'
+                      ? [
+                          {
+                            id: `${OPTIONS_PROP_PREFIX}${property.id}`,
+                            label: '选项管理…',
+                            disabled: onUpdatePropertyOptions === undefined,
+                          },
+                        ]
+                      : []),
+                    ...(onMoveProperty !== undefined
+                      ? [
+                          {
+                            id: `${MOVE_PROP_PREFIX}left:${property.id}`,
+                            label: '左移',
+                            disabled: propIndex < 2, // 首列是标题；第一数据列不能插到标题前
+                          },
+                          {
+                            id: `${MOVE_PROP_PREFIX}right:${property.id}`,
+                            label: '右移',
+                            disabled: propIndex >= properties.length - 1,
+                          },
+                        ]
+                      : []),
                     { id: `${RENAME_PROP_PREFIX}${property.id}`, label: '重命名属性' },
                     ...(property.type === 'ai' && onAiBatchGenerate !== undefined
                       ? [{ id: `${AI_BATCH_PROP_PREFIX}${property.id}`, label: '批量生成' }]
@@ -457,6 +513,34 @@ export function PropBar({
                   label="属性管理"
                   onSelect={(id) => {
                     setPropManagePid(null);
+                    if (id.startsWith(TYPE_PROP_PREFIX)) {
+                      setTypePid(property.id);
+                      return;
+                    }
+                    if (id.startsWith(OPTIONS_PROP_PREFIX)) {
+                      setOptionsPid(property.id);
+                      setOptionsDraft(
+                        (property.options ?? []).map((option) => ({
+                          id: option.id,
+                          name: option.name,
+                          ...(option.tone !== undefined ? { tone: option.tone } : {}),
+                        })),
+                      );
+                      setOptionNewDraft('');
+                      return;
+                    }
+                    if (id.startsWith(`${MOVE_PROP_PREFIX}left:`)) {
+                      // 左移一格：插到「前一个属性」之前（前两个元素被跳过 → beforePid = i-2）
+                      const before = properties[propIndex - 2];
+                      onMoveProperty?.(property.id, before === undefined ? null : before.id);
+                      return;
+                    }
+                    if (id.startsWith(`${MOVE_PROP_PREFIX}right:`)) {
+                      // 右移一格：插到「后一个属性」之后（= 后第二个之前；末尾用 null）
+                      const before = properties[propIndex + 2];
+                      onMoveProperty?.(property.id, before === undefined ? null : before.id);
+                      return;
+                    }
                     if (id.startsWith(RENAME_PROP_PREFIX)) {
                       setRenamePid(property.id);
                       setRenameDraft(property.name);
@@ -537,6 +621,131 @@ export function PropBar({
             }}
           />
           <p className="sc-propbar__prompt-hint">Enter 保存 · 留空则使用默认指令</p>
+        </div>
+      )}
+
+      {typePid === null ? null : (
+        <div className="sc-propbar__pop sc-propbar__pop--type">
+          <Menu
+            items={retargetableTypes(schema.properties[typePid]?.type ?? 'text').map((type) => ({
+              id: type,
+              label: `${FIELD_TYPE_LABEL[type]}（${type}）`,
+            }))}
+            label="更改类型为"
+            onSelect={(id) => {
+              const pid = typePid;
+              setTypePid(null);
+              if (pid !== null && isFieldType(id)) {
+                onChangePropertyType?.(pid, id);
+              }
+            }}
+            onDismiss={() => {
+              setTypePid(null);
+            }}
+          />
+          <p className="sc-propbar__prompt-hint">
+            不兼容的值将原样保留（不显示、不丢失），改回原类型即可恢复。
+          </p>
+        </div>
+      )}
+
+      {optionsPid === null || schema.properties[optionsPid] === undefined ? null : (
+        <div className="sc-propbar__options" role="form" aria-label="选项管理">
+          <p className="sc-propbar__options-title">选项管理（{schema.properties[optionsPid]?.name}）</p>
+          <ul className="sc-propbar__options-list">
+            {optionsDraft.map((option, index) => (
+              <li key={option.id ?? `new-${String(index)}`} className="sc-propbar__options-row">
+                <input
+                  className="sc-dbc-input sc-propbar__options-name"
+                  value={option.name}
+                  aria-label={`选项 ${String(index + 1)} 名称`}
+                  onChange={(event) => {
+                    setOptionsDraft((current) =>
+                      current.map((entry, i) => (i === index ? { ...entry, name: event.target.value } : entry)),
+                    );
+                  }}
+                />
+                <button
+                  type="button"
+                  className="sc-propbar__options-remove"
+                  aria-label={`删除选项：${option.name}`}
+                  onClick={() => {
+                    setOptionsDraft((current) => current.filter((_entry, i) => i !== index));
+                  }}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="sc-propbar__options-row">
+            <input
+              className="sc-dbc-input sc-propbar__options-name"
+              value={optionNewDraft}
+              placeholder="新选项名称…"
+              aria-label="新选项名称"
+              onChange={(event) => {
+                setOptionNewDraft(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  const name = optionNewDraft.trim();
+                  if (name.length === 0) {
+                    return;
+                  }
+                  setOptionsDraft((current) => [...current, { name }]);
+                  setOptionNewDraft('');
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="sc-propbar__options-add"
+              onClick={() => {
+                const name = optionNewDraft.trim();
+                if (name.length === 0) {
+                  return;
+                }
+                setOptionsDraft((current) => [...current, { name }]);
+                setOptionNewDraft('');
+              }}
+            >
+              添加
+            </button>
+          </div>
+          <div className="sc-propbar__options-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const pid = optionsPid;
+                setOptionsPid(null);
+                if (pid === null) {
+                  return;
+                }
+                onUpdatePropertyOptions?.(
+                  pid,
+                  optionsDraft.map((entry) => ({
+                    ...(entry.id !== undefined ? { id: entry.id } : {}),
+                    name: entry.name,
+                    ...(entry.tone !== undefined ? { tone: entry.tone } : {}),
+                  })),
+                );
+              }}
+            >
+              保存
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setOptionsPid(null);
+              }}
+            >
+              取消
+            </Button>
+          </div>
         </div>
       )}
 
