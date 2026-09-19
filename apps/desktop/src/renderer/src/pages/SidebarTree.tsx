@@ -83,6 +83,8 @@ interface NavRowProps {
   icon: ComponentProps<typeof Icon>['icon'];
   depth?: number;
   active?: boolean;
+  /** 分组标题行（T34-01：收藏/最近的小字弱化态，只动样式不改结构）。 */
+  head?: boolean;
   /** 有子节点 → tw 槽渲染折叠三角（点击切展开，不冒泡到行选中）。 */
   branch?: boolean;
   open?: boolean;
@@ -104,6 +106,7 @@ function NavRow({
   icon,
   depth = 0,
   active = false,
+  head = false,
   branch = false,
   open = false,
   count,
@@ -114,10 +117,15 @@ function NavRow({
   onCaretClick,
   onDoubleClick,
 }: NavRowProps) {
+  const rowClass = head
+    ? 'app-nav-row app-nav-row--head'
+    : active
+      ? 'app-nav-row app-nav-row--active'
+      : 'app-nav-row';
   return (
     <div
       data-testid={testId}
-      className={active ? 'app-nav-row app-nav-row--active' : 'app-nav-row'}
+      className={rowClass}
       style={indentStyle(depth)}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -199,6 +207,7 @@ export function SidebarTree() {
         testId={`side-${key}`}
         label={label}
         icon={icon}
+        head
         count={group.length}
         onClick={() => toggleGroup(key)}
       />,

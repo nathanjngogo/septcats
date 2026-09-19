@@ -7,7 +7,7 @@
   position: relative;
   height: 100%;
   overflow-y: auto;
-  background: var(--sc-color-canvas);
+  background: var(--sc-color-content);
   padding: var(--sc-space-xl) var(--sc-space-gutter) var(--sc-space-xxl);
 }
 

@@ -4,13 +4,16 @@
  */
 
 export const colors = {
-  canvas: "#FBFBFA",
-  surface: "#F4F4F2",
+  canvas: "#F9F8F7",
+  surface: "#F1F0EF",
   "surface-raised": "#FFFFFF",
-  ink: "#1C1E21",
-  "ink-secondary": "#5B6068",
-  "ink-faint": "#666C75",
-  hairline: "#E6E6E2",
+  content: "#FFFFFF",
+  "surface-active": "#EEECEB",
+  ink: "#2C2C2B",
+  "ink-secondary": "#5F5E59",
+  "ink-faint": "#6B6964",
+  "icon-faint": "#8E8B86",
+  hairline: "#EAE8E6",
   "hairline-strong": "#D2D2CC",
   accent: "#A16207",
   "accent-soft": "#F6EEDD",
@@ -23,14 +26,17 @@ export const colors = {
 } as const;
 
 export const colorsDark = {
-  canvas: "#16181B",
-  surface: "#1E2124",
-  "surface-raised": "#26292D",
-  ink: "#E9E9E6",
-  "ink-secondary": "#A3A8AF",
-  "ink-faint": "#8E94A0",
-  hairline: "#2C2F34",
-  "hairline-strong": "#3B3F45",
+  canvas: "#202020",
+  surface: "#252525",
+  "surface-raised": "#2E2E2E",
+  content: "#191919",
+  "surface-active": "#2C2C2C",
+  ink: "#E9E9E9",
+  "ink-secondary": "#A9A7A1",
+  "ink-faint": "#9C9A94",
+  "icon-faint": "#8B8B8B",
+  hairline: "#2F2F2F",
+  "hairline-strong": "#424242",
   accent: "#D9A441",
   "accent-soft": "#33290F",
   "on-accent": "#1C1E21",
@@ -82,6 +88,12 @@ export const typography = {
     fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
     fontSize: "13px",
     fontWeight: 500,
+    lineHeight: 1.5
+  },
+  "ui-md": {
+    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontSize: "14px",
+    fontWeight: 450,
     lineHeight: 1.5
   },
   "ui-xs": {
@@ -151,7 +163,7 @@ export const zIndex = {
 
 export const easeOut = 'cubic-bezier(0.16,1,0.3,1)';
 
-export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'ink', 'ink-secondary', 'ink-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection'] as const;
+export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection'] as const;
 
 export const TOKEN_PREFIX = '--sc-';
 

@@ -122,7 +122,9 @@ describe('S4 批次 3 巡检：交互态覆盖（T27-01 §0.B.1）', () => {
   });
 
   it('按压态一律走 token 色（accent-soft / on-accent），无字面色', () => {
-    expect(ruleBody(fileOf('App.css'), 'app-nav-row:active')).toContain('var(--sc-color-accent-soft)');
+    // T34-01：侧栏行按压/选中统一改走中性 surface-active（Notion 同构），
+    // 其余内容区组件按压态仍为 accent-soft——断言语义不变（token 色、无字面色）。
+    expect(ruleBody(fileOf('App.css'), 'app-nav-row:active')).toContain('var(--sc-color-surface-active)');
     expect(ruleBody(fileOf('TrashList.css'), 'trash-row:active')).toContain('var(--sc-color-accent-soft)');
     expect(ruleBody(fileOf('SearchPage.css'), 'search-res:active')).toContain('var(--sc-color-accent-soft)');
     expect(ruleBody(fileOf('CommandPalette.css'), 'palette-row:active')).toContain('var(--sc-color-accent-soft)');

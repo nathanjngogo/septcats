@@ -110,7 +110,8 @@ function parseTokensCss(css: string): { light: ThemeColors; dark: ThemeColors } 
 // --- 断言 ---------------------------------------------------------------------
 
 const TEXT_TOKENS = ['ink', 'ink-secondary', 'ink-faint'] as const;
-const BACKDROPS = ['canvas', 'surface', 'surface-raised'] as const;
+// T34-01：content（内容区背景 #FFFFFF/#191919）纳入门禁平面——采样表的文字色必须在其真实落点上达标
+const BACKDROPS = ['canvas', 'surface', 'surface-raised', 'content'] as const;
 const STATUS_ON_CANVAS = ['accent', 'danger', 'success'] as const;
 
 describe('对比度红线（DESIGN.md ↔ tokens.css ↔ WCAG AA）', () => {
@@ -168,16 +169,18 @@ describe('对比度红线（DESIGN.md ↔ tokens.css ↔ WCAG AA）', () => {
     });
   }
 
-  it('本轮裁决值锚定：ink-faint 浅色 #666C75 / 深色 #8E94A0（PM §0.2，防回归到旧值）', () => {
-    expect(fromCss.light['ink-faint']).toBe('#666C75');
-    expect(fromCss.dark['ink-faint']).toBe('#8E94A0');
+  it('本轮裁决值锚定：ink-faint 浅色 #6B6964 / 深色 #9C9A94（T34-01 Notion 对齐，防回归到旧值）', () => {
+    expect(fromCss.light['ink-faint']).toBe('#6B6964');
+    expect(fromCss.dark['ink-faint']).toBe('#9C9A94');
   });
 
-  it('报告口径：ink-faint 两主题三平面的实测比值（打进测试输出供报告引用）', () => {
+  it('报告口径：文字 token 两主题 × 四平面的实测比值（打进测试输出供报告引用）', () => {
     for (const theme of ['light', 'dark'] as const) {
-      for (const bg of BACKDROPS) {
-        // eslint-disable-next-line no-console -- 报告引用数据
-        console.log(`  ${theme} ink-faint/${bg} = ${ratio(theme, 'ink-faint', bg).toFixed(2)}`);
+      for (const fg of TEXT_TOKENS) {
+        for (const bg of BACKDROPS) {
+          // eslint-disable-next-line no-console -- 报告引用数据
+          console.log(`  ${theme} ${fg}/${bg} = ${ratio(theme, fg, bg).toFixed(2)}`);
+        }
       }
     }
   });

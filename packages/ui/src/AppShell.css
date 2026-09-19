@@ -12,6 +12,7 @@
   gap: var(--sc-space-sm);
   padding: 0 var(--sc-space-md);
   border-bottom: 1px solid var(--sc-color-hairline);
+  /* T34-01：顶栏与侧栏同底色（canvas = Notion 采样 chrome 面），不再用内容区白 */
   background: var(--sc-color-canvas);
 }
 
@@ -46,6 +47,7 @@
 .sc-shell__sidebar {
   min-height: 0;
   border-right: 1px solid var(--sc-color-hairline);
+  /* T34-01：侧栏 chrome 底（canvas），与顶栏同色 */
   background: var(--sc-color-canvas);
 }
 
@@ -53,4 +55,6 @@
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  /* T34-01：内容区独立白底（Notion 采样 content 面），与侧栏/顶栏 chrome 面分色 */
+  background: var(--sc-color-content);
 }

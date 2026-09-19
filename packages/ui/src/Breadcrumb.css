@@ -15,7 +15,8 @@
   display: flex;
   align-items: center;
   gap: var(--sc-space-xxs);
-  font: var(--sc-text-ui-sm);
+  /* T34-01：面包屑 14px（ui-md），Notion 顶栏量级 */
+  font: var(--sc-text-ui-md);
   white-space: nowrap;
 }
 

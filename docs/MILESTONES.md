@@ -64,7 +64,8 @@
 | └ T32-01 块编辑器可见性（老板报障） | 09-19 | 🟡 部分闭环（斜杠菜单 ✅ / 块手柄 → 补派 T32-01B） | 根因：斜杠菜单**从未传 position**（缺省流位置→视口外）已修（真机 `inViewport:false→true`，11 种块型）；块手柄因 `activeBlockId` 仅 `selectionUpdate` 赋值（须先点击）→ 本单改为 hover 归属链 + 视口夹紧 + `＋` 插块 + 拖拽；**但真机 `[data-id]` 元素=0** → 块身份未进 DOM → 手柄仍不渲染 → **T32-01B 补派**。真机另揪出真 bug：拖拽 reorder 因 doc 数组序为拖前序致差分为空、commit 未调用（已修）；全仓 1042 无红（editor 168 / desktop 440） || 2 | replay：未记"覆盖冲突" | 中（冲突副本丢失） | 异设备覆盖写入 report |
 
 | └ T33-01 块手柄压字修复（老板报障「输入文本有重叠」） | 09-19 | ✅ **真机四宽度闭环（rc.9）** | 根因：`.pv-handle` 58px 簇挂在正文列外 24px 窄轨上溢出进正文（gutter=−18）→ 正文列预留 70px 装订线（token 计算）+ 手柄右缘钉在文本左缘外。**PM 独立复验**：1280/900/760/640 四宽度 `overlap:false`、`gutter:12`（手柄仍 28×28）；回归 hover/12 项菜单/11 种斜杠块型全绿；全仓 1049 无红（editor 172 / desktop 449，perf 隔离复跑 13.0ms）、typecheck 9/9、双门禁 ✓；**新立 T35-01**（斜杠菜单 Enter 双处理致文本残留） || 3 | apps/desktop 用 zod 未声明依赖 | 高（CI 必挂） | 补声明 |
-| 4 | Node/Electron 双 ABI → 15 测试静默 skip | 高（假绿） | ensure-abi 守卫脚本 |
+
+| └ T34-01 设计对齐：侧栏/顶栏模仿 Notion | 09-19 | ✅ **token 真值核对 + 真机回归（rc.10）** | 配色取自老板 Notion 截图**逐像素采样**并落 `DESIGN.md`：canvas **#F9F8F7**（侧栏与**顶栏同色**）、surface #F1F0EF、surface-active **#EEECEB**、ink **#2C2C2B**、ink-secondary #5F5E59、hairline #EAE8E6、content **#FFFFFF**；深色 canvas #202020 / surface #252525 / content #191919；新增 token content/surface-active/icon-faint + 字阶 ui-md；对比度门禁 13→17 对（最差 4.82 ≥4.5）；**PM 独立核对 tokens.css 真值全对**；回归：手柄×文本 4/4 overlap=false（T33 成果保持）；全仓 ui 79 / desktop 449（perf 并发假红→隔离 13.0ms）、typecheck 9/9、双门禁 ✓ || 4 | Node/Electron 双 ABI → 15 测试静默 skip | 高（假绿） | ensure-abi 守卫脚本 |
 | 5 | ui 测试 ../../test 断链 + ?raw stub 空串 | 高（24 测试全挂） | 路径修 + 磁盘读 helper |
 | 6 | build-tokens `--sc-font-font-ui` 双前缀漂移 | 中 | key.replace(/^font-/) |
 | 7 | **code node/mark 撞名**（PM RangeError） | 高（编辑器起不来） | 真相层不动，投影边界映射 codeBlock（单源双表） |

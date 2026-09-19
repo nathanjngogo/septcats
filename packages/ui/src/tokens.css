@@ -3,13 +3,16 @@
 
 :root {
   /* colors：浅色主题语义色（DESIGN.md front matter） */
-  --sc-color-canvas: #FBFBFA;
-  --sc-color-surface: #F4F4F2;
+  --sc-color-canvas: #F9F8F7;
+  --sc-color-surface: #F1F0EF;
   --sc-color-surface-raised: #FFFFFF;
-  --sc-color-ink: #1C1E21;
-  --sc-color-ink-secondary: #5B6068;
-  --sc-color-ink-faint: #666C75;
-  --sc-color-hairline: #E6E6E2;
+  --sc-color-content: #FFFFFF;
+  --sc-color-surface-active: #EEECEB;
+  --sc-color-ink: #2C2C2B;
+  --sc-color-ink-secondary: #5F5E59;
+  --sc-color-ink-faint: #6B6964;
+  --sc-color-icon-faint: #8E8B86;
+  --sc-color-hairline: #EAE8E6;
   --sc-color-hairline-strong: #D2D2CC;
   --sc-color-accent: #A16207;
   --sc-color-accent-soft: #F6EEDD;
@@ -32,6 +35,7 @@
   --sc-tracking-h2: -0.005em;
   --sc-text-h3: 600 18px/1.4 var(--sc-font-ui);
   --sc-text-ui-sm: 500 13px/1.5 var(--sc-font-ui);
+  --sc-text-ui-md: 450 14px/1.5 var(--sc-font-ui);
   --sc-text-ui-xs: 450 12px/1.5 var(--sc-font-ui);
   --sc-text-code: 400 14px/1.6 var(--sc-font-mono);
 
@@ -89,14 +93,17 @@
 
 [data-theme="dark"] {
   /* colors：DESIGN.md「深色主题映射」表（focus-ring 跟随同值 token accent） */
-  --sc-color-canvas: #16181B;
-  --sc-color-surface: #1E2124;
-  --sc-color-surface-raised: #26292D;
-  --sc-color-ink: #E9E9E6;
-  --sc-color-ink-secondary: #A3A8AF;
-  --sc-color-ink-faint: #8E94A0;
-  --sc-color-hairline: #2C2F34;
-  --sc-color-hairline-strong: #3B3F45;
+  --sc-color-canvas: #202020;
+  --sc-color-surface: #252525;
+  --sc-color-surface-raised: #2E2E2E;
+  --sc-color-content: #191919;
+  --sc-color-surface-active: #2C2C2C;
+  --sc-color-ink: #E9E9E9;
+  --sc-color-ink-secondary: #A9A7A1;
+  --sc-color-ink-faint: #9C9A94;
+  --sc-color-icon-faint: #8B8B8B;
+  --sc-color-hairline: #2F2F2F;
+  --sc-color-hairline-strong: #424242;
   --sc-color-accent: #D9A441;
   --sc-color-accent-soft: #33290F;
   --sc-color-on-accent: #1C1E21;
