@@ -75,7 +75,7 @@
 
 | └ 新需求队列续（老板 09-19 追加） | 09-19 | 🚧 规划中 | **R8 双链（Obsidian 式）**：T44-01 单已就绪（`[[ ]]` 补全 + 未解析链接 + **反向链接面板** + 派生索引一致性）→ 队列尾 || 8 | diff 重平衡回退键越过锚点 | 中（兄弟序错乱） | 无解→整层等间隔重建 |
 
-| └ T38-01 R2 AI 对话框（右侧可收起 · 多轮） | 09-19 | 🟡 **代码+测试闭环（rc.13）+ 真机 29 PASS / 0 FAIL**（探针/截图已入库；**真实模型多轮与模型产出引用未验证**——机器上无可用端点，已如实登记） | `renderer/src/ai/{AiChatPanel,chatState,chatContext,chatBridge}`：多轮装配（第 3 轮带第 1 轮原文、20 条上限、预算截断保成对）+ 引用 chip「页名 › 块锚点」→ `jumpToBlock`（跨页 `openInTab`）+ 历史/面板态按 workspace 持久化 + 隐私硬不变量（**非本地端点未 consent → fetch 调用数 = 0**、localStorage 无密钥、日志 0 行）；全仓 **1125 无红**（desktop 506）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.13；**待补**：LM Studio 3 轮真机截图 / 隐私现场数值 / 重启还原 / 双主题截图 || 9 | history 冗余 delete 的逆 op 错误复活实体 | 高（撤销链被 fuzz 抓到） | 应用前已死→逆=null |
+| └ T38-01 R2 AI 对话框（右侧可收起 · 多轮） | 09-19 | 🟡 **代码+测试闭环（rc.13）+ 真机 29 PASS / 0 FAIL**（探针/截图已入库；**真实模型多轮 + 模型产出引用已验通**（见下，19 PASS/2 FAIL，2 FAIL 为 CSP 未放行 127.0.0.1 的探针侧问题并登记 T45-01）） | `renderer/src/ai/{AiChatPanel,chatState,chatContext,chatBridge}`：多轮装配（第 3 轮带第 1 轮原文、20 条上限、预算截断保成对）+ 引用 chip「页名 › 块锚点」→ `jumpToBlock`（跨页 `openInTab`）+ 历史/面板态按 workspace 持久化 + 隐私硬不变量（**非本地端点未 consent → fetch 调用数 = 0**、localStorage 无密钥、日志 0 行）；全仓 **1125 无红**（desktop 506）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.13；**待补**：LM Studio 3 轮真机截图 / 隐私现场数值 / 重启还原 / 双主题截图 || 9 | history 冗余 delete 的逆 op 错误复活实体 | 高（撤销链被 fuzz 抓到） | 应用前已死→逆=null |
 | 10 | PageView optimizeDeps 隔离警告 | 低 | ui>child 语法 |
 | 11 | T6 tree 后代收集用 BFS ≠ 视觉序（DFS 前序） | 高（子树不连续） | 改实现出栈即记录+逆序压栈 |
 | 12 | createPage version=1 → 首版 lamport=2（rename 差 1） | 中 | 新建实体 version=0 |

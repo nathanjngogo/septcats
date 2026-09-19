@@ -1,0 +1,265 @@
+{
+  "task": "TASK-T38-01 真机探针（真实多轮 · 真实本机端点）",
+  "ranAt": "2026-09-19T16:53:30.115Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "endpoint": "http://127.0.0.1:1234/v1",
+  "model": "ternary-bonsai-2-27b-pq2_0",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-multiturn\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-multiturn\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-multiturn\\ud\\septcats.settings.json"
+  },
+  "probeProductFacts": {
+    "panelSendPassesMaxTokens": false,
+    "note": "AiChatPanel.send() 调 ai.chat({providerId, messages})，不带 maxTokens → 真实请求体无 max_tokens；main/ai/client.ts 默认 chatTimeoutMs=120_000（未改源码）。探针每轮等待上限 180s。",
+    "endpointMirror": "端点直连摸底（探针侧，非面板路径）见 _scratch/endpoint-probe.json：max_tokens=800 → 9.9s content=\"已记住。\" finish_reason=stop reasoning 1033 字符；无 max_tokens → 12.48s content=\"收到。\" finish_reason=stop；多轮 → 11.17s content=\"7391\"。"
+  },
+  "messages": {
+    "round1": "请记住这个数字：7391。只回复四个字：已记住。",
+    "round2": "请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。",
+    "round3": "我第一轮让你记住的数字是多少？只回答数字。"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "channel": "renderer IPC 直连（显式 maxTokens:800，非面板）",
+      "sent": "请记住这个数字：7391。只回复四个字：已记住。",
+      "elapsed_s": "10.32",
+      "reply": "已记住",
+      "error": null,
+      "note": "未写入面板历史（纯 IPC 取证）"
+    },
+    {
+      "round": 1,
+      "channel": "AI 面板 UI（Enter 发送，产品真实请求形态=无 max_tokens）",
+      "sent": "请记住这个数字：7391。只回复四个字：已记住。",
+      "elapsed_s": "37.31",
+      "reply": "已记住。",
+      "error": null,
+      "note": "historyUserEcho=\"请记住这个数字：7391。只回复四个字：已记住。\" busyAfter=false timedOut=false"
+    },
+    {
+      "round": 2,
+      "channel": "AI 面板 UI（页面内容问答，期望产出出处标记）",
+      "sent": "请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。",
+      "elapsed_s": "7.07",
+      "reply": "本页项目代号为云雀。⟦#1⟧",
+      "error": null,
+      "note": "chipCount=1 rawMarks=[] timedOut=false"
+    },
+    {
+      "round": 3,
+      "channel": "AI 面板 UI（第三轮追问第一轮记忆）",
+      "sent": "我第一轮让你记住的数字是多少？只回答数字。",
+      "elapsed_s": "7.07",
+      "reply": "7391",
+      "error": null,
+      "note": "contains7391=true timedOut=false"
+    }
+  ],
+  "pass": 19,
+  "fail": 2,
+  "assertions": [
+    {
+      "name": "① 顶栏 AI 钮 → 面板 .ai-chat 打开（宽度 320px）",
+      "ok": true,
+      "raw": "{\"panelCount\":1,\"panelW\":320}"
+    },
+    {
+      "name": "[info] ② renderer 侧 ai.state() 快照",
+      "ok": null,
+      "raw": "{\"enabled\":true,\"cloudConsent\":false,\"active\":\"probe-local\",\"providers\":[{\"id\":\"probe-local\",\"baseUrl\":\"http://127.0.0.1:1234/v1\",\"isLocal\":true,\"model\":\"ternary-bonsai-2-27b-pq2_0\",\"hasKey\":false}]}"
+    },
+    {
+      "name": "② 夹具 provider 命中真本机端点且判为本地（isLocal=true、model=目标模型）",
+      "ok": true,
+      "raw": "{\"id\":\"probe-local\",\"baseUrl\":\"http://127.0.0.1:1234/v1\",\"isLocal\":true,\"model\":\"ternary-bonsai-2-27b-pq2_0\",\"hasKey\":false}"
+    },
+    {
+      "name": "② 云端 consent 保持 false（本地端点无需同意，未触发云端门禁）",
+      "ok": true,
+      "raw": "cloudConsent=false"
+    },
+    {
+      "name": "③ 端点 /v1/models 可达且含目标模型",
+      "ok": false,
+      "raw": "{\"ok\":false,\"error\":\"Failed to fetch\"}"
+    },
+    {
+      "name": "④ 0 号轮（maxTokens:800 显式）经真实端点返回非空 content",
+      "ok": true,
+      "raw": "{\"ok\":true,\"text\":\"已记住\",\"model\":\"ternary-bonsai-2-27b-pq2_0\"}"
+    },
+    {
+      "name": "⑤ 轮1：面板收到 AI 回复且原样落盘（非错误态）",
+      "ok": true,
+      "raw": "reply=\"已记住。\" error=null assistantMsgs=1"
+    },
+    {
+      "name": "⑥ 轮2：面板收到 AI 回复且原样落盘（非错误态）",
+      "ok": true,
+      "raw": "reply=\"本页项目代号为云雀。⟦#1⟧\" error=null"
+    },
+    {
+      "name": "⑦ 轮3 回复原文包含「7391」（多轮上下文真的传通的直接证据）",
+      "ok": true,
+      "raw": "第三轮原文=\"7391\" error=null"
+    },
+    {
+      "name": "⑦ 轮3 无错误态",
+      "ok": true,
+      "raw": "errorText=null"
+    },
+    {
+      "name": "⑧ 面板消息数 user=3 / assistant=3（DOM）",
+      "ok": true,
+      "raw": "user=3 assistant=3"
+    },
+    {
+      "name": "⑧ localStorage 历史 user=3 / assistant=3（共 6 条，交错）",
+      "ok": true,
+      "raw": "count=6 roles=[\"user\",\"assistant\",\"user\",\"assistant\",\"user\",\"assistant\"]"
+    },
+    {
+      "name": "⑧ localStorage 无密钥痕迹（sk-/Bearer）",
+      "ok": true,
+      "raw": "hasSecret=false keys=[\"septcats.aichat.history.01M2X9A2Z1XBA1AC358C74TMTZ\",\"septcats.tabs.01M2X9A2Z1XBA1AC358C74TMTZ\",\"septcats.aichat.panel\",\"septcats.theme\"]"
+    },
+    {
+      "name": "[info] ⑧ 三轮原文（localStorage 逐字）",
+      "ok": null,
+      "raw": "[\"请记住这个数字：7391。只回复四个字：已记住。\",\"已记住。\",\"请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。\",\"本页项目代号为云雀。⟦#1⟧\",\"我第一轮让你记住的数字是多少？只回答数字。\",\"7391\"]"
+    },
+    {
+      "name": "[info] ⑨ 模型是否产出可解析引用标记 ⟦#N⟧（产品实际标记语法）",
+      "ok": null,
+      "raw": "markInRounds=true round2=true"
+    },
+    {
+      "name": "[info] ⑨ chip DOM 文本",
+      "ok": null,
+      "raw": "[{\"text\":\"T38 多轮探针页 › 块1\",\"title\":\"跳转到出处\"}]"
+    },
+    {
+      "name": "⑨ 引用标记已渲染为 chip（≠ 原样 ⟦#N⟧ 文本）",
+      "ok": true,
+      "raw": "chips=[{\"text\":\"T38 多轮探针页 › 块1\",\"title\":\"跳转到出处\"}] rawMarks=[]"
+    },
+    {
+      "name": "[info] ⑨ 当前页块清单（探针侧）",
+      "ok": null,
+      "raw": "{\"ws\":\"01M2X9A2Z1XBA1AC358C74TMTZ\",\"blocks\":[{\"id\":\"01M2X9A5PNPFY6MSBXN02PM4GH\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2X9A6548KG52K5D8JEF4P6Y\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]}"
+    },
+    {
+      "name": "⑨ 点 chip → 编辑器选区落在被引用块（真实跳转）",
+      "ok": true,
+      "raw": "selBlockId=01M2X9A5PNPFY6MSBXN02PM4GH before={\"pvScrollTop\":142,\"hasEditor\":true} after={\"selBlockId\":\"01M2X9A5PNPFY6MSBXN02PM4GH\",\"pvScrollTop\":0} blocks=[{\"id\":\"01M2X9A5PNPFY6MSBXN02PM4GH\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2X9A6548KG52K5D8JEF4P6Y\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]"
+    },
+    {
+      "name": "[info] ⑩ 截图（三轮完成态）",
+      "ok": null,
+      "raw": "light 1184x735 / dark 1184x735"
+    },
+    {
+      "name": "⑪ 三轮完成态窗口零滚动（T30 红线）",
+      "ok": true,
+      "raw": "docOverflow=0px"
+    },
+    {
+      "name": "[info] ⑫ 第 1 次优雅退出（window.close → 自退，不强杀）",
+      "ok": null,
+      "raw": "gracefulExited=true panelRaw=\"1\" histCount=6"
+    },
+    {
+      "name": "⑬ 重启后 localStorage 历史逐字还原（6 条 + 原文逐字一致）",
+      "ok": true,
+      "raw": "count=6(quit前 6) textsEq=true"
+    },
+    {
+      "name": "⑬ 重启后面板渲染出 3 轮 user + 3 轮 assistant 气泡（原文一致）",
+      "ok": true,
+      "raw": "user=3 assistant=3 userTextsEq=true"
+    },
+    {
+      "name": "[info] ⑬ 重启后第三轮 assistant 原文（逐字）",
+      "ok": null,
+      "raw": "\"7391\""
+    },
+    {
+      "name": "⑬ 重启后第三轮原文仍含 7391",
+      "ok": true,
+      "raw": "text=\"7391\""
+    },
+    {
+      "name": "[info] ⑬ 截图（重启还原态）",
+      "ok": null,
+      "raw": "light 1184x735 / dark 1184x735"
+    },
+    {
+      "name": "⑭ 全程 pageerror 计数 = 0",
+      "ok": true,
+      "raw": "pageErrors=0 []"
+    },
+    {
+      "name": "⑭ 全程 renderer console error 计数 = 0",
+      "ok": false,
+      "raw": "consoleErrors=2 [\"[run1] Refused to connect to 'http://127.0.0.1:1234/v1/models' because it violates the following Content Security Policy directive: \\\"connect-src 'self' asset: attachment: ws://localhost:* http://localhost:*\\\".\\n\",\"[run1] Fetch API cannot load http://127.0.0.1:1234/v1/models. Refused to connect because it violates the document's Content Security Policy.\"]"
+    },
+    {
+      "name": "[info] ⑭ 第 2 次优雅退出",
+      "ok": null,
+      "raw": "gracefulExited=true"
+    },
+    {
+      "name": "⑮ 真实数据根 C:\\Users\\Administrator\\.septcats 未被触碰（mtime 前后一致）",
+      "ok": true,
+      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+    },
+    {
+      "name": "[info] ⑯ main 侧 ai.log 原始行（app 自计耗时）",
+      "ok": null,
+      "raw": "[\"[2026-09-19T16:52:22.253Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(10320ms)\",\"[2026-09-19T16:52:59.115Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(36836ms)\",\"[2026-09-19T16:53:06.567Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(6963ms)\",\"[2026-09-19T16:53:12.950Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(6264ms)\"]"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "t38-multiturn-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 62811
+    },
+    {
+      "file": "t38-multiturn-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 62826
+    },
+    {
+      "file": "t38-multiturn-restored-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 62753
+    },
+    {
+      "file": "t38-multiturn-restored-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 62864
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "[run1] Refused to connect to 'http://127.0.0.1:1234/v1/models' because it violates the following Content Security Policy directive: \"connect-src 'self' asset: attachment: ws://localhost:* http://localhost:*\".\n",
+    "[run1] Fetch API cannot load http://127.0.0.1:1234/v1/models. Refused to connect because it violates the document's Content Security Policy."
+  ],
+  "realRootMtime": {
+    "before": "1789808566516.3271",
+    "after": "1789808566516.3271"
+  },
+  "aiLogLines": [
+    "[2026-09-19T16:52:22.253Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(10320ms)",
+    "[2026-09-19T16:52:59.115Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(36836ms)",
+    "[2026-09-19T16:53:06.567Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(6963ms)",
+    "[2026-09-19T16:53:12.950Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(6264ms)"
+  ]
+}
