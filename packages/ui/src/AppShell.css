@@ -33,8 +33,14 @@
   min-height: 0;
 }
 
+/* T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨 —— 侧栏不渲染占位、不响应点击，
+ * 主区占满剩余宽度；顶部按钮（aria-expanded）可再展开。 */
 .sc-shell--collapsed .sc-shell__body {
-  grid-template-columns: var(--sc-layout-sidebar-collapsed) 1fr;
+  grid-template-columns: 1fr;
+}
+
+.sc-shell--collapsed .sc-shell__sidebar {
+  display: none;
 }
 
 .sc-shell__sidebar {

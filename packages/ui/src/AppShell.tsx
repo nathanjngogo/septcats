@@ -16,7 +16,7 @@ export interface AppShellProps {
 }
 
 /**
- * AppShell —— 布局壳：顶栏 40px / 侧栏 240px（折叠 48px）/ 内容区无内衬。
+ * AppShell —— 布局壳：顶栏 40px / 侧栏 240px（折叠 = 完全收起，宽度 0）/ 内容区无内衬。
  * 视觉基准：docs/mockups 01-editor.html、02-sidebar-tree.html（顶栏 + 侧栏 + 主区）。
  */
 export function AppShell({

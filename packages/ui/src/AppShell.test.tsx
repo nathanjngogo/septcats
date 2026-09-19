@@ -1,4 +1,6 @@
 import { expectTokenOnlyCssFile } from '../test/css-discipline';
+import { resolvePkgFile } from '../test/pkg-root';
+import { readFileSync } from 'node:fs';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppShell } from './AppShell';
@@ -55,5 +57,20 @@ describe('AppShell', () => {
     );
     expect(container.querySelector('.sc-shell__sidebar')).toBeNull();
     expect(container.querySelector('.sc-shell__main')?.textContent).toBe('只有内容');
+  });
+
+  // TASK-T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨占位。
+  // jsdom 不做布局，这里按 css-discipline 同范式对 AppShell.css 源面做静态契约断言；
+  // 真机数值断言（getBoundingClientRect().width === 0）由 docs/mockups/cdp-audit-t30-after.mjs 覆盖。
+  it('折叠态 CSS 契约：侧栏 display:none、body 单列 1fr（主区占满）', () => {
+    const css = readFileSync(resolvePkgFile('src/AppShell.css'), 'utf8');
+    const collapsedSidebar = /\.sc-shell--collapsed\s+\.sc-shell__sidebar\s*\{([^}]*)\}/.exec(css);
+    expect(collapsedSidebar, '缺折叠态侧栏规则').not.toBeNull();
+    expect(collapsedSidebar?.[1] ?? '').toContain('display: none');
+    const collapsedBody = /\.sc-shell--collapsed\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
+    expect(collapsedBody, '缺折叠态 body 列规则').not.toBeNull();
+    // 单列 1fr：窄轨列（--sc-layout-sidebar-collapsed）不再占位
+    expect(collapsedBody?.[1] ?? '').toMatch(/grid-template-columns:\s*1fr/);
+    expect(collapsedBody?.[1] ?? '').not.toContain('--sc-layout-sidebar-collapsed');
   });
 });

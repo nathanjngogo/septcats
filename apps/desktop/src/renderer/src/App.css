@@ -3,6 +3,22 @@
  * 只用 var(--sc-*) token；颜色/字号/圆角/间距一律来自 DESIGN.md 产物。
  */
 
+/*
+ * T30-01 §②：闭合高度链 —— tokens.css 只给了 html/body 定高，#root 缺位导致
+ * .sc-shell 的 height:100% 依 auto 高父级解析为 auto，shell 被内容（长页/数据库页）
+ * 撑高 → 滚动退化为窗口级，侧栏随内容滚出视口、.sc-shell__main 的 overflow:auto
+ * 形同失效。此处补齐 #root 定高并禁其溢出：滚动只允许发生在内部滚动容器
+ * （.app-side-scroll / .sc-shell__main / .dbpage），窗口不得滚动。
+ */
+html, body {
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 .app-side {
   display: flex;
   flex-direction: column;
