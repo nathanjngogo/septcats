@@ -1,0 +1,276 @@
+{
+  "task": "TASK-T38-01 真机探针",
+  "ranAt": "2026-09-19T15:35:54.943Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-run\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-run\\data",
+    "endpoint": "http://127.0.0.1:45999"
+  },
+  "message": "T38 探针消息：请引用当前页第一个块。",
+  "pass": 29,
+  "fail": 0,
+  "assertions": [
+    {
+      "name": "① 基线：面板 DOM 不存在（收起）",
+      "ok": true,
+      "raw": "panelCount=0 panelRect=null"
+    },
+    {
+      "name": "[info] ① 基线主编辑列 .app-editor-col 宽度",
+      "ok": null,
+      "raw": "944px"
+    },
+    {
+      "name": "[info] ① 基线窗口/主题",
+      "ok": null,
+      "raw": "win=1184x735 theme=light tabCount=1"
+    },
+    {
+      "name": "② 点顶栏 AI 钮 → 面板 .ai-chat 出现",
+      "ok": true,
+      "raw": "panelCount=1 panelW=320px panelH=695px"
+    },
+    {
+      "name": "② 面板宽度 = 320px（DEVIATION-6 决策值）",
+      "ok": true,
+      "raw": "w=320px"
+    },
+    {
+      "name": "② 展开态主编辑列变窄 = 基线 − 面板宽",
+      "ok": true,
+      "raw": "baseline=944px → open=624px Δ=320px"
+    },
+    {
+      "name": "② 顶栏 AI 钮 aria-pressed=true",
+      "ok": true,
+      "raw": "aria-pressed=true matchButtons=1"
+    },
+    {
+      "name": "② 展开态窗口零滚动（T30 红线）",
+      "ok": true,
+      "raw": "docOverflow=0px scrollY=0"
+    },
+    {
+      "name": "[info] 截图（展开态）",
+      "ok": null,
+      "raw": "open-light 1184x735 / open-dark 1184x735"
+    },
+    {
+      "name": "[info] ③ renderer 侧 ai.state()",
+      "ok": null,
+      "raw": "{\"enabled\":true,\"providers\":[\"probe-local\"],\"active\":\"probe-local\",\"isLocal\":[true]}"
+    },
+    {
+      "name": "[info] ④ 发送后 600ms DOM 快照",
+      "ok": null,
+      "raw": "{\"userMsgs\":1,\"userText\":[\"T38 探针消息：请引用当前页第一个块。\"],\"assistantMsgs\":0,\"busy\":true,\"errorText\":null,\"gateText\":null,\"inputValue\":\"\"}"
+    },
+    {
+      "name": "[info] ④ 发送落定快照",
+      "ok": null,
+      "raw": "{\"busy\":false,\"errorText\":\"Error invoking remote method 'ai:chat': AiError: E_AI_UNREACHABLE：端点不可达：net::ERR_CONNECTION_REFUSED\",\"assistantMsgs\":0,\"userMsgs\":1}"
+    },
+    {
+      "name": "④ 用户消息落盘（发送即写 localStorage 历史）",
+      "ok": true,
+      "raw": "histKey=septcats.aichat.history.01M2X4XMSJ1QK2PT43GPVSYTNZ count=1 texts=[\"T38 探针消息：请引用当前页第一个块。\"]"
+    },
+    {
+      "name": "④ AI 回复未落盘（无本地模型 → 无 assistant 条）",
+      "ok": true,
+      "raw": "roles=[\"user\"] assistantDomMessages=0"
+    },
+    {
+      "name": "[info] ④ 错误文案（原文）",
+      "ok": null,
+      "raw": "errorText=\"Error invoking remote method 'ai:chat': AiError: E_AI_UNREACHABLE：端点不可达：net::ERR_CONNECTION_REFUSED\""
+    },
+    {
+      "name": "④ 门控未被拦（未出现「未启用/未配置」引导）",
+      "ok": true,
+      "raw": "errorText=\"Error invoking remote method 'ai:chat': AiError: E_AI_UNREACHABLE：端点不可达：net::ERR_CONNECTION_REFUSED\" gateText=null"
+    },
+    {
+      "name": "④ localStorage 无密钥痕迹（sk-/Bearer）",
+      "ok": true,
+      "raw": "hasSecret=false keys=[\"septcats.tabs.01M2X4XMSJ1QK2PT43GPVSYTNZ\",\"septcats.aichat.history.01M2X4XMSJ1QK2PT43GPVSYTNZ\",\"septcats.aichat.panel\",\"septcats.theme\"]"
+    },
+    {
+      "name": "⑤ 点关闭钮 → 面板 DOM 移除（收起）",
+      "ok": true,
+      "raw": "panelCount=0 panelRect=null"
+    },
+    {
+      "name": "⑤ 收起态主编辑列宽度复原（= 基线）",
+      "ok": true,
+      "raw": "closed=944px baseline=944px"
+    },
+    {
+      "name": "⑤ 收起态 localStorage septcats.aichat.panel === \"0\"",
+      "ok": true,
+      "raw": "panelRaw=\"0\""
+    },
+    {
+      "name": "[info] 截图（收起态）",
+      "ok": null,
+      "raw": "collapsed-light 1184x735 / collapsed-dark 1184x735"
+    },
+    {
+      "name": "⑥ 回归·窗口零滚动（T30 红线）",
+      "ok": true,
+      "raw": "docOverflow=0px scrollY=0"
+    },
+    {
+      "name": "⑥ 回归·页签条存在（T37）",
+      "ok": true,
+      "raw": ".tabsbar=1 .tabsbar-tab=1"
+    },
+    {
+      "name": "⑥ 回归·侧栏完全收起（.sc-shell__sidebar 宽度 = 0）",
+      "ok": true,
+      "raw": "sidebarW=0px"
+    },
+    {
+      "name": "[info] ⑥ 侧栏复原宽度",
+      "ok": null,
+      "raw": "240px"
+    },
+    {
+      "name": "[info] ⑦ 第 1 次优雅退出（window.close → 自退）",
+      "ok": null,
+      "raw": "gracefulExited=true panelRawBeforeQuit=\"0\" histCountBeforeQuit=1"
+    },
+    {
+      "name": "⑧ 重启后面板仍为收起态（DOM 不存在）",
+      "ok": true,
+      "raw": "panelCount=0 panelRect=null"
+    },
+    {
+      "name": "⑧ 重启后 localStorage septcats.aichat.panel 仍为 \"0\"",
+      "ok": true,
+      "raw": "panelRaw=\"0\""
+    },
+    {
+      "name": "⑧ 重启后历史逐字还原（条数 + 原文）",
+      "ok": true,
+      "raw": "count=1 (quit前 1) texts=[\"T38 探针消息：请引用当前页第一个块。\"]"
+    },
+    {
+      "name": "⑨ 重启后展开面板 → 上轮回的会话气泡渲染回来",
+      "ok": true,
+      "raw": "{\"panelCount\":1,\"panelW\":320,\"userMsgs\":1,\"userText\":[\"T38 探针消息：请引用当前页第一个块。\"],\"emptyState\":false}"
+    },
+    {
+      "name": "[info] 截图（重启还原态）",
+      "ok": null,
+      "raw": "1184x735"
+    },
+    {
+      "name": "[info] ⑨b 夹具注入（assistant 引用消息）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"ws\":\"01M2X4XMSJ1QK2PT43GPVSYTNZ\",\"pageId\":\"01M2X4XPRDVD1Q9APV4KXE5ZHK\",\"blockId\":\"01M2X4YB0ZXMR7BMWJ7C5QBRBW\",\"blockText\":\"引用目标段落 16。\",\"blockIndex\":16,\"blockCount\":31}"
+    },
+    {
+      "name": "⑨b 夹具就位（ws/pageId/目标块 id 均可解析）",
+      "ok": true,
+      "raw": "ok=true ws=01M2X4XMSJ1QK2PT43GPVSYTNZ pageId=01M2X4XPRDVD1Q9APV4KXE5ZHK blockId=01M2X4YB0ZXMR7BMWJ7C5QBRBW blockCount=31"
+    },
+    {
+      "name": "⑨b 引用出处 chip 渲染为「页名 › 块锚点」",
+      "ok": true,
+      "raw": "{\"count\":1,\"text\":\"T38 探针页 › 块9\",\"title\":\"跳转到出处\",\"panelOpen\":1,\"targetRectBefore\":{\"top\":1078,\"bottom\":1114},\"winH\":735,\"pvScrollTopBefore\":0}"
+    },
+    {
+      "name": "⑨b 跳转前：被引用块在视口外（跳转效果可观测）",
+      "ok": true,
+      "raw": "rect={\"top\":1078,\"bottom\":1114} winH=735 pvScrollTop=0"
+    },
+    {
+      "name": "⑨b 点 chip → 编辑器选区落在被引用块内（Tiptap editor.state.selection）",
+      "ok": true,
+      "raw": "{\"hasEditorState\":true,\"selKind\":\"TextSelection\",\"selFrom\":184,\"selDepth\":1,\"selBlockId\":\"01M2X4YB0ZXMR7BMWJ7C5QBRBW\",\"rect\":{\"top\":388,\"bottom\":424},\"centeredDelta\":38,\"winH\":735,\"pvScrollTop\":690}"
+    },
+    {
+      "name": "⑨b 点 chip → 被引用块滚入视口且居中（scrollIntoView center）",
+      "ok": true,
+      "raw": "rect={\"top\":388,\"bottom\":424} winH=735 中心偏差=38px"
+    },
+    {
+      "name": "[info] 截图（引用 chip 态）",
+      "ok": null,
+      "raw": "1184x735"
+    },
+    {
+      "name": "⑨b 长页（30 段）+ 面板展开 → 窗口仍零滚动（T30 红线）",
+      "ok": true,
+      "raw": "{\"docOverflow\":0,\"scrollY\":0,\"pvScrollHeight\":1846,\"pvClientHeight\":659,\"blocks\":31}"
+    },
+    {
+      "name": "⑩ 全程 pageerror 计数 = 0",
+      "ok": true,
+      "raw": "pageErrors=0 []"
+    },
+    {
+      "name": "⑩ 全程 renderer console error 计数 = 0",
+      "ok": true,
+      "raw": "consoleErrors=0 []"
+    },
+    {
+      "name": "[info] ⑩ 第 2 次优雅退出",
+      "ok": null,
+      "raw": "gracefulExited=true"
+    },
+    {
+      "name": "⑪ 真实数据根 C:\\Users\\Administrator\\.septcats 未被触碰（mtime 不变）",
+      "ok": true,
+      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "t38-panel-open-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 28383
+    },
+    {
+      "file": "t38-panel-open-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 28759
+    },
+    {
+      "file": "t38-panel-open-dark-after-send.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 36441
+    },
+    {
+      "file": "t38-panel-collapsed-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 18805
+    },
+    {
+      "file": "t38-panel-collapsed-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 18857
+    },
+    {
+      "file": "t38-panel-restored-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 36659
+    },
+    {
+      "file": "t38-citation-chip-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 54037
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": []
+}
