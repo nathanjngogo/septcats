@@ -31,6 +31,13 @@
   position: relative;
   max-width: var(--sc-space-editor-measure);
   margin: 0 auto;
+  /* T33-01 左侧装订线：手柄整簇（＋ 28 + 间距 2 + ⋮⋮ 28，均 --sc-size-control-sm）+
+     右侧呼吸 12 全部预留进列内，簇右缘恒在文本左缘外 gutter = var(--sc-space-md)
+     （12 ≥ 8），任意窗口宽/缩进块不再相交，簇热区不覆盖文本；
+     视觉基准 docs/mockups/01-editor.html .block 的 [24px 28px 1fr] 三列。 */
+  padding-left: calc(
+    var(--sc-size-control-sm) + var(--sc-space-xxs) + var(--sc-size-control-sm) + var(--sc-space-md)
+  );
 }
 
 /* 空库空态（T26-01 §0.A）：与 .trash-empty/.search-empty 同 token 组合（字号/色/留白），
@@ -44,8 +51,11 @@
 
 .pv-handle {
   position: absolute;
-  left: calc(var(--sc-space-gutter) * -1);
-  width: var(--sc-space-xl);
+  /* T33-01：簇锚进 pv-body 预留的装订线（left:0 起步、width:max-content 由簇自身撑开），
+     右缘 = 簇宽（＋28 + gap2 + ⋮⋮28 = 58），确定性钉在文本左缘（padding-left）之外；
+     不再用窄轨 + 负偏移悬挂（旧 left:-gutter/width:24 会被 58px 簇溢出压到文本上）。 */
+  left: 0;
+  width: max-content;
   display: grid;
   place-items: center;
   cursor: grab;

@@ -62,7 +62,8 @@
 | └ T31-01 🔴 P0-3 修复：升级库同步重发循环 | 09-19 | ✅ **老板库副本真机闭环（rc.6）** | 根因=段写入与 `seg_id` 回写/水位推进**非原子** → 水位不推进 → 每轮重取同一区间无限重发；修=`runtime.ts` 取批改以「`seg_id IS NULL` 的 op」为准 + 段落后统一回写 + 冲突/异常留痕 + 每轮日志，`statements.ts` **只增**两条（`opLedger.listUnpublished`/`markSeg` 幂等）。**PM 独立验收（老板库只读副本）**：基线 `seg_id NULL=28/30` → 第 1 轮 **0/30**、水位 maxc=10、段数 13→23 后**连续三轮稳定不再新增**、日志无 sync 错误。全仓 1029 无红（sync 109）、typecheck 9/9、门禁 ✓（dbview 1 万条夹具单跑 95/95 = 并发假红）。**CB 跑满 150 轮上限**（报告未写，PM 接手复跑+文档）；**升级库夹具固化为回归资产** || 1 | sortkey：相邻数字取 b 首字符→前缀死区 | 高（拖拽排序无解崩溃） | digitA=-1 哨兵 + 沿 b 递归 |
 
 | └ T32-01 块编辑器可见性（老板报障） | 09-19 | 🟡 部分闭环（斜杠菜单 ✅ / 块手柄 → 补派 T32-01B） | 根因：斜杠菜单**从未传 position**（缺省流位置→视口外）已修（真机 `inViewport:false→true`，11 种块型）；块手柄因 `activeBlockId` 仅 `selectionUpdate` 赋值（须先点击）→ 本单改为 hover 归属链 + 视口夹紧 + `＋` 插块 + 拖拽；**但真机 `[data-id]` 元素=0** → 块身份未进 DOM → 手柄仍不渲染 → **T32-01B 补派**。真机另揪出真 bug：拖拽 reorder 因 doc 数组序为拖前序致差分为空、commit 未调用（已修）；全仓 1042 无红（editor 168 / desktop 440） || 2 | replay：未记"覆盖冲突" | 中（冲突副本丢失） | 异设备覆盖写入 report |
-| 3 | apps/desktop 用 zod 未声明依赖 | 高（CI 必挂） | 补声明 |
+
+| └ T33-01 块手柄压字修复（老板报障「输入文本有重叠」） | 09-19 | ✅ **真机四宽度闭环（rc.9）** | 根因：`.pv-handle` 58px 簇挂在正文列外 24px 窄轨上溢出进正文（gutter=−18）→ 正文列预留 70px 装订线（token 计算）+ 手柄右缘钉在文本左缘外。**PM 独立复验**：1280/900/760/640 四宽度 `overlap:false`、`gutter:12`（手柄仍 28×28）；回归 hover/12 项菜单/11 种斜杠块型全绿；全仓 1049 无红（editor 172 / desktop 449，perf 隔离复跑 13.0ms）、typecheck 9/9、双门禁 ✓；**新立 T35-01**（斜杠菜单 Enter 双处理致文本残留） || 3 | apps/desktop 用 zod 未声明依赖 | 高（CI 必挂） | 补声明 |
 | 4 | Node/Electron 双 ABI → 15 测试静默 skip | 高（假绿） | ensure-abi 守卫脚本 |
 | 5 | ui 测试 ../../test 断链 + ?raw stub 空串 | 高（24 测试全挂） | 路径修 + 磁盘读 helper |
 | 6 | build-tokens `--sc-font-font-ui` 双前缀漂移 | 中 | key.replace(/^font-/) |
