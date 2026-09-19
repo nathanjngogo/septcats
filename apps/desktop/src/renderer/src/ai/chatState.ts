@@ -235,6 +235,17 @@ export const aiChatActions = {
   togglePanel(): void {
     aiChatActions.setOpen(!aiChatStore.getState().open);
   },
+  /**
+   * T39-01-1：布局整份套用（预设切换/导入）时按 `ai.expanded` + `ai.position` 即时接管
+   * 面板开合（TASK-T39-01 §1.1「预设切换即时生效」）：expanded 且 position≠hidden →
+   * 展开，否则收起（hidden 恒收起，与启动接管语义一致）。
+   * 与 setOpen 的差别：**不写** `septcats.aichat.panel` 手动记录——该记录只由用户显式
+   * 开合产生，T38 启动口径「有手动记录以记录为准」不被预设切换改写。
+   */
+  applyLayoutVisibility(expanded: boolean, positionHidden: boolean): void {
+    const open = expanded && !positionHidden;
+    aiChatStore.setState((state) => (state.open === open ? state : { ...state, open }));
+  },
   /** workspace 切换/就绪时调：装载该 ws 的历史（无记录 → 空历史）。 */
   setWorkspace(workspaceId: string | null): void {
     aiChatStore.setState((state) => {

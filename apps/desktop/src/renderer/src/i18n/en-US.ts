@@ -197,7 +197,7 @@ export const enUS = {
       aiBottom: 'Bottom',
       aiHidden: 'Hidden',
       aiExpanded: 'AI panel expanded by default',
-      aiExpandedDesc: 'Default state on first open after restart (manual toggles win afterwards)',
+      aiExpandedDesc: 'Applied immediately when switching presets (manual toggles win afterwards)',
       tabs: 'Tab bar',
       tabsDesc: 'The multi-tab bar above the editor',
       theme: 'Theme',

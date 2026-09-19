@@ -13,6 +13,7 @@
  * - 纯函数 + 极简 store（state/store.ts 同款 Zustand 同形实现），可独立单测。
  */
 import { THEME_STORAGE_KEY, setGlobalThemeMode } from '@septcats/ui';
+import { aiChatActions } from '../ai/chatState';
 import { createStore, useStore } from '../state/store';
 
 // ---------------------------------------------------------------------------
@@ -284,6 +285,15 @@ function patchLayout(patch: (layout: LayoutState) => LayoutState): void {
   commit(patch(layoutStore.getState().layout));
 }
 
+/**
+ * T39-01-1：布局整份套用（预设切换/导入）后，AI 面板可见性**即时生效**
+ * （TASK-T39-01 §1.1）——与侧栏/measure 的 CSS 变量注入同批；不写面板手动记录
+ * （见 aiChatActions.applyLayoutVisibility），T38 启动口径不变。
+ */
+function syncAiPanelVisibility(layout: LayoutState): void {
+  aiChatActions.applyLayoutVisibility(layout.ai.expanded, layout.ai.position === 'hidden');
+}
+
 export const layoutActions = {
   /** App 挂载时调一次：读存储（损坏回退默认）+ 注入根节点变量。 */
   init(): void {
@@ -292,7 +302,9 @@ export const layoutActions = {
   /** 切预设：整份套用预设参数（即时生效 + 持久化）；主题保持当前值。 */
   applyPreset(id: LayoutPresetId): void {
     const theme = layoutStore.getState().layout.theme;
-    commit({ ...LAYOUT_PRESETS[id], theme });
+    const layout = { ...LAYOUT_PRESETS[id], theme };
+    commit(layout);
+    syncAiPanelVisibility(layout);
   },
   setSidebarPosition(position: SidebarPosition): void {
     patchLayout((layout) => ({ ...layout, preset: 'custom', sidebar: { ...layout.sidebar, position } }));
@@ -346,6 +358,8 @@ export const layoutActions = {
     // Provider 未挂载时 theme.tsx 有缓冲兜底），不直写其真相源键
     setGlobalThemeMode(layout.theme);
     commit(layout);
+    // T39-01-1：导入与预设同属「整份套用」路径，AI 面板可见性同批即时生效
+    syncAiPanelVisibility(layout);
     return { ok: true };
   },
 };

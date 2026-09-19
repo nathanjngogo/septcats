@@ -1,11 +1,11 @@
 {
-  "pass": 21,
-  "fail": 3,
+  "pass": 24,
+  "fail": 0,
   "results": [
     {
       "name": "[info] 启动",
       "ok": null,
-      "raw": "pid=24672"
+      "raw": "pid=22608"
     },
     {
       "name": "A1 命令面板可进入设置页且「布局」区块存在",
@@ -25,7 +25,7 @@
     {
       "name": "[info] workbench",
       "ok": null,
-      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"},\"editor\":{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":false,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}}"
+      "raw": "{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":true,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"},\"editor\":{\"varSidebar\":\"240px\",\"varMeasure\":\"650px\",\"density\":\"comfortable\",\"theme\":\"light\",\"collapsed\":false,\"sidebarW\":239,\"aiPanel\":true,\"bodyMaxW\":null,\"tabsBar\":false,\"scrollLeft\":0,\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}}"
     },
     {
       "name": "B1 预设 notion：侧栏左(240 可见) · measure 650 · AI 面板收起",
@@ -39,13 +39,13 @@
     },
     {
       "name": "B3 预设 workbench：侧栏左 · AI 面板右侧**展开**（缺陷 T39-01-1：切换不即时生效）",
-      "ok": false,
-      "raw": "sidebar=239px measure=650px collapsed=false ai=false"
+      "ok": true,
+      "raw": "sidebar=239px measure=650px collapsed=false ai=true"
     },
     {
       "name": "B4 三预设呈真实差异（measure 随预设变；AI 面板见 T39-01-1）",
-      "ok": false,
-      "raw": "measure: 650px/900px/650px · ai: false/false"
+      "ok": true,
+      "raw": "measure: 650px/900px/650px · ai: false/true"
     },
     {
       "name": "B5 预设写入 localStorage「septcats.layout」",
@@ -185,7 +185,7 @@
     {
       "name": "[info] 红线⑤ 现场",
       "ok": null,
-      "raw": "{\"tabsBar\":true,\"aiPanel\":false,\"aiBottom\":false,\"scrollLeft\":0,\"theme\":\"dark\",\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}"
+      "raw": "{\"tabsBar\":true,\"aiPanel\":true,\"aiBottom\":false,\"scrollLeft\":0,\"theme\":\"dark\",\"layout\":{\"v\":1,\"preset\":\"workbench\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":true},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}}"
     },
     {
       "name": "F4 红线⑤：多页签(T37) 结构在（标签条已渲染）",
@@ -194,8 +194,8 @@
     },
     {
       "name": "F5 红线⑤：AI 面板(T38) 可见性**随布局**（实测 vs 由布局推出的期望一致）",
-      "ok": false,
-      "raw": "实测=false 期望=true 布局ai={\"position\":\"right\",\"expanded\":true}"
+      "ok": true,
+      "raw": "实测=true 期望=true 布局ai={\"position\":\"right\",\"expanded\":true}"
     }
   ],
   "consoleErrors": [],

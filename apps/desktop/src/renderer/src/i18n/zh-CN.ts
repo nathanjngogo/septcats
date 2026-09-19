@@ -191,7 +191,7 @@ export const zhCN = {
       aiBottom: '底部',
       aiHidden: '隐藏',
       aiExpanded: 'AI 面板默认展开',
-      aiExpandedDesc: '重启后首次打开的默认状态（手动开合后以手动为准）',
+      aiExpandedDesc: '切换布局预设时即时生效（手动开合后以手动为准）',
       tabs: '标签条',
       tabsDesc: '编辑区上方的多页签条',
       theme: '主题',

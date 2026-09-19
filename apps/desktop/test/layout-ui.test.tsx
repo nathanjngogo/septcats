@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import { App } from '../src/renderer/src/App';
 import { SettingsPage } from '../src/renderer/src/pages/SettingsPage';
-import { aiChatActions } from '../src/renderer/src/ai/chatState';
+import { aiChatActions, PANEL_OPEN_KEY } from '../src/renderer/src/ai/chatState';
 import {
   LAYOUT_STORAGE_KEY,
   layoutActions,
@@ -370,5 +370,96 @@ describe('T39-01 App 集成（红线回归 ②⑤）', () => {
     await waitFor(() => expect(container.querySelector('.sc-shell') !== null).toBe(true));
     expect(container.querySelector('.sc-shell--collapsed')).not.toBeNull();
     expect(rootVar('--sc-layout-measure')).toBe('900px');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C：T39-01-1 预设切换 → AI 面板可见性即时生效（PM 复跑缺陷 B3/F5 回归面）
+// ---------------------------------------------------------------------------
+
+/** 模拟重启的面板接管（照 App.tsx 挂载 effect 同一表达式：无手动记录以布局默认接管）。 */
+function restartPanel(): void {
+  const layout = layoutStore.getState().layout;
+  aiChatActions.initPanel(layout.ai.expanded && layout.ai.position !== 'hidden');
+}
+
+describe('T39-01-1 预设切换 → AI 面板可见性即时生效', () => {
+  it('切 workbench → .ai-chat 即时渲染；从开态切 focus → 即时收起；预设不写面板手动记录', async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ ...makeDefaultLayout() }));
+    installAppBridge();
+    resetPagesStore({ tabs: ['pg-1'] });
+    const { container } = render(<App />);
+    await waitFor(() => expect(container.querySelector('.sc-shell')).not.toBeNull());
+    // notion 默认：面板收起；清掉 beforeEach 造的手动记录，回到「无手动记录」基线
+    expect(container.querySelector('.ai-chat')).toBeNull();
+    window.localStorage.removeItem(PANEL_OPEN_KEY);
+
+    // 切 workbench（expanded=true）：编辑区 .ai-chat 即时出现（B3/F5 缺陷面）
+    act(() => {
+      layoutActions.applyPreset('workbench');
+    });
+    await waitFor(() => expect(container.querySelector('.ai-chat')).not.toBeNull());
+    expect(persistedLayout()).toMatchObject({ preset: 'workbench', ai: { position: 'right', expanded: true } });
+    // 预设切换不产生手动记录（记录只由显式开合写，T38 口径）；重启后布局默认接管 → 仍展开
+    expect(window.localStorage.getItem(PANEL_OPEN_KEY)).toBeNull();
+    act(() => {
+      restartPanel();
+    });
+    expect(container.querySelector('.ai-chat')).not.toBeNull();
+
+    // 从「开」态切 focus（expanded=false）：面板即时收起
+    act(() => {
+      layoutActions.applyPreset('focus');
+    });
+    expect(container.querySelector('.ai-chat')).toBeNull();
+    expect(persistedLayout()).toMatchObject({ preset: 'focus', ai: { expanded: false } });
+    expect(window.localStorage.getItem(PANEL_OPEN_KEY)).toBeNull();
+  });
+
+  it('ai.position=hidden 的布局导入后仍不渲染；再切 workbench 即时渲染', async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ ...makeDefaultLayout() }));
+    installAppBridge();
+    resetPagesStore({ tabs: ['pg-1'] });
+    const { container } = render(<App />);
+    await waitFor(() => expect(container.querySelector('.sc-shell')).not.toBeNull());
+
+    // 导入 hidden 布局（expanded=true 但 hidden）：hidden 恒不渲染（既有口径保持）
+    act(() => {
+      layoutActions.importFromText(JSON.stringify({ ...makeDefaultLayout(), ai: { position: 'hidden', expanded: true } }));
+    });
+    expect(container.querySelector('.ai-chat')).toBeNull();
+
+    // 再切 workbench（position 回到 right + expanded=true）：即时渲染
+    act(() => {
+      layoutActions.applyPreset('workbench');
+    });
+    await waitFor(() => expect(container.querySelector('.ai-chat')).not.toBeNull());
+  });
+
+  it('T38 回归：手动收起（记录=0）后预设切换不改写记录，重启仍收起', async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ ...makeDefaultLayout() }));
+    installAppBridge();
+    resetPagesStore({ tabs: ['pg-1'] });
+    const { container } = render(<App />);
+    await waitFor(() => expect(container.querySelector('.sc-shell')).not.toBeNull());
+
+    // 手动开合路径写记录 '0'
+    act(() => {
+      aiChatActions.setOpen(false);
+    });
+    expect(window.localStorage.getItem(PANEL_OPEN_KEY)).toBe('0');
+
+    // 切 workbench：会话内面板即时展开，但手动记录不被预设改写
+    act(() => {
+      layoutActions.applyPreset('workbench');
+    });
+    expect(container.querySelector('.ai-chat')).not.toBeNull();
+    expect(window.localStorage.getItem(PANEL_OPEN_KEY)).toBe('0');
+
+    // 重启（initPanel 口径不变）：有手动记录以记录为准 → 仍收起
+    act(() => {
+      restartPanel();
+    });
+    expect(container.querySelector('.ai-chat')).toBeNull();
   });
 });

@@ -261,3 +261,86 @@ DEVIATION 1–12 **全部追认**，其中各点 PM 裁决：
 1. 真机未量测：密度档位切换后的**行高像素**（自动化面已断言档位变量，真机几何未量）。
 2. 窄窗口（640px）下三预设的 AI 底部面板高度链未做真机回归（自动化面 `layout-invariants` 已绿）。
 3. T39-01-1 修复后需重跑本探针（3 条红转绿）+ 重打包 rc.16。
+
+### 6. T39-01-1 修复闭环（PM 复跑）
+
+修复单交付后 PM **重跑同一探针**（未改考卷；渲染层改动后先 `pnpm -C apps/desktop build` 重建 out/）：
+
+| 项 | 修复前 | 修复后 |
+|---|---|---|
+| 探针汇总 | 21 PASS / **3 FAIL** | **24 PASS / 0 FAIL** |
+| B3 预设 workbench → AI 面板展开 | ✗ 面板未出现 | ✅ |
+| B4 三预设真实差异 | ✗ | ✅ |
+| F5 AI 面板可见性随布局 | ✗ 实测=false 期望=true | ✅ **实测=true 期望=true** |
+| 门禁 | 1156 用例 | **1159 用例全绿**（desktop 537 → **540**，+3 修复用例） |
+| typecheck / token 双门禁 | ✓ | ✓ |
+| 红线越界核查 | — | 零 `packages/**`/`main/**`/`shared/**` 改动；**未动探针脚本** ✓ |
+| console / pageerror | 0 / 0 | **0 / 0** |
+
+**修复要点（已复核）**：新增 `aiChatActions.applyLayoutVisibility(expanded, positionHidden)`，
+在 `applyPreset` 与 `importFromText` 的 `commit()` 之后调用；**不写** `septcats.aichat.panel`
+手动记录（保住 T38「有手动记录以手动记录为准」的启动口径），`initPanel` 未动。
+i18n `aiExpandedDesc` 双语同步改为「切换布局预设时即时生效（手动开合后以手动为准）」。
+
+**结论：T39-01-1 关闭**。版本 → **rc.16**。探针截图与 `t39-results.json` 已按 rc.16 覆盖刷新。
+
+## §PM 复跑后修复（T39-01-1）
+
+### 1. 根因确认
+
+与 PM 定位一致，无需重新排查：
+
+- `App.tsx` 挂载 effect 经 `aiChatActions.initPanel(layout.ai.expanded && position !== 'hidden')`
+  接管面板开合**一次**（App.tsx:149-152）；
+- 预设切换路径 `layoutActions.applyPreset`（layoutState.ts）只 `commit()`（写 store + localStorage +
+  CSS 变量注入），**不重新应用面板开合** → 切 workbench（`ai.expanded=true`）后 `.ai-chat` 不出现
+  （探针 B3），切 focus 后原本展开的也不收起；重启后 `initPanel` 才按布局默认接管（BOOT2 G1 现象）。
+
+### 2. 改法
+
+- **`ai/chatState.ts`**：新增 `aiChatActions.applyLayoutVisibility(expanded, positionHidden)`——
+  `expanded && !positionHidden → 展开，否则收起`（hidden 恒收起，与启动接管语义一致）。
+  与 `setOpen` 的差别：**不写** `septcats.aichat.panel` 手动记录——该记录只由用户显式开合产生，
+  T38 启动口径「有手动记录以记录为准」不被预设切换改写。
+- **`layout/layoutState.ts`**：新增私有 `syncAiPanelVisibility(layout)`，在
+  `applyPreset` 与 `importFromText` 的 `commit()` 之后调用（后者与预设同属「整份套用」路径）。
+  `init()`（启动）**不调**——启动语义（无手动记录以布局默认接管）原样保留，`initPanel` 未改。
+  命令面板 `cycleLayoutPreset` 走 `applyPreset`，自动同批生效。
+- 未动：`packages/**`、`src/main/**`、`src/shared/**`、探针脚本、T39-01 已有报告节。
+
+### 3. i18n `settings.layout.aiExpandedDesc` 前后
+
+| 语言 | 改前 | 改后 |
+|---|---|---|
+| zh-CN | 重启后首次打开的默认状态（手动开合后以手动为准） | 切换布局预设时即时生效（手动开合后以手动为准） |
+| en-US | Default state on first open after restart (manual toggles win afterwards) | Applied immediately when switching presets (manual toggles win afterwards) |
+
+### 4. 测试（apps/desktop/test/layout-ui.test.tsx 新增 describe「T39-01-1」3 例）
+
+1. 切 workbench → 编辑区 `.ai-chat` **即时出现**（DOM 面，非 store 断言）；从「开」态切 focus →
+   即时收起；预设切换不写 `PANEL_OPEN_KEY`；模拟重启（`initPanel` 布局默认接管）仍展开。
+2. `ai.position='hidden'` 布局经 `importFromText` 应用后仍不渲染；再切 workbench 即时渲染。
+3. T38 回归：手动收起（记录='0'）后切 workbench 会话内展开但记录不被改写，重启仍收起。
+
+### 5. 自跑原始数值（2026-09-20）
+
+- `pnpm -C apps/desktop test`：`Test Files 49 passed (49)　Tests 540 passed (540)`，Duration 26.58s。
+  含 T38 既有「手动收起后重启仍收起」（ai-chat.test.tsx「面板状态持久化」组）全绿。
+- `pnpm -r typecheck`：13 个包/应用全部 `Done`（含 `apps/desktop` node+web 两 tsconfig）。
+- `node packages/ui/tokens/no-magic.mjs`：`✓ no-magic：组件 CSS 无字面 hex、无非 1px 重复裸 px`。
+- `node packages/ui/tokens/build-tokens.mjs --check`：`✓ token 产物与 DESIGN.md 一致`。
+
+### 6. DEVIATION（2 处，待 PM 追认）
+
+- **D-13**：`importFromText`（导入布局）也同步了 AI 面板可见性——任务书只点名预设切换，
+  但导入与预设同属「整份套用」路径，不同步则同一缺陷换个入口复发。探针 D3/E2 断言不受影响。
+- **D-14**：预设切换**不写** `septcats.aichat.panel` 手动记录（选「接管但不留痕」口径）。
+  推论：用户手动收起（记录='0'）后切 workbench，会话内面板展开，但重启后仍收起（手动记录为准）——
+  与新 i18n 文案「手动开合后以手动为准」一致。若 PM 希望「重启与最后一次所见一致」，
+  改为经 `setOpen` 写记录即可（一处改动），现有 3 例测试需同向调整。
+
+### 7. 遗留
+
+- 真机复跑探针 `node docs/mockups/cdp-e2e-t39-01.mjs`（3 条红应自然转绿）+ rc.16 重打包 —— 留 PM。
+- `settings.layout.aiExpanded` 开关（`setAiExpanded`）仍只改默认值、不即时开合面板——属「参数微调」
+  语义（落 `custom`），不在本单范围；若 PM 认为该开关也须即时生效，另立小单。
