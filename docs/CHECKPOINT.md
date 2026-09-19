@@ -24,3 +24,9 @@
 - 🚧 **T40-01（数据库字段 P1）**：工程师进程 `proc_e9a159331672` 在跑。
 - 🚧 **T38 真机三项**（LM Studio 3 轮 / 隐私现场数值 / 重启还原 + 双主题截图）：已派独立工作流 `deleg_d9737b2f`（只写探针与截图，不改源码、不 commit）。产出后 PM 复核 → 再补 §PM 复跑。
 - 明早待办顺序：T40 验收（全仓→rc.14→真机 11 类型表→提交）→ T39-01 布局设计器 → T41-01 全宽开关（待写单）→ T43-01 改称多维数据（待写单）→ T42-01 转 Wiki → T44-01 双链。
+
+## 夜间追加（09-19 深夜）
+
+- ✅ **T38-01 真机验证入库**：独立工作流 **29 PASS / 0 FAIL**（探针 `docs/mockups/probe-t38-ai.mjs` + 7 截图 `docs/mockups/screens-t38/`），提交 `47ed510`、`5ed0366`。未验证 4 项已如实登记。
+- 🔑 **唯一剩余未验证（真实模型多轮 + 模型自动引用）卡在凭据门**：LM Studio 在跑但要求 Bearer Token；PM 不碰凭据。**等老板二选一**：① LM Studio 关掉 token 校验并给端点；② 授权用其真实配置档案跑只读探针。详见 `docs/tasks/TASK-T38-01-report.md` 末尾节。
+- 🚧 **T40-01（字段 P1）**：仍在跑（已改 `main/dbview.ts`、`renderer/db/*`、`packages/dbview/src/react/{CellEditor,DbView,PropBar}.tsx` + CSS、ipc/preload/window.d.ts、i18n）。**注**：单元格编辑器组件本就住在 `packages/dbview/src/react/`，PM 任务书红线写「不碰 packages/dbview」过严 → 交付时按实际审（只查 `VALUE_SCHEMA_BY_TYPE` 等既有语义是否被改）。
