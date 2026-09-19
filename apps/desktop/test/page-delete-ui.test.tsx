@@ -336,7 +336,7 @@ describe('「转为数据库」后选中同步（T24-01 §0.B 判别①修法）
   it('转换 → 树对账 + selectedId 指向新库页 + 库 UI 出现', async () => {
     render(<PageView />);
 
-    fireEvent.click(screen.getByText('转为数据库'));
+    fireEvent.click(screen.getByText('转为多维数据'));
 
     await waitFor(() => expect(convertBridge.dbCreate).toHaveBeenCalledTimes(1));
     // 判别①回归：转换后 pagesStore.selectedId 必须指向新建库页（修前停留在原页）
@@ -350,7 +350,7 @@ describe('「转为数据库」后选中同步（T24-01 §0.B 判别①修法）
   it('kind 判定 UI 链回归：转换后「另存为模板」按 selectedId 存的是新库页', async () => {
     render(<PageView />);
 
-    fireEvent.click(screen.getByText('转为数据库'));
+    fireEvent.click(screen.getByText('转为多维数据'));
     await waitFor(() => expect(pagesStore.getState().selectedId).toBe(DB_PAGE_ID));
 
     // 面板「另存为模板」按 selectedId 取页（TemplateSaveDialog → templatesActions.saveFromPage）

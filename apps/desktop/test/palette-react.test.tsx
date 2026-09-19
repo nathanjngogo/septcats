@@ -222,7 +222,7 @@ describe('SearchPage（mockup 05 对齐）', () => {
     // 挂载会触发一次重查（tookMs 被刷新），计数稳定后断言
     await waitFor(() => expect(screen.getByText(/2 条结果 · \d+ ms/)).toBeDefined());
     expect(screen.getByText('页面 · 1')).toBeDefined();
-    expect(screen.getByText('数据库 · 1')).toBeDefined();
+    expect(screen.getByText('多维数据 · 1')).toBeDefined();
     expect(screen.getByText('范围：个人工作区')).toBeDefined();
 
     // snippet 高亮：[核反冲] → <mark>
@@ -235,7 +235,7 @@ describe('SearchPage（mockup 05 对齐）', () => {
     // 类型 chip 循环过滤
     fireEvent.click(screen.getByText('类型：全部'));
     expect(screen.getByText('类型：页面')).toBeDefined();
-    expect(screen.queryByText('数据库 · 1')).toBeNull();
+    expect(screen.queryByText('多维数据 · 1')).toBeNull();
 
     // 查询 chip 可移除
     fireEvent.click(screen.getByTestId('search-qchip'));

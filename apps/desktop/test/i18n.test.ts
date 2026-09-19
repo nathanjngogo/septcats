@@ -247,6 +247,31 @@ describe('门禁⑤ renderer 源码字符串字面量无 CJK（T26-01 硬化）'
 });
 
 // ---------------------------------------------------------------------------
+// ⑥ zh-CN 无残留「数据库」（T43-01：改称「多维数据」）
+// ---------------------------------------------------------------------------
+
+describe('门禁⑥ zh-CN 文案无残留「数据库」（T43-01）', () => {
+  const zh = flatten(zhCN);
+
+  it('zh-CN 全部值不含「数据库」一词', () => {
+    const offenders = [...zh.entries()].filter(([, value]) => value.includes('数据库'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('关键 key 值为「多维数据」', () => {
+    expect(t('editor.convertToDatabase')).toBe('转为多维数据'); // 菜单项
+    expect(t('search.groupDatabases')).toBe('多维数据 · {n}'); // 搜索分组标题
+    expect(t('palette.groupDatabases')).toBe('多维数据'); // 命令面板分组
+    expect(t('palette.placeholder')).toBe('搜索页面、多维数据，或输入 > 命令'); // placeholder
+    expect(t('db.loadFailed')).toBe('多维数据加载失败'); // 错误文案
+    expect(t('db.empty.desc')).toBe('新建第一条记录开始填写这个多维数据。'); // 空态文案
+    expect(t('search.filterDatabases')).toContain('多维数据');
+    expect(t('search.kindCollection')).toBe('多维数据');
+    expect(t('palette.metaDatabase')).toBe('多维数据');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ④ 切换 locale 后关键文案
 // ---------------------------------------------------------------------------
 
@@ -265,7 +290,7 @@ describe('门禁④ 切换 locale 后五处关键文案', () => {
     setLocale('zh-CN');
     expect(t('app.searchLabel')).toBe('搜索（Ctrl+K）');
     expect(t('sidebar.trash')).toBe('回收站');
-    expect(t('palette.placeholder')).toBe('搜索页面、数据库，或输入 > 命令');
+    expect(t('palette.placeholder')).toBe('搜索页面、多维数据，或输入 > 命令');
     expect(t('settings.appearance.language')).toBe('语言');
     expect(t('pageDelete.title')).toBe('删除页面');
   });

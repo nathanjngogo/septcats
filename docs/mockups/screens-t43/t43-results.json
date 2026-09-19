@@ -1,0 +1,89 @@
+{
+  "pass": 9,
+  "fail": 0,
+  "results": [
+    {
+      "name": "[info] BOOT1 初始态",
+      "ok": null,
+      "raw": "{\"lang\":\"zh-CN\",\"theme\":\"light\",\"hasOld\":false,\"hasNew\":false}"
+    },
+    {
+      "name": "[info] 页面编辑器按钮",
+      "ok": null,
+      "raw": "{\"hasConvertNew\":true,\"hasConvertOld\":false,\"buttons\":[\"转为多维数据\"]}"
+    },
+    {
+      "name": "§2.2a 页面渲染「转为多维数据」按钮",
+      "ok": true,
+      "raw": "{\"hasConvertNew\":true,\"hasConvertOld\":false,\"buttons\":[\"转为多维数据\"]}"
+    },
+    {
+      "name": "§2.2b 旧文案「转为数据库」未出现",
+      "ok": true,
+      "raw": "hasOld=false"
+    },
+    {
+      "name": "[info] 命令面板",
+      "ok": null,
+      "raw": "{\"placeholder\":\"搜索页面、多维数据，或输入 > 命令\",\"panelHasNew\":false,\"panelHasOld\":false}"
+    },
+    {
+      "name": "§2.2c 命令面板 placeholder 含「多维数据」",
+      "ok": true,
+      "raw": "placeholder=\"搜索页面、多维数据，或输入 > 命令\""
+    },
+    {
+      "name": "§2.2d 命令面板无「数据库」旧文案",
+      "ok": true,
+      "raw": "hasOld=false"
+    },
+    {
+      "name": "§2.1 真机整页可见文本零「数据库」残留",
+      "ok": true,
+      "raw": "命中=0"
+    },
+    {
+      "name": "[info] 英文界面",
+      "ok": null,
+      "raw": "{\"hasConvert\":true,\"cjkCount\":10,\"cjkSample\":\"文案校验页文案校验页\",\"uiIsEnglish\":true,\"uiHit\":[\"Database\"],\"cjkUi\":false}"
+    },
+    {
+      "name": "§2.3a 英文界面出现 Database 文案",
+      "ok": true,
+      "raw": "{\"hasConvert\":true,\"cjkCount\":10,\"cjkSample\":\"文案校验页文案校验页\",\"uiIsEnglish\":true,\"uiHit\":[\"Database\"],\"cjkUi\":false}"
+    },
+    {
+      "name": "[info] §2.3b 英文界面页内 CJK 计数（含数据名，非 UI 文案）",
+      "ok": null,
+      "raw": "cjk=10 sample=\"文案校验页文案校验页\""
+    },
+    {
+      "name": "§2.3b 英文界面 UI 文案为英文且无「多维数据」中文残留",
+      "ok": true,
+      "raw": "uiEnglish=true cjkUi=false"
+    },
+    {
+      "name": "[info] 深色态",
+      "ok": null,
+      "raw": "{\"theme\":\"dark\",\"hasNew\":true,\"hasOld\":false}"
+    },
+    {
+      "name": "§2.5 深色主题下文案同样生效",
+      "ok": true,
+      "raw": "{\"theme\":\"dark\",\"hasNew\":true,\"hasOld\":false}"
+    },
+    {
+      "name": "§2.5b 深色整页零「数据库」残留",
+      "ok": true,
+      "raw": "命中=0"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "shots": [
+    "dark-01-page.png",
+    "en-01-page.png",
+    "light-01-convert-btn.png",
+    "light-02-palette.png"
+  ]
+}
