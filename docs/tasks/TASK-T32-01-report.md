@@ -114,3 +114,104 @@ node packages/ui/tokens/build-tokens.mjs --check → ✓ token 产物与 DESIGN.
 **结论：本单「斜杠菜单」部分闭环；「块手柄」部分未闭环 → 已开补派 T32-01B。**
 根因（PM 取证+定位）：`PageView.tsx:73 blockIdentityOf()` 读 `closest('[data-id]')`，而 `types/shared.ts` 的 `blockIdAttribute.renderHTML` **仅当节点 `id` attr 非空才输出 `data-id`**；真机 `[data-id]` 数量 **0** → 块身份从未进 DOM → hover 归属链（本单新逻辑）全部失效。属**上游装载路径缺 id attr**，不在本单改动面内。
 **PM 探针勘误**：首轮取证我误用选择器 `[data-block-id]`（真实为 `data-id`），已修正探针并复跑确认——**排除了探针误报**才下的结论。
+
+---
+
+# 补派 TASK-T32-01B：块身份 `data-id` 未落到 DOM → 块手柄结构性无法渲染
+
+## §B0. 结论
+
+已修。根因不在 PM 根因链点名的两处「待查」位置——`editorExtensions()` 九个块节点**都**挂了
+`blockIdAttribute`（paragraph.ts:11 等），DB 装载路径 `blocksToPMDoc` 的 `blockIdAttrs`（model.ts:228）
+**也**写了 `attrs.id`。真正的缺口是**第三条路径：键入产生的新块**——`pmDocToBlocks` 在模型层给新块
+生成 ulid，但**没有任何代码把 id 写回 PM 节点 attrs**；而 `blockIdAttribute.renderHTML` 只在 `id`
+非空时才输出 `data-id`（shared.ts:38）。探针建的是新页、两段文字全部键入产生 → 整页 0 个 `data-id`
+→ `DOM-DIAG.blockCount = 0` → hover 归属链断在第一环。
+
+附带发现并修复第二个身份分叉源：输入规则 `# ` `- ` 等用 `setNodeMarkup` 全量替换 attrs
+（inputRules.ts 原 :121 `attrsFor(action)`），把段落已有的 `id` 冲回 null。
+
+## §B1. 根因链（修正版，三条路径逐一核实）
+
+| 路径 | attrs.id 是否落 PM 节点 | data-id 是否进 DOM |
+|---|---|---|
+| ① DB 装载（blocks:list → blocksToPMDoc → content） | ✅ model.ts `blockIdAttrs` | ✅（直至协作层接管前） |
+| ② 显式创建（＋按钮/duplicate/applyBlockType） | ✅ 调用点都带 `id: ulid()` 或 spread 原 attrs | ✅ |
+| ③ **键入产生的新块**（含探针场景：建页后打的每一段） | ❌ `pmDocToBlocks` 只在模型层生成 ulid，**不回写 PM** | ❌ **永远没有** |
+
+补一源：输入规则转换（`# `→heading 等）`setNodeMarkup` 丢原 `id` → 模型层把同一块当新块（身份分叉）。
+
+## §B2. 修复（改动面）
+
+1. **`packages/editor/src/react/Editor.tsx`**（核心）：新增 `writeBackBlockIds(editor, doc)`——
+   每轮编辑反投影后，按 `isPmBlockNodeName`（与 `pmDocToBlocks` 同一过滤口径）取顶层块节点、
+   与存活块按序配对，节点缺 `id` 时 `setNodeMarkup` 补上；补写事务带 meta
+   `septcats:block-id-writeback`，`onUpdate` 见 meta 跳过反投影（防 onChange/回写成环）。
+   节点数与存活块数不符（对应关系被外力破坏）时保守放弃，不猜。
+2. **`packages/editor/src/rules/inputRules.ts`**：`setNodeMarkup` attrs 显式携带原 `id`
+   （`{ id: parent.attrs['id'], ...attrsFor(action) }`）。
+3. **`packages/editor/src/model.ts`**：`isPmBlockNodeName` 由模块私有改为导出（回写过滤复用，
+   保证与反投影同一口径；无行为变化）。
+
+`PageView.tsx` 本轮**零改动**——T32-01 的 hover 归属链/视口夹紧/拖拽逻辑在 `data-id` 进 DOM 后
+自然生效（PM §1.4 判断「上游修好它们全部恢复」成立）。
+
+## §B3. 新增测试（含任务书要求的装载路径断言）
+
+| 用例 | 文件 | 断言 |
+|---|---|---|
+| 装载路径块身份（任务书交付物） | editor `react.test.tsx` | demoBlockDoc（9 块型全）渲染后 `.ProseMirror` 顶层每个块节点带非空 `data-id` 且唯一 |
+| 编辑路径回写 | editor `react.test.tsx` | 空页键入 → DOM `p[data-id]` 出现，且与 onChange 回调 `blocks[0].id` 一致；一轮编辑恰一次 onChange（防环钉） |
+| 输入规则不冲 id | editor `rules.test.ts` | 带 `id` 的段落 `# ` 转 heading 后 `attrs.id` 原值保留 |
+| 协作层 id 往返 | editor `yjs.test.ts` | `attrs.id` 经 PM→Y 种子 + 回放 Y→PM 投影不丢，DOM `[data-id]` 可查询（协作接管内容不失块身份） |
+
+## §B4. 自跑门禁（本轮实跑）
+
+```
+pnpm -C packages/editor test  → 9 files / 172 passed（+4，见 §B3）
+pnpm -C apps/desktop test     → 42 files / 440 passed（零新增、零改动，全绿）
+pnpm -r typecheck             → 9/9 通过
+node packages/ui/tokens/no-magic.mjs          → ✓
+node packages/ui/tokens/build-tokens.mjs --check → ✓
+```
+
+## §B5. 验收对照（任务书 §2；真机数值留 PM）
+
+| # | 验收项 | 本轮覆盖 | 真机 |
+|---|---|---|---|
+| ① | `DOM-DIAG.blockCount > 0` | react.test：装载路径全块型带 `data-id`；编辑路径键入即带 | **（PM 补）** |
+| ② | hover → 手柄存在且视口内 | 修复后 `blockIdentityOf` 的 `closest('[data-id]')` 有命中（T32-01 已有 desktop UI 用例覆盖归属链）；jsdom 无真机 rect | **（PM 补）** |
+| ③ | 点手柄 → 菜单视口内含可读项 | 同上（T32-01 §2② 覆盖链路） | **（PM 补）** |
+| ④ | `/` 斜杠菜单回归 + ↑↓+Enter 换型 | T32-01 用例未动，全绿；applyBlockType spread 原 attrs 保 id | **（PM 补）** |
+| ⑤ | 手柄拖拽换序 + 落库 | blockPosById 依赖 PM attrs.id，回写后可命中（T32-01 §2④ 用例未动，全绿） | **（PM 补）** |
+| ⑥ | 双主题 × 三态截图 + 门禁 | no-magic / build-tokens ✓（本报告 §B4） | **（PM 补）** |
+
+## §B6. 修复前后证据
+
+**修前（PM 真机 rc.7 探针原文，TASK-T32-01B.md §0 引）**：
+`DOM-DIAG.blockCount = 0`、`bcAny = 0`（`[class*="blockcontrol"]` 一个都没有）——键入两段后整页
+无一带块身份。截图见 PM 取证（`docs/mockups/screens-blocks/`，rc.7 轮）。
+
+**修后**：真机探针复跑与重打包按分工**留 PM**（见 §B7）。代码侧证据 = §B3 四个新用例 +
+§B4 全部门禁绿；其中「装载路径」「协作往返」两个用例把 `data-id` 的出现从「恰好在场」升级为
+「逐块断言、逐路径断言」。
+
+## §B7. PM 复跑节
+
+（PM 补：重打包 rc.8（先 `node apps/desktop/scripts/ensure-abi.mjs electron`）→ 复跑
+`docs/mockups/probe-blocks-visibility.mjs`，核 §B5 ①–⑤ 数值 + ⑥ 双主题三态截图。注意探针
+HOVER#2 段的 `[data-id]` 选择器即本单修复产物，预期 `blockCount ≥ 2`。）
+
+## §B8. DEVIATION（待 PM 追认）
+
+1. **Editor onUpdate 签名消费 `transaction`**：Tiptap v2 原生字段，非契约变更；meta 守卫是防环
+   必需（回写事务 docChanged=true，不拦则 onChange/回写互触发成环）。
+2. **`writeBackBlockIds` 进 `@septcats/editor/react` 公共出口**（`export * from './Editor'` 自动带出）：
+   导出仅为可测性与后续复用；apps 未直接引用。
+3. **输入规则 `setNodeMarkup` 携带原 `id`**：超出任务书点名的两处「待查」，但它是同一根因的第二
+   证据源（不修则 `# ` 一打块身份又丢，§B5① 的 blockCount 会在用户输入规则后回退为 0）。
+4. **`isPmBlockNodeName` 私有转导出**：model.ts 零行为变化，纯可见性调整。
+5. **回写失败静默放弃**（节点/块数不符）：协作并发窗口下的极端态；不猜对应关系，宁可手柄暂隐
+   也不误配身份——若 PM 要求强一致可另立账。
+6. **防环口径**：回写事务完全跳过反投影（而非重算后比对）。回写只补 id、不改内容，模型层在
+   回写前的反投影已拿到终态 id（回写的就是它算出来的 ulid），重算是纯冗余。

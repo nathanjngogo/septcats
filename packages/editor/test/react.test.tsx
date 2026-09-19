@@ -77,6 +77,48 @@ describe('Editor（React 视图）', () => {
     expect(JSON.stringify(next.blocks)).toContain('新增文本');
   });
 
+  // -------------------------------------------------------------------------
+  // T32-01B 块身份落 DOM：data-id 是 PageView 手柄归属链（closest('[data-id]')）
+  // 的唯一锚点；缺失则 BlockControls 结构性无法渲染（真机 DOM-DIAG.blockCount = 0）。
+  // -------------------------------------------------------------------------
+
+  it('块身份落 DOM（装载路径）：从 BlockDoc 渲染后每个顶层块节点都带唯一 data-id', () => {
+    const { container } = render(<Editor doc={demoBlockDoc()} onChange={() => {}} />);
+    const pmRoot = container.querySelector('.ProseMirror');
+    expect(pmRoot).not.toBeNull();
+    const topBlocks = [...pmRoot!.children];
+    expect(topBlocks.length).toBeGreaterThanOrEqual(9); // demo 覆盖全部 9 块型
+    const missing = topBlocks.filter((el) => (el.getAttribute('data-id') ?? '').length === 0);
+    expect(missing).toEqual([]);
+    const ids = topBlocks.map((el) => el.getAttribute('data-id'));
+    expect(new Set(ids).size).toBe(ids.length); // 块 id 唯一
+  });
+
+  it('块 id 回写（编辑路径）：新键入的块经反投影后 DOM 出现 data-id，且与 BlockDoc.id 一致', () => {
+    const onChange = vi.fn();
+    const holder: { editor: TiptapEditor | null } = { editor: null };
+    const { container } = render(
+      <Editor
+        doc={{ pageId: 'pg-t32b', blocks: [] }}
+        onChange={onChange}
+        onReady={(instance) => {
+          holder.editor = instance;
+        }}
+      />,
+    );
+    act(() => {
+      holder.editor?.commands.insertContent('新块文本');
+    });
+    const para = container.querySelector('.ProseMirror > p');
+    expect(para).not.toBeNull();
+    const domId = para!.getAttribute('data-id');
+    expect(domId).toBeTruthy();
+    const next = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0] as BlockDoc;
+    expect(next.blocks[0]?.id).toBe(domId);
+    // 回写事务带 meta、不重复反投影：一轮编辑恰一次 onChange（防环钉）
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('卸载时销毁编辑器（不泄漏 PM 实例）', () => {
     const holder: { editor: TiptapEditor | null } = { editor: null };
     const { unmount } = render(

@@ -453,8 +453,9 @@ function isBlockTypeName(type: string): boolean {
   return KNOWN_BLOCK_TYPES.has(type) || type === 'paragraph';
 }
 
-/** 节点名是否为已知块（先还原投影别名，如 codeBlock→code）。 */
-function isPmBlockNodeName(name: string): boolean {
+/** 节点名是否为已知块（先还原投影别名，如 codeBlock→code）。
+ *  导出供 Editor 的块 id 回写复用（过滤顶层节点须与 pmDocToBlocks 同一口径）。 */
+export function isPmBlockNodeName(name: string): boolean {
   return isBlockTypeName(blockTypeOfPmNode(name));
 }
 

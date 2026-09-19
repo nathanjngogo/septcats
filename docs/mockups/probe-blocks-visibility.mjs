@@ -77,7 +77,9 @@ log('HOVER#2 (块包裹层 + 派发事件):', JSON.stringify(hov2), 'wrapHoverOk
 
 // 点手柄 → 菜单
 const handle = page.locator('.sc-blockcontrol__handle').first();
-const hOk = await handle.click({ timeout: 5000 }).then(() => true).catch(() => false);
+const hOk = await handle.click({ timeout: 5000 }).then(() => true).catch(() => {
+  return page.evaluate(() => { const b = document.querySelector('.sc-blockcontrol__handle'); if (!b) return false; for (const t of ['pointerdown','mousedown','mouseup','click']) b.dispatchEvent(new MouseEvent(t, { bubbles: true })); return true; }).catch(() => false);
+});
 await wait(1000);
 const menu = await page.evaluate(() => {
   const m = document.querySelector('.sc-blockcontrol__menu');

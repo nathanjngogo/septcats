@@ -7,14 +7,67 @@
  */
 import { useEffect, useRef } from 'react';
 import { Editor as TiptapEditor } from '@tiptap/core';
+import type { Node as PMNode } from '@tiptap/pm/model';
 import { LamportClock } from '@septcats/core';
 import type { ActorId } from '@septcats/core';
-import { blocksToPMDoc, pmDocToBlocks, type BlockDoc, type PMDocJSON } from '../model';
+import {
+  blocksToPMDoc,
+  isPmBlockNodeName,
+  pmDocToBlocks,
+  type BlockDoc,
+  type PMDocJSON,
+} from '../model';
 import { editorExtensions } from '../types';
 import './editor.css';
 
 /** 编辑器包自用的本地 actor（apps 层接 IPC 时换成真实设备 ID）。 */
 export const EDITOR_ACTOR: ActorId = 'editor0001';
+
+/**
+ * 块 id 回写事务的 meta 标记（TASK-T32-01B）：
+ * 模型层 pmDocToBlocks 给新块生成 ulid，但 PM 节点 attrs.id 仍为空 →
+ * blockIdAttribute.renderHTML 不输出 data-id → 块手柄结构性无法渲染（真机
+ * DOM-DIAG.blockCount = 0）。回写只补 id，不带此 meta 的事务才反投影，
+ * 防止 onChange / 回写互相触发成环。
+ */
+const BLOCK_ID_WRITEBACK_META = 'septcats:block-id-writeback';
+
+/**
+ * 把 BlockDoc 的块 id 回写到 PM 顶层节点（TASK-T32-01B 核心修复）。
+ *
+ * 对应关系：pmDocToBlocks 按 `isPmBlockNodeName` 过滤顶层节点后逐位生成块
+ * （存活块 = 过滤后节点序；tombstone 追加在尾部），故这里用同一过滤口径取
+ * 顶层块节点、与存活块按序配对；节点缺 id（新键入块）或 id 不符时 setNodeMarkup
+ * 补上。补写事务带 {@link BLOCK_ID_WRITEBACK_META}，onUpdate 见 meta 直接跳过。
+ * 节点数与存活块数不符（对应关系被外力破坏）时保守放弃，不猜。
+ */
+export function writeBackBlockIds(editor: TiptapEditor, doc: BlockDoc): void {
+  const liveBlocks = doc.blocks.filter((block) => block.alive === 1);
+  const blockNodes: Array<{ node: PMNode; pos: number }> = [];
+  editor.state.doc.forEach((node, offset) => {
+    if (isPmBlockNodeName(node.type.name)) {
+      blockNodes.push({ node, pos: offset });
+    }
+  });
+  if (blockNodes.length !== liveBlocks.length) {
+    return;
+  }
+  const tr = editor.state.tr;
+  let changed = false;
+  blockNodes.forEach((entry, index) => {
+    const blockId = liveBlocks[index]?.id;
+    if (blockId === undefined || entry.node.attrs['id'] === blockId) {
+      return;
+    }
+    tr.setNodeMarkup(entry.pos, undefined, { ...entry.node.attrs, id: blockId });
+    changed = true;
+  });
+  if (!changed) {
+    return;
+  }
+  tr.setMeta(BLOCK_ID_WRITEBACK_META, true);
+  editor.view.dispatch(tr);
+}
 
 export interface EditorProps {
   /** 初始文档（挂载时读一次；之后编辑器是原位真相，外部改 doc 不会回灌）。 */
@@ -51,11 +104,17 @@ export function Editor({ doc, onChange, onReady, editable = true, className }: E
       extensions: editorExtensions(),
       content: initial,
       editable: editableRef.current,
-      onUpdate: ({ editor }) => {
-        const json = editor.getJSON() as unknown as PMDocJSON;
+      onUpdate: ({ editor: instance, transaction }) => {
+        // 回写事务（只补 attrs.id）：模型层已是终态，跳过反投影防成环
+        if (transaction.getMeta(BLOCK_ID_WRITEBACK_META) === true) {
+          return;
+        }
+        const json = instance.getJSON() as unknown as PMDocJSON;
         const next = pmDocToBlocks(json, docRef.current, () => clock.tick());
         docRef.current = next;
         onChangeRef.current(next);
+        // 反投影后把新块 id 写回 PM 节点 → DOM 出现 data-id（T32-01B）
+        writeBackBlockIds(instance, next);
       },
     });
     onReadyRef.current?.(instance);

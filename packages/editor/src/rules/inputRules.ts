@@ -118,7 +118,12 @@ export function applyInputRule(view: EditorView, from: number, to: number, text:
   if (toDelete > 0) {
     tr.delete(from - toDelete, from);
   }
-  tr.setNodeMarkup($from.before($from.depth), nodeType, attrsFor(action));
+  // setNodeMarkup 的 attrs 是全量替换（缺省的 attr 重置为 default），必须显式带上
+  // 原 id，否则「# 」「- 」等转换会把块身份冲掉 → 反投影按新块处理（身份分叉）。
+  tr.setNodeMarkup($from.before($from.depth), nodeType, {
+    id: parent.attrs['id'],
+    ...attrsFor(action),
+  });
   view.dispatch(tr.scrollIntoView());
   return true;
 }

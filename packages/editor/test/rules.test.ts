@@ -117,6 +117,18 @@ describe('inputRules：真 PM 执行（jsdom 也跑真 ProseMirror）', () => {
     expect(editor.state.doc.firstChild?.textContent).toBe('');
   });
 
+  it('块 id 保留（T32-01B）：带 id 的段落经输入规则转 heading 后 id 不被冲掉', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [{ type: 'paragraph', attrs: { id: 'blk-keep' } }],
+    });
+    expect(typeInto(editor, '#')).toBe(true);
+    const first = editor.state.doc.firstChild;
+    expect(first?.type.name).toBe('heading');
+    expect(first?.attrs['level']).toBe(1);
+    expect(first?.attrs['id']).toBe('blk-keep');
+  });
+
   it('IME 组合期：compositionstart → 输入「# 」无任何变化；compositionend 后恢复', () => {
     const editor = createEditor();
     fireComposition(editor, 'compositionstart');

@@ -310,6 +310,34 @@ describe('YjsEditor 集成：双客户端同 page 协作', () => {
     expect(b.yjs.sync()).toBeNull();
   });
 
+  it('块 id 往返（T32-01B）：attrs.id 经 PM→Y 种子 + 回放 Y→PM 投影不丢（DOM data-id 的上游锚点）', async () => {
+    const seedContent: JSONContent = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', attrs: { id: 'blk-a' }, content: [{ type: 'text', text: '第一块' }] },
+        {
+          type: 'heading',
+          attrs: { id: 'blk-b', level: 2 },
+          content: [{ type: 'text', text: '第二块' }],
+        },
+      ],
+    };
+    const seedClient = makeClient(PAGE, { content: seedContent });
+    const payload = seedClient.yjs.sync();
+    expect(payload).not.toBeNull();
+    seedClient.yjs.destroy();
+    seedClient.editor.destroy();
+
+    const b = makeClient(PAGE, { crdtUpdates: [makeEntry(PAGE, payload!, 'op-seed-t32b')] });
+    const idsB = b.editor.state.doc.content.content.map((node) => node.attrs['id']);
+    expect(idsB).toEqual(['blk-a', 'blk-b']);
+    // DOM 锚点：Y→PM 投影后 data-id 必须可查询（协作接管内容不失块身份）
+    const domIds = [...b.editor.view.dom.querySelectorAll('[data-id]')].map((el) =>
+      el.getAttribute('data-id'),
+    );
+    expect(domIds).toEqual(['blk-a', 'blk-b']);
+  });
+
   it('attach({ seed:false })：迟到种子端不上行初始种子（T19-05-1）；下行增量照常应用投影', async () => {
     // 对端种子（正常 PM 路径产出，含合法段落结构，可直接下行投影）
     const seedClient = makeClient(PAGE, { content: par('远端文本') });
