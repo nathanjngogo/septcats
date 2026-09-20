@@ -10,6 +10,12 @@
  *
  * 交互状态（focusedCell/editingCell/selectedIds）**不落 Op**：它们是设备本地的
  * 瞬时视图状态，不进真相层（切页/重载即重置）。
+ *
+ * 例外（TASK-T47-01）：宿主（DbPage）在**每次写库后** reload 会把本组件整树卸载
+ * 重挂（status→loading 骨架 → 就绪后再挂载），组件内的 focusedCell 随之丢失、
+ * DOM 焦点落回 body——勾选格「点一次就再也按不动 Enter/Space」（键盘只能生效一次，
+ * 点击后无法键盘接力）。故用**会话级焦点记忆**（collection + 记录 id + 属性 id）
+ * 在重挂后恢复单元格焦点；键处理与持久化通道一字未改。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -31,6 +37,23 @@ import './DbView.css';
 export interface CreateRecordField {
   pid?: string | undefined;
   value: string;
+}
+
+/**
+ * 「最后一个被聚焦的单元格」会话级记忆（TASK-T47-01，模块级、跨重挂存活）。
+ * 用记录 id + 属性 id 而非行下标——重挂后行序可能因筛选/排序重排。
+ * 一次性消费：恢复（或确认不可恢复）后立即作废，避免陈旧焦点跨页/跨用例复活。
+ */
+const focusMemory: { collectionId: string | null; rowId: string | null; prop: string | null } = {
+  collectionId: null,
+  rowId: null,
+  prop: null,
+};
+
+function rememberFocusedCell(collectionId: string, rowId: string, prop: string): void {
+  focusMemory.collectionId = collectionId;
+  focusMemory.rowId = rowId;
+  focusMemory.prop = prop;
 }
 
 export interface DbViewProps {
@@ -116,9 +139,16 @@ export function DbView(props: DbViewProps) {
   useEffect(() => {
     setActiveVid(collection.views[0]?.vid ?? '');
     setSelectedIds(new Set());
-    setFocusedCell(null);
     setEditingCell(null);
   }, [collection.id, collection.views]);
+
+  // TASK-T47-01：焦点格只在**换库**时收敛。宿主每次写库后 reload 都会换 `views`
+  // 数组引用（structured clone），若把 focusedCell 一并清掉，勾选格的 Enter/Space
+  // 就会在同一次写库后被吞掉（键盘只能生效一次）。收敛口径与注释声明的「切页/跳转」
+  // 意图一致：以 collection.id 为准。
+  useEffect(() => {
+    setFocusedCell(null);
+  }, [collection.id]);
 
   const visibleRows = useMemo(() => {
     if (activeView === undefined) {
@@ -146,6 +176,31 @@ export function DbView(props: DbViewProps) {
   );
 
   const filtered = visibleRows;
+
+  // TASK-T47-01：重挂后恢复焦点格（一次性消费记忆）。挂载首帧的 filtered 已是
+  // reload 后的新数据，记录 id → 行下标映射在此时是准的。
+  useEffect(() => {
+    const remembered = {
+      collectionId: focusMemory.collectionId,
+      rowId: focusMemory.rowId,
+      prop: focusMemory.prop,
+    };
+    focusMemory.collectionId = null;
+    focusMemory.rowId = null;
+    focusMemory.prop = null;
+    if (
+      remembered.collectionId !== collection.id ||
+      remembered.rowId === null ||
+      remembered.prop === null
+    ) {
+      return;
+    }
+    const rowIndex = filtered.findIndex((row) => row.id === remembered.rowId);
+    if (rowIndex < 0) {
+      return;
+    }
+    setFocusedCell({ rowIndex, prop: remembered.prop });
+  }, []);
 
   const effectiveStatus: DbTableStatus =
     status === 'ready' && filtered.length === 0 && records.length === 0 ? 'empty' : status;
@@ -291,6 +346,11 @@ export function DbView(props: DbViewProps) {
         }}
         onFocusCell={(rowIndex, prop) => {
           setFocusedCell({ rowIndex, prop });
+          // TASK-T47-01：同步记下会话级焦点格（按记录 id 记，重挂后按 id 反查行号）
+          const row = visibleRows[rowIndex];
+          if (row !== undefined) {
+            rememberFocusedCell(collection.id, row.id, prop);
+          }
         }}
         onBeginEdit={(rowIndex, prop) => {
           setEditingCell({ rowIndex, prop });

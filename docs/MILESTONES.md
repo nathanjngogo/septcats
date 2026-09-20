@@ -3,6 +3,7 @@
 > PM 维护。每条 = 已真实验证（命令输出/真机取证），非口头。
 
 | 里程碑 | 日期 | 状态 | 证据 |
+| └ T47-01 三项严复测（E2/E3/F5-F6）| 09-21 | ✅ **全部定论：11 PASS / 0 FAIL，5 项 FAIL 全为探针侧（产品无缺陷）** | E2：重启后四处文案全英文（入口/侧栏/命令面板/页面⋯菜单）；E3：`pref=system` → `uiActual==navigator.language`（zh-CN，三方一致，不再 unknown）+ `--lang=en-US` 对照跟随生效；F5：勾选格 Enter/Space × true↔false 四格全绿（含真实路径单击后 Enter）+ F6 数字格不误切换；全仓 **1275 无红**（desktop 638）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.26 |
 |---|---|---|---|
 | G0 PRD 定稿 | 2026-09-12 | ✅ | 老板答复 Q1–Q9（PROJECT_PLAN §14） |
 | 网盘 API 事实核查 | 09-12 | ✅ | pan.baidu.com/developer 404、open.quark.cn=小程序平台、bypy README（实测） |
