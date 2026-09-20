@@ -51,6 +51,9 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
     enabled: false,
     cloudConsent: false,
     activeProviderId: null,
+    // TASK-T46-01：AI 请求参数（夹具仅补新增字段，既有断言不变）
+    chatTimeoutSec: 120,
+    maxOutputTokens: null,
     providers: [
       {
         id: 'plocal1',
@@ -279,6 +282,9 @@ function installEnabledAiBridge(): { patch: Mock; listModels: Mock } {
         enabled: true,
         cloudConsent: false,
         activeProviderId: 'plocal1',
+        // TASK-T46-01：AI 请求参数（夹具仅补新增字段，既有断言不变）
+        chatTimeoutSec: 120,
+        maxOutputTokens: null,
         providers: [
           {
             id: 'plocal1',
@@ -295,6 +301,8 @@ function installEnabledAiBridge(): { patch: Mock; listModels: Mock } {
       chat: vi.fn(),
       setKey: vi.fn(),
       clearKey: vi.fn(),
+      // TASK-T46-01：请求参数通道（夹具仅补新增字段，既有断言不变）
+      setChatConfig: vi.fn(async () => ({ chatTimeoutSec: 120, maxOutputTokens: null })),
     },
   } as Partial<SeptcatsApi>);
   return { patch: patch as Mock, listModels: listModels as Mock };
@@ -307,6 +315,86 @@ function patchCallsWithProviders(patch: Mock): Array<Record<string, unknown>> {
   }) as unknown as [{ ai: { providers: Array<Record<string, unknown>> } }] | undefined;
   return call === undefined ? [] : call[0].ai.providers;
 }
+
+describe('设置页 · AI 请求参数（TASK-T46-01 §1.1）', () => {
+  it('渲染并回填：超时输入 = 生效秒数（120）；max_tokens 未设置 → 空', async () => {
+    installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    const timeout = (await screen.findByLabelText('请求超时（秒）')) as HTMLInputElement;
+    expect(timeout.value).toBe('120');
+    const tokens = screen.getByLabelText('最大输出 tokens（可选）') as HTMLInputElement;
+    expect(tokens.value).toBe('');
+  });
+
+  it('保存超时 300 → setChatConfig({requestTimeoutSec:300}) → 反馈用 main 回包生效值', async () => {
+    installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+    const setChatConfig = window.septcats.ai.setChatConfig as unknown as Mock;
+    setChatConfig.mockResolvedValueOnce({ chatTimeoutSec: 300, maxOutputTokens: null });
+
+    fireEvent.change(await screen.findByLabelText('请求超时（秒）'), { target: { value: '300' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存超时' }));
+
+    await waitFor(() =>
+      expect(setChatConfig).toHaveBeenCalledWith({ requestTimeoutSec: 300 }),
+    );
+    expect(await screen.findByText('请求超时已设为 300 秒')).toBeDefined();
+  });
+
+  it('越界输入 9999 → 行内报错「请输入 5–600 之间的整数」且不发 setChatConfig；非法文本同办', async () => {
+    installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+    const setChatConfig = window.septcats.ai.setChatConfig as unknown as Mock;
+    const timeout = await screen.findByLabelText('请求超时（秒）');
+
+    fireEvent.change(timeout, { target: { value: '9999' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存超时' }));
+    expect(await screen.findByText('请输入 5–600 之间的整数')).toBeDefined();
+    expect(setChatConfig).not.toHaveBeenCalled();
+
+    fireEvent.change(timeout, { target: { value: '12秒' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存超时' }));
+    expect(await screen.findByText('请输入 5–600 之间的整数')).toBeDefined();
+    expect(setChatConfig).not.toHaveBeenCalled();
+  });
+
+  it('max_tokens：填 2048 → 保存带上；留空 → 显式清回未设置（null）', async () => {
+    installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+    const setChatConfig = window.septcats.ai.setChatConfig as unknown as Mock;
+    const tokens = (await screen.findByLabelText('最大输出 tokens（可选）')) as HTMLInputElement;
+    setChatConfig.mockResolvedValueOnce({ chatTimeoutSec: 120, maxOutputTokens: 2_048 });
+
+    fireEvent.change(tokens, { target: { value: '2048' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存上限' }));
+    await waitFor(() => expect(setChatConfig).toHaveBeenCalledWith({ maxOutputTokens: 2_048 }));
+    expect(await screen.findByText('最大输出 tokens 已设为 2048')).toBeDefined();
+
+    setChatConfig.mockResolvedValueOnce({ chatTimeoutSec: 120, maxOutputTokens: null });
+    fireEvent.change(tokens, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存上限' }));
+    await waitFor(() => expect(setChatConfig).toHaveBeenCalledWith({ maxOutputTokens: null }));
+    expect(await screen.findByText('最大输出 tokens 已留空（请求不带 max_tokens）')).toBeDefined();
+  });
+
+  it('保存失败 → 行内「保存失败：…」（不静默吞错）', async () => {
+    installEnabledAiBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+    const setChatConfig = window.septcats.ai.setChatConfig as unknown as Mock;
+    setChatConfig.mockRejectedValueOnce(new Error('E_MALFORMED：requestTimeoutSec 必须是有限数字或 null'));
+
+    fireEvent.change(await screen.findByLabelText('请求超时（秒）'), { target: { value: '120' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存超时' }));
+
+    expect(await screen.findByText('保存失败：E_MALFORMED：requestTimeoutSec 必须是有限数字或 null')).toBeDefined();
+  });
+});
 
 describe('设置页 · AI 助手（T18-02）', () => {
   it('渲染：AI 助手区块出现，启用开关反映 ai.enabled（默认 false）', async () => {

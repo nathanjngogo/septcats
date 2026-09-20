@@ -5,7 +5,10 @@
  * - ai:listModels → {providerId, refresh?} → AiListModelsResult（TTL 缓存）；
  * - ai:chat       → {providerId, messages, maxTokens?, temperature?} → AiChatResult；
  * - ai:setKey     → {providerId, key} → {ok:true}（密钥只进 CredentialStore）；
- * - ai:clearKey   → {providerId} → {ok:true}。
+ * - ai:clearKey   → {providerId} → {ok:true}；
+ * - ai:setChatConfig → {requestTimeoutSec?, maxOutputTokens?} → AiChatConfigSnapshot
+ *   （TASK-T46-01：超时/max_tokens 落 AI 旁路配置；读取面在 ai:state 的
+ *   chatTimeoutSec / maxOutputTokens 两个字段）。
  *
  * 纯 Node（不 import electron）：与 sync/dbview 同款注册器注入范式，
  * service 缺失时统一回 E_INVARIANT。入参守卫非法 → PagesApiError('E_MALFORMED')；
@@ -18,6 +21,7 @@ import {
   CHANNEL_AI_CHAT,
   CHANNEL_AI_CLEAR_KEY,
   CHANNEL_AI_LIST_MODELS,
+  CHANNEL_AI_SET_CHAT_CONFIG,
   CHANNEL_AI_SET_KEY,
   CHANNEL_AI_STATE,
 } from '../../shared/ipc';
@@ -110,6 +114,24 @@ function readOptionalRefresh(raw: unknown): boolean | undefined {
   return refresh;
 }
 
+/**
+ * AI 对话运行时配置字段守卫（TASK-T46-01）：缺省 = 不改；`null` = 清回未设置；
+ * 有限数 = 设值（越界由 store 夹紧）。其他类型 → E_MALFORMED（含字符串数字：不猜）。
+ */
+function readOptionalConfigNumber(raw: unknown, key: string): number | null | undefined {
+  const value = (raw as Record<string, unknown> | null)?.[key];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new PagesApiError('E_MALFORMED', `${key} 必须是有限数字或 null`);
+  }
+  return value;
+}
+
 export function registerAiIpc(options: AiIpcOptions): void {
   const requireService = (): AiService => {
     const service = options.getService();
@@ -157,5 +179,21 @@ export function registerAiIpc(options: AiIpcOptions): void {
 
   options.registrar.handle(CHANNEL_AI_CLEAR_KEY, async (raw: unknown) => {
     return requireService().clearKey({ providerId: readProviderId(raw) });
+  });
+
+  options.registrar.handle(CHANNEL_AI_SET_CHAT_CONFIG, async (raw: unknown) => {
+    const requestTimeoutSec = readOptionalConfigNumber(raw, 'requestTimeoutSec');
+    const maxOutputTokens = readOptionalConfigNumber(raw, 'maxOutputTokens');
+    const input: {
+      requestTimeoutSec?: number | null;
+      maxOutputTokens?: number | null;
+    } = {};
+    if (requestTimeoutSec !== undefined) {
+      input.requestTimeoutSec = requestTimeoutSec;
+    }
+    if (maxOutputTokens !== undefined) {
+      input.maxOutputTokens = maxOutputTokens;
+    }
+    return requireService().setChatConfig(input);
   });
 }

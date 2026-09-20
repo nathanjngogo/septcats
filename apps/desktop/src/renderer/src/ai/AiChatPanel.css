@@ -203,3 +203,52 @@
   align-items: center;
   justify-content: space-between;
 }
+
+/* TASK-T46-01 §1.2：空正文/纯推理/length 截断的可读提示（不出现空白气泡） */
+.ai-chat__reply-notice {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  background: var(--sc-color-surface-raised);
+  border-left: 2px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-xs);
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  margin-top: var(--sc-space-xxs);
+  overflow-wrap: anywhere;
+}
+
+/* TASK-T46-01 §1.2：推理正文折叠区（默认收起；按钮即展开开关） */
+.ai-chat__reasoning {
+  margin-top: var(--sc-space-xs);
+}
+
+.ai-chat__reasoning-toggle {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-accent);
+  background: var(--sc-color-accent-soft);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-xs);
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  cursor: pointer;
+}
+
+.ai-chat__reasoning-toggle:hover {
+  border-color: var(--sc-color-focus-ring);
+}
+
+.ai-chat__reasoning-toggle:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+}
+
+.ai-chat__reasoning-body {
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink-secondary);
+  background: var(--sc-color-surface-raised);
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  padding: var(--sc-space-xs);
+  margin: var(--sc-space-xxs) 0 0;
+  max-height: var(--sc-space-xxl);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

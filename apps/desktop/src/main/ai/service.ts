@@ -7,12 +7,15 @@
  * （service=septcats，account=ai-<providerId>），绝不进 settings/日志/错误消息。
  * 隐私请求日志只记 `op providerId host 耗时 结果码`，禁记 prompt/响应体/密钥。
  * 启动零外联：不预拉模型，listModels 只在被调用时发请求。
+ * TASK-T46-01：chat 超时与 max_tokens 由 AI 旁路配置（`main/ai/chatConfigStore.ts`）
+ * 注入——未设置时**逐字保持**既有行为（120_000ms、不带 max_tokens）。
  *
  * 依赖注入 CredentialStore + getSettings + fetchFn（照 SyncRuntime 注入风格）；
  * 纯 Node（不 import electron），可直测。
  */
 import type { CredentialStore } from '@septcats/platform';
 import type {
+  AiChatConfigSnapshot,
   AiChatResult,
   AiListModelsResult,
   AiMessage,
@@ -20,7 +23,9 @@ import type {
 } from '../../shared/ai';
 import type { AppSettings } from '../../shared/settings';
 import { ModelListCache } from './cache';
-import { AiClient, type AiClientOptions, type AiFetch } from './client';
+import { effectiveChatTimeoutMs } from './chatConfig';
+import { AiChatConfigStore, defaultChatConfigStore } from './chatConfigStore';
+import { AiClient, DEFAULT_CHAT_TIMEOUT_MS, type AiClientOptions, type AiFetch } from './client';
 import { assertAiUrlAllowed, isLocalBaseUrl, normalizeBaseUrl } from './policy';
 import { AI_CREDENTIAL_SERVICE, AiError, aiCredentialAccount } from './types';
 
@@ -35,7 +40,10 @@ export interface AiServiceOptions {
   /** 模型列表缓存 TTL（默认 60s；测试注入 0/大值）。 */
   cacheTtlMs?: number;
   modelListTimeoutMs?: number;
+  /** chat 超时**兜底注入值**（未设置旁路配置时生效；默认 120_000）。 */
   chatTimeoutMs?: number;
+  /** AI 对话运行时配置存储（默认 = `defaultChatConfigStore()`，懒解析 userData）。 */
+  chatConfigStore?: AiChatConfigStore;
 }
 
 interface GatedProvider {
@@ -71,10 +79,13 @@ export class AiService {
   private readonly log: (line: string) => void;
   private readonly now: () => number;
   private readonly cache: ModelListCache;
+  private readonly chatConfigStore: AiChatConfigStore;
+  private readonly fallbackChatTimeoutMs: number;
 
   constructor(options: AiServiceOptions) {
     this.credentials = options.credentials;
     this.getSettings = options.getSettings;
+    this.fallbackChatTimeoutMs = options.chatTimeoutMs ?? DEFAULT_CHAT_TIMEOUT_MS;
     const clientOptions: AiClientOptions = { fetchFn: options.fetchFn };
     if (options.modelListTimeoutMs !== undefined) {
       clientOptions.modelListTimeoutMs = options.modelListTimeoutMs;
@@ -86,11 +97,42 @@ export class AiService {
     this.log = options.log;
     this.now = options.now ?? Date.now;
     this.cache = new ModelListCache(options.cacheTtlMs ?? 60_000, this.now);
+    this.chatConfigStore = options.chatConfigStore ?? defaultChatConfigStore();
+  }
+
+  /** AI 对话运行时配置的**生效值**（秒/max_tokens；ai:state 与 ai:setChatConfig 共用）。 */
+  async chatConfig(): Promise<AiChatConfigSnapshot> {
+    const config = await this.chatConfigStore.read();
+    return {
+      chatTimeoutSec: Math.round(
+        effectiveChatTimeoutMs(config, this.fallbackChatTimeoutMs) / 1_000,
+      ),
+      maxOutputTokens: config.maxOutputTokens,
+    };
+  }
+
+  /** 写 AI 对话运行时配置（夹紧在 store 内；返回写后生效值）。 */
+  async setChatConfig(patch: {
+    requestTimeoutSec?: number | null;
+    maxOutputTokens?: number | null;
+  }): Promise<AiChatConfigSnapshot> {
+    const config = await this.chatConfigStore.patch(patch);
+    const snapshot: AiChatConfigSnapshot = {
+      chatTimeoutSec: Math.round(
+        effectiveChatTimeoutMs(config, this.fallbackChatTimeoutMs) / 1_000,
+      ),
+      maxOutputTokens: config.maxOutputTokens,
+    };
+    this.log(
+      `ai setChatConfig timeout=${String(snapshot.chatTimeoutSec)}s maxTokens=${snapshot.maxOutputTokens === null ? 'unset' : String(snapshot.maxOutputTokens)}`,
+    );
+    return snapshot;
   }
 
   /** 渲染器视图：派生 isLocal/hasKey，不泄露密钥。凭据读取失败按 false（不抛）。 */
   async state(): Promise<AiStateSnapshot> {
     const settings = this.getSettings();
+    const chatConfig = await this.chatConfig();
     const providers: AiStateSnapshot['providers'] = [];
     for (const provider of settings.ai.providers) {
       let hasKey = false;
@@ -115,6 +157,8 @@ export class AiService {
       enabled: settings.ai.enabled,
       cloudConsent: settings.ai.cloudConsent,
       activeProviderId: settings.ai.activeProviderId,
+      chatTimeoutSec: chatConfig.chatTimeoutSec,
+      maxOutputTokens: chatConfig.maxOutputTokens,
       providers,
     };
   }
@@ -163,9 +207,13 @@ export class AiService {
     }
     const host = hostOf(gate.baseUrl);
     const apiKey = await this.readKey(gate.id);
-    const opts: { maxTokens?: number; temperature?: number } = {};
-    if (input.maxTokens !== undefined) {
-      opts.maxTokens = input.maxTokens;
+    // 旁路配置读在门禁之后（隐私：门禁拒绝时连配置文件都不碰）——「未设置」即注入兜底值。
+    const config = await this.chatConfigStore.read();
+    const timeoutMs = effectiveChatTimeoutMs(config, this.fallbackChatTimeoutMs);
+    const opts: { maxTokens?: number; temperature?: number; timeoutMs: number } = { timeoutMs };
+    const maxTokens = input.maxTokens ?? config.maxOutputTokens;
+    if (maxTokens !== null) {
+      opts.maxTokens = maxTokens;
     }
     if (input.temperature !== undefined) {
       opts.temperature = input.temperature;
@@ -173,12 +221,12 @@ export class AiService {
     try {
       const result = await this.client.chat(gate.baseUrl, apiKey, gate.model, input.messages, opts);
       this.log(
-        `ai chat provider=${gate.id} host=${host} model=${gate.model} → ok(${String(this.now() - startedAt)}ms)`,
+        `ai chat provider=${gate.id} host=${host} model=${gate.model} timeout=${String(timeoutMs / 1_000)}s → ok(${String(this.now() - startedAt)}ms)`,
       );
       return result;
     } catch (error) {
       this.log(
-        `ai chat provider=${gate.id} host=${host} model=${gate.model} → ${errorCodeOf(error)}(${String(this.now() - startedAt)}ms)`,
+        `ai chat provider=${gate.id} host=${host} model=${gate.model} timeout=${String(timeoutMs / 1_000)}s → ${errorCodeOf(error)}(${String(this.now() - startedAt)}ms)`,
       );
       throw error;
     }

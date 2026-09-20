@@ -32,6 +32,7 @@ export const enUS = {
     E_MALFORMED: 'Invalid request parameters',
     E_TEMPLATE_NOT_FOUND: 'The template does not exist or has been deleted',
     E_SETTINGS_INVALID: 'Failed to save settings',
+    E_AI_TIMEOUT: 'Request timed out',
   },
   sidebar: {
     workspace: 'Personal Workspace',
@@ -345,6 +346,20 @@ export const enUS = {
       enableFirstHint: 'Enable AI first',
       editButton: 'Edit',
       removeButton: 'Remove',
+      requestTimeout: 'Request timeout (seconds)',
+      requestTimeoutDesc:
+        'Range {min}-{max} seconds (30-600 recommended), default {default}; raise it for slow local reasoning models so a turn is not aborted midway.',
+      requestTimeoutSave: 'Save timeout',
+      requestTimeoutSaved: 'Request timeout set to {n} seconds',
+      maxTokens: 'Max output tokens (optional)',
+      maxTokensDesc:
+        'Range {min}-{max}; leave empty to send no max_tokens (the endpoint default applies). Reasoning models are likelier to return body text when raised.',
+      maxTokensSave: 'Save limit',
+      maxTokensClear: 'Leave empty (no limit)',
+      maxTokensSaved: 'Max output tokens set to {n}',
+      maxTokensCleared: 'Max output tokens cleared (request sends no max_tokens)',
+      configSaveFailed: 'Save failed: {msg}',
+      configInvalidRange: 'Enter an integer between {min} and {max}',
     },
     templates: {
       title: 'Templates',
@@ -433,6 +448,14 @@ export const enUS = {
     stoppedNote: 'Generation stopped.',
     emptyHistory: 'No conversation yet. Ask about the current page.',
     contextUnavailable: '(No page context available for the current page)',
+    reasoningOnlyNotice: 'The model returned no body text (reasoning content only)',
+    emptyReplyNotice: 'The model returned no body text (retry, or raise "Max output tokens")',
+    lengthNotice: 'Output limit reached - raise max_tokens or retry',
+    reasoningShow: 'Show reasoning content ({n} characters)',
+    reasoningHide: 'Hide reasoning content',
+    reasoningTruncated: '... (reasoning was long; only the first {n} characters are kept)',
+    timeoutHint: 'Raise "Request timeout" in Settings › AI Assistant (currently {n} seconds).',
+    timeoutHintBare: 'Raise "Request timeout" in Settings › AI Assistant.',
     promptRole:
       'You are the built-in AI assistant of the Septcats notes app. Answer concisely and accurately, in the same language as the user.',
     promptContextHeader: 'Current page: ',

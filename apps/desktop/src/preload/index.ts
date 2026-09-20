@@ -172,6 +172,10 @@ const api: SeptcatsApi = {
     setKey: (input) => ipcRenderer.invoke(AI_CHANNELS.setKey, input) as ReturnType<SeptcatsApi['ai']['setKey']>,
     clearKey: (input) =>
       ipcRenderer.invoke(AI_CHANNELS.clearKey, input) as ReturnType<SeptcatsApi['ai']['clearKey']>,
+    setChatConfig: (input) =>
+      ipcRenderer.invoke(AI_CHANNELS.setChatConfig, input) as ReturnType<
+        SeptcatsApi['ai']['setChatConfig']
+      >,
   },
   collab: {
     attach: (input) =>

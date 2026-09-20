@@ -7,7 +7,7 @@
  * 抛 AbortError → E_AI_TIMEOUT。
  */
 import { describe, expect, it } from 'vitest';
-import { AiClient, type AiFetch, type AiFetchResponse } from '../src/main/ai/client';
+import { AiClient, DEFAULT_CHAT_TIMEOUT_MS, type AiFetch, type AiFetchResponse } from '../src/main/ai/client';
 import type { AiMessage } from '../src/shared/ai';
 
 interface RecordedCall {
@@ -164,5 +164,117 @@ describe('ai/client chat', () => {
     const timed2 = makeFetch([timeout]);
     const client3 = new AiClient({ fetchFn: timed2.fetchFn });
     await expect(client3.listModels('http://127.0.0.1:1234', null)).rejects.toThrow(/E_AI_TIMEOUT/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-T46-01：reasoning_content / finish_reason 透出 + 可配置超时
+// ---------------------------------------------------------------------------
+
+/** 永不解析的假 fetch：只在 signal abort 时 reject（超时路径的墙钟取证）。 */
+function hangingFetch(): AiFetch {
+  return (_url, init) =>
+    new Promise<AiFetchResponse>((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => {
+        reject(Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }));
+      });
+    });
+}
+
+describe('ai/client 纯推理响应与超时（TASK-T46-01）', () => {
+  it('reasoning_content / finish_reason 透出（新增可选字段，text/model 语义不变）', async () => {
+    const { fetchFn } = makeFetch([
+      okResponse(
+        JSON.stringify({
+          choices: [
+            {
+              message: { role: 'assistant', content: '正文', reasoning_content: '推理链' },
+              finish_reason: 'stop',
+            },
+          ],
+        }),
+      ),
+    ]);
+    const client = new AiClient({ fetchFn });
+    const result = await client.chat('http://127.0.0.1:1234', null, 'm', MESSAGES);
+    expect(result).toEqual({
+      text: '正文',
+      model: 'm',
+      reasoningContent: '推理链',
+      finishReason: 'stop',
+    });
+  });
+
+  it('content 为空但带 reasoning_content → 成功返回（不再当坏响应）', async () => {
+    const { fetchFn } = makeFetch([
+      okResponse(
+        JSON.stringify({
+          choices: [{ message: { content: '', reasoning_content: '只有推理' }, finish_reason: 'length' }],
+        }),
+      ),
+    ]);
+    const client = new AiClient({ fetchFn });
+    const result = await client.chat('http://127.0.0.1:1234', null, 'm', MESSAGES);
+    expect(result.text).toBe('');
+    expect(result.reasoningContent).toBe('只有推理');
+    expect(result.finishReason).toBe('length');
+  });
+
+  it('content 字段缺省但带 reasoning_content → text 空串（不抛 E_AI_BAD_RESPONSE）', async () => {
+    const { fetchFn } = makeFetch([
+      okResponse(JSON.stringify({ choices: [{ message: { reasoning_content: '推理' } }] })),
+    ]);
+    const client = new AiClient({ fetchFn });
+    const result = await client.chat('http://127.0.0.1:1234', null, 'm', MESSAGES);
+    expect(result.text).toBe('');
+    expect(result.reasoningContent).toBe('推理');
+    expect(result.finishReason).toBeUndefined();
+  });
+
+  it('既无 content 又无 reasoning_content → 仍 E_AI_BAD_RESPONSE（坏响应语义不变）', async () => {
+    const { fetchFn } = makeFetch([okResponse(JSON.stringify({ choices: [{}] }))]);
+    const client = new AiClient({ fetchFn });
+    await expect(client.chat('http://127.0.0.1:1234', null, 'm', MESSAGES)).rejects.toThrow(
+      /E_AI_BAD_RESPONSE/,
+    );
+  });
+
+  it('未注入时 chat 超时真相源 = 120_000ms', () => {
+    expect(DEFAULT_CHAT_TIMEOUT_MS).toBe(120_000);
+  });
+
+  it('注入 chatTimeoutMs 生效；opts.timeoutMs 覆盖注入值（墙钟实测）', async () => {
+    const client = new AiClient({ fetchFn: hangingFetch(), chatTimeoutMs: 600 });
+    const startedAt = Date.now();
+    const error = await client.chat('http://127.0.0.1:1234', null, 'm', MESSAGES).then(
+      () => null,
+      (caught: unknown) => caught as Error,
+    );
+    const elapsedInjected = Date.now() - startedAt;
+    expect(error?.message).toContain('E_AI_TIMEOUT');
+    expect(error?.message).toContain('等待超过 0.60 秒已中止');
+    expect(error?.message).toContain('（127.0.0.1:1234）');
+    expect(elapsedInjected).toBeGreaterThanOrEqual(560);
+    expect(elapsedInjected).toBeLessThan(1_500);
+
+    const started2 = Date.now();
+    await client
+      .chat('http://127.0.0.1:1234', null, 'm', MESSAGES, { timeoutMs: 120 })
+      .then(
+        () => null,
+        (caught: unknown) => caught as Error,
+      );
+    const elapsedOverride = Date.now() - started2;
+    expect(elapsedOverride).toBeGreaterThanOrEqual(100);
+    expect(elapsedOverride).toBeLessThan(500);
+  });
+
+  it('listModels 的 8s 模型列表超时文案保持原样（只改 chat 超时文案）', async () => {
+    const client = new AiClient({ fetchFn: hangingFetch(), modelListTimeoutMs: 100 });
+    const error = await client.listModels('http://127.0.0.1:1234', null).then(
+      () => null,
+      (caught: unknown) => caught as Error,
+    );
+    expect(error?.message).toBe('E_AI_TIMEOUT：端点请求超时（http://127.0.0.1:1234/v1/models）');
   });
 });

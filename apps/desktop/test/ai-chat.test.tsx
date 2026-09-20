@@ -46,6 +46,9 @@ const AI_STATE_OK = {
   enabled: true,
   cloudConsent: false,
   activeProviderId: 'p1',
+  // TASK-T46-01：AI 请求参数（未设置的旁路配置 → 生效超时 120s、不带 max_tokens）
+  chatTimeoutSec: 120,
+  maxOutputTokens: null,
   providers: [
     {
       id: 'p1',
@@ -414,6 +417,172 @@ describe('隐私（TASK-T38-01 §1.4 renderer 面）', () => {
     const allStorage = JSON.stringify(window.localStorage);
     expect(allStorage).not.toContain('sk-');
     expect(allStorage).not.toContain('Bearer');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8) TASK-T46-01：空正文/纯推理/length/超时 的可读呈现 + max_tokens
+// ---------------------------------------------------------------------------
+
+describe('回复健壮性（TASK-T46-01 §1.2/§1.3/§1.4）', () => {
+  const REASONING = '先看第一块：结论甲。再核对第二块：口径乙。';
+
+  it('纯推理响应（content 空 + reasoning_content + finish_reason=length）：提示文案 + 折叠区默认收起可展开 + 无空白气泡', async () => {
+    installEditorProvider();
+    installBridge({
+      chat: vi.fn(async () => ({
+        text: '',
+        model: 'qwen2.5-7b',
+        reasoningContent: REASONING,
+        finishReason: 'length',
+      })),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('本页讲了什么？');
+
+    await waitFor(() => {
+      expect(screen.getByText('模型未返回正文（仅推理内容）')).toBeTruthy();
+    });
+    // ③ finish_reason=length 提示
+    expect(screen.getByText('达到输出上限，可增大 max_tokens 或重试')).toBeTruthy();
+    // 无空白气泡：assistant 气泡可见文本非空
+    const bubble = document.querySelector('.ai-chat__bubble--assistant');
+    expect((bubble?.textContent ?? '').length).toBeGreaterThan(0);
+    expect(bubble?.textContent).toContain('模型未返回正文（仅推理内容）');
+    // ② 折叠区默认收起（正文不在 DOM）
+    expect(document.querySelector('.ai-chat__reasoning-body')).toBeNull();
+    const toggle = document.querySelector('.ai-chat__reasoning-toggle');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle?.textContent).toBe(`查看推理内容（${String(REASONING.length)} 字符）`);
+    // 点开 → 推理原文可见 + aria-expanded=true
+    fireEvent.click(toggle as HTMLElement);
+    await waitFor(() => {
+      const body = document.querySelector('.ai-chat__reasoning-body');
+      expect(body?.textContent).toBe('先看第一块：结论甲。再核对第二块：口径乙。');
+      expect(document.querySelector('.ai-chat__reasoning-toggle')?.getAttribute('aria-expanded')).toBe('true');
+    });
+    // 折叠态可逆
+    fireEvent.click(document.querySelector('.ai-chat__reasoning-toggle') as HTMLElement);
+    await waitFor(() => {
+      expect(document.querySelector('.ai-chat__reasoning-body')).toBeNull();
+    });
+    // 历史落盘：reasoning / finishReason 随消息保存（重启可还原折叠区）
+    const stored = readChatHistory('ws-1');
+    const last = stored?.[stored.length - 1];
+    expect(last?.content).toBe('');
+    expect(last?.reasoning).toContain('结论甲');
+    expect(last?.finishReason).toBe('length');
+  });
+
+  it('空正文且无推理内容：给「未返回正文」提示（不渲染空白气泡）', async () => {
+    installBridge({
+      chat: vi.fn(async () => ({ text: '   ', model: 'qwen2.5-7b' })),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+
+    await waitFor(() => {
+      expect(screen.getByText('模型未返回正文（可重试，或调大「最大输出 tokens」）')).toBeTruthy();
+    });
+    expect(document.querySelector('.ai-chat__reasoning')).toBeNull();
+    const bubble = document.querySelector('.ai-chat__bubble--assistant');
+    expect(bubble?.textContent).toContain('模型未返回正文');
+  });
+
+  it('正常正文 + length：正文照常渲染，另加「达到输出上限」提示', async () => {
+    installBridge({
+      chat: vi.fn(async () => ({
+        text: '这是被截断的半句',
+        model: 'qwen2.5-7b',
+        finishReason: 'length',
+      })),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+
+    await waitFor(() => {
+      expect(document.querySelector('.ai-chat__bubble--assistant')?.textContent).toContain(
+        '这是被截断的半句',
+      );
+    });
+    expect(screen.getByText('达到输出上限，可增大 max_tokens 或重试')).toBeTruthy();
+    expect(screen.queryByText('模型未返回正文（仅推理内容）')).toBeNull();
+  });
+
+  it('E_AI_TIMEOUT：文案「等待超过 N 秒已中止」+ 调大指引（不焯错误码）', async () => {
+    installBridge({
+      state: vi.fn(async () => ({ ...AI_STATE_OK, chatTimeoutSec: 5 })),
+      chat: vi.fn(async () => {
+        throw new Error('E_AI_TIMEOUT：等待超过 5 秒已中止（127.0.0.1:3599）');
+      }),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('慢问题');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('等待超过 5 秒已中止');
+    });
+    const alert = screen.getByRole('alert').textContent ?? '';
+    expect(alert).toBe(
+      '请求超时：等待超过 5 秒已中止（127.0.0.1:3599） 可在设置 › AI 助手中调大「请求超时」（当前 5 秒）。',
+    );
+    expect(alert).toContain('可在设置 › AI 助手中调大「请求超时」');
+  });
+
+  it('非超时错误不被改写（E_AI_UNREACHABLE 走既有 errorText 口径）', async () => {
+    installBridge({
+      chat: vi.fn(async () => {
+        throw new Error('E_AI_UNREACHABLE：端点不可达：fetch failed');
+      }),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'E_AI_UNREACHABLE：端点不可达：fetch failed',
+      );
+    });
+  });
+
+  it('max_tokens：设置里配了才带（未设置 = 请求不带该字段）', async () => {
+    const chat = vi.fn(async () => ({ text: '回复', model: 'qwen2.5-7b' }));
+    installBridge({ state: vi.fn(async () => ({ ...AI_STATE_OK, maxOutputTokens: 800 })), chat });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+    await waitFor(() => expect(chat).toHaveBeenCalledTimes(1));
+    expect(chat.mock.calls[0]?.[0]).toMatchObject({ maxTokens: 800 });
+
+    cleanup();
+    aiChatStore.setState(() => ({ open: true, workspaceId: 'ws-1', messages: [] }));
+    const chat2 = vi.fn(async () => ({ text: '回复', model: 'qwen2.5-7b' }));
+    installBridge({ chat: chat2 });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+    await waitFor(() => expect(chat2).toHaveBeenCalledTimes(1));
+    const arg = chat2.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(arg['maxTokens']).toBeUndefined();
+  });
+
+  it('超长推理正文落盘时截断（localStorage 体量可控）', async () => {
+    installEditorProvider();
+    installBridge({
+      chat: vi.fn(async () => ({
+        text: '',
+        model: 'qwen2.5-7b',
+        reasoningContent: '推'.repeat(5_000),
+      })),
+    });
+    render(<AiChatPanel />);
+    typeAndSend('问');
+    await waitFor(() => {
+      expect(screen.getByText('模型未返回正文（仅推理内容）')).toBeTruthy();
+    });
+    const stored = readChatHistory('ws-1');
+    const last = stored?.[stored.length - 1];
+    expect(last?.reasoning?.length).toBe(4_000 + '…（推理内容较长，此处仅保留前 4000 字符）'.length);
+    expect(last?.reasoning?.startsWith('推'.repeat(10))).toBe(true);
+    expect(last?.reasoning?.endsWith('…（推理内容较长，此处仅保留前 4000 字符）')).toBe(true);
   });
 });
 

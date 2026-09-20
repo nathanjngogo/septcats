@@ -12,13 +12,16 @@
  *   结果直接丢弃，不落历史；
  * - 上下文与引用：chatBridge（PageView 注册）→ chatContext 装配/解析；
  * - 历史与面板状态：chatState（localStorage 持久化，不进账本）。
+ * - TASK-T46-01：空正文/纯推理（可折叠）/length 截断都要有可读提示（不渲染空白气泡）；
+ *   超时（E_AI_TIMEOUT）给出「等待超过 N 秒已中止」+ 调大「请求超时」的指引；
+ *   设置里配了「最大输出 tokens」时面板请求带上 max_tokens。
  * 隐私：本组件不接触密钥、不打消息日志；云端门禁在 main 侧 assertAiUrlAllowed
  * （无 consent 时 fetch 零调用，测试锁死）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Button, Checkbox, Icon, IconButton, Sparkle, Spinner, Trash, X } from '@septcats/ui';
-import { errorText, t } from '../i18n';
+import { t } from '../i18n';
 import { usePages } from '../state/pages';
 import {
   aiChatActions,
@@ -27,7 +30,15 @@ import {
   useAiChat,
   type ChatMsg,
   type ChatRef,
+  type ChatMsgExtra,
 } from './chatState';
+import {
+  clampReasoningForStorage,
+  lengthNoticeText,
+  panelErrorText,
+  reasoningOf,
+  replyNoticeText,
+} from './chatReply';
 import { getEditorChatProvider, requestBlockJump } from './chatBridge';
 import {
   assembleChatMessages,
@@ -84,7 +95,7 @@ export function AiChatPanel() {
     try {
       snapshot = await window.septcats.ai.state();
     } catch (caught: unknown) {
-      setError(errorText(caught));
+      setError(panelErrorText(caught, null));
       return;
     }
     if (!snapshot.enabled) {
@@ -113,20 +124,42 @@ export function AiChatPanel() {
     aiChatActions.appendMessages([makeChatMsg('user', question, Date.now())]);
     setDraft('');
     setBusy(true);
+    // TASK-T46-01 §1.4：设置里配了「最大输出 tokens」才带该字段（未设置 = 现状，不带）
+    const request: {
+      providerId: string;
+      messages: ReturnType<typeof assembleChatMessages>;
+      maxTokens?: number;
+    } = {
+      providerId,
+      messages: assembleChatMessages({ history, contextText, question }),
+    };
+    const configuredTokens = snapshot.maxOutputTokens;
+    if (typeof configuredTokens === 'number' && configuredTokens > 0) {
+      request.maxTokens = configuredTokens;
+    }
     try {
-      const res = await window.septcats.ai.chat({
-        providerId,
-        messages: assembleChatMessages({ history, contextText, question }),
-      });
+      const res = await window.septcats.ai.chat(request);
       if (runId !== runIdRef.current) {
         return; // 已停止/已关闭：迟到结果丢弃
       }
       const refs =
         ctx !== null ? resolveCitations(res.text, blockIndex, ctx.pageId, ctx.pageTitle) : [];
-      aiChatActions.appendMessages([makeChatMsg('assistant', res.text, Date.now(), refs)]);
+      // §1.2：推理正文/length 一并落历史（气泡据此给提示 + 可折叠区）
+      const extra: ChatMsgExtra = {};
+      const reasoning = clampReasoningForStorage(res.reasoningContent);
+      if (reasoning !== undefined) {
+        extra.reasoning = reasoning;
+      }
+      if (typeof res.finishReason === 'string') {
+        extra.finishReason = res.finishReason;
+      }
+      aiChatActions.appendMessages([
+        makeChatMsg('assistant', res.text, Date.now(), refs, extra),
+      ]);
     } catch (caught: unknown) {
       if (runId === runIdRef.current) {
-        setError(errorText(caught));
+        // §1.3：超时 → 「等待超过 N 秒已中止」+ 调大「请求超时」指引
+        setError(panelErrorText(caught, snapshot.chatTimeoutSec ?? null));
       }
     } finally {
       if (runId === runIdRef.current) {
@@ -259,6 +292,10 @@ function ChatBubble({ msg }: { msg: ChatMsg }) {
   }
   const segments = parseCitations(msg.content);
   const refByN = new Map((msg.refs ?? []).map((ref) => [ref.n, ref]));
+  // TASK-T46-01 §1.2：空正文必给提示（绝不渲染空白气泡）；length 单独提示；推理正文可折叠
+  const notice = replyNoticeText(msg);
+  const lengthNotice = lengthNoticeText(msg.finishReason);
+  const reasoning = reasoningOf(msg);
   return (
     <div className="ai-chat__msg ai-chat__msg--assistant">
       <div className="ai-chat__bubble ai-chat__bubble--assistant">
@@ -292,7 +329,40 @@ function ChatBubble({ msg }: { msg: ChatMsg }) {
             })()
           ),
         )}
+        {notice === null ? null : (
+          <div className="ai-chat__reply-notice" role="note">
+            {notice}
+          </div>
+        )}
+        {lengthNotice === null ? null : (
+          <div className="ai-chat__reply-notice" role="note">
+            {lengthNotice}
+          </div>
+        )}
+        {reasoning === null ? null : <ReasoningDisclosure text={reasoning} />}
       </div>
+    </div>
+  );
+}
+
+/** 推理正文折叠区（默认收起；按钮 aria-expanded 暴露展开态，键盘可达）。 */
+function ReasoningDisclosure({ text }: { text: string }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="ai-chat__reasoning">
+      <button
+        type="button"
+        className="ai-chat__reasoning-toggle"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((prev) => !prev);
+        }}
+      >
+        {open
+          ? t('aiChat.reasoningHide')
+          : t('aiChat.reasoningShow').replace('{n}', String(text.length))}
+      </button>
+      {open ? <pre className="ai-chat__reasoning-body">{text}</pre> : null}
     </div>
   );
 }

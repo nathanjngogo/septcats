@@ -35,6 +35,13 @@ export interface ChatMsg {
   refs?: ChatRef[];
   /** 被用户停止的轮次标记（仅展示口径；停止轮不落 assistant 回复）。 */
   stopped?: boolean;
+  /**
+   * TASK-T46-01 §1.2：端点透出的推理正文（`reasoning_content`）——仅 assistant 回复可能带，
+   * 折叠展示（默认收起）；正文为空但本字段有值 = 纯推理响应。
+   */
+  reasoning?: string;
+  /** TASK-T46-01 §1.2：结束原因（`length` = 达到输出上限，气泡给提示）。 */
+  finishReason?: string;
 }
 
 export interface ChatHistoryPersist {
@@ -110,7 +117,10 @@ function isChatMsg(value: unknown): value is ChatMsg {
     (msg.role === 'user' || msg.role === 'assistant') &&
     typeof msg.content === 'string' &&
     typeof msg.ts === 'number' &&
-    (msg.refs === undefined || isChatRefArray(msg.refs))
+    (msg.refs === undefined || isChatRefArray(msg.refs)) &&
+    // TASK-T46-01 新增可选字段：类型不符即判坏条目剔除（旧历史无这两字段，照旧通过）
+    (msg.reasoning === undefined || typeof msg.reasoning === 'string') &&
+    (msg.finishReason === undefined || typeof msg.finishReason === 'string')
   );
 }
 
@@ -188,10 +198,30 @@ export function toApiMessages(messages: readonly ChatMsg[]): AiMessage[] {
   return messages.map((msg) => ({ role: msg.role, content: msg.content }));
 }
 
-export function makeChatMsg(role: ChatMsg['role'], content: string, ts: number, refs?: ChatRef[]): ChatMsg {
+/** 回复附加呈现字段（TASK-T46-01：推理正文 / 结束原因；缺省不产生字段）。 */
+export interface ChatMsgExtra {
+  reasoning?: string;
+  finishReason?: string;
+}
+
+export function makeChatMsg(
+  role: ChatMsg['role'],
+  content: string,
+  ts: number,
+  refs?: ChatRef[],
+  extra?: ChatMsgExtra,
+): ChatMsg {
   const msg: ChatMsg = { id: ulid(), role, content, ts };
   if (refs !== undefined && refs.length > 0) {
     msg.refs = refs;
+  }
+  const reasoning = extra?.reasoning;
+  if (reasoning !== undefined) {
+    msg.reasoning = reasoning;
+  }
+  const finishReason = extra?.finishReason;
+  if (finishReason !== undefined) {
+    msg.finishReason = finishReason;
   }
   return msg;
 }

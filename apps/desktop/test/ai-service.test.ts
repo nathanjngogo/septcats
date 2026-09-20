@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CredentialStore } from '@septcats/platform';
 import type { AiFetchResponse } from '../src/main/ai/client';
+import { DEFAULT_CHAT_TIMEOUT_MS } from '../src/main/ai/client';
+import { serializeAiChatConfig, type AiChatRuntimeConfig } from '../src/main/ai/chatConfig';
+import { AiChatConfigStore } from '../src/main/ai/chatConfigStore';
 import { AiService } from '../src/main/ai/service';
 import type { AppSettings } from '../src/shared/settings';
 import type { AiMessage } from '../src/shared/ai';
@@ -130,18 +133,23 @@ interface SetupResult {
 function setup(
   aiOverrides?: Partial<AppSettings['ai']>,
   responses?: Array<AiFetchResponse | Error>,
+  configStore?: AiChatConfigStore,
 ): SetupResult {
   const store = makeFakeStore();
   const { fetchFn, calls } = makeFetch(responses);
   const logs: string[] = [];
   let ai: AppSettings['ai'] = { ...DEFAULT_AI, providers: [...DEFAULT_AI.providers], ...aiOverrides };
-  const service = new AiService({
+  const options: ConstructorParameters<typeof AiService>[0] = {
     credentials: store,
     getSettings: () => ({ ...baseSettings(), ai }) as AppSettings,
     fetchFn,
     log: (line) => logs.push(line),
     now: () => 1_000,
-  });
+  };
+  if (configStore !== undefined) {
+    options.chatConfigStore = configStore;
+  }
+  const service = new AiService(options);
   return {
     service,
     store,
@@ -303,5 +311,198 @@ describe('ai/service 请求透传与日志', () => {
     await expect(service.listModels({ providerId: 'local' })).rejects.toThrow(/E_AI_UNREACHABLE/);
     expect(logs.some((line) => line.includes('E_AI_UNREACHABLE'))).toBe(true);
     expect(logs.some((line) => line.includes('connection refused'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK-T46-01：可配置超时 / max_tokens（注入值 = 现状；设置值 = 覆盖）
+// ---------------------------------------------------------------------------
+
+/** 内存配置 store（不落盘：注入文本 + 记录写入；目录虚构）。 */
+function makeConfigStore(initial: AiChatRuntimeConfig = { requestTimeoutSec: null, maxOutputTokens: null }): {
+  store: AiChatConfigStore;
+  written: string[];
+} {
+  const written: string[] = [];
+  let text = serializeAiChatConfig(initial);
+  const store = new AiChatConfigStore({
+    resolveDir: async () => 'C:/fixture-userdata',
+    io: {
+      readText: () => text,
+      writeText: (_path, next) => {
+        written.push(next);
+        text = next;
+      },
+    },
+  });
+  return { store, written };
+}
+
+/** 永不解析的假 fetch：只在 signal abort 时 reject（模拟慢/挂死端点）。 */
+function hangingFetch(): FakeFetch {
+  return (_url, init) =>
+    new Promise<AiFetchResponse>((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => {
+        reject(Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }));
+      });
+    });
+}
+
+/** 延迟 delayMs 后回正常响应的假 fetch（模拟慢模型）。 */
+function delayedFetch(delayMs: number): { fetchFn: FakeFetch; calls: RecordedCall[] } {
+  const calls: RecordedCall[] = [];
+  const fetchFn: FakeFetch = async (url, init) => {
+    calls.push({ url, headers: init.headers, body: init.body });
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: '慢回复' } }] }),
+    };
+  };
+  return { fetchFn, calls };
+}
+
+function makeService(options: {
+  fetchFn: FakeFetch;
+  config: AiChatRuntimeConfig;
+  chatTimeoutMs?: number;
+}): { service: AiService; logs: string[]; store: ReturnType<typeof makeFakeStore> } {
+  const store = makeFakeStore();
+  const logs: string[] = [];
+  const serviceOptions: ConstructorParameters<typeof AiService>[0] = {
+    credentials: store,
+    getSettings: () => ({ ...baseSettings(), ai: { ...DEFAULT_AI } }) as AppSettings,
+    fetchFn: options.fetchFn,
+    log: (line) => logs.push(line),
+    chatConfigStore: makeConfigStore(options.config).store,
+  };
+  if (options.chatTimeoutMs !== undefined) {
+    serviceOptions.chatTimeoutMs = options.chatTimeoutMs;
+  }
+  return { service: new AiService(serviceOptions), logs, store };
+}
+
+describe('ai/service 可配置超时（TASK-T46-01 §1.1）', () => {
+  it('未设置配置 → 生效 120s、请求体无 max_tokens（默认行为不变）', async () => {
+    const { store } = makeConfigStore();
+    const { service, calls } = setup(undefined, undefined, store);
+    const snapshot = await service.state();
+    expect(snapshot.chatTimeoutSec).toBe(120);
+    expect(snapshot.maxOutputTokens).toBeNull();
+    await service.chat({ providerId: 'local', messages: MESSAGES });
+    const body = JSON.parse(calls[0]?.body ?? '{}') as Record<string, unknown>;
+    expect(body['max_tokens']).toBeUndefined();
+    expect(DEFAULT_CHAT_TIMEOUT_MS).toBe(120_000);
+  });
+
+  it('未设置配置 → 用注入兜底值（本用例 400ms，实测约 0.4s 中止；生产注入 = 120_000ms）', async () => {
+    const { service } = makeService({
+      fetchFn: hangingFetch(),
+      config: { requestTimeoutSec: null, maxOutputTokens: null },
+      chatTimeoutMs: 400,
+    });
+    const startedAt = Date.now();
+    const error = await service.chat({ providerId: 'local', messages: MESSAGES }).then(
+      () => null,
+      (caught: unknown) => caught as Error,
+    );
+    const elapsedMs = Date.now() - startedAt;
+    expect(error?.message).toContain('E_AI_TIMEOUT');
+    expect(error?.message).toContain('等待超过 0.40 秒已中止');
+    expect(elapsedMs).toBeGreaterThanOrEqual(380);
+    expect(elapsedMs).toBeLessThan(1_500);
+  });
+
+  it('配置 requestTimeoutSec=5 → 约 5s 中止且文案含「等待超过 5 秒已中止」（墙钟实测）', async () => {
+    const { service, logs } = makeService({
+      fetchFn: hangingFetch(),
+      config: { requestTimeoutSec: 5, maxOutputTokens: null },
+    });
+    const startedAt = Date.now();
+    const error = await service.chat({ providerId: 'local', messages: MESSAGES }).then(
+      () => null,
+      (caught: unknown) => caught as Error,
+    );
+    const elapsedMs = Date.now() - startedAt;
+    expect(error?.message).toContain('E_AI_TIMEOUT');
+    expect(error?.message).toContain('等待超过 5 秒已中止');
+    expect(error?.message).toContain('127.0.0.1:1234');
+    expect(elapsedMs).toBeGreaterThanOrEqual(4_700);
+    expect(elapsedMs).toBeLessThan(7_000);
+    expect(logs.some((line) => line.includes('timeout=5s') && line.includes('E_AI_TIMEOUT'))).toBe(
+      true,
+    );
+  }, 20_000);
+
+  it('配置 requestTimeoutSec=300 → 不提前中止（600ms 慢响应照常返回，日志 timeout=300s）', async () => {
+    const slow = delayedFetch(600);
+    const { service, logs } = makeService({
+      fetchFn: slow.fetchFn,
+      config: { requestTimeoutSec: 300, maxOutputTokens: null },
+    });
+    const startedAt = Date.now();
+    const result = await service.chat({ providerId: 'local', messages: MESSAGES });
+    const elapsedMs = Date.now() - startedAt;
+    expect(result).toEqual({ text: '慢回复', model: 'qwen2.5-7b' });
+    expect(elapsedMs).toBeGreaterThanOrEqual(580);
+    expect(logs.some((line) => line.includes('timeout=300s') && line.includes('→ ok('))).toBe(true);
+  });
+
+  it('配置 maxOutputTokens=800 → 请求体带 max_tokens=800；显式 maxTokens 优先', async () => {
+    const { service, calls } = setup(undefined, undefined, makeConfigStore({
+      requestTimeoutSec: null,
+      maxOutputTokens: 800,
+    }).store);
+    const snapshot = await service.state();
+    expect(snapshot.maxOutputTokens).toBe(800);
+    await service.chat({ providerId: 'local', messages: MESSAGES });
+    expect((JSON.parse(calls[0]?.body ?? '{}') as Record<string, unknown>)['max_tokens']).toBe(800);
+    await service.chat({ providerId: 'local', messages: MESSAGES, maxTokens: 64 });
+    expect((JSON.parse(calls[1]?.body ?? '{}') as Record<string, unknown>)['max_tokens']).toBe(64);
+  });
+
+  it('setChatConfig 越界夹紧/清除并返回生效值（9999→600、2→5、tokens 0→1、null→回 120）', async () => {
+    const { store, written } = makeConfigStore();
+    const { service } = setup(undefined, undefined, store);
+    expect(await service.setChatConfig({ requestTimeoutSec: 9_999 })).toEqual({
+      chatTimeoutSec: 600,
+      maxOutputTokens: null,
+    });
+    expect(await service.setChatConfig({ requestTimeoutSec: 2 })).toEqual({
+      chatTimeoutSec: 5,
+      maxOutputTokens: null,
+    });
+    expect(await service.setChatConfig({ maxOutputTokens: 0 })).toEqual({
+      chatTimeoutSec: 5,
+      maxOutputTokens: 1,
+    });
+    expect(await service.setChatConfig({ requestTimeoutSec: null })).toEqual({
+      chatTimeoutSec: 120,
+      maxOutputTokens: 1,
+    });
+    expect(await service.setChatConfig({ maxOutputTokens: null })).toEqual({
+      chatTimeoutSec: 120,
+      maxOutputTokens: null,
+    });
+    expect(written).toHaveLength(5);
+    expect(JSON.parse(written[4] ?? '{}')).toEqual({
+      v: 1,
+      requestTimeoutSec: null,
+      maxOutputTokens: null,
+    });
+  });
+
+  it('配置写入后 chat 立即生效（同一实例：5s → 中止值随新的 600s 变化）', async () => {
+    const { store } = makeConfigStore({ requestTimeoutSec: 5, maxOutputTokens: null });
+    const { service, logs } = setup(undefined, undefined, store);
+    await service.setChatConfig({ requestTimeoutSec: 600 });
+    const snapshot = await service.state();
+    expect(snapshot.chatTimeoutSec).toBe(600);
+    expect(await service.setChatConfig({ requestTimeoutSec: null })).toEqual({
+      chatTimeoutSec: 120,
+      maxOutputTokens: null,
+    });
+    expect(logs.some((line) => line.includes('ai setChatConfig timeout=120s'))).toBe(true);
   });
 });

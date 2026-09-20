@@ -1,0 +1,1115 @@
+{
+  "task": "audit-fixbatches：5 条未经 PM 复核的修复提交 · 独立真机复核（第三方复核方，非 PM 自跑）",
+  "ranAt": "2026-09-20T17:32:24.535Z",
+  "commitUnderAudit": [
+    "3e5e6c7",
+    "4d25613",
+    "17946d5"
+  ],
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "appBundleMtime": "Mon Sep 21 2026 01:02:00 GMT+0800 (中国标准时间)",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\audit-fixbatches\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\audit-fixbatches\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\audit-fixbatches\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789808566516.3271",
+    "realRootMtimeAfter": "1789808566516.3271",
+    "untouched": true
+  },
+  "pass": 29,
+  "fail": 5,
+  "quiet": [
+    {
+      "boot": 1,
+      "gracefulExited": true
+    },
+    {
+      "boot": 2,
+      "gracefulExited": true
+    },
+    {
+      "boot": 3,
+      "gracefulExited": true
+    }
+  ],
+  "phases": {
+    "boot1Tree": [],
+    "t40": {
+      "checkboxPid": "p01M2ZXWSNH56X2QDYVGQV05TAT",
+      "textPid": "p01M2ZXWXAMQ27WXR34VC3EJWEE",
+      "clickValues": [
+        {
+          "p01M2ZXVPR7P4AVA1YVAH8VG4SJ": "未命名",
+          "p01M2ZXWSNH56X2QDYVGQV05TAT": true
+        }
+      ],
+      "enterValues": [
+        {
+          "p01M2ZXVPR7P4AVA1YVAH8VG4SJ": "未命名",
+          "p01M2ZXWSNH56X2QDYVGQV05TAT": true
+        }
+      ],
+      "spaceValues": [
+        {
+          "p01M2ZXVPR7P4AVA1YVAH8VG4SJ": "未命名",
+          "p01M2ZXWSNH56X2QDYVGQV05TAT": true
+        }
+      ],
+      "reload": {
+        "properties": [
+          {
+            "id": "p01M2ZXVPR7P4AVA1YVAH8VG4SJ",
+            "name": "名称",
+            "type": "text",
+            "options": []
+          },
+          {
+            "id": "p01M2ZXWSNH56X2QDYVGQV05TAT",
+            "name": "勾选",
+            "type": "checkbox",
+            "options": []
+          }
+        ],
+        "records": [
+          {
+            "id": "rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC",
+            "values": {
+              "p01M2ZXVPR7P4AVA1YVAH8VG4SJ": "未命名",
+              "p01M2ZXWSNH56X2QDYVGQV05TAT": true
+            }
+          }
+        ],
+        "domOn": 1
+      }
+    },
+    "t42": {
+      "roundTrips": [
+        {
+          "round": 1,
+          "hasSub": true,
+          "childName": "复核子页1",
+          "childState": {
+            "hasEditor": true,
+            "dbpage": false,
+            "wikiLanding": false,
+            "title": "复核子页1"
+          },
+          "backState": {
+            "wikiLanding": true,
+            "hasEditor": false,
+            "indexRows": 1,
+            "indexLabels": [
+              "复核子页1"
+            ]
+          }
+        },
+        {
+          "round": 2,
+          "hasSub": true,
+          "childName": "复核子页2",
+          "childState": {
+            "hasEditor": true,
+            "dbpage": false,
+            "wikiLanding": false,
+            "title": "复核子页2"
+          },
+          "backState": {
+            "wikiLanding": true,
+            "hasEditor": false,
+            "indexRows": 2,
+            "indexLabels": [
+              "复核子页1",
+              "复核子页2"
+            ]
+          }
+        },
+        {
+          "round": 3,
+          "hasSub": true,
+          "childName": "复核子页3",
+          "childState": {
+            "hasEditor": true,
+            "dbpage": false,
+            "wikiLanding": false,
+            "title": "复核子页3"
+          },
+          "backState": {
+            "wikiLanding": true,
+            "hasEditor": false,
+            "indexRows": 3,
+            "indexLabels": [
+              "复核子页1",
+              "复核子页2",
+              "复核子页3"
+            ]
+          }
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "collabSpy": {
+        "installed": false,
+        "error": null
+      }
+    },
+    "t44": {
+      "targetId": "01M2ZXYHF8GVT8G1BAYV4SEM9R",
+      "beforeDelete": {
+        "total": 1,
+        "unresolved": 0,
+        "items": [
+          {
+            "text": "复核目标页",
+            "cls": "sc-wikilink",
+            "dataTarget": "01M2ZXYHF8GVT8G1BAYV4SEM9R",
+            "dataTitle": "复核目标页",
+            "outer": "<span class=\"sc-wikilink\" data-wikilink=\"\" data-title=\"复核目标页\" data-target=\"01M2ZXYHF8GVT8G1BAYV4SEM9R\" contenteditable=\"false\">复核目标页</span>"
+          }
+        ]
+      },
+      "afterDelete": {
+        "total": 1,
+        "unresolved": 1,
+        "items": [
+          {
+            "text": "复核目标页",
+            "cls": "sc-wikilink sc-wikilink--unresolved",
+            "dataTarget": null,
+            "dataTitle": "复核目标页",
+            "outer": "<span class=\"sc-wikilink sc-wikilink--unresolved\" data-wikilink=\"\" data-title=\"复核目标页\" contenteditable=\"false\">复核目标页</span>"
+          }
+        ]
+      },
+      "blDomBefore": {
+        "panel": true,
+        "items": 1,
+        "sources": [
+          "复核源页"
+        ],
+        "contexts": []
+      },
+      "blBridgeBefore": {
+        "n": 1,
+        "entries": [
+          {
+            "sourcePageId": "01M2ZXYE6J2VGDM99GNTG5Z86W",
+            "sourceTitle": "复核源页",
+            "context": ""
+          }
+        ]
+      },
+      "blBridgeAfterDelete": {
+        "n": 0,
+        "entries": []
+      },
+      "blDomAfterDelete": {
+        "panel": true,
+        "items": 0,
+        "sources": [],
+        "contexts": []
+      },
+      "afterRestore": {
+        "state": {
+          "total": 1,
+          "unresolved": 0,
+          "items": [
+            {
+              "text": "复核目标页",
+              "cls": "sc-wikilink",
+              "dataTarget": "01M2ZXYHF8GVT8G1BAYV4SEM9R",
+              "dataTitle": "复核目标页",
+              "outer": "<span class=\"sc-wikilink\" data-wikilink=\"\" data-title=\"复核目标页\" data-target=\"01M2ZXYHF8GVT8G1BAYV4SEM9R\" contenteditable=\"false\">复核目标页</span>"
+            }
+          ]
+        },
+        "tree": [
+          {
+            "id": "01M2ZXYHF8GVT8G1BAYV4SEM9R",
+            "title": "复核目标页",
+            "alive": 1,
+            "pageType": "page",
+            "parentId": null,
+            "deletedAt": null
+          }
+        ],
+        "bridge": {
+          "n": 1,
+          "entries": [
+            {
+              "sourcePageId": "01M2ZXYE6J2VGDM99GNTG5Z86W",
+              "sourceTitle": "复核源页",
+              "context": ""
+            }
+          ]
+        }
+      }
+    },
+    "t43": {
+      "localeBefore": {
+        "navLang": "zh-CN",
+        "pref": null,
+        "zh": {
+          "设置": false,
+          "外观": false,
+          "收藏": true,
+          "跟随系统": false
+        },
+        "en": {
+          "Settings": false,
+          "Appearance": false,
+          "Favorites": false,
+          "System": false
+        },
+        "sideText": "个人工作区 新建页面 收藏 0 最近 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 回收站 1"
+      },
+      "settingsLocaleState": {
+        "navLang": "zh-CN",
+        "pref": null,
+        "zh": {
+          "设置": true,
+          "外观": true,
+          "收藏": true,
+          "跟随系统": true
+        },
+        "en": {
+          "Settings": false,
+          "Appearance": false,
+          "Favorites": false,
+          "System": false
+        },
+        "sideText": "个人工作区 新建页面 收藏 0 最近 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 回收站 1"
+      },
+      "radioLabels": [
+        "浅色",
+        "深色",
+        "跟随系统",
+        "跟随系统",
+        "简体中文",
+        "English",
+        "左侧",
+        "收起",
+        "右侧",
+        "底部",
+        "隐藏",
+        "浅色",
+        "深色",
+        "跟随系统",
+        "舒适",
+        "紧凑"
+      ],
+      "afterClickEn": {
+        "navLang": "zh-CN",
+        "pref": "en-US",
+        "zh": {
+          "设置": false,
+          "外观": false,
+          "收藏": false,
+          "跟随系统": false
+        },
+        "en": {
+          "Settings": true,
+          "Appearance": true,
+          "Favorites": true,
+          "System": true
+        },
+        "sideText": "Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 Trash 1"
+      },
+      "settingsFileAfterClick": {
+        "locale": "en-US",
+        "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\audit-fixbatches\\data"
+      },
+      "boot2": {
+        "navLang": "zh-CN",
+        "pref": "en-US",
+        "zh": {
+          "设置": false,
+          "外观": false,
+          "收藏": false,
+          "跟随系统": false
+        },
+        "en": {
+          "Settings": false,
+          "Appearance": false,
+          "Favorites": true,
+          "System": false
+        },
+        "sideText": "Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 Trash 1"
+      },
+      "afterSystem": {
+        "clickedSystem": true,
+        "afterSystem": {
+          "navLang": "zh-CN",
+          "pref": "en-US",
+          "zh": {
+            "设置": false,
+            "外观": false,
+            "收藏": false,
+            "跟随系统": false
+          },
+          "en": {
+            "Settings": true,
+            "Appearance": true,
+            "Favorites": true,
+            "System": true
+          },
+          "sideText": "Personal Workspace New Page Favorites 0 Recent 9 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 复核目标页 Fixed width Convert to Wiki Delete Trash"
+        },
+        "settingsFileAfterSystem": {
+          "locale": "en-US"
+        }
+      },
+      "boot3": {
+        "navLang": "zh-CN",
+        "pref": "en-US",
+        "zh": {
+          "设置": false,
+          "外观": false,
+          "收藏": false,
+          "跟随系统": false
+        },
+        "en": {
+          "Settings": false,
+          "Appearance": false,
+          "Favorites": true,
+          "System": false
+        },
+        "sideText": "Personal Workspace New Page Favorites 0 Recent 9 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 复核目标页 Trash"
+      }
+    }
+  },
+  "assertions": [
+    {
+      "commit": "(boot)",
+      "subject": "boot",
+      "name": "[info] 被复核的已打包产物 out/main/index.js mtime（不重打包，直接跑现成产物）",
+      "ok": null,
+      "raw": "Mon Sep 21 2026 01:02:00 GMT+0800 (中国标准时间)"
+    },
+    {
+      "commit": "(boot)",
+      "subject": "boot",
+      "name": "[info] 夹具工作区 id",
+      "ok": null,
+      "raw": "01M2ZXV3YSD9VPKV86VT9EMVCF"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 普通页 ⋯ 菜单项（原始）",
+      "ok": null,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "N1 普通页 ⋯ 菜单仍含全宽项（隐藏未误伤普通页）",
+      "ok": true,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 普通页宽度 before/after（原始 px）",
+      "ok": null,
+      "raw": "{\"before\":{\"winInner\":1184,\"pvRootPresent\":true,\"pvRootMeasure\":null,\"pvRoot\":{\"w\":944,\"x\":240},\"pvBody\":{\"w\":650,\"x\":379.5},\"pvBodyClientW\":650,\"dbpage\":null,\"dbpageClientW\":null,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":null,\"measureChain\":[]},\"after\":{\"winInner\":1184,\"pvRootPresent\":true,\"pvRootMeasure\":\"full\",\"pvRoot\":{\"w\":944,\"x\":240},\"pvBody\":{\"w\":849,\"x\":280},\"pvBodyClientW\":849,\"dbpage\":null,\"dbpageClientW\":null,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":null,\"measureChain\":[{\"tag\":\"DIV\",\"cls\":\"pv-root\",\"m\":\"full\"}]},\"clicked\":true}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "N2 普通页切全宽真生效（.pv-body 像素变宽，measure=full）",
+      "ok": true,
+      "raw": "before={\"measure\":null,\"bodyClientW\":650,\"bodyBox\":{\"w\":650,\"x\":379.5}} after={\"measure\":\"full\",\"bodyClientW\":849,\"bodyBox\":{\"w\":849,\"x\":280}} delta=199"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 普通页还原固定宽度后",
+      "ok": null,
+      "raw": "{\"winInner\":1184,\"pvRootPresent\":true,\"pvRootMeasure\":null,\"pvRoot\":{\"w\":944,\"x\":240},\"pvBody\":{\"w\":650,\"x\":379.5},\"pvBodyClientW\":650,\"dbpage\":null,\"dbpageClientW\":null,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":null,\"measureChain\":[]}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 「转为多维数据」按钮存在并点击",
+      "ok": null,
+      "raw": "hasConvert=true"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 转换后页面树（原始）",
+      "ok": null,
+      "raw": "[{\"id\":\"01M2ZXVKMT2NR4R77EWAS36576\",\"title\":\"复核数据页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null},{\"id\":\"pg-01M2ZXVPR7P4AVA1YVAH8VG4SG\",\"title\":\"复核数据页\",\"alive\":1,\"pageType\":\"database\",\"parentId\":null,\"deletedAt\":null}]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] DB 页节点 id / 侧栏行 testid",
+      "ok": null,
+      "raw": "dbPageId=pg-01M2ZXVPR7P4AVA1YVAH8VG4SG rowId=side-node-pg-01M2ZXVPR7P4AVA1YVAH8VG4SG plainPageId=01M2ZXV5W5CW23N57W82G6AMXW"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 点击 DB 页行后选中页渲染（原始）",
+      "ok": null,
+      "raw": "{\"clicked\":{\"clicked\":true,\"rowId\":\"side-node-pg-01M2ZXVPR7P4AVA1YVAH8VG4SG\"},\"kind\":{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false}}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "D0 真机 UI 转换产出 DB 页，且**确实选中 DB 行**后渲染 .dbpage（同名双节点按 id 消歧）",
+      "ok": true,
+      "raw": "dbPageId=pg-01M2ZXVPR7P4AVA1YVAH8VG4SG rowId=side-node-pg-01M2ZXVPR7P4AVA1YVAH8VG4SG kind={\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false} tree=[{\"id\":\"01M2ZXVKMT2NR4R77EWAS36576\",\"title\":\"复核数据页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null},{\"id\":\"pg-01M2ZXVPR7P4AVA1YVAH8VG4SG\",\"title\":\"复核数据页\",\"alive\":1,\"pageType\":\"database\",\"parentId\":null,\"deletedAt\":null}]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] DB 页 ⋯ 菜单项（原始）",
+      "ok": null,
+      "raw": "[\"删除\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "D1 DB 页 ⋯ 菜单不含全宽项（隐藏方案生效）",
+      "ok": true,
+      "raw": "[\"删除\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "D2 DB 页 ⋯ 菜单仍含删除项（未误删其它项）",
+      "ok": true,
+      "raw": "[\"删除\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 选中 DB 页（按 id 点击，选中页渲染原始）",
+      "ok": null,
+      "raw": "{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 命令面板（选中 DB 页）全部选项（原始）",
+      "ok": null,
+      "raw": "[\"新建页面在根层创建空白页\",\"切换工作区切换到下一个工作区\",\"打开设置偏好与应用设置\",\"切换主题：浅色界面主题\",\"切换主题：深色界面主题\",\"切换主题：跟随系统界面主题\",\"导出导出当前工作区快照\",\"回收站查看已删除页面\",\"同步面板查看同步状态\",\"导入从 Notion 导出包 / Markdown / CSV 导入\",\"AI 续写基于选中文本或当前块继续写\",\"AI 摘要压缩为要点摘要\",\"AI 改写保持原意改写\",\"AI 翻译翻译为英文（可改目标语言）\",\"另存为模板把当前页面结构存为模板，之后可从模板新建\",\"删除页面把当前页面移入回收站（可在回收站恢复）\",\"打开 / 关闭 AI 对话右侧 AI 对话面板（多轮对话，上下文取当前页）\",\"切换布局预设在 Notion / 专注 / 工作台 之间循环切换\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 命令面板搜 full（选中 DB 页，原始）",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "P1 命令面板在 DB 页不含全宽命令（含搜 full 别名也不含）；且选中页确为 DbPage",
+      "ok": true,
+      "raw": "selected={\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false} panel=[\"新建页面在根层创建空白页\",\"切换工作区切换到下一个工作区\",\"打开设置偏好与应用设置\",\"切换主题：浅色界面主题\",\"切换主题：深色界面主题\",\"切换主题：跟随系统界面主题\",\"导出导出当前工作区快照\",\"回收站查看已删除页面\",\"同步面板查看同步状态\",\"导入从 Notion 导出包 / Markdown / CSV 导入\",\"AI 续写基于选中文本或当前块继续写\",\"AI 摘要压缩为要点摘要\",\"AI 改写保持原意改写\",\"AI 翻译翻译为英文（可改目标语言）\",\"另存为模板把当前页面结构存为模板，之后可从模板新建\",\"删除页面把当前页面移入回收站（可在回收站恢复）\",\"打开 / 关闭 AI 对话右侧 AI 对话面板（多轮对话，上下文取当前页）\",\"切换布局预设在 Notion / 专注 / 工作台 之间循环切换\"] searchFull=[]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 选中普通页（按 id 点击，原始）",
+      "ok": null,
+      "raw": "{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 命令面板（选中普通页）全部选项（原始）",
+      "ok": null,
+      "raw": "[\"全宽 / 固定宽度切换当前页正文列宽度（每页独立记忆）\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 命令面板搜 full（选中普通页，原始）",
+      "ok": null,
+      "raw": "[\"全宽 / 固定宽度切换当前页正文列宽度（每页独立记忆）\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "P2 命令面板在普通页含全宽命令（门控有对照）",
+      "ok": false,
+      "raw": "selected={\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false} panel=[\"全宽 / 固定宽度切换当前页正文列宽度（每页独立记忆）\"] searchFull=[\"全宽 / 固定宽度切换当前页正文列宽度（每页独立记忆）\"]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 像素原始矩阵（DB 固定 / DB 全宽 / 普通页固定 / 普通页全宽）",
+      "ok": null,
+      "raw": "{\"dbFixed\":{\"winInner\":1184,\"pvRootPresent\":false,\"pvRootMeasure\":null,\"pvRoot\":null,\"pvBody\":null,\"pvBodyClientW\":null,\"dbpage\":{\"w\":944,\"x\":240},\"dbpageClientW\":944,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":\"dbpage\",\"measureChain\":[]},\"dbFixedKind\":{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false},\"normalFixed\":{\"winInner\":1184,\"pvRootPresent\":true,\"pvRootMeasure\":null,\"pvRoot\":{\"w\":944,\"x\":240},\"pvBody\":{\"w\":650,\"x\":379.5},\"pvBodyClientW\":650,\"dbpage\":null,\"dbpageClientW\":null,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":null,\"measureChain\":[]},\"normalFixedKind\":{\"dbpage\":false,\"pvRoot\":true,\"pvBody\":true,\"hasEditor\":true,\"wikiLanding\":false},\"dbFull\":{\"winInner\":1184,\"pvRootPresent\":false,\"pvRootMeasure\":null,\"pvRoot\":null,\"pvBody\":null,\"pvBodyClientW\":null,\"dbpage\":{\"w\":944,\"x\":240},\"dbpageClientW\":944,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":\"dbpage\",\"measureChain\":[]},\"dbFullKind\":{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false},\"normalFull\":{\"winInner\":1184,\"pvRootPresent\":true,\"pvRootMeasure\":\"full\",\"pvRoot\":{\"w\":944,\"x\":240},\"pvBody\":{\"w\":849,\"x\":280},\"pvBodyClientW\":849,\"dbpage\":null,\"dbpageClientW\":null,\"dbgrid\":null,\"dbgridClientW\":null,\"dbpageClass\":null,\"measureChain\":[{\"tag\":\"DIV\",\"cls\":\"pv-root\",\"m\":\"full\"}]},\"normalFullKind\":{\"dbpage\":false,\"pvRoot\":true,\"pvBody\":true,\"hasEditor\":true,\"wikiLanding\":false}}"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "X1 前提独立验证：DB 页在 pageWidth=全宽 下容器/网格像素差为 0（「DB 全宽无视觉效果」前提成立）",
+      "ok": true,
+      "raw": "dbFixed.dbpageClientW=944 dbFull.dbpageClientW=944 delta=0 | dbFixed.dbgridClientW=null dbFull.dbgridClientW=null gridDelta=0 | DB 页 pv-root 存在？fixed=false full=false；DB 页 pv-body 宽度 fixed=null full=null；chain=[]"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "X2 对照：同一注入下普通页正文列真变宽（注入通道有效，非探针失灵）",
+      "ok": true,
+      "raw": "normalFixed.pvBodyClientW=650 normalFull.pvBodyClientW=849 delta=199 measure=full"
+    },
+    {
+      "commit": "17946d5 / T41-01-1",
+      "subject": "DB 页全宽项无视觉效果",
+      "name": "[info] 结论数值（T41-01-1）",
+      "ok": null,
+      "raw": "DB 页「全宽」下 .dbpage clientWidth = 944 → 944（差 0px，未变宽）；.dbpage 无 data-measure 祖先、无 .pv-body（.pv-body 宽度 null）；普通页同条件下 .pv-body 650 → 849（+199px）"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] T40 起点：选中 DB 页（原始）",
+      "ok": null,
+      "raw": "{\"row\":{\"clicked\":true,\"rowId\":\"side-node-pg-01M2ZXVPR7P4AVA1YVAH8VG4SG\"},\"kind\":{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false}}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] DB 页初始网格（原始）",
+      "ok": null,
+      "raw": "{\"gridRows\":0,\"headers\":[],\"headerNames\":[],\"checkboxCells\":0,\"checkboxOn\":0,\"propChips\":[],\"menuLabels\":[],\"dialogTitles\":[],\"activeElement\":{\"tag\":\"BODY\",\"role\":null,\"cls\":null},\"emptyState\":\"还没有记录新建第一条记录开始填写这个多维数据。新建记录\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F0 T40 起点确为 DB 页（.dbpage 在位，避免量到同名普通页）",
+      "ok": true,
+      "raw": "{\"dbpage\":true,\"pvRoot\":false,\"pvBody\":false,\"hasEditor\":false,\"wikiLanding\":false}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 建记录后（原始）",
+      "ok": null,
+      "raw": "{\"via\":\"empty-state-button\",\"records\":[{\"id\":\"rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC\",\"values\":{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\"}}],\"grid\":{\"gridRows\":1,\"headers\":[null,\"名称（text）\"],\"headerNames\":[\"名称\"],\"checkboxCells\":0,\"checkboxOn\":0,\"propChips\":[{\"label\":\"名称text\",\"aria\":\"属性管理：名称\"}],\"menuLabels\":[],\"dialogTitles\":[],\"activeElement\":{\"tag\":\"BODY\",\"role\":null,\"cls\":null},\"emptyState\":null}}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F1 真机 UI 建出 1 条记录（空态按钮「新建记录」）",
+      "ok": true,
+      "raw": "via=empty-state-button records=[{\"id\":\"rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC\",\"values\":{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\"}}]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 「新属性」菜单项（原始）",
+      "ok": null,
+      "raw": "[\"文本\",\"数字\",\"单选\",\"多选\",\"日期\",\"勾选\",\"链接\",\"关联\",\"AI\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 建勾选字段后 schema（原始）",
+      "ok": null,
+      "raw": "{\"title_pid\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"order\":[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\"],\"properties\":[{\"id\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"name\":\"名称\",\"type\":\"text\",\"options\":[]},{\"id\":\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"name\":\"勾选\",\"type\":\"checkbox\",\"options\":[]}],\"records\":[{\"id\":\"rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC\",\"values\":{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\"}}]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F2 真机 UI 建「勾选」字段成功（菜单可点 + schema 出现 checkbox 列 + 网格表头出现）",
+      "ok": true,
+      "raw": "menu=[\"文本\",\"数字\",\"单选\",\"多选\",\"日期\",\"勾选\",\"链接\",\"关联\",\"AI\"] pid=p01M2ZXWSNH56X2QDYVGQV05TAT properties=[{\"id\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"name\":\"名称\",\"type\":\"text\",\"options\":[]},{\"id\":\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"name\":\"勾选\",\"type\":\"checkbox\",\"options\":[]}] headers=[null,\"名称（text）\",\"勾选（checkbox）\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 建文本字段后 schema 顺序（原始）",
+      "ok": null,
+      "raw": "[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F3 真机 UI 建「文本」字段成功（schema 属性序列增长）",
+      "ok": true,
+      "raw": "order=[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 建字段后当前记录（原始）",
+      "ok": null,
+      "raw": "[{\"id\":\"rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC\",\"values\":{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\"}}]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 点击勾选格后（原始）",
+      "ok": null,
+      "raw": "{\"values\":[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}],\"on\":1,\"activeElement\":{\"tag\":\"BODY\",\"role\":null,\"cls\":null}}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F4 点击勾选格：值真的写入并落库（.sc-dbc-check--on 出现 + db.load 读回 true）",
+      "ok": true,
+      "raw": "checkboxPid=p01M2ZXWSNH56X2QDYVGQV05TAT values=[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}] domOn=1"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] Enter 后（原始）",
+      "ok": null,
+      "raw": "{\"values\":[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}],\"on\":1,\"activeElement\":{\"tag\":\"BODY\",\"role\":null,\"cls\":null}}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F5 gridcell 上按 Enter：勾选值被切换并落库（true → 非 true）",
+      "ok": false,
+      "raw": "before={\"activeElement\":{\"tag\":\"BODY\",\"role\":null,\"cls\":null},\"on\":1} after=[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}] domOn=1"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] Space 后（原始）",
+      "ok": null,
+      "raw": "{\"values\":[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}],\"on\":1}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F6 gridcell 上按 Space：勾选值被切换回 true 并落库",
+      "ok": true,
+      "raw": "values=[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}] domOn=1"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 属性管理菜单（原始）",
+      "ok": null,
+      "raw": "[\"更改类型…\",\"左移\",\"右移\",\"重命名属性\",\"删除属性\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 排序前后属性序列（原始）",
+      "ok": null,
+      "raw": "{\"before\":[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\"],\"after\":[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\"],\"headers\":[\"名称\",\"文本\",\"勾选\"]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F7 真机 UI 字段左移：schema 属性序列真的变了（顺序下标变化）",
+      "ok": true,
+      "raw": "before=[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\"] after=[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWXAMQ27WXR34VC3EJWEE\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\"] headers=[\"名称\",\"文本\",\"勾选\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 改类型菜单（原始）",
+      "ok": null,
+      "raw": "[\"数字（number）\",\"单选（select）\",\"多选（multi_select）\",\"日期（date）\",\"勾选（checkbox）\",\"链接（url）\",\"邮箱（email）\",\"关联（relation）\",\"文件（file）\",\"AI（ai）\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 改类型二次确认弹层（原始）",
+      "ok": null,
+      "raw": "[\"更改字段类型将把字段「文本」从 text 改为 number。能自动迁移的值会转换；无法迁移的值原样保留（该列不再显示，\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 改类型后（原始）",
+      "ok": null,
+      "raw": "{\"pid\":\"p01M2ZXWXAMQ27WXR34VC3EJWEE\",\"property\":{\"id\":\"p01M2ZXWXAMQ27WXR34VC3EJWEE\",\"name\":\"文本\",\"type\":\"number\",\"options\":[]},\"headers\":[null,\"名称（text）\",\"文本（number）\",\"勾选（checkbox）\"]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F8 真机 UI 改字段类型：文本 → 数字 生效（schema type + 表头 title 同步）",
+      "ok": true,
+      "raw": "menu=[\"数字（number）\",\"单选（select）\",\"多选（multi_select）\",\"日期（date）\",\"勾选（checkbox）\",\"链接（url）\",\"邮箱（email）\",\"关联（relation）\",\"文件（file）\",\"AI（ai）\"] dialog=[\"更改字段类型将把字段「文本」从 text 改为 number。能自动迁移的值会转换；无法迁移的值原样保留（该列不再显示，\"] property={\"id\":\"p01M2ZXWXAMQ27WXR34VC3EJWEE\",\"name\":\"文本\",\"type\":\"number\",\"options\":[]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 删除字段二次确认弹层（原始）",
+      "ok": null,
+      "raw": "[\"删除字段将删除字段「文本」，该列的所有值将一并清理且不可恢复。确定删除？取消删除\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 删除字段后（原始）",
+      "ok": null,
+      "raw": "{\"order\":[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\"],\"properties\":[{\"id\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"name\":\"名称\",\"type\":\"text\",\"options\":[]},{\"id\":\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"name\":\"勾选\",\"type\":\"checkbox\",\"options\":[]}],\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\"]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F9 真机 UI 删除字段：schema 属性消失（值同事务清理，勾选列不受影响）",
+      "ok": true,
+      "raw": "dialog=[\"删除字段将删除字段「文本」，该列的所有值将一并清理且不可恢复。确定删除？取消删除\"] order=[\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\"] properties=[{\"id\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"name\":\"名称\",\"type\":\"text\",\"options\":[]},{\"id\":\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"name\":\"勾选\",\"type\":\"checkbox\",\"options\":[]}]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F10 删除另一字段后勾选列值仍为 true（无连带损坏）",
+      "ok": true,
+      "raw": "values=[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}]"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] collab.attach 间谍是否安装成功（contextBridge 只读则失败，仅作辅助证据）",
+      "ok": null,
+      "raw": "{\"installed\":false,\"error\":null}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] 普通页 ⋯ 菜单（转 Wiki 前，原始）",
+      "ok": null,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] wiki 落地页初始态（原始）",
+      "ok": null,
+      "raw": "{\"title\":\"复核Wiki页\",\"hasEditor\":false,\"indexRows\":0,\"emptyIndex\":true,\"subpageBtn\":true}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "W0 真机 UI 转 Wiki 成功：落地页渲染且**无编辑器**（.ProseMirror 不在 DOM）",
+      "ok": true,
+      "raw": "landing={\"title\":\"复核Wiki页\",\"hasEditor\":false,\"indexRows\":0,\"emptyIndex\":true,\"subpageBtn\":true}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] 往返 r1（原始）",
+      "ok": null,
+      "raw": "{\"hasSub\":true,\"childName\":\"复核子页1\",\"childState\":{\"hasEditor\":true,\"dbpage\":false,\"wikiLanding\":false,\"title\":\"复核子页1\"},\"backState\":{\"wikiLanding\":true,\"hasEditor\":false,\"indexRows\":1,\"indexLabels\":[\"复核子页1\"]}}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] 往返 r2（原始）",
+      "ok": null,
+      "raw": "{\"hasSub\":true,\"childName\":\"复核子页2\",\"childState\":{\"hasEditor\":true,\"dbpage\":false,\"wikiLanding\":false,\"title\":\"复核子页2\"},\"backState\":{\"wikiLanding\":true,\"hasEditor\":false,\"indexRows\":2,\"indexLabels\":[\"复核子页1\",\"复核子页2\"]}}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] 往返 r3（原始）",
+      "ok": null,
+      "raw": "{\"hasSub\":true,\"childName\":\"复核子页3\",\"childState\":{\"hasEditor\":true,\"dbpage\":false,\"wikiLanding\":false,\"title\":\"复核子页3\"},\"backState\":{\"wikiLanding\":true,\"hasEditor\":false,\"indexRows\":3,\"indexLabels\":[\"复核子页1\",\"复核子页2\",\"复核子页3\"]}}"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] wiki 往返期间 console error（原始全文）",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] wiki 往返期间 pageerror（原始全文）",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "W1 wiki 往返 3 轮：console error = 0 且 pageerror = 0（原缺陷签名 4 条错误不再出现）",
+      "ok": true,
+      "raw": "console=0 [] pageerror=0 []"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "W2 每轮返回 wiki 落地页仍无编辑器挂载、子页索引随建子页增长",
+      "ok": true,
+      "raw": "[{\"round\":1,\"childName\":\"复核子页1\",\"indexRows\":1,\"labels\":[\"复核子页1\"]},{\"round\":2,\"childName\":\"复核子页2\",\"indexRows\":2,\"labels\":[\"复核子页1\",\"复核子页2\"]},{\"round\":3,\"childName\":\"复核子页3\",\"indexRows\":3,\"labels\":[\"复核子页1\",\"复核子页2\",\"复核子页3\"]}]"
+    },
+    {
+      "commit": "3e5e6c7 / T42-01-1",
+      "subject": "wiki 页误接协作层",
+      "name": "[info] collab.attach 调用序列（原始，装得上才有效）",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 目标页 id（原始）",
+      "ok": null,
+      "raw": "id=01M2ZXYHF8GVT8G1BAYV4SEM9R node=[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null}]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] [[ 补全候选（原始）",
+      "ok": null,
+      "raw": "[\"复核目标页\"]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 删除前 源页链接（原始）",
+      "ok": null,
+      "raw": "{\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L1 建链成功且**已解析**：数据只有 1 条 .sc-wikilink、0 条 unresolved，data-target = 目标页 id",
+      "ok": true,
+      "raw": "menuOpen=true state={\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 目标页反向链接面板（删除前，原始）",
+      "ok": null,
+      "raw": "{\"panel\":true,\"items\":1,\"sources\":[\"复核源页\"],\"contexts\":[]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] links.backlinks(目标页)（删除前，原始）",
+      "ok": null,
+      "raw": "{\"n\":1,\"entries\":[{\"sourcePageId\":\"01M2ZXYE6J2VGDM99GNTG5Z86W\",\"sourceTitle\":\"复核源页\",\"context\":\"\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L2 删除前：目标页反向链接面板条目数 ≥ 1，DB 索引 links.backlinks 计数 ≥ 1",
+      "ok": true,
+      "raw": "dom={\"panel\":true,\"items\":1,\"sources\":[\"复核源页\"],\"contexts\":[]} bridge={\"n\":1,\"entries\":[{\"sourcePageId\":\"01M2ZXYE6J2VGDM99GNTG5Z86W\",\"sourceTitle\":\"复核源页\",\"context\":\"\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 目标页 ⋯ 菜单（原始）",
+      "ok": null,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 删除后页面树（原始）",
+      "ok": null,
+      "raw": "[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":0,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":1789925491904}]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L3 真机路径删除目标页成功（菜单含删除 + 二次确认弹层 + 树内 alive=0）",
+      "ok": true,
+      "raw": "menu=[\"固定宽度\",\"转为 Wiki\",\"删除\"] del=true confirm=true tree=[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":0,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":1789925491904}]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 删除后 源页链接（原始）",
+      "ok": null,
+      "raw": "{\"total\":1,\"unresolved\":1,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink sc-wikilink--unresolved\",\"dataTarget\":null,\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink sc-wikilink--unresolved\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] links.backlinks(已删目标页 id)（删除后，原始）",
+      "ok": null,
+      "raw": "{\"n\":0,\"entries\":[]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L4 删除目标页后：源页链接转**未解析态**（class 含 sc-wikilink--unresolved、data-target 消失、文本不变）",
+      "ok": true,
+      "raw": "before=[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}] after=[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink sc-wikilink--unresolved\",\"dataTarget\":null,\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink sc-wikilink--unresolved\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 选 English 前 locale 状态（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"pref\":null,\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":true,\"跟随系统\":false},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":false,\"System\":false},\"sideText\":\"个人工作区 新建页面 收藏 0 最近 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 回收站 1\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 设置页打开后 locale 状态（原始）",
+      "ok": null,
+      "raw": "{\"opened\":true,\"settingsLocaleState\":{\"navLang\":\"zh-CN\",\"pref\":null,\"zh\":{\"设置\":true,\"外观\":true,\"收藏\":true,\"跟随系统\":true},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":false,\"System\":false},\"sideText\":\"个人工作区 新建页面 收藏 0 最近 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 回收站 1\"}}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 语言/主题 单选标签（原始）",
+      "ok": null,
+      "raw": "[\"浅色\",\"深色\",\"跟随系统\",\"跟随系统\",\"简体中文\",\"English\",\"左侧\",\"收起\",\"右侧\",\"底部\",\"隐藏\",\"浅色\",\"深色\",\"跟随系统\",\"舒适\",\"紧凑\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 点击 English 后立刻（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":true,\"Appearance\":true,\"Favorites\":true,\"System\":true},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 Trash 1\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 夹具 settings 文件 locale（点击后，原始）",
+      "ok": null,
+      "raw": "{\"locale\":\"en-US\",\"rootPath\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\audit-fixbatches\\\\data\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "E1 设置里点 English 立刻生效（界面转英文 + 标记写为 en-US）",
+      "ok": true,
+      "raw": "clicked=true state={\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":true,\"Appearance\":true,\"Favorites\":true,\"System\":true},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核子页1 复核子页2 复核子页3 复核普通页 复核数据页 复核数据页 复核源页 Trash 1\"} settingsFile={\"locale\":\"en-US\",\"rootPath\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\audit-fixbatches\\\\data\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 重启后 locale 状态（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":true,\"System\":false},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 Trash 1\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 重启时夹具 settings.locale（原始）",
+      "ok": null,
+      "raw": "{\"locale\":\"en-US\",\"rootPath\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\audit-fixbatches\\\\data\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "E2【T43 主线复现】显式选 English 后重启：界面为英文（原缺陷：回中文）",
+      "ok": false,
+      "raw": "boot2={\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":true,\"System\":false},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 8 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 Trash 1\"} settingsFile={\"locale\":\"en-US\",\"rootPath\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\audit-fixbatches\\\\data\"}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] （重启=reload）后源页链接（原始）",
+      "ok": null,
+      "raw": "{\"total\":1,\"unresolved\":1,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink sc-wikilink--unresolved\",\"dataTarget\":null,\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink sc-wikilink--unresolved\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L5 删除目标页后重启（reload 语义）：链接仍为未解析态（非界面刷新问题）",
+      "ok": true,
+      "raw": "{\"total\":1,\"unresolved\":1,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink sc-wikilink--unresolved\",\"dataTarget\":null,\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink sc-wikilink--unresolved\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 回收站行（原始）",
+      "ok": null,
+      "raw": "[\"trash-row-01M2ZXYHF8GVT8G1BAYV4SEM9R\"]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 恢复后 源页链接（原始）",
+      "ok": null,
+      "raw": "{\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 恢复后 页面树（原始）",
+      "ok": null,
+      "raw": "[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null}]"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 恢复后 links.backlinks(目标页)（原始）",
+      "ok": null,
+      "raw": "{\"n\":1,\"entries\":[{\"sourcePageId\":\"01M2ZXYE6J2VGDM99GNTG5Z86W\",\"sourceTitle\":\"复核源页\",\"context\":\"\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L6 回收站恢复目标页后：链接**重新已解析**且 data-target 回到原页 id（双向收敛，无单向 bug）",
+      "ok": true,
+      "raw": "restore=true state={\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]} tree=[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null}] bridge={\"n\":1,\"entries\":[{\"sourcePageId\":\"01M2ZXYE6J2VGDM99GNTG5Z86W\",\"sourceTitle\":\"复核源页\",\"context\":\"\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 点未解析链接前（原始）",
+      "ok": null,
+      "raw": "{\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "[info] 点未解析链接后（原始）",
+      "ok": null,
+      "raw": "{\"state\":{\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]},\"title\":\"复核源页\",\"tree\":[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null}]}"
+    },
+    {
+      "commit": "4d25613 / T44-01-1",
+      "subject": "删目标页后链接仍判已解析",
+      "name": "L7 点未解析链接 → 新建同名页并跳转、链接回填**新页 id**（claim#3 新建路径 + 非死页跳转）",
+      "ok": false,
+      "raw": "preClick={\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]} postClick={\"total\":1,\"unresolved\":0,\"items\":[{\"text\":\"复核目标页\",\"cls\":\"sc-wikilink\",\"dataTarget\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"dataTitle\":\"复核目标页\",\"outer\":\"<span class=\\\"sc-wikilink\\\" data-wikilink=\\\"\\\" data-title=\\\"复核目标页\\\" data-target=\\\"01M2ZXYHF8GVT8G1BAYV4SEM9R\\\" contenteditable=\\\"false\\\">复核目标页</span>\"}]} title=复核源页 newId=01M2ZXYHF8GVT8G1BAYV4SEM9R oldId=01M2ZXYHF8GVT8G1BAYV4SEM9R tree=[{\"id\":\"01M2ZXYHF8GVT8G1BAYV4SEM9R\",\"title\":\"复核目标页\",\"alive\":1,\"pageType\":\"page\",\"parentId\":null,\"deletedAt\":null}]"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "[info] 重启后 DB 页（原始）",
+      "ok": null,
+      "raw": "{\"grid\":{\"gridRows\":1,\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\"],\"checkboxOn\":1},\"properties\":[{\"id\":\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\",\"name\":\"名称\",\"type\":\"text\",\"options\":[]},{\"id\":\"p01M2ZXWSNH56X2QDYVGQV05TAT\",\"name\":\"勾选\",\"type\":\"checkbox\",\"options\":[]}],\"records\":[{\"id\":\"rec-01M2ZXWPSKB0TD5NHT4HRJ3ENC\",\"values\":{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}}]}"
+    },
+    {
+      "commit": "3e5e6c7 / T40-01-1",
+      "subject": "勾选列值界面写不进去",
+      "name": "F11 重启（重开）后勾选值读回仍为 true（落库非仅内存）",
+      "ok": true,
+      "raw": "checkboxPid=p01M2ZXWSNH56X2QDYVGQV05TAT values=[{\"p01M2ZXVPR7P4AVA1YVAH8VG4SJ\":\"未命名\",\"p01M2ZXWSNH56X2QDYVGQV05TAT\":true}] domOn=1 headers=[null,\"名称（text）\",\"勾选（checkbox）\"]"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 点 System 后（原始）",
+      "ok": null,
+      "raw": "{\"opened\":true,\"clickedSystem\":true,\"afterSystem\":{\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":true,\"Appearance\":true,\"Favorites\":true,\"System\":true},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 9 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 复核目标页 Fixed width Convert to Wiki Delete Trash\"},\"settingsFileAfterSystem\":{\"locale\":\"en-US\"}}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "[info] 重启（跟随系统）后 locale（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":true,\"System\":false},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 9 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 复核目标页 Trash\"}"
+    },
+    {
+      "commit": "3e5e6c7 / T43-01-1",
+      "subject": "显式选 English 重启回中文",
+      "name": "E3 标记为显式 system 时重启按系统语言落点（与 navigator.language 一致）",
+      "ok": false,
+      "raw": "navLang=zh-CN expected=zh-CN actual=unknown pref=en-US state={\"navLang\":\"zh-CN\",\"pref\":\"en-US\",\"zh\":{\"设置\":false,\"外观\":false,\"收藏\":false,\"跟随系统\":false},\"en\":{\"Settings\":false,\"Appearance\":false,\"Favorites\":true,\"System\":false},\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 9 Wiki 1 复核Wiki页 复核普通页 复核数据页 复核数据页 复核源页 复核目标页 Trash\"}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

@@ -274,6 +274,8 @@ export const CHANNEL_AI_CHAT = 'ai:chat';
 export const CHANNEL_AI_SET_KEY = 'ai:setKey';
 /** 清除密钥：{providerId} → {ok:true}。 */
 export const CHANNEL_AI_CLEAR_KEY = 'ai:clearKey';
+/** 写 AI 对话运行时配置（超时/max_tokens）：AiChatConfigPatch → AiChatConfigSnapshot。 */
+export const CHANNEL_AI_SET_CHAT_CONFIG = 'ai:setChatConfig';
 
 export const AI_CHANNELS = {
   state: CHANNEL_AI_STATE,
@@ -281,6 +283,7 @@ export const AI_CHANNELS = {
   chat: CHANNEL_AI_CHAT,
   setKey: CHANNEL_AI_SET_KEY,
   clearKey: CHANNEL_AI_CLEAR_KEY,
+  setChatConfig: CHANNEL_AI_SET_CHAT_CONFIG,
 } as const;
 
 export type AiChannel = (typeof AI_CHANNELS)[keyof typeof AI_CHANNELS];

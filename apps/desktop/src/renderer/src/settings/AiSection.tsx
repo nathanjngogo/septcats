@@ -9,7 +9,16 @@
  */
 import { useEffect, useState } from 'react';
 import { Button, Dialog, Switch } from '@septcats/ui';
-import type { AiProviderConfig, AiProviderKind, AiStateSnapshot } from '../../../shared/ai';
+import type { AiChatConfigSnapshot, AiProviderConfig, AiProviderKind, AiStateSnapshot } from '../../../shared/ai';
+import {
+  AI_CHAT_TIMEOUT_ADVISED_MAX_SEC,
+  AI_CHAT_TIMEOUT_ADVISED_MIN_SEC,
+  AI_CHAT_TIMEOUT_DEFAULT_SEC,
+  AI_CHAT_TIMEOUT_MAX_SEC,
+  AI_CHAT_TIMEOUT_MIN_SEC,
+  AI_MAX_OUTPUT_TOKENS_MAX,
+  AI_MAX_OUTPUT_TOKENS_MIN,
+} from '../../../shared/ai';
 import { t } from '../i18n';
 import './AiSection.css';
 
@@ -85,6 +94,12 @@ export function AiSection(): JSX.Element {
   /** 模型下拉四态：providerId → ModelState */
   const [models, setModels] = useState<Record<string, ModelState>>({});
 
+  // TASK-T46-01：AI 请求参数（超时秒 / 最大输出 tokens）
+  const [timeoutInput, setTimeoutInput] = useState('');
+  const [maxTokensInput, setMaxTokensInput] = useState('');
+  const [configFeedback, setConfigFeedback] = useState<InlineResult | null>(null);
+  const [configSaving, setConfigSaving] = useState(false);
+
   // 添加/编辑弹窗（同壳复用：mode 区分）
   const [providerDialogMode, setProviderDialogMode] = useState<'add' | 'edit' | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -142,6 +157,99 @@ export function AiSection(): JSX.Element {
 
   const setBusyKey = (key: string, on: boolean): void => {
     setBusy((prev) => ({ ...prev, [key]: on }));
+  };
+
+  // TASK-T46-01：输入框随快照回填（保存后经 setAiState 回填 main 夹紧后的实际值）
+  useEffect(() => {
+    if (aiState === null) {
+      return;
+    }
+    setTimeoutInput(String(aiState.chatTimeoutSec));
+    setMaxTokensInput(aiState.maxOutputTokens === null ? '' : String(aiState.maxOutputTokens));
+  }, [aiState]);
+
+  /** 整数解析 + 区间校验（不合规 → 行内报错并返回 null）。 */
+  const parseConfigNumber = (raw: string, min: number, max: number): number | null => {
+    const trimmed = raw.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      setConfigFeedback({
+        ok: false,
+        text: fillTemplate(t('settings.ai.configInvalidRange'), {
+          min: String(min),
+          max: String(max),
+        }),
+      });
+      return null;
+    }
+    const parsed = Number.parseInt(trimmed, 10);
+    if (parsed < min || parsed > max) {
+      setConfigFeedback({
+        ok: false,
+        text: fillTemplate(t('settings.ai.configInvalidRange'), {
+          min: String(min),
+          max: String(max),
+        }),
+      });
+      return null;
+    }
+    return parsed;
+  };
+
+  /** 写 AI 请求参数：回包即生效值（main 侧夹紧），据此回填 + 行内反馈。 */
+  const applyChatConfig = async (
+    patch: { requestTimeoutSec?: number | null; maxOutputTokens?: number | null },
+    describeSaved: (next: AiChatConfigSnapshot) => string,
+  ): Promise<void> => {
+    setConfigFeedback(null);
+    setConfigSaving(true);
+    try {
+      const next = await window.septcats.ai.setChatConfig(patch);
+      setAiState((prev) =>
+        prev === null
+          ? prev
+          : { ...prev, chatTimeoutSec: next.chatTimeoutSec, maxOutputTokens: next.maxOutputTokens },
+      );
+      setConfigFeedback({ ok: true, text: describeSaved(next) });
+    } catch (cause) {
+      setConfigFeedback({
+        ok: false,
+        text: fillTemplate(t('settings.ai.configSaveFailed'), { msg: describeAiError(cause) }),
+      });
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
+  const saveTimeout = async (): Promise<void> => {
+    const parsed = parseConfigNumber(
+      timeoutInput,
+      AI_CHAT_TIMEOUT_MIN_SEC,
+      AI_CHAT_TIMEOUT_MAX_SEC,
+    );
+    if (parsed === null) {
+      return;
+    }
+    await applyChatConfig({ requestTimeoutSec: parsed }, (next) =>
+      fillTemplate(t('settings.ai.requestTimeoutSaved'), { n: String(next.chatTimeoutSec) }),
+    );
+  };
+
+  /** 留空 = 清回未设置（请求不带 max_tokens），保持既有默认行为。 */
+  const saveMaxTokens = async (): Promise<void> => {
+    const raw = maxTokensInput.trim();
+    if (raw.length === 0) {
+      await applyChatConfig({ maxOutputTokens: null }, () => t('settings.ai.maxTokensCleared'));
+      return;
+    }
+    const parsed = parseConfigNumber(raw, AI_MAX_OUTPUT_TOKENS_MIN, AI_MAX_OUTPUT_TOKENS_MAX);
+    if (parsed === null) {
+      return;
+    }
+    await applyChatConfig({ maxOutputTokens: parsed }, (next) =>
+      fillTemplate(t('settings.ai.maxTokensSaved'), {
+        n: String(next.maxOutputTokens ?? AI_MAX_OUTPUT_TOKENS_MIN),
+      }),
+    );
   };
 
   const loadModels = async (providerId: string, forceRefresh = false): Promise<void> => {
@@ -413,6 +521,97 @@ export function AiSection(): JSX.Element {
           />
         </div>
       </div>
+
+      <div className="settings-row">
+        <div className="settings-lab">
+          <span className="settings-lab-b">{t('settings.ai.requestTimeout')}</span>
+          <span className="settings-lab-d">
+            {fillTemplate(t('settings.ai.requestTimeoutDesc'), {
+              min: String(AI_CHAT_TIMEOUT_ADVISED_MIN_SEC),
+              max: String(AI_CHAT_TIMEOUT_ADVISED_MAX_SEC),
+              default: String(AI_CHAT_TIMEOUT_DEFAULT_SEC),
+            })}
+          </span>
+        </div>
+        <div className="settings-ctl">
+          <div className="settings-ai-config-ctl">
+            <input
+              className="settings-ai-input settings-ai-input--num"
+              type="number"
+              inputMode="numeric"
+              min={AI_CHAT_TIMEOUT_MIN_SEC}
+              max={AI_CHAT_TIMEOUT_MAX_SEC}
+              step={1}
+              value={timeoutInput}
+              aria-label={t('settings.ai.requestTimeout')}
+              onChange={(event) => {
+                setTimeoutInput(event.target.value);
+              }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={configSaving}
+              disabled={aiState === null}
+              onClick={() => {
+                void saveTimeout();
+              }}
+            >
+              {t('settings.ai.requestTimeoutSave')}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-row">
+        <div className="settings-lab">
+          <span className="settings-lab-b">{t('settings.ai.maxTokens')}</span>
+          <span className="settings-lab-d">
+            {fillTemplate(t('settings.ai.maxTokensDesc'), {
+              min: String(AI_MAX_OUTPUT_TOKENS_MIN),
+              max: String(AI_MAX_OUTPUT_TOKENS_MAX),
+            })}
+          </span>
+        </div>
+        <div className="settings-ctl">
+          <div className="settings-ai-config-ctl">
+            <input
+              className="settings-ai-input settings-ai-input--num"
+              type="number"
+              inputMode="numeric"
+              min={AI_MAX_OUTPUT_TOKENS_MIN}
+              max={AI_MAX_OUTPUT_TOKENS_MAX}
+              step={1}
+              value={maxTokensInput}
+              placeholder={t('settings.ai.maxTokensClear')}
+              aria-label={t('settings.ai.maxTokens')}
+              onChange={(event) => {
+                setMaxTokensInput(event.target.value);
+              }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={configSaving}
+              disabled={aiState === null}
+              onClick={() => {
+                void saveMaxTokens();
+              }}
+            >
+              {t('settings.ai.maxTokensSave')}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {configFeedback === null ? null : (
+        <p
+          className={configFeedback.ok ? 'settings-ai-inline-ok' : 'settings-ai-inline-error'}
+          role="alert"
+        >
+          {configFeedback.text}
+        </p>
+      )}
 
       <div className="settings-row">
         <div className="settings-lab">

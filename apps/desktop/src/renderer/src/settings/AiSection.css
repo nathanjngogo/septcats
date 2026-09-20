@@ -144,3 +144,14 @@
   font: var(--sc-text-code);
   color: var(--sc-color-ink);
 }
+
+/* TASK-T46-01：请求参数行（数字输入 + 保存键并排；一次性几何宽度照 .settings-path 先例） */
+.settings-ai-config-ctl {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.settings-ai-input--num {
+  width: 140px;
+}

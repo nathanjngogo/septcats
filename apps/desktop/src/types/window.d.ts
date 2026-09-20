@@ -32,6 +32,8 @@ import type {
   TemplateMeta,
 } from '../main/templates';
 import type {
+  AiChatConfigPatch,
+  AiChatConfigSnapshot,
   AiChatResult,
   AiListModelsResult,
   AiMessage,
@@ -63,6 +65,11 @@ export interface SeptcatsAiApi {
   setKey(input: { providerId: string; key: string }): Promise<{ ok: true }>;
   /** 清除密钥。 */
   clearKey(input: { providerId: string }): Promise<{ ok: true }>;
+  /**
+   * 写 AI 对话运行时配置（TASK-T46-01）：字段缺省 = 不改、显式 null = 清回未设置、
+   * 有限数 = 设值（越界在 main 侧夹紧）。返回写后生效值。
+   */
+  setChatConfig(input: AiChatConfigPatch): Promise<AiChatConfigSnapshot>;
 }
 
 /**
