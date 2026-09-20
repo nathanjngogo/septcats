@@ -241,3 +241,23 @@ CSP 放行了 `localhost` 但**没放行 `127.0.0.1`**。应用的 AI 请求走 
 5. 深色截图经探针注入 `dataset.theme='dark'`（未走设置页 UI 路径）。
 6. **诚实披露（探针产物）**：本轮首跑的清理逻辑过宽，误删了上一轮 `probe-t38-ai.mjs` 的截图/结果；已重跑重建（29/29 PASS）。**重建文件是新的测值**，非字节还原；**原始文件仍在本仓库 git 历史中**（提交 `47ed510`）。
 
+
+### ✅ 隐私零外呼 —— **网络层已验通（2026-09-21 01:1x，40 PASS / 0 FAIL）**
+
+**探针**：`docs/mockups/probe-t38-privacy.mjs`；**原始数值**：`docs/mockups/screens-t38/t38-privacy-results.json`（40 PASS / 0 FAIL / 63 条断言）
+**只读合规**：夹具 = 真实档案**完整副本**（robocopy 逐项等量：257/257 文件、847/847）；真实数据根前后 **mtime 与 sha256 全等**（`septcats.db`、`-wal`、`-shm`、`settings.json`、logs 逐一相等）→ 老板真实档案**零写入**。
+
+| 场景 | 原始数值 |
+|---|---|
+| **A 本地端点**（`127.0.0.1:1234/v1` + `master`，面板真实发送） | 全部 URL 请求 **仅 1 条**：`http://127.0.0.1:1234/v1/chat/completions` ×1；**外部主机 0**；回复 `OK`（3.04s，main 侧 `ok(2539ms)`）；pageerror 0 / console error 0；`window.close()` 优雅退出 ✓ |
+| **B 云端端点 + `cloudConsent=false`** | 目标云端主机请求次数 = **0**；**该轮全部 URL 请求 = 0**；DNS 层 0；netstat 6×2s 非本地对端 0；界面可读拒绝原文：`E_AI_CLOUD_DENIED：非本地端点需在设置中显式开启云端调用`；assistant 消息 0 条 ✓ |
+| **凭据** | 真密钥发现 **0 个**（三份 net-log 的 `sk-` 形状 0/0/0；产品日志 `Authorization` 提及 0） |
+
+### ⚠️ 一条「排障工具」的既有风险（非产品缺陷，值得记住）
+
+Chromium net-log（`--log-net-log`，Default 模式）**不是密钥安全通道**：本次唯一命中是探针自注入的**非密钥哨兵** Authorization 头，出现在 `CORS_REQUEST.params.headers` 中**未脱敏**（同一请求的 `HTTP_TRANSACTION_SEND_REQUEST_HEADERS` 里已被 Chromium 脱敏为 `[24 bytes were stripped]`）。
+→ **实务规则**：任何让用户开启 `--log-net-log` 的排障流程，**事后必须清除/轮换该次涉及的凭据**。
+→ 因此 **原始 net-log 文件不入版本库**（仅保留在本地 `docs/mockups/screens-t38/*netlog*.json`，供复核）。
+
+**结论**：T38-01 的 4 项「未验证」中 **3 项已验通**（真实多轮 / 模型产出引用 / 隐私零外呼网络层）；仅剩「截图视觉判读」一项由 `vision_analyze`（Qwen3.8-Flash-Next）做过一次复核，不等同于逐张人工核对。
+

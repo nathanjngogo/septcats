@@ -1,0 +1,1299 @@
+{
+  "task": "TASK-T38-01 真机探针（网络层「隐私零外呼」硬不变量）",
+  "ranAt": "2026-09-20T17:15:41.165Z",
+  "method": {
+    "netlog": "Electron/Chromium --log-net-log=<file>（captureMode=Default，不记录 cookie/认证等私有数据）；解析 REQUEST_ALIVE.url 得「主机名→请求次数」全表 + HOST_RESOLVER_MANAGER_REQUEST.host 得 DNS 层主机 + polledData.hostResolverInfo/proxySettings。",
+    "netstat": "netstat -ano 按 electron.exe PID 过滤，取该进程树的 TCP 对端（辅助证据）。",
+    "hostResolverSafetyNet": "--host-resolver-rules=MAP api-inference.modelscope.cn 127.0.0.1（安全网：即便有缺陷也不会真的发往外网；net-log 仍记录真实 URL），映射不影响本断言口径。",
+    "sentinel": "哨兵常量（**非真密钥**）作为 CredentialStore 里的 key 值写入夹具副本，用于验证请求头是否会被 net-log 落盘；只报计数。",
+    "privacyOfThisProbe": "本探针不打印/不落盘任何 Authorization、API key、token 的值；只输出主机名、计数、布尔。所有日志/账本扫描只报条数。"
+  },
+  "findings": [
+    "Chromium net-log 在 captureMode=Default 下：HTTP_TRANSACTION_SEND_REQUEST_HEADERS 的 authorization 头值被脱敏为「[N bytes were stripped]」（实测 1 处）；但同一个请求的 CORS_REQUEST.params.headers 字符串**未脱敏**，明文包含 authorization 头值（实测哨兵命中 1 处）。→ 结论：net-log 不是密钥安全通道；任何要求用户开 --log-net-log 的排障流程须提示先清除/轮换凭据。（与产品代码无关，属 Chromium 采集行为。）",
+    "真实档案 %APPDATA%\\@septcats\\desktop\\septcats.settings.json 的 ai.providers 为 [] 且无 credentials 目录 → 本机没有已配置的云端端点，场景 B 的云端 baseUrl 采用任务书示例主机，密钥为占位哨兵（非真密钥）。",
+    "本机（Node v22.23.2 / Windows）实测 fs.cpSync(dir, dir, {recursive:true}) 对**目录**静默不生效（单文件 cpSync 正常），故夹具复制改用 robocopy /E，并以「文件数/字节数/hash 逐项相等」核对完整性。",
+    "真实档案里日志目录 C:\\Users\\Administrator\\.septcats\\logs 无 ai.log（本机从未有过 AI 请求日志）→ 场景 A 的 ai.log 是在副本 logs/ 里新生成的。"
+  ],
+  "fixture": {
+    "dir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy",
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\data",
+    "netlogDir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog",
+    "copiedFrom": {
+      "userData": "C:\\Users\\Administrator\\AppData\\Roaming\\@septcats\\desktop",
+      "dataRoot": "C:\\Users\\Administrator\\.septcats"
+    },
+    "copyMs": 470
+  },
+  "preflight": {
+    "ranAt": "2026-09-20T17:14:46.707Z",
+    "proxyEnvVars": [
+      "http_proxy=(deleted)",
+      "https_proxy=(deleted)",
+      "HTTP_PROXY=(deleted)",
+      "HTTPS_PROXY=(deleted)",
+      "ALL_PROXY=(deleted)",
+      "all_proxy=(deleted)"
+    ],
+    "electronPidsBefore": [],
+    "endpointReachableProbeSide": {
+      "ok": true,
+      "status": 200,
+      "ids": [
+        "master"
+      ]
+    },
+    "localEndpoint": "http://127.0.0.1:1234/v1",
+    "localModel": "master",
+    "cloudBaseUrl": "https://api-inference.modelscope.cn/v1"
+  },
+  "productFacts": {
+    "realProfileHasNoAiProviders": true,
+    "note": "真实档案 %APPDATA%\\@septcats\\desktop\\septcats.settings.json 的 ai.providers = []（未配置任何 provider），故场景 B 的云端 baseUrl 采用任务书示例主机 https://api-inference.modelscope.cn/v1（占位密钥，非真密钥）。",
+    "cloudConsentSemantics": "main/ai/service.ts gateForNetwork：ai.enabled → provider 存在 → assertAiUrlAllowed(baseUrl, cloudConsent)（非本地且无 consent 抛 E_AI_CLOUD_DENIED，**此处尚未发出任何网络请求**）→ 取 key → 发请求。"
+  },
+  "runs": {
+    "baseline": {
+      "pid": 4040,
+      "args": [
+        ".",
+        "--user-data-dir=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\ud",
+        "--remote-debugging-port=9401",
+        "--log-net-log=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\baseline.json",
+        "--host-resolver-rules=MAP api-inference.modelscope.cn 127.0.0.1"
+      ],
+      "panelOpened": 0,
+      "histCount": 0,
+      "dom": {
+        "panelCount": 0,
+        "userMsgs": 0,
+        "assistantMsgs": 0,
+        "assistantTexts": [],
+        "busy": false,
+        "errorText": null,
+        "gateText": null,
+        "emptyHistory": false,
+        "winOverflow": 0
+      },
+      "exit": {
+        "gracefulExited": true,
+        "forcedKill": false
+      }
+    },
+    "scenarioA": {
+      "pid": 10756,
+      "args": [
+        ".",
+        "--user-data-dir=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\ud",
+        "--remote-debugging-port=9401",
+        "--log-net-log=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\scenarioA-local.json",
+        "--host-resolver-rules=MAP api-inference.modelscope.cn 127.0.0.1"
+      ],
+      "send": {
+        "elapsed_s": "3.04",
+        "timedOut": false
+      },
+      "dom": {
+        "panelCount": 1,
+        "userMsgs": 1,
+        "assistantMsgs": 1,
+        "assistantTexts": [
+          "OK"
+        ],
+        "busy": false,
+        "errorText": null,
+        "gateText": null,
+        "emptyHistory": false,
+        "winOverflow": 0
+      },
+      "storage": {
+        "histKey": "septcats.aichat.history.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+        "histCount": 2,
+        "histRoles": [
+          "user",
+          "assistant"
+        ],
+        "histTexts": [
+          "Reply with exactly two characters: OK",
+          "OK"
+        ]
+      },
+      "reply": "OK",
+      "setKeyRes": {
+        "ok": true,
+        "hasKey": true,
+        "isLocal": true,
+        "enabled": true,
+        "cloudConsent": false
+      },
+      "activeTitle": null,
+      "historyClear": {
+        "before": {
+          "histKey": null,
+          "histCount": 0,
+          "histRoles": [],
+          "histTexts": [],
+          "lastAssistant": null,
+          "allKeys": [
+            "septcats.tabs.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+            "septcats.layout",
+            "septcats.aichat.panel",
+            "septcats.theme"
+          ]
+        },
+        "after": {
+          "histKey": null,
+          "histCount": 0,
+          "histRoles": [],
+          "histTexts": [],
+          "lastAssistant": null,
+          "allKeys": [
+            "septcats.tabs.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+            "septcats.layout",
+            "septcats.aichat.panel",
+            "septcats.theme"
+          ]
+        },
+        "via": "product-ui"
+      },
+      "netstat": {
+        "idle": {
+          "listen": {
+            "127.0.0.1:9401": 1
+          },
+          "peers": {
+            "127.0.0.1:9401 → 127.0.0.1:10815 [ESTABLISHED]": 1
+          }
+        },
+        "after": {
+          "listen": {
+            "127.0.0.1:9401": 1
+          },
+          "peers": {
+            "127.0.0.1:9401 → 127.0.0.1:10815 [ESTABLISHED]": 1,
+            "127.0.0.1:10829 → 127.0.0.1:1234 [ESTABLISHED]": 1
+          }
+        }
+      },
+      "exit": {
+        "gracefulExited": true,
+        "forcedKill": false
+      }
+    },
+    "scenarioB": {
+      "pid": 11216,
+      "args": [
+        ".",
+        "--user-data-dir=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\ud",
+        "--remote-debugging-port=9401",
+        "--log-net-log=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\scenarioB-cloud-denied.json",
+        "--host-resolver-rules=MAP api-inference.modelscope.cn 127.0.0.1"
+      ],
+      "send": {
+        "elapsed_s": "1.02",
+        "timedOut": false
+      },
+      "dom": {
+        "panelCount": 1,
+        "userMsgs": 1,
+        "assistantMsgs": 0,
+        "assistantTexts": [],
+        "busy": false,
+        "errorText": "Error invoking remote method 'ai:chat': AiError: E_AI_CLOUD_DENIED：非本地端点需在设置中显式开启云端调用",
+        "gateText": null,
+        "emptyHistory": false,
+        "winOverflow": 0
+      },
+      "storage": {
+        "histKey": "septcats.aichat.history.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+        "histCount": 1,
+        "histRoles": [
+          "user"
+        ],
+        "histTexts": [
+          "privacy probe: this message must never leave the machine"
+        ]
+      },
+      "errorText": "Error invoking remote method 'ai:chat': AiError: E_AI_CLOUD_DENIED：非本地端点需在设置中显式开启云端调用",
+      "setKeyRes": {
+        "ok": true,
+        "hasKey": true,
+        "isLocal": false,
+        "baseUrl": "https://api-inference.modelscope.cn/v1",
+        "model": "placeholder-model",
+        "enabled": true,
+        "cloudConsent": false
+      },
+      "historyClear": {
+        "before": {
+          "histKey": "septcats.aichat.history.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+          "histCount": 2,
+          "histRoles": [
+            "user",
+            "assistant"
+          ],
+          "histTexts": [
+            "Reply with exactly two characters: OK",
+            "OK"
+          ],
+          "lastAssistant": "OK",
+          "allKeys": [
+            "septcats.tabs.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+            "septcats.aichat.history.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+            "septcats.aichat.panel",
+            "septcats.layout",
+            "septcats.theme"
+          ]
+        },
+        "after": {
+          "histKey": null,
+          "histCount": 0,
+          "histRoles": [],
+          "histTexts": [],
+          "lastAssistant": null,
+          "allKeys": [
+            "septcats.tabs.01M2FTH1A2QEKP9EXN7RXJVR7Y",
+            "septcats.aichat.panel",
+            "septcats.layout",
+            "septcats.theme"
+          ]
+        },
+        "via": "product-ui"
+      },
+      "netstat": {
+        "idle": {
+          "listen": {
+            "127.0.0.1:9401": 1
+          },
+          "peers": {
+            "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+          }
+        },
+        "samples": [
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          },
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          },
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          },
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          },
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          },
+          {
+            "listen": {
+              "127.0.0.1:9401": 1
+            },
+            "peers": {
+              "127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]": 1
+            }
+          }
+        ]
+      },
+      "exit": {
+        "gracefulExited": true,
+        "forcedKill": false
+      }
+    }
+  },
+  "aiLogLines": [
+    "[2026-09-20T17:15:14.118Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=master → ok(2313ms)"
+  ],
+  "netlogs": {
+    "baseline": {
+      "path": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\baseline.json",
+      "exists": true,
+      "bytes": 51997,
+      "chars": 51997,
+      "captureMode": "Default",
+      "eventCount": 14,
+      "requestsByHost": {},
+      "requestsByUrl": {},
+      "dnsLookupHosts": {},
+      "dnsLookupRawValues": [],
+      "sourceTypes": {
+        "COOKIE_STORE": 4,
+        "NONE": 3,
+        "HTTP_SERVER_PROPERTIES": 4,
+        "NETWORK_QUALITY_ESTIMATOR": 1,
+        "QUIC_SESSION_POOL": 2
+      },
+      "proxySettings": {
+        "effective": {
+          "from_system": true
+        },
+        "original": {
+          "from_system": true
+        }
+      },
+      "hostResolverCacheEntries": [],
+      "nameservers": [
+        "[fe80::5]:53",
+        "223.5.5.5:53",
+        "223.6.6.6:53",
+        "[fe80::5]:53"
+      ],
+      "requestHosts": [],
+      "externalRequestHosts": [],
+      "externalRequestCount": 0,
+      "secretScan": {
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 0
+      },
+      "authorizationCapture": {
+        "strippedPlaceholders": 0,
+        "corsRequestSentinelHits": 0
+      },
+      "authHeaderNamesInRequest": [],
+      "authorizationHeaderValueShape": []
+    },
+    "scenarioA": {
+      "path": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\scenarioA-local.json",
+      "exists": true,
+      "bytes": 192920,
+      "chars": 192920,
+      "captureMode": "Default",
+      "eventCount": 1245,
+      "requestsByHost": {
+        "http://127.0.0.1:1234": 1
+      },
+      "requestsByUrl": {
+        "http://127.0.0.1:1234/v1/chat/completions": 1
+      },
+      "dnsLookupHosts": {
+        "127.0.0.1": 3
+      },
+      "dnsLookupRawValues": [
+        "http://127.0.0.1:1234",
+        "http://127.0.0.1:1234",
+        "http://127.0.0.1:1234"
+      ],
+      "sourceTypes": {
+        "COOKIE_STORE": 10,
+        "NONE": 3,
+        "HTTP_SERVER_PROPERTIES": 4,
+        "NETWORK_QUALITY_ESTIMATOR": 7,
+        "URL_REQUEST": 1150,
+        "UDP_SOCKET": 15,
+        "UDP_CLIENT_SOCKET": 12,
+        "HTTP_STREAM_JOB_CONTROLLER": 8,
+        "HTTP_STREAM_JOB": 12,
+        "TRANSPORT_CONNECT_JOB": 10,
+        "SOCKET": 12,
+        "QUIC_SESSION_POOL": 2
+      },
+      "proxySettings": {
+        "effective": {
+          "from_system": true
+        },
+        "original": {
+          "from_system": true
+        }
+      },
+      "hostResolverCacheEntries": [],
+      "nameservers": [
+        "[fe80::5]:53",
+        "223.5.5.5:53",
+        "223.6.6.6:53",
+        "[fe80::5]:53"
+      ],
+      "requestHosts": [
+        "127.0.0.1"
+      ],
+      "externalRequestHosts": [],
+      "externalRequestCount": 0,
+      "secretScan": {
+        "skShaped": 0,
+        "bearerReadableToken": 1,
+        "authorizationMentions": 2,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 1
+      },
+      "authorizationCapture": {
+        "strippedPlaceholders": 1,
+        "corsRequestSentinelHits": 1
+      },
+      "authHeaderNamesInRequest": [
+        "Host",
+        "Connection",
+        "Content-Length",
+        "authorization",
+        "content-type",
+        "Sec-Fetch-Site",
+        "Sec-Fetch-Mode",
+        "Sec-Fetch-Dest",
+        "User-Agent",
+        "Accept-Encoding",
+        "Accept-Language"
+      ],
+      "authorizationHeaderValueShape": [
+        {
+          "valueLength": 24,
+          "equalsBearerPlusSentinel": false,
+          "looksLikeStrippedPlaceholder": true
+        }
+      ]
+    },
+    "scenarioB": {
+      "path": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\netlog\\scenarioB-cloud-denied.json",
+      "exists": true,
+      "bytes": 51999,
+      "chars": 51999,
+      "captureMode": "Default",
+      "eventCount": 14,
+      "requestsByHost": {},
+      "requestsByUrl": {},
+      "dnsLookupHosts": {},
+      "dnsLookupRawValues": [],
+      "sourceTypes": {
+        "COOKIE_STORE": 4,
+        "NONE": 3,
+        "HTTP_SERVER_PROPERTIES": 4,
+        "NETWORK_QUALITY_ESTIMATOR": 1,
+        "QUIC_SESSION_POOL": 2
+      },
+      "proxySettings": {
+        "effective": {
+          "from_system": true
+        },
+        "original": {
+          "from_system": true
+        }
+      },
+      "hostResolverCacheEntries": [],
+      "nameservers": [
+        "[fe80::5]:53",
+        "223.5.5.5:53",
+        "223.6.6.6:53",
+        "[fe80::5]:53"
+      ],
+      "requestHosts": [],
+      "externalRequestHosts": [],
+      "externalRequestCount": 0,
+      "secretScan": {
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 0
+      },
+      "authorizationCapture": {
+        "strippedPlaceholders": 0,
+        "corsRequestSentinelHits": 0
+      },
+      "authHeaderNamesInRequest": [],
+      "authorizationHeaderValueShape": []
+    }
+  },
+  "netlogArchive": [
+    {
+      "tag": "baseline",
+      "archivedTo": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t38\\t38-privacy-netlog-baseline.json",
+      "bytes": 51997,
+      "sha256": "c6024a48f6f169477ae7486741867f21ea609c46b8bfbdff349ce0c987a35dea"
+    },
+    {
+      "tag": "scenarioA-local",
+      "archivedTo": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t38\\t38-privacy-netlog-scenarioA-local.json",
+      "bytes": 192920,
+      "sha256": "c7038a35be9a5ee0e5bc74d25bd128c15c5e5ca707c3297d6744bc609bac13e8"
+    },
+    {
+      "tag": "scenarioB-cloud-denied",
+      "archivedTo": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t38\\t38-privacy-netlog-scenarioB-cloud-denied.json",
+      "bytes": 51999,
+      "sha256": "02cc5a8a86264df4cdcc20500f2323442939e1353d80516f485cf92afa9ad5cc"
+    }
+  ],
+  "secretScans": {
+    "netlog": [
+      {
+        "run": "baseline",
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 0
+      },
+      {
+        "run": "scenarioA",
+        "skShaped": 0,
+        "bearerReadableToken": 1,
+        "authorizationMentions": 2,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 1
+      },
+      {
+        "run": "scenarioB",
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "readableBearerTokensOtherThanSentinel": 0,
+        "probeSentinelOccurrences": 0
+      }
+    ],
+    "logs": [
+      {
+        "file": "<fix>\\profile\\data\\logs\\ai.log",
+        "exists": true,
+        "bytes": 114,
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "probeSentinelOccurrences": 0
+      },
+      {
+        "file": "<fix>\\profile\\data\\logs\\main.log",
+        "exists": true,
+        "bytes": 21423,
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "probeSentinelOccurrences": 0
+      },
+      {
+        "file": "<fix>\\profile\\data\\logs\\sync.log",
+        "exists": true,
+        "bytes": 16212,
+        "skShaped": 0,
+        "bearerReadableToken": 0,
+        "authorizationMentions": 0,
+        "probeSentinelOccurrences": 0
+      }
+    ],
+    "credentials": [
+      {
+        "file": "<fix>\\profile\\data\\credentials\\septcats__ai-probe-local.enc",
+        "bytes": 328,
+        "looksBase64": true,
+        "sentinelPlaintextOccurrences": 0
+      },
+      {
+        "file": "<fix>\\profile\\data\\credentials\\septcats__ai-probe-cloud.enc",
+        "bytes": 328,
+        "looksBase64": true,
+        "sentinelPlaintextOccurrences": 0
+      }
+    ],
+    "authorizationCapture": [
+      {
+        "run": "baseline",
+        "strippedPlaceholders": 0,
+        "corsRequestSentinelHits": 0,
+        "headerNames": [],
+        "valueShape": []
+      },
+      {
+        "run": "scenarioA",
+        "strippedPlaceholders": 1,
+        "corsRequestSentinelHits": 1,
+        "headerNames": [
+          "Host",
+          "Connection",
+          "Content-Length",
+          "authorization",
+          "content-type",
+          "Sec-Fetch-Site",
+          "Sec-Fetch-Mode",
+          "Sec-Fetch-Dest",
+          "User-Agent",
+          "Accept-Encoding",
+          "Accept-Language"
+        ],
+        "valueShape": [
+          {
+            "valueLength": 24,
+            "equalsBearerPlusSentinel": false,
+            "looksLikeStrippedPlaceholder": true
+          }
+        ]
+      },
+      {
+        "run": "scenarioB",
+        "strippedPlaceholders": 0,
+        "corsRequestSentinelHits": 0,
+        "headerNames": [],
+        "valueShape": []
+      }
+    ],
+    "allCounts": [
+      {
+        "where": "netlog:baseline",
+        "sk": 0,
+        "bearer": 0,
+        "auth": 0,
+        "otherThanSentinel": 0,
+        "sentinel": 0
+      },
+      {
+        "where": "netlog:scenarioA",
+        "sk": 0,
+        "bearer": 1,
+        "auth": 2,
+        "otherThanSentinel": 0,
+        "sentinel": 1
+      },
+      {
+        "where": "netlog:scenarioB",
+        "sk": 0,
+        "bearer": 0,
+        "auth": 0,
+        "otherThanSentinel": 0,
+        "sentinel": 0
+      },
+      {
+        "where": "log:<fix>\\profile\\data\\logs\\ai.log",
+        "sk": 0,
+        "bearer": 0,
+        "auth": 0,
+        "sentinel": 0
+      },
+      {
+        "where": "log:<fix>\\profile\\data\\logs\\main.log",
+        "sk": 0,
+        "bearer": 0,
+        "auth": 0,
+        "sentinel": 0
+      },
+      {
+        "where": "log:<fix>\\profile\\data\\logs\\sync.log",
+        "sk": 0,
+        "bearer": 0,
+        "auth": 0,
+        "sentinel": 0
+      }
+    ]
+  },
+  "readonly": {
+    "realRootBefore": {
+      "dir": "C:\\Users\\Administrator\\.septcats",
+      "exists": true,
+      "dirMtimeMs": "1789808566516.3271",
+      "topLevelCount": 12,
+      "listingSha256": "77c7d61cbf44bd1e2acccb39b09f8e96d176fb386bf37066943700a0a2bc0800",
+      "files": {
+        "septcats.db": {
+          "mtimeMs": "1789824941958.0457",
+          "sha256": "9b2fc5b4c257927d7f45e11500f76343657ae2ccbf73cd6002b9c5e1e74da165"
+        },
+        "septcats.db-wal": {
+          "mtimeMs": "1789911657595.008",
+          "sha256": "0c85c074f09b38dbb131aa3f75d83e53179a57fb873a69f71d8a23e3a50bebd6"
+        },
+        "septcats.db-shm": {
+          "mtimeMs": "1789911609741.0967",
+          "sha256": "9df034631ce8442cf68e81c860a44f992ddfded84807fe536107f15b5985bf85"
+        },
+        "logs\\main.log": {
+          "mtimeMs": "1789911610334.598",
+          "sha256": "9fc84e0647e7338b1a27038f24a1d6d24e9bfacfc647369c05e59b276e1b0fb3"
+        },
+        "logs\\ai.log": {
+          "mtimeMs": "absent",
+          "sha256": "absent"
+        },
+        "logs\\sync.log": {
+          "mtimeMs": "1789911657595.5088",
+          "sha256": "a105040614067b593a9792dda6886a02d832d13d9684a285b53ede1aab060738"
+        }
+      }
+    },
+    "realRootAfter": {
+      "dir": "C:\\Users\\Administrator\\.septcats",
+      "exists": true,
+      "dirMtimeMs": "1789808566516.3271",
+      "topLevelCount": 12,
+      "listingSha256": "77c7d61cbf44bd1e2acccb39b09f8e96d176fb386bf37066943700a0a2bc0800",
+      "files": {
+        "septcats.db": {
+          "mtimeMs": "1789824941958.0457",
+          "sha256": "9b2fc5b4c257927d7f45e11500f76343657ae2ccbf73cd6002b9c5e1e74da165"
+        },
+        "septcats.db-wal": {
+          "mtimeMs": "1789911657595.008",
+          "sha256": "0c85c074f09b38dbb131aa3f75d83e53179a57fb873a69f71d8a23e3a50bebd6"
+        },
+        "septcats.db-shm": {
+          "mtimeMs": "1789911609741.0967",
+          "sha256": "9df034631ce8442cf68e81c860a44f992ddfded84807fe536107f15b5985bf85"
+        },
+        "logs\\main.log": {
+          "mtimeMs": "1789911610334.598",
+          "sha256": "9fc84e0647e7338b1a27038f24a1d6d24e9bfacfc647369c05e59b276e1b0fb3"
+        },
+        "logs\\ai.log": {
+          "mtimeMs": "absent",
+          "sha256": "absent"
+        },
+        "logs\\sync.log": {
+          "mtimeMs": "1789911657595.5088",
+          "sha256": "a105040614067b593a9792dda6886a02d832d13d9684a285b53ede1aab060738"
+        }
+      }
+    },
+    "realUDBefore": {
+      "dir": "C:\\Users\\Administrator\\AppData\\Roaming\\@septcats\\desktop",
+      "exists": true,
+      "dirMtimeMs": "1789911699247.2964",
+      "topLevelCount": 20,
+      "listingSha256": "cc675df934f7e17148efcfccc895fe1b2f5ad7fbbfb9f62c36ea5af7c30d419c",
+      "files": {
+        "septcats.settings.json": {
+          "mtimeMs": "1789799380016.0388",
+          "sha256": "8bacf762d30d5f4388087aabb9d045b959bbf01f85edd04cbbe4678d4862116f"
+        },
+        "Preferences": {
+          "mtimeMs": "1789911620160.7778",
+          "sha256": "529b6595a4727a6b2d6cc154ae51f426216c01fc7fda02de2460abfb3de118a4"
+        },
+        "Local State": {
+          "mtimeMs": "1789269238486.5642",
+          "sha256": "4ab6f09b44e1f00e729e322f4ad2c35517171a7aa133e8039d8d6773d2f80e6e"
+        }
+      }
+    },
+    "realUDAfter": {
+      "dir": "C:\\Users\\Administrator\\AppData\\Roaming\\@septcats\\desktop",
+      "exists": true,
+      "dirMtimeMs": "1789911699247.2964",
+      "topLevelCount": 20,
+      "listingSha256": "cc675df934f7e17148efcfccc895fe1b2f5ad7fbbfb9f62c36ea5af7c30d419c",
+      "files": {
+        "septcats.settings.json": {
+          "mtimeMs": "1789799380016.0388",
+          "sha256": "8bacf762d30d5f4388087aabb9d045b959bbf01f85edd04cbbe4678d4862116f"
+        },
+        "Preferences": {
+          "mtimeMs": "1789911620160.7778",
+          "sha256": "529b6595a4727a6b2d6cc154ae51f426216c01fc7fda02de2460abfb3de118a4"
+        },
+        "Local State": {
+          "mtimeMs": "1789269238486.5642",
+          "sha256": "4ab6f09b44e1f00e729e322f4ad2c35517171a7aa133e8039d8d6773d2f80e6e"
+        }
+      }
+    },
+    "fixDataAfterCopy": {
+      "dir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\data",
+      "exists": true,
+      "dirMtimeMs": "1789808566516.3271",
+      "topLevelCount": 12,
+      "listingSha256": "77c7d61cbf44bd1e2acccb39b09f8e96d176fb386bf37066943700a0a2bc0800",
+      "files": {
+        "septcats.db": {
+          "mtimeMs": "1789824941958.0457",
+          "sha256": "9b2fc5b4c257927d7f45e11500f76343657ae2ccbf73cd6002b9c5e1e74da165"
+        },
+        "septcats.db-wal": {
+          "mtimeMs": "1789911657595.008",
+          "sha256": "0c85c074f09b38dbb131aa3f75d83e53179a57fb873a69f71d8a23e3a50bebd6"
+        },
+        "septcats.db-shm": {
+          "mtimeMs": "1789911609741.0967",
+          "sha256": "9df034631ce8442cf68e81c860a44f992ddfded84807fe536107f15b5985bf85"
+        }
+      }
+    },
+    "fixDataAfter": {
+      "dir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\data",
+      "exists": true,
+      "dirMtimeMs": "1789924511064.746",
+      "topLevelCount": 14,
+      "listingSha256": "ce4c36572050d0aecd7a7b1fbcc66216f301d82ae0d5fb163e37c6c3981c970d",
+      "files": {
+        "septcats.db": {
+          "mtimeMs": "1789924487947.7095",
+          "sha256": "d787fb86bea49b7bacf2479410f33d4dde1945e8041f299fce18a7098810abb3"
+        },
+        "septcats.db-wal": {
+          "mtimeMs": "1789924519691.3315",
+          "sha256": "ff3664271b41303437722021fe682c55c9997b2b78b05ecf9a388e19958879a5"
+        },
+        "septcats.db-shm": {
+          "mtimeMs": "1789924519541.2205",
+          "sha256": "5548ada6e21ada262167e94dab7ead5594bd3963d67c1e220565f5643093e017"
+        }
+      }
+    },
+    "fixUDAfter": {
+      "dir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\ud",
+      "exists": true,
+      "dirMtimeMs": "1789924536723.9746",
+      "topLevelCount": 20,
+      "listingSha256": "a1c2a2450fc7cd02b3ea223eea3cd1a64c963a687b468febe40752c90a174a93",
+      "files": {
+        "septcats.settings.json": {
+          "mtimeMs": "1789924519113.5671",
+          "sha256": "be765479ca8701ffa0f0555514592740653dd37f9ebbec98bd669344599539e3"
+        }
+      }
+    },
+    "outFingerprintBefore": {
+      "mainIndex": {
+        "mtimeMs": "1789923720064.3337",
+        "sha256": "bf895dc49d640c97480bdac07b65f689ecfa89acd1efa593fab011a123bb5a2f"
+      },
+      "rendererAssets": {
+        "index-CdkwcmuA.css": "7abfce12fe93ac41da68aba7966cfbdb9772f514312eabf0840ff3cc5314886a",
+        "index-gKkfmJ0I.js": "7f8e2bc2707d4cb7c5733273072e5bbf7ac0fb8ef22d5e848ffad5db7581a340"
+      }
+    },
+    "outFingerprintAfter": {
+      "mainIndex": {
+        "mtimeMs": "1789923720064.3337",
+        "sha256": "bf895dc49d640c97480bdac07b65f689ecfa89acd1efa593fab011a123bb5a2f"
+      },
+      "rendererAssets": {
+        "index-CdkwcmuA.css": "7abfce12fe93ac41da68aba7966cfbdb9772f514312eabf0840ff3cc5314886a",
+        "index-gKkfmJ0I.js": "7f8e2bc2707d4cb7c5733273072e5bbf7ac0fb8ef22d5e848ffad5db7581a340"
+      }
+    }
+  },
+  "assertions": [
+    {
+      "name": "[info] 前置：探针进程代理环境变量",
+      "ok": null,
+      "raw": "[\"http_proxy=(deleted)\",\"https_proxy=(deleted)\",\"HTTP_PROXY=(deleted)\",\"HTTPS_PROXY=(deleted)\",\"ALL_PROXY=(deleted)\",\"all_proxy=(deleted)\"]",
+      "kind": "info"
+    },
+    {
+      "name": "前置：探针启动前本机无 electron.exe 在跑（真实档案无活动写入者）",
+      "ok": true,
+      "raw": "electronPids=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "前置：本机端点 /v1/models 可达且含模型 master（探针侧 Node 直连）",
+      "ok": true,
+      "raw": "{\"ok\":true,\"status\":200,\"ids\":[\"master\"]}",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] 真实档案指纹（BEFORE）· 数据根",
+      "ok": null,
+      "raw": "{\"dir\":\"C:\\\\Users\\\\Administrator\\\\.septcats\",\"exists\":true,\"dirMtimeMs\":\"1789808566516.3271\",\"topLevelCount\":12,\"listingSha256\":\"77c7d61cbf44bd1e2acccb39b09f8e96d176fb386bf37066943700a0a2bc0800\",\"files\":{\"septcats.db\":{\"mtimeMs\":\"1789824941958.0457\",\"sha256\":\"9b2fc5b4c257927d7f45e11500f76343657ae2ccbf73cd6002b9c5e1e74da165\"},\"septcats.db-wal\":{\"mtimeMs\":\"1789911657595.008\",\"sha256\":\"0c85c074f09b38dbb131aa3f75d83e53179a57fb873a69f71d8a23e3a50bebd6\"},\"septcats.db-shm\":{\"mtimeMs\":\"1789911609741.0967\",\"sha256\":\"9df034631ce8442cf68e81c860a44f992ddfded84807fe536107f15b5985bf85\"},\"logs\\\\main.log\":{\"mtimeMs\":\"1789911610334.598\",\"sha256\":\"9fc84e0647e7338b1a27038f24a1d6d24e9bfacfc647369c05e59b276e1b0fb3\"},\"logs\\\\ai.log\":{\"mtimeMs\":\"absent\",\"sha256\":\"absent\"},\"logs\\\\sync.log\":{\"mtimeMs\":\"1789911657595.5088\",\"sha256\":\"a105040614067b593a9792dda6886a02d832d13d9684a285b53ede1aab060738\"}}}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 真实档案指纹（BEFORE）· userData",
+      "ok": null,
+      "raw": "{\"dir\":\"C:\\\\Users\\\\Administrator\\\\AppData\\\\Roaming\\\\@septcats\\\\desktop\",\"exists\":true,\"dirMtimeMs\":\"1789911699247.2964\",\"topLevelCount\":20,\"listingSha256\":\"cc675df934f7e17148efcfccc895fe1b2f5ad7fbbfb9f62c36ea5af7c30d419c\",\"files\":{\"septcats.settings.json\":{\"mtimeMs\":\"1789799380016.0388\",\"sha256\":\"8bacf762d30d5f4388087aabb9d045b959bbf01f85edd04cbbe4678d4862116f\"},\"Preferences\":{\"mtimeMs\":\"1789911620160.7778\",\"sha256\":\"529b6595a4727a6b2d6cc154ae51f426216c01fc7fda02de2460abfb3de118a4\"},\"Local State\":{\"mtimeMs\":\"1789269238486.5642\",\"sha256\":\"4ab6f09b44e1f00e729e322f4ad2c35517171a7aa133e8039d8d6773d2f80e6e\"}}}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 夹具复制完成",
+      "ok": null,
+      "raw": "{\"userData\":{\"src\":\"C:\\\\Users\\\\Administrator\\\\AppData\\\\Roaming\\\\@septcats\\\\desktop\",\"dst\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\probe-t38-privacy\\\\profile\\\\ud\",\"exitCode\":1,\"ok\":true,\"tookMs\":336},\"dataRoot\":{\"src\":\"C:\\\\Users\\\\Administrator\\\\.septcats\",\"dst\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\probe-t38-privacy\\\\profile\\\\data\",\"exitCode\":1,\"ok\":true,\"tookMs\":134},\"copyMs\":470,\"dataTree\":{\"src\":{\"files\":257,\"bytes\":137783443,\"dirs\":8},\"dst\":{\"files\":257,\"bytes\":137783443,\"dirs\":8}},\"udTree\":{\"src\":{\"files\":847,\"bytes\":176615218,\"dirs\":20},\"dst\":{\"files\":847,\"bytes\":176615218,\"dirs\":20}}}",
+      "kind": "info"
+    },
+    {
+      "name": "F-1 夹具副本完整（robocopy 退出码 <8，文件数/字节数与真实档案逐一相等）",
+      "ok": true,
+      "raw": "data: robocopyExit=1 files 257→257 bytes 137783443→137783443；ud: robocopyExit=1 files 847→847 bytes 176615218→176615218；耗时 470ms",
+      "kind": "assert"
+    },
+    {
+      "name": "F-2 夹具副本 = 真实档案的忠实副本（septcats.db 与 settings.json 的 sha256 与真实一致）",
+      "ok": true,
+      "raw": "copyDbSha=9b2fc5b4c257927d… realDbSha=9b2fc5b4c257927d… copySettingsSha=8bacf762d30d5f43… realSettingsSha=8bacf762d30d5f43…",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] baseline 运行（零 AI 交互）",
+      "ok": null,
+      "raw": "panelCount=0 gracefulExited=true forcedKill=false",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 场景 A：清空面板历史（副本内）——老板真实历史条数（仅计数）",
+      "ok": null,
+      "raw": "{\"via\":\"product-ui\",\"beforeCount\":0,\"afterCount\":0}",
+      "kind": "info"
+    },
+    {
+      "name": "A-0 发送前面板历史已清空（保证请求上下文只有探针文本，无老板真实历史）",
+      "ok": true,
+      "raw": "count=0 via=product-ui",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] 场景 A：当前页（面板上下文来源）",
+      "ok": null,
+      "raw": "null",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 场景 A：夹具 ai.state()（哨兵密钥写入后，hasKey 应为 true）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"hasKey\":true,\"isLocal\":true,\"enabled\":true,\"cloudConsent\":false}",
+      "kind": "info"
+    },
+    {
+      "name": "A-1 面板真实发送后收到 AI 回复（非空原文，非错误态）",
+      "ok": true,
+      "raw": "reply=\"OK\" errorText=null assistantMsgs=1 userMsgs=1 elapsed=3.04s timedOut=false",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] A-2 面板 DOM 快照",
+      "ok": null,
+      "raw": "{\"userMsgs\":1,\"assistantMsgs\":1,\"assistantTexts\":[\"OK\"],\"errorText\":null,\"busy\":false}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] A-3 面板历史（localStorage，副本内，逐字）",
+      "ok": null,
+      "raw": "{\"histKey\":\"septcats.aichat.history.01M2FTH1A2QEKP9EXN7RXJVR7Y\",\"histCount\":2,\"histRoles\":[\"user\",\"assistant\"],\"histTexts\":[\"Reply with exactly two characters: OK\",\"OK\"]}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 场景 A：优雅退出",
+      "ok": null,
+      "raw": "gracefulExited=true forcedKill=false",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 场景 B：清空面板历史（副本内，仅计数）",
+      "ok": null,
+      "raw": "{\"via\":\"product-ui\",\"beforeCount\":2,\"afterCount\":0}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] 场景 B：夹具 ai.state()（云端 provider，占位密钥已写入，cloudConsent=false）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"hasKey\":true,\"isLocal\":false,\"baseUrl\":\"https://api-inference.modelscope.cn/v1\",\"model\":\"placeholder-model\",\"enabled\":true,\"cloudConsent\":false}",
+      "kind": "info"
+    },
+    {
+      "name": "B-0 夹具云端 provider 命中占位云端地址且被判为非本地",
+      "ok": true,
+      "raw": "{\"ok\":true,\"hasKey\":true,\"isLocal\":false,\"baseUrl\":\"https://api-inference.modelscope.cn/v1\",\"model\":\"placeholder-model\",\"enabled\":true,\"cloudConsent\":false}",
+      "kind": "assert"
+    },
+    {
+      "name": "B-1 界面给出可读拒绝提示（role=alert 的 .ai-chat__error 非空，含 E_AI_CLOUD_DENIED 与中文说明）",
+      "ok": true,
+      "raw": "errorText=\"Error invoking remote method 'ai:chat': AiError: E_AI_CLOUD_DENIED：非本地端点需在设置中显式开启云端调用\"",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] B-2 拒绝提示原文（产品文案，非密钥）",
+      "ok": null,
+      "raw": "\"Error invoking remote method 'ai:chat': AiError: E_AI_CLOUD_DENIED：非本地端点需在设置中显式开启云端调用\"",
+      "kind": "info"
+    },
+    {
+      "name": "B-3 拒绝后没有新增 assistant 消息（数据未出网 → 无回复可落）",
+      "ok": true,
+      "raw": "assistantMsgs=0 histCount=1 histRoles=[\"user\"] histTexts=[\"privacy probe: this message must never leave the machine\"]",
+      "kind": "assert"
+    },
+    {
+      "name": "B-4 面板回到非 busy 态（未有在途请求挂住）",
+      "ok": true,
+      "raw": "busy=false",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] 场景 B：优雅退出",
+      "ok": null,
+      "raw": "gracefulExited=true forcedKill=false",
+      "kind": "info"
+    },
+    {
+      "name": "[info] net-log[baseline] 概览",
+      "ok": null,
+      "raw": "{\"exists\":true,\"bytes\":51997,\"events\":14,\"captureMode\":\"Default\",\"requestsByHost\":{},\"requestsByUrl\":{},\"dnsLookupHosts\":{},\"hostResolverCacheEntries\":[],\"proxySettings\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}},\"nameservers\":[\"[fe80::5]:53\",\"223.5.5.5:53\",\"223.6.6.6:53\",\"[fe80::5]:53\"]}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] net-log[scenarioA] 概览",
+      "ok": null,
+      "raw": "{\"exists\":true,\"bytes\":192920,\"events\":1245,\"captureMode\":\"Default\",\"requestsByHost\":{\"http://127.0.0.1:1234\":1},\"requestsByUrl\":{\"http://127.0.0.1:1234/v1/chat/completions\":1},\"dnsLookupHosts\":{\"127.0.0.1\":3},\"hostResolverCacheEntries\":[],\"proxySettings\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}},\"nameservers\":[\"[fe80::5]:53\",\"223.5.5.5:53\",\"223.6.6.6:53\",\"[fe80::5]:53\"]}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] net-log[scenarioB] 概览",
+      "ok": null,
+      "raw": "{\"exists\":true,\"bytes\":51999,\"events\":14,\"captureMode\":\"Default\",\"requestsByHost\":{},\"requestsByUrl\":{},\"dnsLookupHosts\":{},\"hostResolverCacheEntries\":[],\"proxySettings\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}},\"nameservers\":[\"[fe80::5]:53\",\"223.5.5.5:53\",\"223.6.6.6:53\",\"[fe80::5]:53\"]}",
+      "kind": "info"
+    },
+    {
+      "name": "N-0 三份 net-log 均解析成功（事件数 > 0）",
+      "ok": true,
+      "raw": "{\"baseline\":{\"bytes\":51997,\"events\":14,\"parseError\":null},\"scenarioA\":{\"bytes\":192920,\"events\":1245,\"parseError\":null},\"scenarioB\":{\"bytes\":51999,\"events\":14,\"parseError\":null}}",
+      "kind": "assert"
+    },
+    {
+      "name": "N-1 场景 A：所有网络请求主机名 ⊆ 本地（127.0.0.1/localhost/::1），零外部主机",
+      "ok": true,
+      "raw": "hosts={\"http://127.0.0.1:1234\":1} externalHosts=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "N-2 场景 A：本机端点确实被请求（面板路径真实命中 127.0.0.1:1234）",
+      "ok": true,
+      "raw": "endpointRequests={\"http://127.0.0.1:1234\":1} byUrl={\"http://127.0.0.1:1234/v1/chat/completions\":1}",
+      "kind": "assert"
+    },
+    {
+      "name": "N-3 场景 A：相对 baseline 新增请求主机 ⊆ 本地集合（无新增外部主机）",
+      "ok": true,
+      "raw": "newVsBaseline=[\"127.0.0.1\"] baseline=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "N-4 场景 A：DNS 层只解析本地名（HOST_RESOLVER_MANAGER_REQUEST.host 全为本地）",
+      "ok": true,
+      "raw": "dnsLookupHosts={\"127.0.0.1\":3}",
+      "kind": "assert"
+    },
+    {
+      "name": "N-5 场景 B：对云端主机 api-inference.modelscope.cn 的请求次数 = 0（数据未出网）",
+      "ok": true,
+      "raw": "cloudHostCount=0 requestsByHost={} requestsByUrl={}",
+      "kind": "assert"
+    },
+    {
+      "name": "N-6 场景 B：整轮零外部主机请求（externalRequestHosts 为空）",
+      "ok": true,
+      "raw": "externalHosts=[] externalCount=0",
+      "kind": "assert"
+    },
+    {
+      "name": "N-7 场景 B：DNS 层零云端主机解析（hostResolver 缓存与 DNS 事件双双为空/无该主机）",
+      "ok": true,
+      "raw": "dnsLookupHosts={} resolverCache=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "N-8 三次运行均未使用显式代理（net-log proxySettings 无 fixed_servers/无自定义代理服务器）",
+      "ok": true,
+      "raw": "{\"baseline\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}},\"scenarioA\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}},\"scenarioB\":{\"effective\":{\"from_system\":true},\"original\":{\"from_system\":true}}}",
+      "kind": "assert"
+    },
+    {
+      "name": "N-9 baseline（零 AI 交互）net-log 里 URL 请求数 = 0（启动无任何后台外联/噪声，对照成立）",
+      "ok": true,
+      "raw": "baselineRequests={} events=14",
+      "kind": "assert"
+    },
+    {
+      "name": "N-10 场景 B 全程该进程树 URL 请求数 = 0（连本机端点都没有；证明拒绝发生在请求构造之前）",
+      "ok": true,
+      "raw": "scenarioBRequests={} events=14",
+      "kind": "assert"
+    },
+    {
+      "name": "S-1 场景 B：netstat 采样中进程树无任何非本地对端连接",
+      "ok": true,
+      "raw": "samples=6 peers=[\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\",\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\",\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\",\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\",\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\",\"127.0.0.1:9401 → 127.0.0.1:10838 [ESTABLISHED]\"] nonLocal=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] S-2 场景 A：进程树对端（含本机端点连接）",
+      "ok": null,
+      "raw": "{\"idle\":{\"listen\":{\"127.0.0.1:9401\":1},\"peers\":{\"127.0.0.1:9401 → 127.0.0.1:10815 [ESTABLISHED]\":1}},\"after\":{\"listen\":{\"127.0.0.1:9401\":1},\"peers\":{\"127.0.0.1:9401 → 127.0.0.1:10815 [ESTABLISHED]\":1,\"127.0.0.1:10829 → 127.0.0.1:1234 [ESTABLISHED]\":1}}}",
+      "kind": "info"
+    },
+    {
+      "name": "[info] L-1 main 侧 ai.log 原始行（产品自记：op provider host 耗时 结果码；无 prompt/响应体/密钥）",
+      "ok": null,
+      "raw": "[\"[2026-09-20T17:15:14.118Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=master → ok(2313ms)\"]",
+      "kind": "info"
+    },
+    {
+      "name": "L-2 场景 A：ai.log 有本机端点成功行（ok(...)）——证明请求由 main 侧真实发出并成功",
+      "ok": true,
+      "raw": "[\"[2026-09-20T17:15:14.118Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=master → ok(2313ms)\"]",
+      "kind": "assert"
+    },
+    {
+      "name": "L-3 场景 B：ai.log 里云端 provider/host 命中行数 = 0（门禁拒绝早于日志/请求构造）",
+      "ok": true,
+      "raw": "cloudLogHits=[]",
+      "kind": "assert"
+    },
+    {
+      "name": "L-4 场景 B：任何产品日志里都不出现云端主机名（连一行都没有）",
+      "ok": true,
+      "raw": "logFiles=[{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\ai.log\",\"bytes\":114},{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\main.log\",\"bytes\":21423},{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\sync.log\",\"bytes\":16212}]",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] C-1 凭据文件（DPAPI 密文，仅计数与形状）",
+      "ok": null,
+      "raw": "[{\"file\":\"<fix>\\\\profile\\\\data\\\\credentials\\\\septcats__ai-probe-local.enc\",\"bytes\":328,\"looksBase64\":true,\"sentinelPlaintextOccurrences\":0},{\"file\":\"<fix>\\\\profile\\\\data\\\\credentials\\\\septcats__ai-probe-cloud.enc\",\"bytes\":328,\"looksBase64\":true,\"sentinelPlaintextOccurrences\":0}]",
+      "kind": "info"
+    },
+    {
+      "name": "C-2 产品自身日志/账本零密钥泄露（fixture ai.log / main.log / sync.log：sk- 形状 = 0、可读 Bearer = 0、Authorization 提及 = 0、哨兵 = 0）",
+      "ok": true,
+      "raw": "[{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\ai.log\",\"sk\":0,\"bearer\":0,\"auth\":0,\"sentinel\":0},{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\main.log\",\"sk\":0,\"bearer\":0,\"auth\":0,\"sentinel\":0},{\"f\":\"<fix>\\\\profile\\\\data\\\\logs\\\\sync.log\",\"sk\":0,\"bearer\":0,\"auth\":0,\"sentinel\":0}]",
+      "kind": "assert"
+    },
+    {
+      "name": "C-3 net-log 中未出现**真**密钥/令牌（sk- 形状 = 0；排除探针哨兵后，可读 Bearer token = 0）",
+      "ok": true,
+      "raw": "[{\"run\":\"baseline\",\"sk\":0,\"bearerTotal\":0,\"otherThanSentinel\":0,\"sentinel\":0,\"authorizationMentions\":0},{\"run\":\"scenarioA\",\"sk\":0,\"bearerTotal\":1,\"otherThanSentinel\":0,\"sentinel\":1,\"authorizationMentions\":2},{\"run\":\"scenarioB\",\"sk\":0,\"bearerTotal\":0,\"otherThanSentinel\":0,\"sentinel\":0,\"authorizationMentions\":0}]",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] C-3b net-log 采集模式行为（Chromium 既有行为，非产品缺陷）· Authorization 头脱敏证据",
+      "ok": null,
+      "raw": "[{\"run\":\"baseline\",\"strippedPlaceholders\":0,\"corsRequestSentinelHits\":0,\"headerNames\":[],\"valueShape\":[]},{\"run\":\"scenarioA\",\"strippedPlaceholders\":1,\"corsRequestSentinelHits\":1,\"headerNames\":[\"Host\",\"Connection\",\"Content-Length\",\"authorization\",\"content-type\",\"Sec-Fetch-Site\",\"Sec-Fetch-Mode\",\"Sec-Fetch-Dest\",\"User-Agent\",\"Accept-Encoding\",\"Accept-Language\"],\"valueShape\":[{\"valueLength\":24,\"equalsBearerPlusSentinel\":false,\"looksLikeStrippedPlaceholder\":true}]},{\"run\":\"scenarioB\",\"strippedPlaceholders\":0,\"corsRequestSentinelHits\":0,\"headerNames\":[],\"valueShape\":[]}]",
+      "kind": "info"
+    },
+    {
+      "name": "C-4 夹具凭据为 DPAPI 密文（不含哨兵明文）",
+      "ok": true,
+      "raw": "[{\"file\":\"<fix>\\\\profile\\\\data\\\\credentials\\\\septcats__ai-probe-local.enc\",\"bytes\":328,\"looksBase64\":true,\"sentinelPlaintextOccurrences\":0},{\"file\":\"<fix>\\\\profile\\\\data\\\\credentials\\\\septcats__ai-probe-cloud.enc\",\"bytes\":328,\"looksBase64\":true,\"sentinelPlaintextOccurrences\":0}]",
+      "kind": "assert"
+    },
+    {
+      "name": "C-5 产品侧无任何把密钥写进日志的代码路径证据：ai.log 行只含 op/providerId/host/model/耗时/结果码，无 prompt、无响应体、无密钥",
+      "ok": true,
+      "raw": "[\"[2026-09-20T17:15:14.118Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=master → ok(2313ms)\"]",
+      "kind": "assert"
+    },
+    {
+      "name": "R-1 真实数据根 C:\\Users\\Administrator\\.septcats 未被触碰（目录 mtime 前后一致 + 顶层条目指纹一致）",
+      "ok": true,
+      "raw": "dirMtimeMs 1789808566516.3271 → 1789808566516.3271；listingSha 77c7d61cbf44bd1e… → 77c7d61cbf44bd1e…",
+      "kind": "assert"
+    },
+    {
+      "name": "R-2 真实数据根关键文件 hash/mtime 前后一致（septcats.db / db-wal / logs/main.log）",
+      "ok": true,
+      "raw": "{\"septcats.db\":{\"mtimeMs\":\"1789824941958.0457\",\"sha\":\"9b2fc5b4c257\"},\"septcats.db-wal\":{\"mtimeMs\":\"1789911657595.008\",\"sha\":\"0c85c074f09b\"},\"septcats.db-shm\":{\"mtimeMs\":\"1789911609741.0967\",\"sha\":\"9df034631ce8\"},\"logs\\\\main.log\":{\"mtimeMs\":\"1789911610334.598\",\"sha\":\"9fc84e0647e7\"},\"logs\\\\ai.log\":{\"mtimeMs\":\"absent\",\"sha\":\"absent\"},\"logs\\\\sync.log\":{\"mtimeMs\":\"1789911657595.5088\",\"sha\":\"a10504061406\"}}",
+      "kind": "assert"
+    },
+    {
+      "name": "R-3 真实 userData（%APPDATA%\\@septcats\\desktop）未被触碰（mtime + 指纹 + settings hash 一致）",
+      "ok": true,
+      "raw": "dirMtimeMs 1789911699247.2964 → 1789911699247.2964；settingsSha 8bacf762d30d5f43… → 8bacf762d30d5f43…",
+      "kind": "assert"
+    },
+    {
+      "name": "R-4 应用确实写在**副本**上（副本 db/wal 指纹与初始副本不同，且副本 settings.rootPath 指向副本 data）",
+      "ok": true,
+      "raw": "copyDb mtime 1789824941958.0457 → 1789924487947.7095；copyWal mtime 1789911657595.008 → 1789924519691.3315；fixtureRootPath=E:\\Hermes Agent工作空间\\_scratch\\probe-t38-privacy\\profile\\data",
+      "kind": "assert"
+    },
+    {
+      "name": "R-5 副本 userData 也被使用（副本 ud 顶层指纹发生变化：settings 被探针改写）",
+      "ok": true,
+      "raw": "fixtureUDSettingsSha=be765479ca8701ff… realSha=8bacf762d30d5f43…",
+      "kind": "assert"
+    },
+    {
+      "name": "R-6 产品构建产物（out/）未被改动（main/index.js 与 renderer assets hash 前后一致）",
+      "ok": true,
+      "raw": "mainSha bf895dc49d640c97… → bf895dc49d640c97…",
+      "kind": "assert"
+    },
+    {
+      "name": "N-11 三份 net-log 原始证据已归档进 docs/mockups/screens-t38/（归档前通过密钥扫描：无 sk- 形状、无非哨兵可读 token）",
+      "ok": true,
+      "raw": "[{\"tag\":\"baseline\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-baseline.json\",\"bytes\":51997,\"sha256\":\"c6024a48f6f169477ae7486741867f21ea609c46b8bfbdff349ce0c987a35dea\"},{\"tag\":\"scenarioA-local\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-scenarioA-local.json\",\"bytes\":192920,\"sha256\":\"c7038a35be9a5ee0e5bc74d25bd128c15c5e5ca707c3297d6744bc609bac13e8\"},{\"tag\":\"scenarioB-cloud-denied\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-scenarioB-cloud-denied.json\",\"bytes\":51999,\"sha256\":\"02cc5a8a86264df4cdcc20500f2323442939e1353d80516f485cf92afa9ad5cc\"}]",
+      "kind": "assert"
+    },
+    {
+      "name": "[info] N-12 归档 net-log 路径与 hash",
+      "ok": null,
+      "raw": "[{\"tag\":\"baseline\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-baseline.json\",\"bytes\":51997,\"sha256\":\"c6024a48f6f169477ae7486741867f21ea609c46b8bfbdff349ce0c987a35dea\"},{\"tag\":\"scenarioA-local\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-scenarioA-local.json\",\"bytes\":192920,\"sha256\":\"c7038a35be9a5ee0e5bc74d25bd128c15c5e5ca707c3297d6744bc609bac13e8\"},{\"tag\":\"scenarioB-cloud-denied\",\"archivedTo\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t38\\\\t38-privacy-netlog-scenarioB-cloud-denied.json\",\"bytes\":51999,\"sha256\":\"02cc5a8a86264df4cdcc20500f2323442939e1353d80516f485cf92afa9ad5cc\"}]",
+      "kind": "info"
+    },
+    {
+      "name": "E-1 全程 pageerror 计数 = 0",
+      "ok": true,
+      "raw": "pageErrors=0 []",
+      "kind": "assert"
+    },
+    {
+      "name": "E-2 全程 renderer console error 计数 = 0",
+      "ok": true,
+      "raw": "consoleErrors=0 []",
+      "kind": "assert"
+    },
+    {
+      "name": "E-3 三次运行全部 window.close() 优雅退出（无强杀）",
+      "ok": true,
+      "raw": "[{\"gracefulExited\":true,\"forcedKill\":false},{\"gracefulExited\":true,\"forcedKill\":false},{\"gracefulExited\":true,\"forcedKill\":false}]",
+      "kind": "assert"
+    },
+    {
+      "name": "E-4 探针结束后本机无残留 electron.exe（进程树干净）",
+      "ok": true,
+      "raw": "electronPidsAfter=[]",
+      "kind": "assert"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "t38-privacy-a-assistant-reply.png",
+      "selector": ".ai-chat__msg--assistant",
+      "clip": {
+        "x": 873,
+        "y": 150,
+        "width": 303,
+        "height": 45
+      },
+      "width": 303,
+      "height": 45,
+      "bytes": 987
+    },
+    {
+      "file": "t38-privacy-b-cloud-denied-error.png",
+      "selector": ".ai-chat__error",
+      "clip": {
+        "x": 873,
+        "y": 150,
+        "width": 303,
+        "height": 83
+      },
+      "width": 303,
+      "height": 83,
+      "bytes": 6501
+    }
+  ],
+  "pass": 40,
+  "fail": 0,
+  "errors": {
+    "pageErrors": [],
+    "consoleErrors": []
+  }
+}
