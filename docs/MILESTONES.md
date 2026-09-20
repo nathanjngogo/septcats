@@ -113,7 +113,7 @@
 | 27 | 我的 CDP 审计脚本自身「假绿」：重导断言只查「页集合无新增」近似，未用全量 skippedDuplicate==plan1 记账集合核对 → E2 幂等击穿（漏 41 条）连续三轮都从这条缝里溜过去 | 中（验收工具缺陷） | 断言改为双态硬核对（新库全量 404/旧库 skipped≥420）+ 纯逻辑 golden-dedup 用与 SQL 逐字对齐的 (path,hash) 键回归 |
 | └ T45-01 CSP connect-src 放行 127.0.0.1（P3） | 09-21 | ✅ **真机闭环（rc.24）** | 唯一真源 `renderer/index.html:14` 仅追加 `ws://127.0.0.1:* http://127.0.0.1:*`（其它指令逐字未变、无通配）；真机判据 **renderer console error 2 → 0** + 本地端点真实对话 4 轮全 ok（1.9s/3.6s/7.5s/3.3s）；全仓 1232 无红、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.24 |
 | └ T38-01 隐私零外呼（网络层）| 09-21 | ✅ **验通（40 PASS / 0 FAIL）** | 场景 A 本地端点：全部 URL 请求仅 `127.0.0.1:1234/chat/completions` ×1、外部主机 0；场景 B 云端+consent=false：目标主机请求 **0**、该轮全部 URL 请求 **0**、拒绝文案可读、assistant 0 条；真实档案 mtime+sha256（db/wal/shm/settings/logs）前后全等（零写入）；真密钥 0；原始 net-log 因 Chromium 未脱敏 CORS 请求头而不入库 |
-| └ T46-01 AI 健壮性（超时可配置 / 空正文提示）| 09-21 | 🚧 委派工作流实现中 | 单：`docs/tasks/TASK-T46-01.md`；交付后 → 验收 → **rc.25** → 老板签发 0.3.0 |
+| └ T46-01 AI 健壮性（超时可配置 / 空正文提示）| 09-21 | ✅ **代码+测试+真机闭环（rc.25）** | 新增 `main/ai/chatConfig.ts`+`chatConfigStore.ts`+`renderer/ai/chatReply.ts`+`test/ai-chat-config.test.ts`(14 用例)；超时未设置仍 120000ms 不变、设 5s+挂起端点 **5012ms** 中止且文案可读（不含裸错误码）、设 300s 不提前中止（611ms 返回）；空正文桩响应按**成功**处理 + 折叠区默认收起、无空白气泡；真本机端点 `master` 1958ms/3279ms 回复正常、CB 真机探针 **32/32**；全仓 **1272 无红**（desktop 635）、typecheck 9/9、双门禁 ✓；红线核对 packages 改动 0；版本 → 0.3.0-rc.25 |
 | └ 5 个修复批次独立复核（老板指令）| 09-21 | 🚧 委派工作流复核中 | `3e5e6c7`(T40-01-1/T42-01-1/T43-01-1) + `4d25613`(T44-01-1) + `17946d5`(T41-01-1)：自设判据、真机原始数值、PASS/FAIL/CANNOT-VERIFY |
 
 ## CodeBuddy 质量观察（09-13 复盘）

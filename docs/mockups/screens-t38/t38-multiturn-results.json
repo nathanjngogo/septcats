@@ -1,6 +1,6 @@
 {
   "task": "TASK-T38-01 真机探针（真实多轮 · 真实本机端点）",
-  "ranAt": "2026-09-19T17:00:16.808Z",
+  "ranAt": "2026-09-20T17:03:32.647Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "endpoint": "http://127.0.0.1:1234/v1",
   "model": "ternary-bonsai-2-27b-pq2_0",
@@ -25,7 +25,7 @@
       "round": 0,
       "channel": "renderer IPC 直连（显式 maxTokens:800，非面板）",
       "sent": "请记住这个数字：7391。只回复四个字：已记住。",
-      "elapsed_s": "10.41",
+      "elapsed_s": "1.95",
       "reply": "已记住",
       "error": null,
       "note": "未写入面板历史（纯 IPC 取证）"
@@ -34,8 +34,8 @@
       "round": 1,
       "channel": "AI 面板 UI（Enter 发送，产品真实请求形态=无 max_tokens）",
       "sent": "请记住这个数字：7391。只回复四个字：已记住。",
-      "elapsed_s": "78.64",
-      "reply": "已记得。",
+      "elapsed_s": "4.03",
+      "reply": "已记住",
       "error": null,
       "note": "historyUserEcho=\"请记住这个数字：7391。只回复四个字：已记住。\" busyAfter=false timedOut=false"
     },
@@ -43,8 +43,8 @@
       "round": 2,
       "channel": "AI 面板 UI（页面内容问答，期望产出出处标记）",
       "sent": "请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。",
-      "elapsed_s": "5.04",
-      "reply": "本页第一段写了：探针第一段：本页项目代号为云雀。⟦#1⟧",
+      "elapsed_s": "8.07",
+      "reply": "本页第一段写道：\"本页项目代号为云雀。\" ⟦#1⟧",
       "error": null,
       "note": "chipCount=1 rawMarks=[] timedOut=false"
     },
@@ -52,14 +52,14 @@
       "round": 3,
       "channel": "AI 面板 UI（第三轮追问第一轮记忆）",
       "sent": "我第一轮让你记住的数字是多少？只回答数字。",
-      "elapsed_s": "9.08",
+      "elapsed_s": "4.03",
       "reply": "7391",
       "error": null,
       "note": "contains7391=true timedOut=false"
     }
   ],
-  "pass": 21,
-  "fail": 0,
+  "pass": 20,
+  "fail": 1,
   "assertions": [
     {
       "name": "① 顶栏 AI 钮 → 面板 .ai-chat 打开（宽度 320px）",
@@ -83,8 +83,8 @@
     },
     {
       "name": "③ 端点 /v1/models 可达且含目标模型（探针侧 Node 直连）",
-      "ok": true,
-      "raw": "{\"ok\":true,\"status\":200,\"ids\":[\"ternary-bonsai-2-27b-pq2_0\"],\"via\":\"node-probe\"}"
+      "ok": false,
+      "raw": "{\"ok\":true,\"status\":200,\"ids\":[\"master\"],\"via\":\"node-probe\"}"
     },
     {
       "name": "④ 0 号轮（maxTokens:800 显式）经真实端点返回非空 content",
@@ -94,12 +94,12 @@
     {
       "name": "⑤ 轮1：面板收到 AI 回复且原样落盘（非错误态）",
       "ok": true,
-      "raw": "reply=\"已记得。\" error=null assistantMsgs=1"
+      "raw": "reply=\"已记住\" error=null assistantMsgs=1"
     },
     {
       "name": "⑥ 轮2：面板收到 AI 回复且原样落盘（非错误态）",
       "ok": true,
-      "raw": "reply=\"本页第一段写了：探针第一段：本页项目代号为云雀。⟦#1⟧\" error=null"
+      "raw": "reply=\"本页第一段写道：\\\"本页项目代号为云雀。\\\" ⟦#1⟧\" error=null"
     },
     {
       "name": "⑦ 轮3 回复原文包含「7391」（多轮上下文真的传通的直接证据）",
@@ -124,12 +124,12 @@
     {
       "name": "⑧ localStorage 无密钥痕迹（sk-/Bearer）",
       "ok": true,
-      "raw": "hasSecret=false keys=[\"septcats.tabs.01M2X9N7K3PRYKSKYN5HD8TQ2T\",\"septcats.aichat.panel\",\"septcats.theme\",\"septcats.aichat.history.01M2X9N7K3PRYKSKYN5HD8TQ2T\"]"
+      "raw": "hasSecret=false keys=[\"septcats.tabs.01M2ZWAGYG5E051EMAB28WHWHT\",\"septcats.aichat.history.01M2ZWAGYG5E051EMAB28WHWHT\",\"septcats.layout\",\"septcats.aichat.panel\",\"septcats.theme\"]"
     },
     {
       "name": "[info] ⑧ 三轮原文（localStorage 逐字）",
       "ok": null,
-      "raw": "[\"请记住这个数字：7391。只回复四个字：已记住。\",\"已记得。\",\"请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。\",\"本页第一段写了：探针第一段：本页项目代号为云雀。⟦#1⟧\",\"我第一轮让你记住的数字是多少？只回答数字。\",\"7391\"]"
+      "raw": "[\"请记住这个数字：7391。只回复四个字：已记住。\",\"已记住\",\"请只依据当前页面内容回答：本页第一段写了什么？回答时在句末加上出处标记。\",\"本页第一段写道：\\\"本页项目代号为云雀。\\\" ⟦#1⟧\",\"我第一轮让你记住的数字是多少？只回答数字。\",\"7391\"]"
     },
     {
       "name": "[info] ⑨ 模型是否产出可解析引用标记 ⟦#N⟧（产品实际标记语法）",
@@ -149,12 +149,12 @@
     {
       "name": "[info] ⑨ 当前页块清单（探针侧）",
       "ok": null,
-      "raw": "{\"ws\":\"01M2X9N7K3PRYKSKYN5HD8TQ2T\",\"blocks\":[{\"id\":\"01M2X9NAGFCSS4B011JW133TQ5\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2X9NAYX6ZX5CET9BX44XY68\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]}"
+      "raw": "{\"ws\":\"01M2ZWAGYG5E051EMAB28WHWHT\",\"blocks\":[{\"id\":\"01M2ZWAKTHR90859WWA9XR5YJ8\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2ZWAM9AN8W8QAJFMA95HPHP\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]}"
     },
     {
       "name": "⑨ 点 chip → 编辑器选区落在被引用块（真实跳转）",
       "ok": true,
-      "raw": "selBlockId=01M2X9NAGFCSS4B011JW133TQ5 before={\"pvScrollTop\":142,\"hasEditor\":true} after={\"selBlockId\":\"01M2X9NAGFCSS4B011JW133TQ5\",\"pvScrollTop\":0} blocks=[{\"id\":\"01M2X9NAGFCSS4B011JW133TQ5\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2X9NAYX6ZX5CET9BX44XY68\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]"
+      "raw": "selBlockId=01M2ZWAKTHR90859WWA9XR5YJ8 before={\"pvScrollTop\":142,\"hasEditor\":true} after={\"selBlockId\":\"01M2ZWAKTHR90859WWA9XR5YJ8\",\"pvScrollTop\":0} blocks=[{\"id\":\"01M2ZWAKTHR90859WWA9XR5YJ8\",\"text\":\"探针第一段：本页项目代号为云雀。\"},{\"id\":\"01M2ZWAM9AN8W8QAJFMA95HPHP\",\"text\":\"探针第二段：交付窗口为 2027 年 3 月。\"}]"
     },
     {
       "name": "[info] ⑩ 截图（三轮完成态）",
@@ -219,7 +219,7 @@
     {
       "name": "[info] ⑯ main 侧 ai.log 原始行（app 自计耗时）",
       "ok": null,
-      "raw": "[\"[2026-09-19T16:58:27.636Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(10406ms)\",\"[2026-09-19T16:59:45.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(77993ms)\",\"[2026-09-19T16:59:50.944Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(4639ms)\",\"[2026-09-19T16:59:59.773Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(8407ms)\"]"
+      "raw": "[\"[2026-09-20T17:03:00.035Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(1944ms)\",\"[2026-09-20T17:03:03.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(3582ms)\",\"[2026-09-20T17:03:11.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(7526ms)\",\"[2026-09-20T17:03:15.502Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(3288ms)\"]"
     }
   ],
   "screenshots": [
@@ -227,25 +227,25 @@
       "file": "t38-multiturn-light.png",
       "width": 1184,
       "height": 735,
-      "bytes": 64228
+      "bytes": 65665
     },
     {
       "file": "t38-multiturn-dark.png",
       "width": 1184,
       "height": 735,
-      "bytes": 64267
+      "bytes": 65764
     },
     {
       "file": "t38-multiturn-restored-light.png",
       "width": 1184,
       "height": 735,
-      "bytes": 64164
+      "bytes": 65611
     },
     {
       "file": "t38-multiturn-restored-dark.png",
       "width": 1184,
       "height": 735,
-      "bytes": 64303
+      "bytes": 65819
     }
   ],
   "pageErrors": [],
@@ -255,9 +255,9 @@
     "after": "1789808566516.3271"
   },
   "aiLogLines": [
-    "[2026-09-19T16:58:27.636Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(10406ms)",
-    "[2026-09-19T16:59:45.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(77993ms)",
-    "[2026-09-19T16:59:50.944Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(4639ms)",
-    "[2026-09-19T16:59:59.773Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(8407ms)"
+    "[2026-09-20T17:03:00.035Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(1944ms)",
+    "[2026-09-20T17:03:03.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(3582ms)",
+    "[2026-09-20T17:03:11.651Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(7526ms)",
+    "[2026-09-20T17:03:15.502Z] [INFO] (ai) ai chat provider=probe-local host=127.0.0.1:1234 model=ternary-bonsai-2-27b-pq2_0 → ok(3288ms)"
   ]
 }
