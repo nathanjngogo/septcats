@@ -59,3 +59,21 @@
 - E3（system 落点）**未闭环**：`actual=unknown`。
 - 本次复核**未覆盖** T40-01-1 的「改类型值迁移不静默丢失」全矩阵（仅验文本→数字一条）、也未覆盖简繁/多语言其它分支。
 - 复核方在报告生成前因 provider 额度耗尽中断（`HTTP 429 insufficient balance`）→ 本报告由 PM 从**其已完成的原始结果 JSON** 生成，未新增测量。
+
+
+## ⚠️ 5 项 FAIL 原文与分类（**PM 更正：本报告首版误漏此节，已补齐**）
+
+原始 JSON 字段：`pass=29`、`fail=5`；逐项 `ok=false` 的有以下 5 条（原文引用自 `audit-fixbatches-results.json`）：
+
+| # | 判定项 | 原始数值（截断） | PM 分类 |
+|---|---|---|---|
+| 1 | **P2 命令面板在普通页含全宽命令（门控有对照）** | `selected={"dbpage":true,"pvRoot":false,…}`；`panel=["全宽 / 固定宽度切换当前页正文列宽度（每页独立记忆）"]` | **探针侧**：命令确已出现，但探针按 id 点击「普通页」行未切换成功（选中仍为 DB 页）→ 前置选中条件不成立而判失败。产品侧 D1/P1（DB 页隐藏）已 PASS，门控对照未被推翻 |
+| 2 | **F5 gridcell 上按 Enter：勾选值被切换并落库（true → 非 true）** | `before={"activeElement":{tag:"BODY"},…,"on":1}` → `after=[{…checkbox:true}]`（仍为 true） | **待确认（可能真缺陷）**：Enter 在勾选格上未触发切换（Space 的 F6 反而 PASS，但值也已是 true → F5/F6 的期望值受前序步骤影响）。建议单列小单复核「勾选格键盘切换键位」的实际支持矩阵 |
+| 3 | **E2【T43 主线复现】显式选 English 后重启：界面为英文（原缺陷：回中文）** | `boot2={"pref":"en-US","zh":{…全 false},"en":{"Settings":false,"Appearance":false,"Favorites":true,"System":false},"sideText":"Personal Workspace New Page Favorites 0 Recent 8 … Trash 1"}` | **探针侧倾向**：重启后侧栏/界面**确实为英文**（`sideText` 全英文、`zh` 全 false），但探针用「Settings/Appearance/System」等文案探测而重启后设置页未打开 → 判 false。**原缺陷（回中文）看起来未复现**，但需一次更严谨的复测才能定论 |
+| 4 | **L7 点未解析链接 → 新建同名页并跳转、链接回填新页 id** | `preClick={"unresolved":0,"dataTarget":"01M2ZX…"}` | **探针侧（步骤自相矛盾）**：前序 L6 已把目标页从回收站恢复 → 点击前链接**已是已解析态**，L7 的前提被自己的上一步破坏 |
+| 5 | **E3 标记为显式 system 时重启按系统语言落点** | `navLang=zh-CN expected=zh-CN actual=unknown pref=en-US` | **测量缺口**：`actual=unknown`，探针未取到落点 → 无法判定 |
+
+**净结论（不被 FAIL 夸大也不被掩盖）**：
+- **无证据表明产品缺陷未修好的项**：T44-01-1 主线（L1–L4/L5/L6）、T40-01-1（F0–F4、F7–F11）、T42-01-1（W0–W2）、T43-01-1 主线（E1）、T41-01-1 门控（D1/D2/P1/N1/N2/X1/X2）均 PASS。
+- **5 项 FAIL 中 4 项为探针侧（选中/时序/测量口径）**，1 项（**F5 勾选格 Enter 键**）**可能为真缺陷**，建议单列小单复核。
+- E2/E3 的语言落点与 F5 的键盘矩阵，**建议补一次口径更严的专项复测**（本报告不将其算作已通过）。
