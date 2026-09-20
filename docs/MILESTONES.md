@@ -111,6 +111,10 @@
 | 25 | 导入执行器层尾排序键饱和：nextSortKey 只尾追加，真包 execute 253/536 撞 SORTKEY_MAX_LENGTH=16 中断 | 高（真包必现） | PM 亲修：将满即整层重建（rebalanceLayer+sortSequence，与新页同 batch 原子），2 条回归（饱和/墓碑幂等）绿 |
 | 26 | 计划器去重先于重命名 → 撞名条目二次导入漏网（真包 CDP 终验抓到：重导 plan 漏 41 条、真库 16 个同 path 双 hash） | 高（幂等承诺破口） | PM 亲修：finalizePlan 顺序重排（重命名先于去重，最终 path 为源集合纯函数）+ databaseItem 签名收窄 collection；plan.test 补「改名条目二次导入全命中」回归；顺带纠正我 82fe749 轮漏跑 typecheck 的疏漏 |
 | 27 | 我的 CDP 审计脚本自身「假绿」：重导断言只查「页集合无新增」近似，未用全量 skippedDuplicate==plan1 记账集合核对 → E2 幂等击穿（漏 41 条）连续三轮都从这条缝里溜过去 | 中（验收工具缺陷） | 断言改为双态硬核对（新库全量 404/旧库 skipped≥420）+ 纯逻辑 golden-dedup 用与 SQL 逐字对齐的 (path,hash) 键回归 |
+| └ T45-01 CSP connect-src 放行 127.0.0.1（P3） | 09-21 | ✅ **真机闭环（rc.24）** | 唯一真源 `renderer/index.html:14` 仅追加 `ws://127.0.0.1:* http://127.0.0.1:*`（其它指令逐字未变、无通配）；真机判据 **renderer console error 2 → 0** + 本地端点真实对话 4 轮全 ok（1.9s/3.6s/7.5s/3.3s）；全仓 1232 无红、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.24 |
+| └ T38-01 隐私零外呼（网络层）| 09-21 | ✅ **验通（40 PASS / 0 FAIL）** | 场景 A 本地端点：全部 URL 请求仅 `127.0.0.1:1234/chat/completions` ×1、外部主机 0；场景 B 云端+consent=false：目标主机请求 **0**、该轮全部 URL 请求 **0**、拒绝文案可读、assistant 0 条；真实档案 mtime+sha256（db/wal/shm/settings/logs）前后全等（零写入）；真密钥 0；原始 net-log 因 Chromium 未脱敏 CORS 请求头而不入库 |
+| └ T46-01 AI 健壮性（超时可配置 / 空正文提示）| 09-21 | 🚧 委派工作流实现中 | 单：`docs/tasks/TASK-T46-01.md`；交付后 → 验收 → **rc.25** → 老板签发 0.3.0 |
+| └ 5 个修复批次独立复核（老板指令）| 09-21 | 🚧 委派工作流复核中 | `3e5e6c7`(T40-01-1/T42-01-1/T43-01-1) + `4d25613`(T44-01-1) + `17946d5`(T41-01-1)：自设判据、真机原始数值、PASS/FAIL/CANNOT-VERIFY |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
