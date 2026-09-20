@@ -1,0 +1,279 @@
+{
+  "task": "TASK-T46-01 真机探针（可配置超时 + 空正文/纯推理/length 可读提示）",
+  "ranAt": "2026-09-20T17:46:05.128Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\probe-t46\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\probe-t46\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\probe-t46\\ud\\septcats.settings.json"
+  },
+  "mock": {
+    "base": "http://127.0.0.1:18111",
+    "model": "t46-stub",
+    "reasoningLength": 34,
+    "chatCount": 6
+  },
+  "real": {
+    "endpoint": "http://127.0.0.1:1234/v1",
+    "model": "master"
+  },
+  "pass": 32,
+  "fail": 0,
+  "assertions": [
+    {
+      "name": "① AI 面板打开（.ai-chat 存在，宽 320px）",
+      "ok": true,
+      "raw": "{\"count\":1,\"width\":320}"
+    },
+    {
+      "name": "① 未设置任何 AI 请求参数 → ai.state() 生效超时 = 120s、maxOutputTokens = null（默认不回归）",
+      "ok": true,
+      "raw": "chatTimeoutSec=120 maxOutputTokens=null"
+    },
+    {
+      "name": "A1 空正文 + 推理 → 气泡出现「模型未返回正文（仅推理内容）」",
+      "ok": true,
+      "raw": "notices=[\"模型未返回正文（仅推理内容）\",\"达到输出上限，可增大 max_tokens 或重试\"]"
+    },
+    {
+      "name": "A2 finish_reason=length → 「达到输出上限，可增大 max_tokens 或重试」",
+      "ok": true,
+      "raw": "notices=[\"模型未返回正文（仅推理内容）\",\"达到输出上限，可增大 max_tokens 或重试\"]"
+    },
+    {
+      "name": "A3 无空白气泡（assistant 气泡可见文本非空）",
+      "ok": true,
+      "raw": "lastBubbleLen=52 text=\"模型未返回正文（仅推理内容）达到输出上限，可增大 max_tokens 或重试查看推理内容（34 字符）\""
+    },
+    {
+      "name": "A4 折叠区默认收起：aria-expanded=false 且正文不在 DOM",
+      "ok": true,
+      "raw": "toggles=[{\"text\":\"查看推理内容（34 字符）\",\"expanded\":\"false\"}] bodies=0"
+    },
+    {
+      "name": "A5 折叠按钮文案 =「查看推理内容（34 字符）」",
+      "ok": true,
+      "raw": "{\"text\":\"查看推理内容（34 字符）\",\"expanded\":\"false\"}"
+    },
+    {
+      "name": "A6 点开 → 推理原文可见 + aria-expanded=true",
+      "ok": true,
+      "raw": "bodies=[\"先核对第一块：结论甲；再看第二块：口径乙。据此正文应写「两处一致」。\"] toggles=[{\"text\":\"收起推理内容\",\"expanded\":\"true\"}]"
+    },
+    {
+      "name": "A7 再点 → 折叠可逆（正文重新从 DOM 移除）",
+      "ok": true,
+      "raw": "[{\"text\":\"查看推理内容（34 字符）\",\"expanded\":\"false\"}]"
+    },
+    {
+      "name": "[info] A8 截图尺寸",
+      "ok": null,
+      "raw": "expanded light 1184x735 / dark 1184x735; collapsed light 1184x735 / dark 1184x735"
+    },
+    {
+      "name": "A9 历史落盘：content 为空 + reasoning 保留 + finishReason=length（重启可还原折叠区）",
+      "ok": true,
+      "raw": "role=assistant content=\"\" reasoningLen=34 finishReason=length"
+    },
+    {
+      "name": "B1 空正文无推理 → 「模型未返回正文（可重试，或调大「最大输出 tokens」）」",
+      "ok": true,
+      "raw": "notices=[\"模型未返回正文（仅推理内容）\",\"达到输出上限，可增大 max_tokens 或重试\",\"模型未返回正文（可重试，或调大「最大输出 tokens」）\"]"
+    },
+    {
+      "name": "B2 无推理 → 不出现折叠区",
+      "ok": true,
+      "raw": "toggles=1（应仍只有 A 轮那一个）"
+    },
+    {
+      "name": "B3 无空白气泡（正文为空但气泡有提示文案）",
+      "ok": true,
+      "raw": "lastBubbleLen=32"
+    },
+    {
+      "name": "C1 setChatConfig({requestTimeoutSec:5}) → 生效 5s",
+      "ok": true,
+      "raw": "{\"chatTimeoutSec\":5,\"maxOutputTokens\":null}"
+    },
+    {
+      "name": "C2 ai.state().chatTimeoutSec 同步 = 5",
+      "ok": true,
+      "raw": "chatTimeoutSec=5"
+    },
+    {
+      "name": "C3 约 5s 中止（墙钟 4.7–7.0s）",
+      "ok": true,
+      "raw": "elapsedMs=5282"
+    },
+    {
+      "name": "C4 面板文案含「等待超过 5 秒已中止」（不是只显示错误码）",
+      "ok": true,
+      "raw": "\"请求超时：等待超过 5 秒已中止（127.0.0.1:18111） 可在设置 › AI 助手中调大「请求超时」（当前 5 秒）。\""
+    },
+    {
+      "name": "C5 面板文案含调大指引「可在设置 › AI 助手中调大「请求超时」」",
+      "ok": true,
+      "raw": "\"请求超时：等待超过 5 秒已中止（127.0.0.1:18111） 可在设置 › AI 助手中调大「请求超时」（当前 5 秒）。\""
+    },
+    {
+      "name": "C6 面板文案不含裸错误码 E_AI_TIMEOUT",
+      "ok": true,
+      "raw": "\"请求超时：等待超过 5 秒已中止（127.0.0.1:18111） 可在设置 › AI 助手中调大「请求超时」（当前 5 秒）。\""
+    },
+    {
+      "name": "C7 超时轮不落 assistant 历史（只有 user 追加）",
+      "ok": true,
+      "raw": "assistantMsgs=2（A、B 两轮）"
+    },
+    {
+      "name": "D1 setChatConfig({requestTimeoutSec:300}) → 生效 300s",
+      "ok": true,
+      "raw": "{\"chatTimeoutSec\":300,\"maxOutputTokens\":null}"
+    },
+    {
+      "name": "D2 300s 下 600ms 慢响应正常返回（不提前中止）",
+      "ok": true,
+      "raw": "elapsedMs=825 assistantMsgs=3 error=null"
+    },
+    {
+      "name": "E1 清回未设置（null）→ 生效值回 120s（默认行为）",
+      "ok": true,
+      "raw": "{\"chatTimeoutSec\":120,\"maxOutputTokens\":null}"
+    },
+    {
+      "name": "F1 setChatConfig({maxOutputTokens:800}) → 生效 800",
+      "ok": true,
+      "raw": "{\"chatTimeoutSec\":120,\"maxOutputTokens\":800}"
+    },
+    {
+      "name": "F2 面板请求体带 max_tokens=800（设置生效）",
+      "ok": true,
+      "raw": "body.max_tokens=800 elapsedMs=419"
+    },
+    {
+      "name": "F3 清回 null → 请求体不带 max_tokens（保持既有默认行为）",
+      "ok": true,
+      "raw": "hasMaxTokens=false elapsedMs=418"
+    },
+    {
+      "name": "[info] F4 桩收到的全部请求体 max_tokens 轨迹",
+      "ok": null,
+      "raw": "[null]"
+    },
+    {
+      "name": "G1 切到真本机端点（isLocal=true）",
+      "ok": true,
+      "raw": "{\"id\":\"t46-stub\",\"kind\":\"lmstudio\",\"name\":\"真本机端点\",\"baseUrl\":\"http://127.0.0.1:1234/v1\",\"isLocal\":true,\"hasKey\":false,\"model\":\"master\"}"
+    },
+    {
+      "name": "G2 真机轮正常回复（无错误、气泡非空）",
+      "ok": true,
+      "raw": "elapsedMs=3279 error=null text=\"1+1 等于 2。查看推理内容（51 字符）\""
+    },
+    {
+      "name": "[info] G3 真机轮耗时（面板口径，含本地推理）",
+      "ok": null,
+      "raw": "3.28s"
+    },
+    {
+      "name": "H1 全程 pageerror 计数 0",
+      "ok": true,
+      "raw": "[]"
+    },
+    {
+      "name": "H2 全程 renderer console error 计数 0",
+      "ok": true,
+      "raw": "[]"
+    },
+    {
+      "name": "H3 localStorage 无密钥痕迹（sk-/Bearer）",
+      "ok": true,
+      "raw": "hasSecret=false"
+    },
+    {
+      "name": "[info] H4 优雅退出（window.close → 自退）",
+      "ok": null,
+      "raw": "gracefulExited=true"
+    },
+    {
+      "name": "H5 真实数据根 .septcats 未被触碰（mtime 前后一致）",
+      "ok": true,
+      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+    },
+    {
+      "name": "[info] H6 main 侧 ai.log 原始行（app 自计耗时）",
+      "ok": null,
+      "raw": "[\"[2026-09-20T17:45:42.213Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(34ms)\",\"[2026-09-20T17:45:46.722Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)\",\"[2026-09-20T17:45:47.135Z] [INFO] (ai) ai setChatConfig timeout=5s maxTokens=unset\",\"[2026-09-20T17:45:52.167Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=5s → E_AI_TIMEOUT(5013ms)\",\"[2026-09-20T17:45:54.351Z] [INFO] (ai) ai setChatConfig timeout=300s maxTokens=unset\",\"[2026-09-20T17:45:54.975Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=300s → ok(604ms)\",\"[2026-09-20T17:45:55.193Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=unset\",\"[2026-09-20T17:45:55.194Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=800\",\"[2026-09-20T17:45:55.216Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)\",\"[2026-09-20T17:45:55.630Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=unset\",\"[2026-09-20T17:45:55.654Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)\",\"[2026-09-20T17:45:59.248Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:1234 model=master timeout=120s → ok(3161ms)\"]"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "t46-empty-reasoning-expanded-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 47237
+    },
+    {
+      "file": "t46-empty-reasoning-expanded-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 47488
+    },
+    {
+      "file": "t46-empty-reasoning-collapsed-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 46704
+    },
+    {
+      "file": "t46-empty-reasoning-collapsed-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 46995
+    },
+    {
+      "file": "t46-timeout-5s-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 60770
+    },
+    {
+      "file": "t46-timeout-5s-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 61272
+    },
+    {
+      "file": "t46-real-light.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 59639
+    },
+    {
+      "file": "t46-real-dark.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 59426
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "aiLogLines": [
+    "[2026-09-20T17:45:42.213Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(34ms)",
+    "[2026-09-20T17:45:46.722Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)",
+    "[2026-09-20T17:45:47.135Z] [INFO] (ai) ai setChatConfig timeout=5s maxTokens=unset",
+    "[2026-09-20T17:45:52.167Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=5s → E_AI_TIMEOUT(5013ms)",
+    "[2026-09-20T17:45:54.351Z] [INFO] (ai) ai setChatConfig timeout=300s maxTokens=unset",
+    "[2026-09-20T17:45:54.975Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=300s → ok(604ms)",
+    "[2026-09-20T17:45:55.193Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=unset",
+    "[2026-09-20T17:45:55.194Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=800",
+    "[2026-09-20T17:45:55.216Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)",
+    "[2026-09-20T17:45:55.630Z] [INFO] (ai) ai setChatConfig timeout=120s maxTokens=unset",
+    "[2026-09-20T17:45:55.654Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:18111 model=t46-stub timeout=120s → ok(2ms)",
+    "[2026-09-20T17:45:59.248Z] [INFO] (ai) ai chat provider=t46-stub host=127.0.0.1:1234 model=master timeout=120s → ok(3161ms)"
+  ],
+  "realRootMtime": {
+    "before": "1789808566516.3271",
+    "after": "1789808566516.3271"
+  }
+}

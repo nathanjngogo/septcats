@@ -546,7 +546,7 @@ describe('回复健壮性（TASK-T46-01 §1.2/§1.3/§1.4）', () => {
   });
 
   it('max_tokens：设置里配了才带（未设置 = 请求不带该字段）', async () => {
-    const chat = vi.fn(async () => ({ text: '回复', model: 'qwen2.5-7b' }));
+    const chat = vi.fn(async (_input: Record<string, unknown>) => ({ text: '回复', model: 'qwen2.5-7b' }));
     installBridge({ state: vi.fn(async () => ({ ...AI_STATE_OK, maxOutputTokens: 800 })), chat });
     render(<AiChatPanel />);
     typeAndSend('问');
@@ -555,7 +555,7 @@ describe('回复健壮性（TASK-T46-01 §1.2/§1.3/§1.4）', () => {
 
     cleanup();
     aiChatStore.setState(() => ({ open: true, workspaceId: 'ws-1', messages: [] }));
-    const chat2 = vi.fn(async () => ({ text: '回复', model: 'qwen2.5-7b' }));
+    const chat2 = vi.fn(async (_input: Record<string, unknown>) => ({ text: '回复', model: 'qwen2.5-7b' }));
     installBridge({ chat: chat2 });
     render(<AiChatPanel />);
     typeAndSend('问');
