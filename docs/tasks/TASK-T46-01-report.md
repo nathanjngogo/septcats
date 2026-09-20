@@ -185,3 +185,20 @@ SEPTCATS_T46_REAL=1 node docs/mockups/probe-t46-robustness.mjs                  
 ## §PM 真机复跑（PM 补）
 
 （PM 补）
+
+
+## §PM 复跑（独立，rc.25 构建后）—— **30 PASS / 0 FAIL**
+
+**探针**：`docs/mockups/probe-t46-robustness.mjs`（CB 自建，PM 独立复跑）；日志 `_scratch/t46-probe.log`
+
+| 判据 | PM 复跑原始数值 |
+|---|---|
+| 空正文无空白气泡 | `lastBubbleLen=52`，气泡原文「模型未返回正文（仅推理内容）达到输出上限，可增大 max_tokens 或重试查看推理内容（34 字符）」 |
+| 折叠默认收起 | `aria-expanded=false`、正文 `bodies=0`（不在 DOM） |
+| 展开可见推理原文 | `bodies=["先核对第一块：结论甲；再看第二块：口径乙。据此正文应写「两处一致」。"]`、`aria-expanded=true`、可逆 |
+| 超时文案可读 | 「请求超时：等待超过 5 秒已中止（127.0.0.1:18111） 可在设置 › AI 助手中调大「请求超时」（当前 5 秒）。」→ **含指引、不含裸错误码**（C4/C5/C6 三条同时 PASS） |
+| main 侧自计耗时（ai.log 原文） | `setChatConfig timeout=5s` → `E_AI_TIMEOUT(5011ms)`；`timeout=300s` → `ok(609ms)`；`timeout=120s maxTokens=800` → `ok(2ms)`；默认 120s → `ok(30ms)` |
+| DoD | 全仓 **1272 无红**（desktop 635）、typecheck 9/9、双门禁 ✓、`packages/` 改动 0 |
+
+**结论：T46-01 代码 + 测试 + 真机（含 PM 独立复跑）闭环 → rc.25。**
+
