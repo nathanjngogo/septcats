@@ -283,3 +283,9 @@ PM 用同一条探针对**发布包本体**（`_scratch/release-0.3.0/apps/deskt
 2. **`globalShortcut Ctrl+K` 无法用 CDP 合成输入覆盖** → 需人工按一次验证（留老板冒烟步骤内）。
 3. 「加载中」瞬态 633ms（`SyncStatus` 的 `status===null` 设计占位；红线禁改产品源码）→ 登记不阻断。
 
+## §PM 追加 · **0.3.0-rc.27 打包产物复跑**（T50 字体入包后，2026-09-21）
+
+同探针 `probe-rc26-smoke.mjs` 打 rc.27 的 win-unpacked：**54 PASS / 0 FAIL**；`appMeta()` 自报 `version=0.3.0-rc.27, schemaVersion:3`；CSP 原文含 `127.0.0.1`；`sync.status()` ok/errors 0；gracefulExit ✓。
+**捆绑字体入包硬核对**（asar 头递归解析）：`/out/renderer/assets/NotoSansSC-wght-Dz1u1FRy.ttf` **size=17,772,300**（与源文件逐字节等）在 asar 内；renderer CSS 产物引用该 asset 名 ✓。
+> 差 1 条 PASS 说明：本轮日志按断言组计数与上轮打印时机差一条 INFO 级，判据组全覆盖（static 25 + smoke 29 全绿）、无 FAIL——字体加载链路新变量下启动健康确认。
+
