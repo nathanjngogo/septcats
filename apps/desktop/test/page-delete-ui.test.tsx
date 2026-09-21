@@ -318,6 +318,8 @@ function installConvertBridge(): void {
       list: vi.fn(async () => ({ templates: [] })),
       saveFromPage: impl.templatesSave,
     },
+    // T51-01：App 挂载订阅原生菜单动作（假桥给退订函数即可）
+    menu: { onAction: () => () => {} },
   } as unknown as SeptcatsApi);
 }
 

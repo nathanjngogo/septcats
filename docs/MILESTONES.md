@@ -3,6 +3,7 @@
 > PM 维护。每条 = 已真实验证（命令输出/真机取证），非口头。
 
 | 里程碑 | 日期 | 状态 | 证据 |
+| └ T51-01 重命名 blur 提交+菜单本地化 | 09-21 | ✅ PM 复跑 **16 PASS / 0 FAIL** | 三键语义齐（Enter/Esc/blur）空值回退；真实 ApplicationMenu zh 全中/en 全英 23 label 同构；File→New Page 真可用；Ctrl+W 关标签不关窗（无 role:close）；D-3 registerAccelerator:false 追认；desktop 651 全仓无红 |
 | └ T50-01 全局字体→思源黑体 | 09-21 | ✅ PM 复跑 **18 PASS / 0 FAIL** | 捆绑 Noto Sans SC 可变体 16.9MB（sha a3041811）；DESIGN.md 9 处非 mono 全换（mono 未动）；@font-face 自托管 swap；`fonts.check()` 假绿坑发现并改三层证据（源对照 344.094 等值 + 浮层像素互异）；视觉模型判读截图无瑕疵；产物 T50-01 |
 | └ T49-01 键盘行为收口（Enter 进编辑）| 09-21 | ✅ PM 复跑 **8 PASS / 0 FAIL** | dbview 98→122；真机：数字格 Enter `dataEditing false→true` 且 DB 不动、G3 全链提交 DB 读回 7、勾选格 4 格与 T47 逐位一致；深色截图补齐；CB 越界格式化交接文档已回滚 |
 | └ T48-01 打包产物启动冒烟 + 包内代码验证 | 09-21 | ✅ **rc.26 与正式 0.3.0 包均 55 PASS / 0 FAIL** | 打包产物启动：无「数据库服务启动失败/同步运行时不可用」、`sync.status()` state=ok/errors=0、UI 就绪、pageerror 0、优雅退出；**包内代码验证**（自写 asar 解析）：CSP 含 `127.0.0.1`、`chatConfig`/`setChatConfig`/「等待超过」、双链/反向链接/全宽文案全部命中；登记 3 条（updater 预发布通道 rc.yml 404、Ctrl+K 需人工按、加载中 633ms 瞬态） |

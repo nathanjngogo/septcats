@@ -14,6 +14,7 @@ import {
   DIAG_CHANNELS,
   FAVORITES_CHANNELS,
   IMPORT_CHANNELS,
+  MENU_CHANNELS,
   PAGES_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
@@ -211,6 +212,10 @@ const api: SeptcatsApi = {
       >,
     rebuild: () =>
       ipcRenderer.invoke(LINKS_CHANNELS.rebuild) as ReturnType<SeptcatsApi['links']['rebuild']>,
+  },
+  // T51-01：原生菜单动作推送订阅（main → renderer 单向）
+  menu: {
+    onAction: (listener) => subscribe(MENU_CHANNELS.action, listener),
   },
 };
 

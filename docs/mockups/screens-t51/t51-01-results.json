@@ -1,0 +1,588 @@
+{
+  "task": "TASK-T51-01 真机取证（重命名 blur 提交 + 原生菜单本地化）",
+  "ranAt": "2026-09-21T15:37:59.160Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) + main-process Node inspector (--inspect) 读 Menu.getApplicationMenu / BrowserWindow 置顶 / Menu.popup / desktopCapturer",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t51-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t51-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t51-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t51-01-menu-zh.png",
+    "t51-01-menu-en.png"
+  ],
+  "pass": 16,
+  "fail": 0,
+  "quiet": [
+    {
+      "boot": 1,
+      "gracefulExited": true,
+      "forced": false
+    }
+  ],
+  "phases": {
+    "menuZh": [
+      {
+        "type": "submenu",
+        "label": "文件",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "新建页面",
+            "role": null,
+            "accelerator": "CmdOrCtrl+N",
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "导入…",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "回收站",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "关闭标签",
+            "role": null,
+            "accelerator": "CmdOrCtrl+W",
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "退出",
+            "role": "quit",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "编辑",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "撤销",
+            "role": "undo",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "重做",
+            "role": "redo",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "剪切",
+            "role": "cut",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "复制",
+            "role": "copy",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "粘贴",
+            "role": "paste",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "全选",
+            "role": "selectall",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "视图",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "折叠侧栏",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "全宽 / 固定宽度",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "命令面板",
+            "role": null,
+            "accelerator": "CmdOrCtrl+K",
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "放大",
+            "role": "zoomin",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "缩小",
+            "role": "zoomout",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "实际大小",
+            "role": "resetzoom",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "帮助",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "关于 Septcats",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      }
+    ],
+    "menuEn": [
+      {
+        "type": "submenu",
+        "label": "File",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "New Page",
+            "role": null,
+            "accelerator": "CmdOrCtrl+N",
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Import…",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Trash",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Close Tab",
+            "role": null,
+            "accelerator": "CmdOrCtrl+W",
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Quit",
+            "role": "quit",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "Edit",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "Undo",
+            "role": "undo",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Redo",
+            "role": "redo",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Cut",
+            "role": "cut",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Copy",
+            "role": "copy",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Paste",
+            "role": "paste",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Select All",
+            "role": "selectall",
+            "accelerator": null,
+            "registerAccelerator": false,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "View",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "Toggle Sidebar",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Full Width",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Command Palette",
+            "role": null,
+            "accelerator": "CmdOrCtrl+K",
+            "registerAccelerator": false,
+            "submenu": null
+          },
+          {
+            "type": "separator",
+            "label": "",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Zoom In",
+            "role": "zoomin",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Zoom Out",
+            "role": "zoomout",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          },
+          {
+            "type": "normal",
+            "label": "Actual Size",
+            "role": "resetzoom",
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      },
+      {
+        "type": "submenu",
+        "label": "Help",
+        "role": null,
+        "accelerator": null,
+        "registerAccelerator": true,
+        "submenu": [
+          {
+            "type": "normal",
+            "label": "About Septcats",
+            "role": null,
+            "accelerator": null,
+            "registerAccelerator": true,
+            "submenu": null
+          }
+        ]
+      }
+    ]
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t51-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t51-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真点「新建页面」×3 → 3 标签 / 3 存活页",
+      "ok": true,
+      "raw": "tabs=3 pages=3"
+    },
+    {
+      "step": "G1|rename",
+      "name": "G1-1 重命名 blur 提交（真机）：改标题后点别处失焦 → 标题落库、编辑框关闭（修前被 cancel 吞掉）",
+      "ok": true,
+      "raw": "inputOpened=true inputStillOpen=false titles=[\"失焦改名成立\",\"未命名\",\"未命名\"]"
+    },
+    {
+      "step": "G1|rename",
+      "name": "G1-2 Esc 取消（真机）：标题不变、编辑框关闭",
+      "ok": true,
+      "raw": "inputStillOpen=false titles=[\"失焦改名成立\",\"未命名\",\"未命名\"]"
+    },
+    {
+      "step": "G1|rename",
+      "name": "G1-3 空值 blur 回退（真机）：仅空白 → 不改名、编辑框关闭",
+      "ok": true,
+      "raw": "inputStillOpen=false titles=[\"失焦改名成立\",\"未命名\",\"未命名\"]"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "[info] 置顶（原始）",
+      "ok": null,
+      "raw": "{\"visible\":true,\"focused\":true,\"minimized\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800},\"onTop\":true}"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "[info] zh 真实 ApplicationMenu（原始）",
+      "ok": null,
+      "raw": "[{\"type\":\"submenu\",\"label\":\"文件\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"新建页面\",\"role\":null,\"accelerator\":\"CmdOrCtrl+N\",\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"导入…\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"回收站\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"关闭标签\",\"role\":null,\"accelerator\":\"CmdOrCtrl+W\",\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"退出\",\"role\":\"quit\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"编辑\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"撤销\",\"role\":\"undo\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"重做\",\"role\":\"redo\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"剪切\",\"role\":\"cut\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"复制\",\"role\":\"copy\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"粘贴\",\"role\":\"paste\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"全选\",\"role\":\"selectall\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"视图\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"折叠侧栏\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"全宽 / 固定宽度\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"命令面板\",\"role\":null,\"accelerator\":\"CmdOrCtrl+K\",\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"放大\",\"role\":\"zoomin\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"缩小\",\"role\":\"zoomout\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"实际大小\",\"role\":\"resetzoom\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"帮助\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"关于 Septcats\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]}]"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "G2-1 中文菜单：真实安装的 ApplicationMenu 全部 label 为中文（四组：文件/编辑/视图/帮助）",
+      "ok": true,
+      "raw": "top=[\"文件\",\"编辑\",\"视图\",\"帮助\"] labels=[\"文件\",\"新建页面\",\"导入…\",\"回收站\",\"关闭标签\",\"退出\",\"编辑\",\"撤销\",\"重做\",\"剪切\",\"复制\",\"粘贴\",\"全选\",\"视图\",\"折叠侧栏\",\"全宽 / 固定宽度\",\"命令面板\",\"放大\",\"缩小\",\"实际大小\",\"帮助\",\"关于 Septcats\"]"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "G2-2 Close Tab 委托页签逻辑：同键 CmdOrCtrl+W、registerAccelerator=false、**无 role:'close'**（不会关窗）",
+      "ok": true,
+      "raw": "closeTab={\"type\":\"normal\",\"label\":\"关闭标签\",\"role\":null,\"accelerator\":\"CmdOrCtrl+W\",\"registerAccelerator\":false,\"submenu\":null} anyRoleClose=false"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "G2-3 Edit 六项用标准 role 且不抢注册（页内编辑器 Ctrl+Z/C/V/A 不被截断）",
+      "ok": true,
+      "raw": "editRoles=[\"undo\",\"redo\",\"cut\",\"copy\",\"paste\",\"selectall\"]"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "G2-4 命令面板菜单项不注册 Ctrl+K（与 main globalShortcut 不双绑）；缩放 role 正常注册",
+      "ok": true,
+      "raw": "palette={\"type\":\"normal\",\"label\":\"命令面板\",\"role\":null,\"accelerator\":\"CmdOrCtrl+K\",\"registerAccelerator\":false,\"submenu\":null}"
+    },
+    {
+      "step": "G2|menu-zh",
+      "name": "G2-5 中文原生菜单截图已产出（置顶窗口 + 真实弹出 File 子菜单，含标题栏/菜单栏/子菜单项）",
+      "ok": true,
+      "raw": "rect={\"x\":668,\"y\":219,\"width\":1224,\"height\":889} bytes=42012 err=null"
+    },
+    {
+      "step": "G3|menu-newpage",
+      "name": "G3-1 File→New Page 可用：菜单项触发后存活页 +1（真菜单项，非侧栏按钮）",
+      "ok": true,
+      "raw": "route=main-side menuItem.click()（与真实点击同一处理器） pages 3→4 tabs 3→4 osKeys={\"status\":0,\"out\":\"\",\"err\":\"\"} fallback=undefined"
+    },
+    {
+      "step": "G4|ctrl-w",
+      "name": "G4-1 Ctrl+W 关的是标签不是窗口：标签 -1、页面数不变、窗口仍活",
+      "ok": true,
+      "raw": "tabs 4→3 pages 4→4 alive={\"closed\":false,\"appSide\":true}"
+    },
+    {
+      "step": "G4|ctrl-w",
+      "name": "G4-2 连按 Ctrl+W：再关一个标签且窗口仍活（绝不 role:close 关窗）",
+      "ok": true,
+      "raw": "tabs 3→2 windowAlive=true"
+    },
+    {
+      "step": "G5|locale-en",
+      "name": "G5-1 设置页真点 English：locale 标记 en-US + 界面即时英文（settings.patch 已到 main → 菜单应已重建）",
+      "ok": true,
+      "raw": "settingsOpen=true radioExists=true langAfter={\"stored\":\"en-US\",\"legend\":\"Appearance\"}"
+    },
+    {
+      "step": "G5|menu-en",
+      "name": "[info] en 真实 ApplicationMenu（原始）",
+      "ok": null,
+      "raw": "[{\"type\":\"submenu\",\"label\":\"File\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"New Page\",\"role\":null,\"accelerator\":\"CmdOrCtrl+N\",\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Import…\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Trash\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Close Tab\",\"role\":null,\"accelerator\":\"CmdOrCtrl+W\",\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Quit\",\"role\":\"quit\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"Edit\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"Undo\",\"role\":\"undo\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Redo\",\"role\":\"redo\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Cut\",\"role\":\"cut\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Copy\",\"role\":\"copy\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Paste\",\"role\":\"paste\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Select All\",\"role\":\"selectall\",\"accelerator\":null,\"registerAccelerator\":false,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"View\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"Toggle Sidebar\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Full Width\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Command Palette\",\"role\":null,\"accelerator\":\"CmdOrCtrl+K\",\"registerAccelerator\":false,\"submenu\":null},{\"type\":\"separator\",\"label\":\"\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Zoom In\",\"role\":\"zoomin\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Zoom Out\",\"role\":\"zoomout\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null},{\"type\":\"normal\",\"label\":\"Actual Size\",\"role\":\"resetzoom\",\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]},{\"type\":\"submenu\",\"label\":\"Help\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":[{\"type\":\"normal\",\"label\":\"About Septcats\",\"role\":null,\"accelerator\":null,\"registerAccelerator\":true,\"submenu\":null}]}]"
+    },
+    {
+      "step": "G5|menu-en",
+      "name": "G5-2 英文菜单（语言切换即时重建）：真实 ApplicationMenu 全部 label 为英文、无 CJK、结构同构",
+      "ok": true,
+      "raw": "top=[\"File\",\"Edit\",\"View\",\"Help\"] labels=[\"File\",\"New Page\",\"Import…\",\"Trash\",\"Close Tab\",\"Quit\",\"Edit\",\"Undo\",\"Redo\",\"Cut\",\"Copy\",\"Paste\",\"Select All\",\"View\",\"Toggle Sidebar\",\"Full Width\",\"Command Palette\",\"Zoom In\",\"Zoom Out\",\"Actual Size\",\"Help\",\"About Septcats\"] raised={\"visible\":true,\"focused\":true,\"minimized\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800},\"onTop\":true}"
+    },
+    {
+      "step": "G5|menu-en",
+      "name": "G5-3 英文原生菜单截图已产出（同一 File 子菜单展开）",
+      "ok": true,
+      "raw": "rect={\"x\":668,\"y\":219,\"width\":1224,\"height\":889} bytes=29338 err=null"
+    },
+    {
+      "step": "teardown",
+      "name": "G6-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    }
+  ]
+}

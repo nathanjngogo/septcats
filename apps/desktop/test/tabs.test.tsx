@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import { PageView } from '../src/renderer/src/pages/PageView';
 import { TabsBar } from '../src/renderer/src/tabs/TabsBar';
-import { handleTabsKeydown } from '../src/renderer/src/tabs/shortcuts';
+import { closeActiveTab, handleTabsKeydown } from '../src/renderer/src/tabs/shortcuts';
 import { pagesActions, pagesStore, type PagesState } from '../src/renderer/src/state/pages';
 import {
   closeTabFallback,
@@ -223,6 +223,17 @@ describe('store 动作（TASK-T37-01 §1.1/§1.3/§1.5/§1.6）', () => {
     pagesActions.closeTab('pg-b');
     expect(bridge.remove).not.toHaveBeenCalled();
     expect(nodesDb.filter((node) => node.alive === 1).map((node) => node.id)).toEqual(['pg-a', 'pg-b', 'pg-c']);
+  });
+
+  it('closeActiveTab：原生菜单 Close Tab 与 Ctrl+W 共用入口（只关标签、不删页、不关窗）', () => {
+    seedStore({ tabs: ['pg-a', 'pg-b'], selectedId: 'pg-a' });
+    expect(closeActiveTab()).toBe(true);
+    expect(pagesStore.getState().tabs).toEqual(['pg-b']);
+    expect(pagesStore.getState().selectedId).toBe('pg-b'); // 相邻回落
+    expect(bridge.remove).not.toHaveBeenCalled(); // 绝不删页
+    // 空集合/无选中 → false（不发空 op）
+    seedStore({ tabs: [], selectedId: null });
+    expect(closeActiveTab()).toBe(false);
   });
 
   it('页签快照随动作持久化：打开/排序/关闭都写 localStorage（按 workspace 隔离键）', () => {

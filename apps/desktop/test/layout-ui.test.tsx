@@ -292,6 +292,8 @@ function installAppBridge(): void {
     templates: { list: vi.fn(async () => ({ templates: [] })) },
     appMeta: vi.fn(async () => ({ name: 'Septcats', version: '0.0.0', schemaVersion: 1, layoutRoot: '.septcats' })),
     update: { onState: vi.fn(() => () => {}) },
+    // T51-01：App 挂载订阅原生菜单动作（假桥给退订函数即可）
+    menu: { onAction: vi.fn(() => () => {}) },
   } as unknown as SeptcatsApi);
 }
 

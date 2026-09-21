@@ -19,7 +19,7 @@ import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
 import { TabsBar } from './tabs/TabsBar';
-import { handleTabsKeydown } from './tabs/shortcuts';
+import { closeActiveTab, handleTabsKeydown } from './tabs/shortcuts';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { t, useLocale } from './i18n';
 import { SyncStatusButton } from './sync/SyncStatus';
@@ -144,6 +144,14 @@ export function App() {
   const openImport = useCallback(() => setView('import'), []);
   useCommandWiring(openSettings, openImport);
 
+  // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
+  // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
+  const toggleSidebar = useCallback((): void => {
+    const next = !collapsed;
+    setCollapsed(next);
+    layoutActions.setSidebarPosition(next ? 'collapsed' : 'left');
+  }, [collapsed]);
+
   // T20-02 §0.B：挂载时初始化 pages store（workspaceId 就位后命令面板/搜索页才真正
   // 发起检索——palette.runSearch 在 workspaceId=null 时静默早退）。
   // load() 幂等：重复调用只是多一次 IPC 快照对账、以同一 activeId 覆盖同一状态切片，
@@ -225,21 +233,56 @@ export function App() {
   const paletteOpenFlag = usePalette((state) => state.open);
   const pagesViewFlag = usePages((state) => state.view);
   useEffect(() => {
+    const editorVisible =
+      !inSettingsFlag &&
+      !inImportFlag &&
+      !searchOpenFlag &&
+      !paletteOpenFlag &&
+      pagesViewFlag === 'pages';
     const onKeyDown = (event: KeyboardEvent): void => {
-      handleTabsKeydown(event, {
-        editorVisible:
-          !inSettingsFlag &&
-          !inImportFlag &&
-          !searchOpenFlag &&
-          !paletteOpenFlag &&
-          pagesViewFlag === 'pages',
-      });
+      handleTabsKeydown(event, { editorVisible });
     };
     window.addEventListener('keydown', onKeyDown);
+    // T51-01：原生菜单动作派发（同一编辑器可见门控——Close Tab 与 Ctrl+W 同条件、
+    // 同 closeActiveTab 逻辑；空 op 不产生）。菜单不做 role:'close'，绝不关窗口。
+    const unsubscribeMenu = window.septcats.menu.onAction(({ action }) => {
+      switch (action) {
+        case 'newPage':
+          void pagesActions.createPage(null);
+          break;
+        case 'import':
+          setView('import');
+          break;
+        case 'openTrash':
+          pagesActions.showTrash();
+          break;
+        case 'toggleSidebar':
+          toggleSidebar();
+          break;
+        case 'toggleFullWidth': {
+          const id = pagesStore.getState().selectedId;
+          if (id !== null) {
+            pageWidthActions.toggle(id);
+          }
+          break;
+        }
+        case 'commandPalette':
+          paletteActions.open();
+          break;
+        case 'closeTab':
+          if (editorVisible) {
+            closeActiveTab();
+          }
+          break;
+        default:
+          break;
+      }
+    });
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      unsubscribeMenu();
     };
-  }, [inSettingsFlag, inImportFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag]);
+  }, [inSettingsFlag, inImportFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag, toggleSidebar]);
 
   const inSettings = view === 'settings';
   const inImport = view === 'import';
@@ -262,12 +305,7 @@ export function App() {
     <>
       <AppShell
         sidebarCollapsed={collapsed}
-        onToggleSidebar={() => {
-          // T39-01：开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致
-          const next = !collapsed;
-          setCollapsed(next);
-          layoutActions.setSidebarPosition(next ? 'collapsed' : 'left');
-        }}
+        onToggleSidebar={toggleSidebar}
         breadcrumb={breadcrumb}
         actions={
           <>

@@ -3,6 +3,7 @@
  * 渲染器只能通过 window.septcats 访问主进程能力（contextIsolation:true）。
  */
 import type { Op } from '@septcats/core';
+import type { MenuActionId } from '../shared/ipc';
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 import type { PageNodeView } from '../main/pages';
@@ -373,6 +374,15 @@ export interface SeptcatsLinksApi {
   rebuild(): Promise<{ links: number }>;
 }
 
+/**
+ * 原生应用菜单（T51-01）。通道与 `src/shared/ipc.ts` 的 `MENU_CHANNELS` 一对一；
+ * main 侧菜单项被点击 → 推送 `{ action }`，renderer 派发到既有 actions。
+ */
+export interface SeptcatsMenuApi {
+  /** 订阅菜单动作推送，返回退订函数。 */
+  onAction(listener: (payload: { action: MenuActionId }) => void): () => void;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -406,6 +416,8 @@ export interface SeptcatsApi {
   templates: SeptcatsTemplatesApi;
   /** 双链（R8 · T44-01）。 */
   links: SeptcatsLinksApi;
+  /** 原生应用菜单（T51-01）。 */
+  menu: SeptcatsMenuApi;
 }
 
 declare global {

@@ -24,6 +24,32 @@ export const enUS = {
     // from the locale at creation time; kept in sync with zh-CN via the i18n gate)
     defaultName: 'Personal Workspace',
   },
+  // T51-01: native application menu copy (main/menu.ts reads the same dictionary
+  // as the renderer; key set mirrors zh-CN.ts, enforced by the i18n gate).
+  menu: {
+    file: 'File',
+    edit: 'Edit',
+    view: 'View',
+    help: 'Help',
+    fileNewPage: 'New Page',
+    fileImport: 'Import…',
+    fileTrash: 'Trash',
+    fileCloseTab: 'Close Tab',
+    fileQuit: 'Quit',
+    editUndo: 'Undo',
+    editRedo: 'Redo',
+    editCut: 'Cut',
+    editCopy: 'Copy',
+    editPaste: 'Paste',
+    editSelectAll: 'Select All',
+    viewToggleSidebar: 'Toggle Sidebar',
+    viewToggleFullWidth: 'Full Width',
+    viewCommandPalette: 'Command Palette',
+    viewZoomIn: 'Zoom In',
+    viewZoomOut: 'Zoom Out',
+    viewZoomReset: 'Actual Size',
+    helpAbout: 'About Septcats',
+  },
   errors: {
     E_CYCLE: 'A page cannot be moved under its own subpage',
     E_PARENT_GONE: 'The target parent page does not exist, or is still in the Trash',

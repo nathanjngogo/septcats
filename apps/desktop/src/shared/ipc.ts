@@ -355,3 +355,28 @@ export const LINKS_CHANNELS = {
 } as const;
 
 export type LinksChannel = (typeof LINKS_CHANNELS)[keyof typeof LINKS_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 原生应用菜单（T51-01）。main 侧菜单项被点击 → 推送给 renderer，由 renderer
+// 派发到既有 actions（Close Tab 复用页签逻辑，绝不用 role:'close' 关窗口）。
+// ---------------------------------------------------------------------------
+
+/** main → renderer：原生菜单项被点击，载荷 `{ action: MenuActionId }`。 */
+export const CHANNEL_MENU_ACTION = 'menu:action';
+
+/** 菜单可派发动作的单一来源（main 菜单项 ↔ renderer handler 的契约）。 */
+export const MENU_ACTIONS = [
+  'newPage',
+  'import',
+  'openTrash',
+  'toggleSidebar',
+  'toggleFullWidth',
+  'commandPalette',
+  'closeTab',
+  /** 「关于」由 main 侧就地弹窗处理，不经 renderer。 */
+  'about',
+] as const;
+
+export type MenuActionId = (typeof MENU_ACTIONS)[number];
+
+export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION } as const;

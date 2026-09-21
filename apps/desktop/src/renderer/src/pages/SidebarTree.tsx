@@ -6,11 +6,12 @@
  * 经 nodes 解析（找不到/已删除的 id 跳过，为空显示空态行）；「新建页面」=
  * createPage(null)（store 内部已选中新页并进入重命名）；「回收站」=
  * showTrash()，再次点击 showPages() 回页面视图。
- * 行内重命名：双击行标题 → beginRename → 既有 editingId 输入框（Enter 提交 / Esc 取消）。
+ * 行内重命名：双击行标题 → beginRename → 既有 editingId 输入框
+ * （Enter 提交 / Esc 取消 / **失焦提交**，T51-01：点别处不再吞掉改名）。
  * 视觉零新增：复用 App.css 的 app-side* 与 app-nav-* 类及 var(--sc-*) token，
  * 图标只从 @septcats/ui 出口取。
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type {
   ComponentProps,
   CSSProperties,
@@ -48,22 +49,38 @@ interface GroupOpen {
   wiki: boolean;
 }
 
-/** 行内重命名输入框（最小实现：行内 input + 既有 token 样式）。 */
+/**
+ * 行内重命名输入框（最小实现：行内 input + 既有 token 样式）。
+ *
+ * T51-01：三键语义 = Enter 提交 / Esc 取消 / **失焦提交**（点别处不再吞改名）。
+ * 空值、仅空白、或与原标题同值 → 不落库、回退原标题（只退出编辑，不动节点）；
+ * `settledRef` 保证提交/取消只发生一次——Enter 提交触发卸载后浏览器仍可能派发
+ * blur，若再提交会多发一次 rename op。三条路径共用既有 `pagesActions.renamePage`
+ * / `cancelRename` 单一入口，不新造协议。
+ */
 function RenameInput({ id, title }: { id: string; title: string }) {
+  const settledRef = useRef(false);
+  const settle = (value: string, action: 'commit' | 'cancel'): void => {
+    if (settledRef.current) {
+      return;
+    }
+    settledRef.current = true;
+    const trimmed = value.trim();
+    if (action === 'commit' && trimmed.length > 0 && trimmed !== title) {
+      void pagesActions.renamePage(id, trimmed);
+      return;
+    }
+    pagesActions.cancelRename();
+  };
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      const value = event.currentTarget.value.trim();
-      if (value.length > 0) {
-        void pagesActions.renamePage(id, value);
-      } else {
-        pagesActions.cancelRename();
-      }
+      settle(event.currentTarget.value, 'commit');
       return;
     }
     if (event.key === 'Escape') {
       event.preventDefault();
-      pagesActions.cancelRename();
+      settle(event.currentTarget.value, 'cancel');
     }
   };
   return (
@@ -75,7 +92,7 @@ function RenameInput({ id, title }: { id: string; title: string }) {
       onFocus={(event) => event.currentTarget.select()}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={handleKeyDown}
-      onBlur={() => pagesActions.cancelRename()}
+      onBlur={(event) => settle(event.currentTarget.value, 'commit')}
       aria-label={t('sidebar.renameAria')}
     />
   );

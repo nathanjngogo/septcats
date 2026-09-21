@@ -16,6 +16,7 @@ import {
   CHANNEL_IMPORT_PICK,
   CHANNEL_IMPORT_PLAN,
   CHANNEL_IMPORT_PROGRESS,
+  CHANNEL_MENU_ACTION,
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
@@ -40,6 +41,9 @@ import {
 } from '../shared/ipc';
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
+import type { MenuActionId } from '../shared/ipc';
+import { applyApplicationMenu } from './menu';
+import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
 import {
   parseFeedUrlFromYml,
   registerUpdaterIpc,
@@ -460,6 +464,47 @@ function registerPaletteShortcut(): void {
   globalShortcut.register(PALETTE_SHORTCUT, broadcastPaletteToggle);
 }
 
+// --- 原生应用菜单（TASK-T51-01 §1②） ----------------------------------------
+
+/** 当前菜单语言（settings.locale 的解析结果；启动与每次 settings:patch 后更新）。 */
+let menuLocale: MenuLocale = 'zh-CN';
+
+/** 「关于」弹窗（跨平台；role:'about' 仅在 macOS 有效，故走 dialog）。 */
+function showAboutDialog(locale: MenuLocale): void {
+  const options = {
+    type: 'info' as const,
+    title: menuText(locale, 'helpAbout'),
+    message: app.getName(),
+    detail: `v${app.getVersion()} · schema v${String(SCHEMA_VERSION)}`,
+    buttons: ['OK'],
+  };
+  if (mainWindow === null) {
+    void dialog.showMessageBox(options);
+    return;
+  }
+  void dialog.showMessageBox(mainWindow, options);
+}
+
+/**
+ * 菜单动作出口：'about' 由 main 就地弹窗；其余广播给所有窗口，由 renderer 派发到
+ * 既有 actions（Close Tab → closeActiveTab，绝不用 role:'close' 关窗口）。
+ */
+function handleMenuAction(action: MenuActionId): void {
+  if (action === 'about') {
+    showAboutDialog(menuLocale);
+    return;
+  }
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(CHANNEL_MENU_ACTION, { action });
+  }
+}
+
+/** 按 locale 重建并安装应用菜单（启动即用当前 locale；语言切换后即时重建）。 */
+function installApplicationMenu(locale: string): void {
+  menuLocale = toMenuLocale(locale);
+  applyApplicationMenu(menuLocale, handleMenuAction);
+}
+
 /**
  * 注册 page/fav/recent/workspace 四域 IPC。`service === null` 时（DB 启动失败）
  * 各通道统一回 `E_INVARIANT`，让渲染器有明确错误可展示。
@@ -598,9 +643,12 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
 
   // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份
   ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, ctx.layout.root));
-  ipcMain.handle(CHANNEL_SETTINGS_PATCH, (_event: unknown, raw: unknown) =>
-    patchAppSettings(ctx.userDataDir, ctx.layout.root, raw),
-  );
+  ipcMain.handle(CHANNEL_SETTINGS_PATCH, (_event: unknown, raw: unknown) => {
+    const settings = patchAppSettings(ctx.userDataDir, ctx.layout.root, raw);
+    // T51-01：语言（或任何设置）落盘后按新 locale 即时重建原生菜单
+    installApplicationMenu(settings.locale);
+    return settings;
+  });
 
   // 诊断（M9）：export 只生成预览（不落盘）；confirm 才写最终文件
   ipcMain.handle(CHANNEL_DIAG_EXPORT, () => gatherDiagnosticPackage(ctx));
@@ -810,6 +858,8 @@ async function bootstrapApplication(): Promise<void> {
   protocol.handle(ATTACHMENT_SCHEME, assetHandler);
 
   createWindow();
+  // T51-01：启动即用当前 locale 装配原生应用菜单（替换 Electron 默认英文菜单）
+  installApplicationMenu(readSettings(ctx.userDataDir).locale);
   registerPaletteShortcut();
   if (PERF_TRACE) {
     captureStartupPerf(ctx.userDataDir);

@@ -24,6 +24,32 @@ export const zhCN = {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
     defaultName: '个人工作区',
   },
+  // T51-01：原生应用菜单文案（main 侧 menu.ts 与 renderer 同源读取本字典；
+  // 键名与 en-US.ts 逐一同构，受 i18n.test.ts 门禁①/②约束）。
+  menu: {
+    file: '文件',
+    edit: '编辑',
+    view: '视图',
+    help: '帮助',
+    fileNewPage: '新建页面',
+    fileImport: '导入…',
+    fileTrash: '回收站',
+    fileCloseTab: '关闭标签',
+    fileQuit: '退出',
+    editUndo: '撤销',
+    editRedo: '重做',
+    editCut: '剪切',
+    editCopy: '复制',
+    editPaste: '粘贴',
+    editSelectAll: '全选',
+    viewToggleSidebar: '折叠侧栏',
+    viewToggleFullWidth: '全宽 / 固定宽度',
+    viewCommandPalette: '命令面板',
+    viewZoomIn: '放大',
+    viewZoomOut: '缩小',
+    viewZoomReset: '实际大小',
+    helpAbout: '关于 Septcats',
+  },
   errors: {
     E_CYCLE: '不能把页面移动到它自己的子页面下',
     E_PARENT_GONE: '目标父页面不存在，或仍在回收站',

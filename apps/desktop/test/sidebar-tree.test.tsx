@@ -229,3 +229,72 @@ describe('SidebarTree（TASK-T21-02 §0.1）', () => {
     expect(bridge.rename).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * TASK-T51-01 §1①：行内重命名三键语义 + 空值回退（老板 09-21 报「一定要回车才能
+ * 确认，不合理」）。失焦提交走既有 renamePage，空值/仅空白/未变化不落库。
+ */
+describe('SidebarTree 行内重命名失焦提交（TASK-T51-01）', () => {
+  function openRename(): HTMLInputElement {
+    fireEvent.doubleClick(screen.getByTestId('side-node-pg-a'));
+    const input = document.querySelector('.app-nav-input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    return input;
+  }
+
+  it('blur 提交：改名后点别处（失焦）即落库，不停留在编辑态', async () => {
+    seedStore();
+    render(<SidebarTree />);
+
+    const input = openRename();
+    fireEvent.change(input, { target: { value: '失焦改名' } });
+    fireEvent.blur(input);
+
+    await waitFor(() => expect(bridge.rename).toHaveBeenCalledWith({ id: 'pg-a', title: '失焦改名' }));
+    await waitFor(() => expect(pagesStore.getState().editingId).toBeNull());
+  });
+
+  it('Enter 提交：既有行为保持（落库 + 退出编辑）', async () => {
+    seedStore();
+    render(<SidebarTree />);
+
+    const input = openRename();
+    fireEvent.change(input, { target: { value: '回车改名' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(bridge.rename).toHaveBeenCalledWith({ id: 'pg-a', title: '回车改名' }));
+    await waitFor(() => expect(pagesStore.getState().editingId).toBeNull());
+  });
+
+  it('Esc 取消：不落库、标题回退原标题', () => {
+    seedStore();
+    render(<SidebarTree />);
+
+    const input = openRename();
+    fireEvent.change(input, { target: { value: '不该保存' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(pagesStore.getState().editingId).toBeNull();
+    expect(bridge.rename).not.toHaveBeenCalled();
+    expect(pagesStore.getState().nodes.find((node) => node.id === 'pg-a')?.title).toBe('暗物质探测实验笔记');
+  });
+
+  it('空值/仅空白/未变化 blur：回退原标题，不发空 op', async () => {
+    seedStore();
+    render(<SidebarTree />);
+
+    // 仅空白 → blur：不落库
+    const blank = openRename();
+    fireEvent.change(blank, { target: { value: '   ' } });
+    fireEvent.blur(blank);
+    expect(pagesStore.getState().editingId).toBeNull();
+    expect(bridge.rename).not.toHaveBeenCalled();
+
+    // 值未变化 → blur：同样跳过提交（不新造协议，靠调用侧跳过）
+    const unchanged = openRename();
+    fireEvent.blur(unchanged);
+    await waitFor(() => expect(pagesStore.getState().editingId).toBeNull());
+    expect(bridge.rename).not.toHaveBeenCalled();
+    expect(pagesStore.getState().nodes.find((node) => node.id === 'pg-a')?.title).toBe('暗物质探测实验笔记');
+  });
+});

@@ -17,23 +17,36 @@ export interface TabsShortcutGate {
   editorVisible: boolean;
 }
 
+/**
+ * 关当前标签（相邻回落；不触碰页面/回收站）。返回是否真的关了。
+ * 键盘 Ctrl+W 与原生菜单 File→Close Tab 共用本函数（T51-01 §1②「同键同动作」，
+ * 菜单绝不挂 role:'close'）。
+ */
+export function closeActiveTab(): boolean {
+  const state = pagesStore.getState();
+  if (state.tabs.length === 0 || state.selectedId === null) {
+    return false;
+  }
+  pagesActions.closeTab(state.selectedId);
+  return true;
+}
+
 /** 处理一次 keydown；返回是否消费（消费时已 preventDefault）。 */
 export function handleTabsKeydown(event: KeyboardEvent, gate: TabsShortcutGate): boolean {
   const action = tabsShortcutAction(event);
   if (action === null || !gate.editorVisible) {
     return false;
   }
-  const state = pagesStore.getState();
-  if (state.tabs.length === 0) {
-    return false;
-  }
   if (action === 'close') {
-    if (state.selectedId === null) {
+    if (!closeActiveTab()) {
       return false;
     }
     event.preventDefault();
-    pagesActions.closeTab(state.selectedId);
     return true;
+  }
+  const state = pagesStore.getState();
+  if (state.tabs.length === 0) {
+    return false;
   }
   if (action === 'next') {
     event.preventDefault();
