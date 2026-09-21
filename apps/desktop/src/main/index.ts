@@ -42,8 +42,12 @@ import {
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
 import type { MenuActionId } from '../shared/ipc';
+import { CLOSE_CHANNELS } from '../shared/ipc';
 import { applyApplicationMenu } from './menu';
 import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
+import { createCloseGuard, parseCloseDecision, type CloseGuard } from './closeGuard';
+import { buildTrayMenuTemplate } from './trayTemplate';
+import { createTray, destroyTray, getTray, getTrayMenu, refreshTrayMenu } from './tray';
 import {
   parseFeedUrlFromYml,
   registerUpdaterIpc,
@@ -118,6 +122,13 @@ let dbHandle: DbHandle | null = null;
 let syncRuntime: SyncRuntime | null = null;
 let collabHub: CollabHub | null = null;
 let updaterService: { check(): Promise<UpdateState>; dispose(): void } | null = null;
+/** 关窗拦截器（T54-01）：bootstrapApplication 里装配，createWindow 的 close 事件消费。 */
+let closeGuard: CloseGuard | null = null;
+/**
+ * 真退出意图（T54-01 §1①）：托盘菜单「退出」/「重新启动更新」/ OS 关停置 true。
+ * false 期的 close = **用户关窗** → 冲刷 + 按 settings.trayClose 路由（可能弹询问框）。
+ */
+let quittingFlag = false;
 
 // --- 启动打点（TASK-T14-01 §2：--perf-trace 门，默认关 = 零开销） --------------
 
@@ -176,7 +187,24 @@ function createWindow(): void {
     platformContext?.logger.forModule('main').info('window ready-to-show');
   });
 
+  /**
+   * 关窗拦截（T54-01 §1①）：用户关窗 → preventDefault → 冲刷未提交编辑 → 按
+   * settings.trayClose 路由（ask 才弹自绘询问框）；真退出 → 同样先冲刷再放行
+   * （`exiting` 态返回 false，不再拦）。closeGuard 未装配（初始化异常）时保持旧行为。
+   */
+  window.on('close', (event) => {
+    const guard = closeGuard;
+    if (guard === null) {
+      return;
+    }
+    if (!guard.requestClose()) {
+      return;
+    }
+    event.preventDefault();
+  });
+
   window.on('closed', () => {
+    closeGuard?.onWindowDestroyed('主窗口 closed');
     mainWindow = null;
   });
 
@@ -188,6 +216,84 @@ function createWindow(): void {
   }
 
   mainWindow = window;
+}
+
+// --- 关窗 / 托盘动作出口（T54-01 §1①③） --------------------------------------
+
+/** 显示主窗口（无窗口则建窗）：托盘左键 toggle 与右键「显示主窗口」共用。 */
+function showMainWindow(): void {
+  const window = mainWindow;
+  if (window === null) {
+    createWindow();
+    return;
+  }
+  if (window.isMinimized()) {
+    window.restore();
+  }
+  window.show();
+  window.focus();
+}
+
+/** 最小化到托盘：只隐藏，不销毁（进程与库连接保持存活，无窗口不假死）。 */
+function hideMainWindowToTray(): void {
+  const window = mainWindow;
+  if (window === null) {
+    return;
+  }
+  window.hide();
+  platformContext?.logger.forModule('main').info('主窗口已最小化到托盘（进程保持存活）');
+}
+
+/** 托盘菜单「退出」：置 quittingFlag 后 app.quit（冲刷由 closeGuard 的真退出路径保证，不再弹框）。 */
+function quitFromTray(): void {
+  quittingFlag = true;
+  platformContext?.logger.forModule('main').info('托盘菜单退出：quittingFlag=true → app.quit');
+  app.quit();
+}
+
+const TRAY_MENU_ACTIONS = { show: showMainWindow, quit: quitFromTray };
+
+/** 关窗拦截器装配（bootstrapApplication 调一次；依赖注入使状态机可单测）。 */
+function installCloseGuard(ctx: PlatformContext): CloseGuard {
+  const guard = createCloseGuard({
+    isQuitting: () => quittingFlag,
+    setQuitting: (value) => {
+      quittingFlag = value;
+    },
+    readTrayClose: () => readSettings(ctx.userDataDir).trayClose,
+    sendFlush: (requestId) => {
+      const window = mainWindow;
+      if (window === null || window.webContents.isDestroyed()) {
+        throw new Error('无可用窗口，editor:flush 无法投递');
+      }
+      window.webContents.send(CLOSE_CHANNELS.flush, { requestId });
+    },
+    sendAsk: () => {
+      const window = mainWindow;
+      if (window === null || window.webContents.isDestroyed()) {
+        throw new Error('无可用窗口，close:ask 无法投递');
+      }
+      window.webContents.send(CLOSE_CHANNELS.ask, {});
+    },
+    hideToTray: hideMainWindowToTray,
+    quitApp: () => {
+      app.quit();
+    },
+    persistTrayClose: (mode) => {
+      // writeSettings 只收 patch：trayClose 单键写入，rootPath 与其它段按 merge 保住
+      writeSettings(ctx.userDataDir, { trayClose: mode });
+    },
+    newRequestId: () => `flush-${String(Date.now())}-${String(process.pid)}`,
+    log: {
+      info: (message) => {
+        ctx.logger.forModule('main').info(message);
+      },
+      warn: (message) => {
+        ctx.logger.forModule('main').warn(message);
+      },
+    },
+  });
+  return guard;
 }
 
 // --- 数据库与页面服务 -------------------------------------------------------
@@ -503,6 +609,8 @@ function handleMenuAction(action: MenuActionId): void {
 function installApplicationMenu(locale: string): void {
   menuLocale = toMenuLocale(locale);
   applyApplicationMenu(menuLocale, handleMenuAction);
+  // T54-01：托盘右键菜单 label 同源 i18n → 随语言切换即时重建
+  refreshTrayMenu(menuLocale, TRAY_MENU_ACTIONS);
 }
 
 /**
@@ -648,6 +756,24 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     // T51-01：语言（或任何设置）落盘后按新 locale 即时重建原生菜单
     installApplicationMenu(settings.locale);
     return settings;
+  });
+
+  // 关窗协作（T54-01 §1①②）：renderer 冲刷回执 + 询问框决议。
+  ipcMain.handle(CLOSE_CHANNELS.flushAck, (_event: unknown, raw: unknown) => {
+    const record = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+    const requestId = typeof record['requestId'] === 'string' ? record['requestId'] : '';
+    const tasks = typeof record['tasks'] === 'number' ? record['tasks'] : 0;
+    const failures = typeof record['failures'] === 'number' ? record['failures'] : 0;
+    const matched = closeGuard?.ackFlush(requestId) ?? false;
+    logger.info(
+      `editor:flushAck requestId=${requestId} tasks=${String(tasks)} failures=${String(failures)} matched=${String(matched)}`,
+    );
+    return { ok: true };
+  });
+  ipcMain.handle(CLOSE_CHANNELS.decide, (_event: unknown, raw: unknown) => {
+    const decision = parseCloseDecision(raw);
+    closeGuard?.resolveAsk(decision);
+    return { action: decision.action };
   });
 
   // 诊断（M9）：export 只生成预览（不落盘）；confirm 才写最终文件
@@ -852,12 +978,24 @@ async function bootstrapApplication(): Promise<void> {
   const services = await bootstrapDatabase(ctx);
   registerIpcHandlers(ctx, services);
 
+  // T54-01：关窗拦截器（须在 createWindow 之前装配——首窗的 close 事件立即用得上）
+  closeGuard = installCloseGuard(ctx);
+
   // asset:// / attachment://：导入附件内容寻址解析（TASK-T11-01 §C-3，main 侧协议方案）
   const assetHandler = createAssetRequestHandler(ctx.layout.attachments);
   protocol.handle(ASSET_SCHEME, assetHandler);
   protocol.handle(ATTACHMENT_SCHEME, assetHandler);
 
   createWindow();
+  // T54-01：托盘（左键 toggle、右键「显示主窗口 / 退出」）；无窗口时进程不假死
+  createTray({
+    locale: toMenuLocale(readSettings(ctx.userDataDir).locale),
+    getWindow: () => mainWindow,
+    actions: TRAY_MENU_ACTIONS,
+    log: (message) => {
+      logger.info(`[tray] ${message}`);
+    },
+  });
   // T51-01：启动即用当前 locale 装配原生应用菜单（替换 Electron 默认英文菜单）
   installApplicationMenu(readSettings(ctx.userDataDir).locale);
   registerPaletteShortcut();
@@ -892,6 +1030,14 @@ if (!gotSingleInstanceLock) {
     mainWindow.focus();
   });
 
+  /**
+   * 真退出统一入口（T54-01 §1③）：app.quit / 托盘退出 / OS 关停（如更新安装）一律
+   * 置 quittingFlag —— 此后主窗 close 走「冲刷后放行」，**不再弹询问框**。
+   */
+  app.on('before-quit', () => {
+    quittingFlag = true;
+  });
+
   app.whenReady().then(bootstrapApplication).catch((error: unknown) => {
     const reason = error instanceof Error ? error.stack ?? error.message : String(error);
     const logger = platformContext?.logger.forModule('main') ?? null;
@@ -905,6 +1051,7 @@ if (!gotSingleInstanceLock) {
 
   app.on('will-quit', () => {
     globalShortcut.unregister(PALETTE_SHORTCUT);
+    destroyTray();
     updaterService?.dispose();
     updaterService = null;
     collabHub?.dispose();
@@ -921,3 +1068,36 @@ if (!gotSingleInstanceLock) {
     }
   });
 }
+
+// --- T54-01 真机取证口 -------------------------------------------------------
+/**
+ * 托盘实例没有 Electron 全局访问器（不像 `Menu.getApplicationMenu()`），真机探针
+ * 只能经 main 进程 inspector `require` 本 bundle（模块缓存命中 → 同一实例）取句柄。
+ * 这里只暴露**只读/同源动作**五项：
+ *  - `getTray()`：托盘实例（存在性/左键监听器断言）；
+ *  - `showMainWindow()`：托盘菜单「显示主窗口」的同一处理器（隐藏后恢复走这条路）；
+ *  - `quitFromTray()`：托盘菜单「退出」的同一处理器（OS 级真点不可用时回落取证）；
+ *  - `trayMenuTemplate(locale)`：托盘右键菜单模板（探针读原始 label/type JSON）；
+ *  - `popTrayMenuOverWindow(x, y)`：把**托盘在建的同一个 Menu 实例**在窗口内弹成原生
+ *    菜单（本机会话里 `Tray.popUpContextMenu()` 不渲染可见菜单，见 T54-01 报告 D-2）。
+ * 产品代码路径不读它，无行为副作用；正式发布面（打包/安装）留 PM。
+ */
+export const t54Probe = {
+  getTray,
+  showMainWindow,
+  quitFromTray,
+  trayMenuTemplate: (locale: string): unknown =>
+    buildTrayMenuTemplate(toMenuLocale(locale), TRAY_MENU_ACTIONS).map((item) => ({
+      type: item.type ?? 'normal',
+      label: item.label ?? null,
+    })),
+  popTrayMenuOverWindow: (x: number, y: number): boolean => {
+    const menu = getTrayMenu();
+    const window = mainWindow;
+    if (menu === null || window === null) {
+      return false;
+    }
+    menu.popup({ window, x, y });
+    return true;
+  },
+};

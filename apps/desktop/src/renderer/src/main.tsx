@@ -6,6 +6,8 @@ import './styles/fonts.css';
 import '@septcats/ui/tokens.css';
 import { App } from './App';
 import { initLocale } from './i18n';
+import { syncAllCollab } from './collab/collabClient';
+import { installFlushBridge, registerFlushTask } from './state/flushRegistry';
 
 /**
  * 渲染器入口：先上 token（DESIGN.md 产物），再用 ThemeProvider 管双主题
@@ -27,6 +29,14 @@ if (container === null) {
 }
 
 const shouldSeedTheme = !hasStoredTheme();
+
+/**
+ * T54-01 §1①：装关窗冲刷桥（挂载前装好——main 的 editor:flush 可能来得比 React 挂载早，
+ * 此时无注册任务 → 立即 ack（task 数 0），绝不因未装而让 main 走 2s 超时）。
+ */
+installFlushBridge();
+// 协作层上行防抖尾（打开的每页 Y.Doc）也须在关窗前冲掉（T54-01 §1①）
+registerFlushTask(syncAllCollab);
 
 void window.septcats.settings
   .get()

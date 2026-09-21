@@ -21,6 +21,7 @@ import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
 import { TabsBar } from './tabs/TabsBar';
 import { closeActiveTab, handleTabsKeydown } from './tabs/shortcuts';
+import { CloseAskDialog } from './close/CloseAskDialog';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { t, useLocale } from './i18n';
 import { SyncStatusButton } from './sync/SyncStatus';
@@ -401,6 +402,8 @@ export function App() {
       <TemplateSaveDialog />
       {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
       <PageDeleteDialog />
+      {/* T54-01 §1②：关窗询问框（自绘像素模态；main 拦 close 并冲刷完后推 close:ask） */}
+      <CloseAskDialog />
       {/* T24-01 §0.C：全局 Toast 视口（pushToast 队列渲染；根层挂载，底部居中、
           不遮挡居中 Dialog；样式全部走 @septcats/ui 既有 token） */}
       <ToastViewport

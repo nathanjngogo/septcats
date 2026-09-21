@@ -1,0 +1,50 @@
+/* CloseAskDialog.css —— 关窗询问框（TASK-T54-01 §1②）。
+ *
+ * 全量吃 T53-01 落地的像素 token：硬边亮暗面（--sc-bevel-out）+ 2px 描边 +
+ * 像素偏移投影（--sc-pixel-out）+ modal 抬升（--sc-shadow-modal）。零新增色值、
+ * 零字面 hex（no-magic 门禁：apps/desktop/src/renderer 亦在扫描面内）。
+ */
+
+.close-ask__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sc-z-dialog);
+  display: grid;
+  place-items: center;
+  background: var(--sc-color-overlay);
+}
+
+.close-ask {
+  width: 420px;
+  max-width: calc(100vw - var(--sc-space-gutter));
+  padding: var(--sc-space-xl);
+  border: 2px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-shadow-modal), var(--sc-pixel-out);
+}
+
+.close-ask__title {
+  margin: 0 0 var(--sc-space-md);
+  font: var(--sc-text-h3);
+}
+
+.close-ask__body {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.close-ask__remember {
+  margin-top: var(--sc-space-lg);
+  padding-top: var(--sc-space-md);
+  border-top: 1px solid var(--sc-color-hairline);
+}
+
+.close-ask__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-xl);
+}

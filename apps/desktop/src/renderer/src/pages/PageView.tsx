@@ -54,6 +54,7 @@ import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
 import { aliveNodes, pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
 import { usePageWidth } from '../state/pageWidth';
+import { registerFlushTask } from '../state/flushRegistry';
 import { BacklinksPanel } from './BacklinksPanel';
 import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
@@ -221,6 +222,19 @@ export function PageView({ page }: PageViewProps) {
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  /**
+   * T54-01 §1①：把当前编辑轮次接进关窗冲刷链——main 拦 close 后发 editor:flush，
+   * renderer 跑完全部注册任务才回 ack（「键入正文 → 立刻关窗」的正文因此必在库）。
+   * 任务经 sessionRef 现读：换页/重建 session 后冲刷的永远是当前实例。
+   */
+  useEffect(
+    () =>
+      registerFlushTask(async () => {
+        await sessionRef.current?.flush();
+      }),
+    [],
+  );
 
   /**
    * EditSession 工厂（T21-01）：EditSession 产出的 ops 原样透传 `blocks:commit`

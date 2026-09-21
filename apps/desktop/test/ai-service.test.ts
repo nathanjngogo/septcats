@@ -116,6 +116,7 @@ function baseSettings(): Omit<AppSettings, 'ai'> {
     locale: 'zh-CN',
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
+    trayClose: 'ask',
     data: { note: '' },
     sync: { enabled: true, encrypt: false, gc: false },
   };

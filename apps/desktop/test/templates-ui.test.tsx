@@ -61,6 +61,7 @@ function defaultSettings(): AppSettings {
     locale: 'zh-CN',
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
+    trayClose: 'ask',
     data: { note: '~/.septcats' },
     sync: { enabled: true, encrypt: false, gc: false },
     ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },

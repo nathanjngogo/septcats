@@ -238,6 +238,7 @@ function cloudSettings(): AppSettings {
     locale: 'zh-CN',
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
+    trayClose: 'ask',
     data: { note: '' },
     sync: { enabled: false, encrypt: false, gc: false },
     ai: {

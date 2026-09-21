@@ -1,6 +1,6 @@
 {
   "task": "TASK-T52-01 真机取证（布局融合三件）",
-  "ranAt": "2026-09-21T16:33:32.101Z",
+  "ranAt": "2026-09-21T17:18:08.918Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 四宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -61,11 +61,11 @@
       "inViewport": true
     },
     "colors": {
-      "barBg": "rgb(249, 248, 247)",
+      "barBg": "rgb(245, 245, 245)",
       "barBorderBottom": "0px",
       "activeBg": "rgb(255, 255, 255)",
       "activeBorderBottom": "0px",
-      "inactiveBg": "rgb(241, 240, 239)",
+      "inactiveBg": "rgb(237, 237, 237)",
       "pvBg": "rgb(255, 255, 255)",
       "pvTop": 76,
       "barBottom": 76,
@@ -134,12 +134,12 @@
       "clusterH": 28
     },
     "darkColors": {
-      "barBg": "rgb(32, 32, 32)",
+      "barBg": "rgb(20, 20, 20)",
       "barBorderBottom": "0px",
-      "activeBg": "rgb(25, 25, 25)",
+      "activeBg": "rgb(10, 10, 10)",
       "activeBorderBottom": "0px",
-      "inactiveBg": "rgb(37, 37, 37)",
-      "pvBg": "rgb(25, 25, 25)",
+      "inactiveBg": "rgb(30, 30, 30)",
+      "pvBg": "rgb(10, 10, 10)",
       "pvTop": 76,
       "barBottom": 76,
       "belowActive": "pv-root"
@@ -222,7 +222,7 @@
       "step": "G3|fusion",
       "name": "[info] 融合色值/分隔线（原始）",
       "ok": null,
-      "raw": "{\"barBg\":\"rgb(249, 248, 247)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(241, 240, 239)\",\"pvBg\":\"rgb(255, 255, 255)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+      "raw": "{\"barBg\":\"rgb(245, 245, 245)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(237, 237, 237)\",\"pvBg\":\"rgb(255, 255, 255)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
     },
     {
       "step": "G3|fusion",
@@ -234,13 +234,13 @@
       "step": "G3|fusion",
       "name": "G3-2 §2③：活动标签背景 = .pv-root 背景（连通无缝，贴色值）",
       "ok": true,
-      "raw": "activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) barBg=rgb(249, 248, 247) inactiveBg=rgb(241, 240, 239)"
+      "raw": "activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245) inactiveBg=rgb(237, 237, 237)"
     },
     {
       "step": "G3|fusion",
       "name": "G3-3 非活动标签沉 surface（≠ 活动标签色、≠ 行底色）",
       "ok": true,
-      "raw": "inactiveBg=rgb(241, 240, 239) activeBg=rgb(255, 255, 255) barBg=rgb(249, 248, 247)"
+      "raw": "inactiveBg=rgb(237, 237, 237) activeBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245)"
     },
     {
       "step": "G3|fusion",
@@ -330,13 +330,13 @@
       "step": "G7|screens",
       "name": "G7-2 窗口级补充截图（含标题栏 + 原生菜单栏，侧栏顶到菜单下沿）",
       "ok": true,
-      "raw": "bytes=37321 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
+      "raw": "bytes=42281 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
     },
     {
       "step": "G7|screens",
       "name": "[info] 浅色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2980,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2852,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",
@@ -348,19 +348,19 @@
       "step": "G7|screens",
       "name": "[info] 深色融合色值（原始）",
       "ok": null,
-      "raw": "{\"barBg\":\"rgb(32, 32, 32)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(25, 25, 25)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(37, 37, 37)\",\"pvBg\":\"rgb(25, 25, 25)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+      "raw": "{\"barBg\":\"rgb(20, 20, 20)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(10, 10, 10)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(30, 30, 30)\",\"pvBg\":\"rgb(10, 10, 10)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
     },
     {
       "step": "G7|screens",
       "name": "G7-3 深色主题下同样成立：活动标签底 = .pv-root 底、无边线（同一 token 双主题）",
       "ok": true,
-      "raw": "activeBg=rgb(25, 25, 25) pvBg=rgb(25, 25, 25) barBorder=0px"
+      "raw": "activeBg=rgb(10, 10, 10) pvBg=rgb(10, 10, 10) barBorder=0px"
     },
     {
       "step": "G7|screens",
       "name": "[info] 深色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2936,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2922,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",

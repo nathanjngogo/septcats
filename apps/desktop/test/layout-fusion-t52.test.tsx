@@ -108,6 +108,7 @@ function defaultSettings(): AppSettings {
     locale: 'zh-CN',
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
+    trayClose: 'ask',
     data: { note: '~/.septcats' },
     sync: { enabled: true, encrypt: false, gc: false },
     ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
@@ -145,6 +146,8 @@ function installAppBridge(): void {
     appMeta: vi.fn(async () => ({ name: 'Septcats', version: '0.0.0', schemaVersion: 1, layoutRoot: '.septcats' })),
     update: { onState: vi.fn(() => () => {}) },
     menu: { onAction: vi.fn(() => () => {}) },
+    // T54-01：App 挂载订阅关窗询问（假桥给退订函数 + 决议桩）
+    close: { onFlushRequest: vi.fn(() => () => {}), flushAck: vi.fn(), onAsk: vi.fn(() => () => {}), decide: vi.fn() },
   } as unknown as SeptcatsApi);
 }
 

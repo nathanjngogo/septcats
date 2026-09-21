@@ -11,12 +11,13 @@
  * 各带确认弹窗；恢复码一次性明文，只在弹窗内存中存在，关窗即清）。
  * T18-02：「同步密钥」之后插入「AI 助手」区块（fieldset 壳；内容/弹窗/i18n/busy
  * 由 AiSection 自管，见 settings/AiSection.tsx）。区块列表：
- *  - 外观 / 布局（T39-01 布局设计器，LayoutSection 自管）/ 数据与隐私 / 同步密钥 / AI 助手（T18-02）/ 诊断 / 关于。
+ *  - 外观 / 布局（T39-01 布局设计器，LayoutSection 自管）/ 关闭行为（T54-01）/ 数据与隐私 /
+ *    同步密钥 / AI 助手（T18-02）/ 诊断 / 关于。
  */
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Checkbox, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
-import type { AppSettings, AppSettingsPatch, ThemeMode } from '../../../shared/settings';
+import type { AppSettings, AppSettingsPatch, ThemeMode, TrayCloseMode } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
@@ -72,6 +73,15 @@ function languageOptions(): Array<{ value: LocalePref; label: string }> {
     { value: 'system', label: t('settings.appearance.langSystem') },
     { value: 'zh-CN', label: t('settings.appearance.langZh') },
     { value: 'en-US', label: t('settings.appearance.langEn') },
+  ];
+}
+
+/** 关闭行为三选（T54-01 §1②）：每次询问 / 最小化到托盘 / 退出应用。 */
+function trayCloseOptions(): Array<{ value: TrayCloseMode; label: string }> {
+  return [
+    { value: 'ask', label: t('settings.close.modeAsk') },
+    { value: 'tray', label: t('settings.close.modeTray') },
+    { value: 'quit', label: t('settings.close.modeQuit') },
   ];
 }
 
@@ -195,6 +205,11 @@ export function SettingsPage() {
 
   const handleLinkPreview = (on: boolean): void => {
     void patch({ privacy: { linkPreviewOnType: on } });
+  };
+
+  // T54-01：关闭行为三选（询问框「记住我的选择」写的就是这一项，从这里可改回）
+  const handleTrayClose = (mode: TrayCloseMode): void => {
+    void patch({ trayClose: mode });
   };
 
   const handleExport = async (): Promise<void> => {
@@ -366,6 +381,25 @@ export function SettingsPage() {
           <fieldset className="settings-section">
             <legend className="settings-legend">{t('settings.layout.title')}</legend>
             <LayoutSection />
+          </fieldset>
+
+          {/* T54-01 §1②③：关闭行为（关窗询问框「记住我的选择」的落点，可改回「每次询问」） */}
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.close.title')}</legend>
+            <SettingsRow
+              title={t('settings.close.mode')}
+              desc={t('settings.close.modeDesc')}
+              control={
+                <RadioGroup<TrayCloseMode>
+                  label={t('settings.close.mode')}
+                  name="settings-tray-close"
+                  options={trayCloseOptions()}
+                  value={settings.trayClose}
+                  onChange={handleTrayClose}
+                  disabled={saving}
+                />
+              }
+            />
           </fieldset>
 
           <fieldset className="settings-section">

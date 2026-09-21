@@ -15,6 +15,9 @@ export type Locale = 'zh-CN' | 'en-US';
 
 export type EditMode = 'rich' | 'markdown';
 
+/** 关闭主窗口行为（TASK-T54-01；与 @septcats/platform 的 TRAY_CLOSE_MODES 同构）。 */
+export type TrayCloseMode = 'ask' | 'tray' | 'quit';
+
 export interface AppSettings {
   theme: ThemeMode;
   locale: Locale;
@@ -28,6 +31,8 @@ export interface AppSettings {
     defaultEditMode: EditMode;
     spellcheck: boolean;
   };
+  /** 关闭主窗口行为（TASK-T54-01）：ask 弹询问框 / tray 最小化到托盘 / quit 直接退出。 */
+  trayClose: TrayCloseMode;
   data: {
     /** 同步文件夹路径（仅展示不可改，改路径归 M8b）。 */
     note: string;
@@ -62,6 +67,7 @@ export type AppSettingsPatch = {
   locale?: Locale;
   privacy?: Partial<AppSettings['privacy']>;
   editor?: Partial<AppSettings['editor']>;
+  trayClose?: TrayCloseMode;
   data?: Partial<AppSettings['data']>;
   sync?: Partial<AppSettings['sync']>;
   ai?: Partial<AppSettings['ai']>;

@@ -52,6 +52,17 @@ export const enUS = {
     viewZoomOut: 'Zoom Out',
     viewZoomReset: 'Actual Size',
     helpAbout: 'About Septcats',
+    // T54-01: tray context menu (main/trayTemplate.ts reads the same dictionary)
+    trayShow: 'Show Main Window',
+    trayQuit: 'Quit',
+  },
+  // T54-01: close-confirmation dialog (renderer-drawn pixel modal) + Settings "Closing" section
+  closeAsk: {
+    title: 'Close Septcats',
+    body: 'Your edits are saved. Quit the app, or keep Septcats running in the tray?',
+    minimizeToTray: 'Minimize to Tray',
+    quit: 'Quit',
+    remember: 'Remember my choice',
   },
   errors: {
     E_CYCLE: 'A page cannot be moved under its own subpage',
@@ -223,6 +234,16 @@ export const enUS = {
       langSystem: 'System',
       langZh: 'Chinese (Simplified)',
       langEn: 'English',
+    },
+    // T54-01: closing behavior — what the window close button does (the dialog's
+    // "Remember my choice" writes here; changeable back to Ask every time)
+    close: {
+      title: 'Closing',
+      mode: 'When closing the main window',
+      modeDesc: 'Action taken when you click the window close button; Ask shows the dialog (Esc or overlay click = cancel)',
+      modeAsk: 'Ask every time',
+      modeTray: 'Minimize to tray',
+      modeQuit: 'Quit the app',
     },
     layout: {
       title: 'Layout',

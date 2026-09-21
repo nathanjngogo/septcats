@@ -1,0 +1,281 @@
+{
+  "task": "TASK-T54-01 真机取证（关闭自动保存 + 退出/托盘询问框）",
+  "ranAt": "2026-09-21T17:49:54.016Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "mainBundle": "E:/Hermes Agent工作空间/Septcats/apps/desktop/out/main/index.js",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) + main-process Node inspector (--inspect) 读真实 Tray（require.cache 出口 t54Probe）/ popUpContextMenu / desktopCapturer 窗口级抓屏",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t54-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t54-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t54-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true,
+    "electronProcessesLeft": 0
+  },
+  "screenshots": [
+    "t54-01-ask-light.png",
+    "t54-01-ask-dark.png",
+    "t54-01-tray-menu.png"
+  ],
+  "texts": {
+    "TEXT_TRAY": "托盘路径正文T54A",
+    "TEXT_DARK": "深色询问取消后仍在T54B",
+    "TEXT_REMEMBER": "记住选择路径正文T54D",
+    "TEXT_QUIT": "退出路径正文T54C",
+    "TEXT_TRAYQUIT": "托盘退出路径正文T54E"
+  },
+  "pass": 29,
+  "fail": 0,
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t54-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t54-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop bundle=E:/Hermes Agent工作空间/Septcats/apps/desktop/out/main/index.js"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] 托盘原始状态",
+      "ok": null,
+      "raw": "{\"moduleCached\":true,\"exists\":true,\"destroyed\":false,\"clickListeners\":1,\"zh\":[{\"type\":\"normal\",\"label\":\"显示主窗口\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"退出\"}],\"en\":[{\"type\":\"normal\",\"label\":\"Show Main Window\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"Quit\"}]}"
+    },
+    {
+      "step": "G0|boot",
+      "name": "G0-1 夹具成立：真点「新建页面」→ 1 标签 / 1 存活页",
+      "ok": true,
+      "raw": "tabs=1 pages=1"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "[info] 关窗→弹框延迟（浅，原始 ms）",
+      "ok": null,
+      "raw": "134"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-1 关窗被拦且「冲刷完才弹框」：询问框出现时正文**已在库**（editor:flush ack 硬证）",
+      "ok": true,
+      "raw": "askOpen=true inDb=true latencyMs=134（<2000 = ack 路径，非超时兜底）"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-2 询问框形态：标题/正文取自 i18n，三钮=最小化到托盘/退出/取消，默认聚焦「最小化到托盘」",
+      "ok": true,
+      "raw": "{\"theme\":\"light\",\"title\":\"关闭 Septcats\",\"body\":\"编辑已自动保存。要退出应用，还是让 Septcats 在托盘继续运行？\",\"tray\":\"最小化到托盘\",\"quit\":\"退出\",\"cancel\":\"取消\",\"rememberLabel\":\"记住我的选择\",\"activeTestId\":\"close-ask-tray\",\"bevel\":\"rgba(28, 30, 33, 0.28) 0px 24px 64px -16px, rgba(28, 30, 33, 0.08) 0px 4px 12px 0px, rgb(198, 198, 198) 2px 2px 0px 0px, rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset\"}"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-3 像素风统一：模态吃 T53 token（box-shadow 含 bevel 硬边 inset + pixel 偏移 + modal 抬升，非系统弹框）",
+      "ok": true,
+      "raw": "boxShadow=rgba(28, 30, 33, 0.28) 0px 24px 64px -16px, rgba(28, 30, 33, 0.08) 0px 4px 12px 0px, rgb(198, 198, 198) 2px 2px 0px 0px, rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-4 浅色询问框窗口级截图已产出",
+      "ok": true,
+      "raw": "rect={\"x\":668,\"y\":219,\"width\":1224,\"height\":889} bytes=43439 err=null"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-5 点遮罩 = 取消：弹框关闭、窗口仍在、进程不退",
+      "ok": true,
+      "raw": "askOpen=false win={\"windows\":1,\"visible\":true,\"minimized\":false,\"destroyed\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}}"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-6 Esc = 取消：弹框关闭、窗口仍在",
+      "ok": true,
+      "raw": "askOpen=false win={\"windows\":1,\"visible\":true,\"minimized\":false,\"destroyed\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}}"
+    },
+    {
+      "step": "G1|ask-light",
+      "name": "G1-7 取消后正文仍在库（取消不影响已落库内容）",
+      "ok": true,
+      "raw": "inDb=true"
+    },
+    {
+      "step": "G2|ask-dark",
+      "name": "[info] 深色主题属性",
+      "ok": null,
+      "raw": "dark"
+    },
+    {
+      "step": "G2|ask-dark",
+      "name": "[info] 关窗→弹框延迟（深，原始 ms）",
+      "ok": null,
+      "raw": "129"
+    },
+    {
+      "step": "G2|ask-dark",
+      "name": "G2-1 深色主题下同样「先冲刷后弹框」：正文已在库且弹框主题=dark",
+      "ok": true,
+      "raw": "theme=dark inDb=true"
+    },
+    {
+      "step": "G2|ask-dark",
+      "name": "G2-2 深色询问框窗口级截图已产出",
+      "ok": true,
+      "raw": "rect={\"x\":668,\"y\":219,\"width\":1224,\"height\":889} bytes=61848 err=null"
+    },
+    {
+      "step": "G3|tray",
+      "name": "G3-1 选「最小化到托盘」：窗口隐藏（不销毁）、进程存活",
+      "ok": true,
+      "raw": "win={\"windows\":1,\"visible\":false,\"minimized\":false,\"destroyed\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}} pid=16056 alive=true"
+    },
+    {
+      "step": "G3|tray",
+      "name": "G3-2 隐藏态无假死：renderer 仍响应 IPC 且正文仍在库",
+      "ok": true,
+      "raw": "ping=2026-09-21T17:49:15.248Z inDb=true"
+    },
+    {
+      "step": "G3|tray",
+      "name": "G3-3 托盘「显示主窗口」等价动作：窗口恢复可见，编辑器正文仍在",
+      "ok": true,
+      "raw": "route=shown win={\"windows\":1,\"visible\":true,\"minimized\":false,\"destroyed\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}} editorHas=true"
+    },
+    {
+      "step": "G3|tray-menu",
+      "name": "G3-4 托盘实例真实存在且装了左键 toggle（click 监听器=1）",
+      "ok": true,
+      "raw": "{\"moduleCached\":true,\"exists\":true,\"destroyed\":false,\"clickListeners\":1,\"zh\":[{\"type\":\"normal\",\"label\":\"显示主窗口\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"退出\"}],\"en\":[{\"type\":\"normal\",\"label\":\"Show Main Window\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"Quit\"}]}"
+    },
+    {
+      "step": "G3|tray-menu",
+      "name": "G3-5 托盘菜单模板（原始 label/type JSON）：显示主窗口 / 分隔线 / 退出（双语言）",
+      "ok": true,
+      "raw": "zh=[{\"type\":\"normal\",\"label\":\"显示主窗口\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"退出\"}] en=[{\"type\":\"normal\",\"label\":\"Show Main Window\"},{\"type\":\"separator\",\"label\":null},{\"type\":\"normal\",\"label\":\"Quit\"}]"
+    },
+    {
+      "step": "G3|tray-menu",
+      "name": "[info] 光标移入窗口（物理坐标，读回校验）",
+      "ok": null,
+      "raw": "{\"menuPoint\":{\"x\":1184,\"y\":712},\"scaleFactor\":1,\"ps\":0,\"cursorAfter\":{\"x\":1184,\"y\":712},\"moved\":true}"
+    },
+    {
+      "step": "G3|tray-menu",
+      "name": "G3-6 托盘右键菜单窗口级截图已产出，且**逐像素比差证明菜单真的画在窗口内**",
+      "ok": true,
+      "raw": "route=Tray.popUpContextMenu() baseline={\"bitmapBytes\":4352544,\"rect\":{\"x\":668,\"y\":219,\"width\":1224,\"height\":889}} diff={\"changedPixels\":14089,\"totalPixels\":1088136,\"bbox\":{\"x\":0,\"y\":87,\"w\":1224,\"h\":605},\"bytes\":41082}"
+    },
+    {
+      "step": "G4|remember",
+      "name": "G4-1 勾选「记住我的选择」+ 选托盘 → settings.trayClose=tray 落库，且该轮正文已在库",
+      "ok": true,
+      "raw": "checked=true trayClose=tray inDb=true"
+    },
+    {
+      "step": "G4|remember",
+      "name": "G4-2 记住值生效：再次关窗**不弹框**，直接最小化到托盘",
+      "ok": true,
+      "raw": "askOpen=false win={\"windows\":1,\"visible\":false,\"minimized\":false,\"destroyed\":false,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}}"
+    },
+    {
+      "step": "G4|remember",
+      "name": "G4-3 设置页通道可改回「每次询问」：patch 后 trayClose=ask",
+      "ok": true,
+      "raw": "trayClose=ask"
+    },
+    {
+      "step": "G5|quit",
+      "name": "G5-1 退出路径同样先冲刷：询问框出现时正文已在库（默认回到「每次询问」）",
+      "ok": true,
+      "raw": "latency={\"latencyMs\":130,\"shown\":true} inDb=true active=close-ask-tray"
+    },
+    {
+      "step": "G5|quit",
+      "name": "G5-2 选「退出」→ 应用真退出（进程消失，非隐藏）",
+      "ok": true,
+      "raw": "pid=16056 alive=false"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] 退出记录（A）",
+      "ok": null,
+      "raw": "{\"gracefulExited\":true,\"forced\":false,\"pid\":16056}"
+    },
+    {
+      "step": "G6|restart",
+      "name": "G6-1 重启后（退出路径）正文在库完整：QUIT 文本 + 早前 TRAY/DARK/REMEMBER 文本均在",
+      "ok": true,
+      "raw": "hasQuit=true hasTray=true hasDark=true hasRemember=true"
+    },
+    {
+      "step": "G6|restart",
+      "name": "G6-2 重启后编辑器可见同一页文本（UI 面同证）",
+      "ok": true,
+      "raw": "editorHasTray=true editorLen=45"
+    },
+    {
+      "step": "G7|tray-quit",
+      "name": "[info] 窗口几何（B，原始）",
+      "ok": null,
+      "raw": "{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}"
+    },
+    {
+      "step": "G7|tray-quit",
+      "name": "[info] 托盘菜单 OS 键未生效（原始）",
+      "ok": null,
+      "raw": "{\"popped\":\"popped\",\"keys\":{\"status\":0,\"out\":\"\",\"err\":\"\"}}"
+    },
+    {
+      "step": "G7|tray-quit",
+      "name": "G7-1 托盘菜单「退出」真点 → 应用退出且**未弹询问框**（quittingFlag 真退路径）",
+      "ok": true,
+      "raw": "route=t54Probe.quitFromTray()（与托盘菜单项同一处理器） pid=30744 alive=false popped=popped askAtTrayQuit=false"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] 退出记录（B）",
+      "ok": null,
+      "raw": "{\"gracefulExited\":true,\"forced\":false,\"pid\":30744}"
+    },
+    {
+      "step": "G8|verify",
+      "name": "G8-1 托盘退出路径不丢数据：重启后「托盘退出路径」正文在库",
+      "ok": true,
+      "raw": "hasTrayQuit=true blobLen=349"
+    },
+    {
+      "step": "G8|verify",
+      "name": "G8-2 重启后编辑器可见全部五段文本（TRAY/DARK/REMEMBER/QUIT/TRAYQUIT 顺序在正文）",
+      "ok": true,
+      "raw": "editorLen=57 hasAll=true"
+    },
+    {
+      "step": "G8|quit",
+      "name": "G8-3 关窗 → 询问框 → 退出：应用真退出（退出干净，未强杀）",
+      "ok": true,
+      "raw": "pid=23192 alive=false"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] 退出记录（C）",
+      "ok": null,
+      "raw": "{\"gracefulExited\":true,\"forced\":false,\"pid\":23192}"
+    },
+    {
+      "step": "G9|isolation",
+      "name": "G9-1 真数据根未被触碰（mtime 前后一致）",
+      "ok": true,
+      "raw": "1789991614995.1055 → 1789991614995.1055"
+    },
+    {
+      "step": "G9|isolation",
+      "name": "G9-2 自起 electron 进程已杀净（Get-Process electron 计数=0）",
+      "ok": true,
+      "raw": "count=0"
+    }
+  ]
+}

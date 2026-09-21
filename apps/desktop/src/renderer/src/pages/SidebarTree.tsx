@@ -11,7 +11,7 @@
  * 视觉零新增：复用 App.css 的 app-side* 与 app-nav-* 类及 var(--sc-*) token，
  * 图标只从 @septcats/ui 出口取。
  */
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import type {
   ComponentProps,
   CSSProperties,
@@ -23,6 +23,7 @@ import type { PageNode } from '@septcats/editor';
 import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
 import type { PageNodeView } from '../../../types/window';
 import { aliveNodes, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
+import { registerFlushTask } from '../state/flushRegistry';
 import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
 import { t } from '../i18n';
@@ -57,9 +58,13 @@ interface GroupOpen {
  * `settledRef` 保证提交/取消只发生一次——Enter 提交触发卸载后浏览器仍可能派发
  * blur，若再提交会多发一次 rename op。三条路径共用既有 `pagesActions.renamePage`
  * / `cancelRename` 单一入口，不新造协议。
+ *
+ * T54-01 §1①：编辑中（未提交）是「待结算态」——注册进关窗冲刷链：main 拦 close
+ * 发 editor:flush 时立刻按当前输入值提交（关窗 ≠ 失焦，不注册就会丢这一笔改名）。
  */
 function RenameInput({ id, title }: { id: string; title: string }) {
   const settledRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const settle = (value: string, action: 'commit' | 'cancel'): void => {
     if (settledRef.current) {
       return;
@@ -83,12 +88,28 @@ function RenameInput({ id, title }: { id: string; title: string }) {
       settle(event.currentTarget.value, 'cancel');
     }
   };
+  // 关窗冲刷（T54-01）：按输入框现值提交，并 await 落库（settle 幂等，settled 后空操作）
+  useEffect(() =>
+    registerFlushTask(async () => {
+      if (settledRef.current) {
+        return;
+      }
+      settledRef.current = true;
+      const trimmed = (inputRef.current?.value ?? title).trim();
+      if (trimmed.length > 0 && trimmed !== title) {
+        await pagesActions.renamePage(id, trimmed);
+        return;
+      }
+      pagesActions.cancelRename();
+    }),
+  );
   return (
     <input
       className="app-nav-input"
       data-testid="side-rename-input"
       defaultValue={title}
       autoFocus
+      ref={inputRef}
       onFocus={(event) => event.currentTarget.select()}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={handleKeyDown}

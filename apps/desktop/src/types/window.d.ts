@@ -3,7 +3,12 @@
  * 渲染器只能通过 window.septcats 访问主进程能力（contextIsolation:true）。
  */
 import type { Op } from '@septcats/core';
-import type { MenuActionId } from '../shared/ipc';
+import type {
+  CloseAction,
+  CloseDecisionInput,
+  EditorFlushAckInput,
+  MenuActionId,
+} from '../shared/ipc';
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 import type { PageNodeView } from '../main/pages';
@@ -383,6 +388,23 @@ export interface SeptcatsMenuApi {
   onAction(listener: (payload: { action: MenuActionId }) => void): () => void;
 }
 
+/**
+ * 关窗协作（T54-01）。通道与 `src/shared/ipc.ts` 的 `CLOSE_CHANNELS` 一对一：
+ * main 拦主窗 close → `onFlushRequest`（editor:flush）→ renderer 冲刷一切未提交编辑
+ * → `flushAck` → main 按 settings.trayClose 路由；ask 时推 `onAsk` 弹自绘像素询问框，
+ * 用户选择经 `decide`（close:decide）回 main。
+ */
+export interface SeptcatsCloseApi {
+  /** 订阅「关窗前冲刷」请求，返回退订函数。 */
+  onFlushRequest(listener: (payload: { requestId: string }) => void): () => void;
+  /** 冲刷完成回执（一切未提交编辑已落库）。 */
+  flushAck(input: EditorFlushAckInput): Promise<{ ok: true }>;
+  /** 订阅关窗询问（main 已完成冲刷、等待用户选择），返回退订函数。 */
+  onAsk(listener: () => void): () => void;
+  /** 提交用户选择；remember=true 时 main 持久化 settings.trayClose。 */
+  decide(input: CloseDecisionInput): Promise<{ action: CloseAction }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -418,6 +440,8 @@ export interface SeptcatsApi {
   links: SeptcatsLinksApi;
   /** 原生应用菜单（T51-01）。 */
   menu: SeptcatsMenuApi;
+  /** 关窗协作（T54-01：冲刷握手 + 自绘询问框）。 */
+  close: SeptcatsCloseApi;
 }
 
 declare global {

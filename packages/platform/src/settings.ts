@@ -40,6 +40,13 @@ export type Locale = (typeof LOCALES)[number];
 export const EDIT_MODES = ['rich', 'markdown'] as const;
 export type EditMode = (typeof EDIT_MODES)[number];
 
+/**
+ * 关闭主窗口时的行为（TASK-T54-01 §1.2）：ask = 弹询问框；tray = 最小化到托盘；
+ * quit = 退出应用。由 renderer 询问框的「记住我的选择」写入，设置页可改回。
+ */
+export const TRAY_CLOSE_MODES = ['ask', 'tray', 'quit'] as const;
+export type TrayCloseMode = (typeof TRAY_CLOSE_MODES)[number];
+
 /** AI provider 形态（M11 · TASK-T18-01 §2.1：三者共用 OpenAI 兼容协议）。 */
 export const AI_PROVIDER_KINDS = ['lmstudio', 'ollama', 'openai-compatible'] as const;
 export type AiProviderKind = (typeof AI_PROVIDER_KINDS)[number];
@@ -62,6 +69,8 @@ export const appSettingsSchema = z.object({
     defaultEditMode: z.enum(EDIT_MODES),
     spellcheck: z.boolean(),
   }),
+  /** 关闭主窗口行为（TASK-T54-01）：ask 弹框 / tray 最小化到托盘 / quit 直接退出。 */
+  trayClose: z.enum(TRAY_CLOSE_MODES),
   data: z.object({
     note: z.string(),
   }),
@@ -107,6 +116,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   locale: 'zh-CN',
   privacy: { telemetry: false, linkPreviewOnType: true },
   editor: { defaultEditMode: 'rich', spellcheck: true },
+  trayClose: 'ask',
   data: { note: '' },
   sync: { enabled: true, encrypt: false, gc: false },
   ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
@@ -158,6 +168,7 @@ export function mergeSettingsPatch(current: AppSettings, patch: unknown): AppSet
     editor: isPlainObject(src['editor'])
       ? { ...current.editor, ...src['editor'] }
       : { ...current.editor },
+    trayClose: src['trayClose'] ?? current.trayClose,
     data: isPlainObject(src['data']) ? { ...current.data, ...src['data'] } : { ...current.data },
     sync: isPlainObject(src['sync']) ? { ...current.sync, ...src['sync'] } : { ...current.sync },
     ai: isPlainObject(src['ai']) ? { ...current.ai, ...src['ai'] } : { ...current.ai },
@@ -240,6 +251,7 @@ function parseAppSettings(raw: Record<string, unknown>): AppSettings | null {
     editor: isPlainObject(raw['editor'])
       ? { ...DEFAULT_APP_SETTINGS.editor, ...raw['editor'] }
       : { ...DEFAULT_APP_SETTINGS.editor },
+    trayClose: raw['trayClose'] ?? DEFAULT_APP_SETTINGS.trayClose,
     data: isPlainObject(raw['data'])
       ? { ...DEFAULT_APP_SETTINGS.data, ...raw['data'] }
       : { ...DEFAULT_APP_SETTINGS.data },

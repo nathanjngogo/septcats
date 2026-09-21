@@ -102,3 +102,13 @@ export function detachCollab(pageId: string): void {
     console.error('[collab] detach 失败（main 侧由 LRU 兜底回收）', error);
   });
 }
+
+/**
+ * T54-01 §1①：关窗冲刷任务——冲掉所有打开页的 Y.Doc 上行防抖尾（≤100ms 增量），
+ * 冲完上行 op 才入账本。注册方为 renderer 入口（registerFlushTask(syncAllCollab)）。
+ */
+export function syncAllCollab(): void {
+  for (const yjs of docs.values()) {
+    yjs.sync();
+  }
+}

@@ -9,6 +9,7 @@ import {
   CHANNEL_PAGE_SUMMARY_SET,
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
+  CLOSE_CHANNELS,
   COLLAB_CHANNELS,
   DB_CHANNELS,
   DIAG_CHANNELS,
@@ -216,6 +217,17 @@ const api: SeptcatsApi = {
   // T51-01：原生菜单动作推送订阅（main → renderer 单向）
   menu: {
     onAction: (listener) => subscribe(MENU_CHANNELS.action, listener),
+  },
+  // T54-01：关窗协作（冲刷握手 + 自绘询问框）
+  close: {
+    onFlushRequest: (listener) => subscribe(CLOSE_CHANNELS.flush, listener),
+    flushAck: (input) =>
+      ipcRenderer.invoke(CLOSE_CHANNELS.flushAck, input) as ReturnType<
+        SeptcatsApi['close']['flushAck']
+      >,
+    onAsk: (listener) => subscribe(CLOSE_CHANNELS.ask, listener),
+    decide: (input) =>
+      ipcRenderer.invoke(CLOSE_CHANNELS.decide, input) as ReturnType<SeptcatsApi['close']['decide']>,
   },
 };
 

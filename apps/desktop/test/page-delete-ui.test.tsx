@@ -320,6 +320,8 @@ function installConvertBridge(): void {
     },
     // T51-01：App 挂载订阅原生菜单动作（假桥给退订函数即可）
     menu: { onAction: () => () => {} },
+    // T54-01：App 挂载订阅关窗询问（假桥给退订函数 + 决议桩）
+    close: { onFlushRequest: () => () => {}, flushAck: async () => ({ ok: true }), onAsk: () => () => {}, decide: async () => ({ action: 'cancel' as const }) },
   } as unknown as SeptcatsApi);
 }
 

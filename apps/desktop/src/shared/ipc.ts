@@ -380,3 +380,44 @@ export const MENU_ACTIONS = [
 export type MenuActionId = (typeof MENU_ACTIONS)[number];
 
 export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION } as const;
+
+// ---------------------------------------------------------------------------
+// 关窗协作（T54-01）：关窗前「冲刷未提交编辑」握手 + 自绘询问框决议。
+// main 拦主窗 close（quittingFlag=false 时）→ 先 editor:flush → renderer 冲刷全部
+// 未提交编辑（PageView 防抖缓冲 / 行内重命名待结算态 / 协作层防抖尾）→ ack →
+// 再按 settings.trayClose 路由：ask 时推 close:ask 弹自绘像素模态，用户选择经
+// close:decide 回 main。真退出（quittingFlag=true）走同一冲刷后直放行。
+// ---------------------------------------------------------------------------
+
+/** main → renderer：关窗前冲刷未提交编辑。载荷 `{ requestId }`。 */
+export const CHANNEL_EDITOR_FLUSH = 'editor:flush';
+/** renderer → main：冲刷完成 ack（invoke）。载荷 `{ requestId, tasks, failures }`。 */
+export const CHANNEL_EDITOR_FLUSH_ACK = 'editor:flushAck';
+/** main → renderer：弹关窗询问框（自绘像素模态）。载荷 `{}`。 */
+export const CHANNEL_CLOSE_ASK = 'close:ask';
+/** renderer → main：询问框选择（invoke）。载荷 CloseDecisionInput → `{ action }`。 */
+export const CHANNEL_CLOSE_DECIDE = 'close:decide';
+
+/** 询问框三态动作（与 settings.trayClose 的持久化值区分：cancel 不是持久值）。 */
+export const CLOSE_ACTIONS = ['tray', 'quit', 'cancel'] as const;
+export type CloseAction = (typeof CLOSE_ACTIONS)[number];
+
+export interface CloseDecisionInput {
+  action: CloseAction;
+  /** 勾选「记住我的选择」→ main 写 settings.trayClose（cancel 记回 ask）。 */
+  remember: boolean;
+}
+
+/** renderer → main 的冲刷回执（tasks = 跑过的冲刷任务数，failures = 其中失败数）。 */
+export interface EditorFlushAckInput {
+  requestId: string;
+  tasks: number;
+  failures: number;
+}
+
+export const CLOSE_CHANNELS = {
+  flush: CHANNEL_EDITOR_FLUSH,
+  flushAck: CHANNEL_EDITOR_FLUSH_ACK,
+  ask: CHANNEL_CLOSE_ASK,
+  decide: CHANNEL_CLOSE_DECIDE,
+} as const;

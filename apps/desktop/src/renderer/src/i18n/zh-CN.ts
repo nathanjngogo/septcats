@@ -52,6 +52,17 @@ export const zhCN = {
     viewZoomOut: '缩小',
     viewZoomReset: '实际大小',
     helpAbout: '关于 Septcats',
+    // T54-01：托盘右键菜单（main/trayTemplate.ts 与 renderer 同源读取本字典）
+    trayShow: '显示主窗口',
+    trayQuit: '退出',
+  },
+  // T54-01：关窗询问框（renderer 自绘像素模态；禁系统弹框）与设置页「关闭行为」区块
+  closeAsk: {
+    title: '关闭 Septcats',
+    body: '编辑已自动保存。要退出应用，还是让 Septcats 在托盘继续运行？',
+    minimizeToTray: '最小化到托盘',
+    quit: '退出',
+    remember: '记住我的选择',
   },
   errors: {
     E_CYCLE: '不能把页面移动到它自己的子页面下',
@@ -220,6 +231,15 @@ export const zhCN = {
       langSystem: '跟随系统',
       langZh: '简体中文',
       langEn: 'English',
+    },
+    // T54-01：关闭行为——点窗口关闭按钮时的动作（询问框「记住我的选择」写这里，可改回）
+    close: {
+      title: '关闭行为',
+      mode: '关闭主窗口时',
+      modeDesc: '点窗口关闭按钮时的动作；「每次询问」会弹出询问框（Esc 或点遮罩 = 取消）',
+      modeAsk: '每次询问',
+      modeTray: '最小化到托盘',
+      modeQuit: '退出应用',
     },
     layout: {
       title: '布局',

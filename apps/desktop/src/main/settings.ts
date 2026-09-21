@@ -5,7 +5,7 @@
  * 转成 shared/settings.ts 的线上契约类型，供 main/index.ts 注册的 handler 直接调用，
  * 也供 test/settings.test.ts 在纯 Node 环境直测。
  *
- * 隐私约定：渲染器只拿到 AppSettings（theme/locale/privacy/editor/data），
+ * 隐私约定：渲染器只拿到 AppSettings（theme/locale/privacy/editor/trayClose/data），
  * 其中 `data.note` 由 main 用「同步目录绝对路径」覆盖——路径展示但不可改（改路径归 M8b）。
  */
 
@@ -20,6 +20,7 @@ export function readAppSettings(userDataDir: string, syncDir: string): AppSettin
     locale: settings.locale,
     privacy: settings.privacy,
     editor: settings.editor,
+    trayClose: settings.trayClose,
     data: { note: syncDir },
     sync: settings.sync,
     ai: settings.ai,
@@ -43,6 +44,7 @@ export function patchAppSettings(
     locale: merged.locale,
     privacy: merged.privacy,
     editor: merged.editor,
+    trayClose: merged.trayClose,
     data: { note: syncDir },
     sync: merged.sync,
     ai: merged.ai,

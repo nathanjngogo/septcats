@@ -77,6 +77,7 @@ function defaultSettings(): AppSettings {
     locale: 'zh-CN',
     privacy: { telemetry: false, linkPreviewOnType: true },
     editor: { defaultEditMode: 'rich', spellcheck: true },
+    trayClose: 'ask',
     data: { note: '~/.septcats' },
     sync: { enabled: true, encrypt: false, gc: false },
     ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
@@ -294,6 +295,8 @@ function installAppBridge(): void {
     update: { onState: vi.fn(() => () => {}) },
     // T51-01：App 挂载订阅原生菜单动作（假桥给退订函数即可）
     menu: { onAction: vi.fn(() => () => {}) },
+    // T54-01：App 挂载订阅关窗询问（假桥给退订函数 + 决议桩）
+    close: { onFlushRequest: vi.fn(() => () => {}), flushAck: vi.fn(), onAsk: vi.fn(() => () => {}), decide: vi.fn() },
   } as unknown as SeptcatsApi);
 }
 
