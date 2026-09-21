@@ -32,3 +32,11 @@ DESIGN.md+tokens 产物+组件 CSS diff+`docs/tasks/TASK-T53-01-report.md`（灰
 ## 5. 排队理由（对老板的交代）
 
 ③ 与 ④⑤ 同碰 `TabsBar.css`/`App.css`，且灰阶值要以布局定稿后的层次为准（先结构后皮肤），故排 T51→T52→T53 串行。
+
+
+## 附录 A · PM 已做的灰阶色板与对比度预算（WCAG 独立复算，派单即用）
+
+**浅**：canvas `#F5F5F5` / surface `#EDEDED` / surface-active `#DFDFDF` / content `#FFFFFF` / ink `#1A1A1A` / ink-secondary `#595959` / ink-faint `#757575` / hairline `#DDDDDD` / icon-faint `#9A9A9A`
+**深**：canvas `#141414` / surface `#1E1E1E` / surface-active `#2A2A2A` / content `#0A0A0A` / ink `#EDEDED` / ink-secondary `#A8A8A8` / ink-faint `#8C8C8C` / hairline `#2E2E2E` / icon-faint `#6E6E6E`
+
+预算结果（PM 亲算，非门禁复跑）：**13 对文字色全过 ≥4.5**（最差 inkSecondary/surfaceActive=5.26 浅、6.04 深）；`ink-faint/canvas` 浅 4.23、`ink-faint/surface` 浅 3.94 为**贴线对**——工程师改 DESIGN.md 后必须跑 `contrast.test.ts` 按**门禁实际配对表**定论（口径同 T34：配对表以门禁为准）；若贴线对被判红，ink-faint 提一档到 `#6E6E6E`（浅）即可过，数值写进报告。`icon-faint`（2.4–3.6）属非文字图标色，按 T34 既有裁决走图标/正文色分离口径，不进文字门禁。
