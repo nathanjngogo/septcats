@@ -49,55 +49,55 @@ export const colorsDark = {
 
 export const typography = {
   "font-ui": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
   },
   "font-serif-note": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
   },
   "font-mono": {
     fontFamily: "Geist Mono, Sarasa Mono SC, Microsoft YaHei Mono, Consolas, monospace"
   },
   "editor-body": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "16px",
     fontWeight: 400,
     lineHeight: 1.75,
     letterSpacing: "0.01em"
   },
   h1: {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "28px",
     fontWeight: 650,
     lineHeight: 1.3,
     letterSpacing: "-0.01em"
   },
   h2: {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "22px",
     fontWeight: 620,
     lineHeight: 1.35,
     letterSpacing: "-0.005em"
   },
   h3: {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "18px",
     fontWeight: 600,
     lineHeight: 1.4
   },
   "ui-sm": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "13px",
     fontWeight: 500,
     lineHeight: 1.5
   },
   "ui-md": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "14px",
     fontWeight: 450,
     lineHeight: 1.5
   },
   "ui-xs": {
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif",
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "12px",
     fontWeight: 450,
     lineHeight: 1.5

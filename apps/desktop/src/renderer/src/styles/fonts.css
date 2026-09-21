@@ -1,0 +1,30 @@
+/*
+ * fonts.css —— 自托管思源黑体（TASK-T50-01 / §16.5 老板 09-21 全局规则）。
+ *
+ * 为什么是手写声明而不是 DESIGN.md 的 token 产物：
+ *   DESIGN.md 管的是「用哪个族」（`--sc-font-ui` 等 token），字体文件本体是资产，
+ *   @font-face 的 src（文件路径）不属于设计决策，故不塞进 tokens 构建链——
+ *   否则 `packages/ui` 的产物会反向依赖 `apps/desktop` 的 assets 路径。
+ *
+ * 族名口径（脚本读 ttf name 表实证，不靠猜）：
+ *   name(16) 排版族名 = "Noto Sans SC"  ← DESIGN.md 栈首用的就是它
+ *   name(1)  兼容族名 = "Noto Sans SC Thin"（可变字体的默认实例名，勿用）
+ *   name(6)  PostScript 名 = "NotoSansSC-Thin"
+ *   一份文件即全 wght 轴：字体自身 23 表含 fvar + gvar + glyf，`font-weight: 100 900` 覆盖
+ *   DESIGN.md 用到的 400/450/500/600/620/650 全部非整档字重。
+ *
+ * 纪律：
+ * - 只准引 `assets/fonts/NotoSansSC-wght.ttf`（已校验，sha256 前缀 a3041811，17 772 300 B）；
+ *   禁任何在线字体 / CDN（离线红线，CSP `font-src 'self' data:` 亦不放行远程）。
+ * - 不写 unicode-range：全量中文，裁剪等于自废武功。
+ * - font-display: swap：首屏先上兜底栈，字体到位后换字，绝不出现空白正文。
+ */
+@font-face {
+  font-family: "Noto Sans SC";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    url('../../assets/fonts/NotoSansSC-wght.ttf') format('truetype-variations'),
+    url('../../assets/fonts/NotoSansSC-wght.ttf') format('truetype');
+}

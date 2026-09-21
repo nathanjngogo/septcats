@@ -27,46 +27,46 @@ colors:
   # ---- 深色主题覆盖值不写在这里：由 tokens 构建脚本从 colors-dark 组生成 [data-theme=dark] ----
 typography:
   font-ui:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
   font-serif-note:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
   font-mono:
     fontFamily: "Geist Mono, Sarasa Mono SC, Microsoft YaHei Mono, Consolas, monospace"
   editor-body:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 16px
     fontWeight: 400
     lineHeight: 1.75
     letterSpacing: "0.01em"
   h1:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 28px
     fontWeight: 650
     lineHeight: 1.3
     letterSpacing: "-0.01em"
   h2:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 22px
     fontWeight: 620
     lineHeight: 1.35
     letterSpacing: "-0.005em"
   h3:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 18px
     fontWeight: 600
     lineHeight: 1.4
   ui-sm:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 13px
     fontWeight: 500
     lineHeight: 1.5
   ui-md:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 14px
     fontWeight: 450
     lineHeight: 1.5
   ui-xs:
-    fontFamily: "Geist, PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 12px
     fontWeight: 450
     lineHeight: 1.5
@@ -151,7 +151,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 
 ## Typography
 
-- 一个无衬线家族统治全应用（Geist + CJK 系统栈）。**衬线禁用**——「笔记本感」由排版密度与纸色达成，不靠字体装腔（design-taste-frontend 的 serif discipline）。
+- 一个无衬线家族统治全应用（**自托管思源黑体**：Noto Sans SC 可变体随包分发，禁一切在线字体 + CJK 系统栈兜底；T50-01 §16.5）。**衬线禁用**——「笔记本感」由排版密度与纸色达成，不靠字体装腔（design-taste-frontend 的 serif discipline）。
 - 字重梯度小而准：400 正文 / 450–500 UI / 600–650 标题。层级靠颜色与间距，不靠字号轰炸；H1 28px 封顶。
 - **中文排印规则（编辑器强制）**：
   1. 中西文之间加 `0.15em` 间隙（CSS: 文本节点包裹 `span.cjk-gap`，或 `font-feature-settings` + JS 预处理，实现层统一提供）。
@@ -198,6 +198,6 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - Do：先改 DESIGN.md 再改任何样式代码；tokens 构建脚本是唯一翻译层。
 - Do：所有可点元素有 hover、active、focus-visible 三态；所有列表有空态。
 - Do：深浅主题同一 PR 内同时截图自检（§16.3）。
-- Don't：写死 hex；Don't：用 Inter（字体占位 Geist，若授权受阻用系统栈首字族，由 PM 另行换发）；Don't：AI 紫、渐变按钮、毛玻璃大面积铺、装饰性彩色圆点、em-dash 堆叠的文案。
+- Don't：写死 hex；Don't：用 Inter 或任何在线字体（字体固定为自托管思源黑体 Noto Sans SC，禁 CDN/远程 font-face，T50-01 §16.5）；Don't：AI 紫、渐变按钮、毛玻璃大面积铺、装饰性彩色圆点、em-dash 堆叠的文案。
 - Don't：animate `width/height/top/left`；Don't：linear 缓动（全部 spring 或 `cubic-bezier(0.16,1,0.3,1)` 近似）。
 - Don't：emoji 当图标；图标只用 Icon.tsx（Phosphor, strokeWidth 1.5，尺寸档 16/20/24）。

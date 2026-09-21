@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { hasStoredTheme, setGlobalThemeMode, ThemeProvider } from '@septcats/ui';
+// 自托管思源黑体（T50-01）：@font-face 必须最先注册，后面的 tokens.css 才引用得到族名。
+import './styles/fonts.css';
 import '@septcats/ui/tokens.css';
 import { App } from './App';
 import { initLocale } from './i18n';

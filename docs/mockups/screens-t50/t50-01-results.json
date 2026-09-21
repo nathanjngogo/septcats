@@ -1,0 +1,635 @@
+{
+  "task": "TASK-T50-01 真机取证（全局字体切换为自托管思源黑体）",
+  "ranAt": "2026-09-21T13:18:16.155Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "appBundleMtime": "Mon Sep 21 2026 21:17:44 GMT+0800 (中国标准时间)",
+  "fontFingerprint": {
+    "bytes": 17772300,
+    "sha256Prefix": "a3041811a78c361b",
+    "bundledTtf": [
+      {
+        "name": "NotoSansSC-wght-Dz1u1FRy.ttf",
+        "size": 17772300
+      }
+    ]
+  },
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t50-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t50-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t50-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "pass": 18,
+  "fail": 0,
+  "quiet": [
+    {
+      "boot": 1,
+      "gracefulExited": true
+    }
+  ],
+  "phases": {
+    "content": [
+      {
+        "tag": "P",
+        "cls": "sc-block sc-block--paragraph",
+        "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+      },
+      {
+        "tag": "H1",
+        "cls": "sc-block sc-block--heading",
+        "text": "一级标题 思源黑体"
+      },
+      {
+        "tag": "P",
+        "cls": "sc-block sc-block--paragraph",
+        "text": "正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。"
+      },
+      {
+        "tag": "PRE",
+        "cls": "sc-block sc-block--code",
+        "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+      }
+    ],
+    "fonts": {
+      "faces": [
+        {
+          "family": "Noto Sans SC",
+          "weight": "100 900",
+          "style": "normal",
+          "status": "loaded",
+          "display": "swap"
+        }
+      ],
+      "checks": {
+        "400 16px \"Noto Sans SC\"": true,
+        "450 14px \"Noto Sans SC\"": true,
+        "650 28px \"Noto Sans SC\"": true,
+        "400 16px \"Source Han Sans SC\"": true,
+        "400 14px \"Geist Mono\"": true,
+        "400 16px \"__septcats_no_such_family__\"": true
+      },
+      "fontFaceRules": [
+        "@font-face { font-family: \"Noto Sans SC\"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(\"./NotoSansSC-wght-Dz1u1FRy.ttf\") format(\"truetype-variations\"), url(\"./NotoSansSC-wght-Dz1u1FRy.ttf\") format(\"truetype\"); }"
+      ],
+      "resourceEntries": [],
+      "bundledTtf": [
+        {
+          "name": "NotoSansSC-wght-Dz1u1FRy.ttf",
+          "size": 17772300
+        }
+      ]
+    },
+    "computed": {
+      "light": {
+        "body": {
+          "sel": "body",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "500",
+          "fontSize": "13px",
+          "tag": "BODY",
+          "cls": null,
+          "text": "\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik"
+        },
+        "paragraph": {
+          "sel": ".ProseMirror p",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "400",
+          "fontSize": "16px",
+          "tag": "P",
+          "cls": "sc-block sc-block--paragraph",
+          "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+        },
+        "heading": {
+          "sel": "h1.sc-block--heading",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "650",
+          "fontSize": "28px",
+          "tag": "H1",
+          "cls": "sc-block sc-block--heading",
+          "text": "一级标题 思源黑体"
+        },
+        "code": {
+          "sel": ".sc-block--code",
+          "fontFamily": "\"Geist Mono\", \"Sarasa Mono SC\", \"Microsoft YaHei Mono\", Consolas, monospace",
+          "fontWeight": "400",
+          "fontSize": "14px",
+          "tag": "PRE",
+          "cls": "sc-block sc-block--code",
+          "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+        }
+      },
+      "metrics": {
+        "sample": "思源黑体字体验收 Septcats 0123456789",
+        "bundled": 287.629,
+        "yahei": 295.797,
+        "serif": 288.655,
+        "mono": 287.629,
+        "nonexistent": 287.629
+      },
+      "domMetrics": {
+        "sample": "思源黑体字体验收 Septcats 0123456789",
+        "bundled": 287.641,
+        "nonexistent": 287.641,
+        "yahei": 295.797,
+        "sansSerif": 287.641,
+        "serif": 288.656,
+        "bundledW650": 295.375,
+        "nonexistentW650": 296.656,
+        "cjkBundled": 128,
+        "cjkNonexistent": 128,
+        "latinBundled": 156.047,
+        "latinNonexistent": 156.047,
+        "latinYahei": 163.063
+      },
+      "dark": {
+        "body": {
+          "sel": "body",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "500",
+          "fontSize": "13px",
+          "tag": "BODY",
+          "cls": null,
+          "text": "\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik"
+        },
+        "paragraph": {
+          "sel": ".ProseMirror p",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "400",
+          "fontSize": "16px",
+          "tag": "P",
+          "cls": "sc-block sc-block--paragraph",
+          "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+        },
+        "heading": {
+          "sel": "h1.sc-block--heading",
+          "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+          "fontWeight": "650",
+          "fontSize": "28px",
+          "tag": "H1",
+          "cls": "sc-block sc-block--heading",
+          "text": "一级标题 思源黑体"
+        },
+        "code": {
+          "sel": ".sc-block--code",
+          "fontFamily": "\"Geist Mono\", \"Sarasa Mono SC\", \"Microsoft YaHei Mono\", Consolas, monospace",
+          "fontWeight": "400",
+          "fontSize": "14px",
+          "tag": "PRE",
+          "cls": "sc-block sc-block--code",
+          "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+        }
+      }
+    },
+    "fontFaceToggle": {
+      "found": true,
+      "sample": "思源黑体字体验收 Septcats 0123456789 Wm@#",
+      "withFace": 344.094,
+      "withoutFace": 344.094,
+      "afterRestore": 344.094,
+      "restoreOk": true,
+      "bundledFileIsTheOneRendering": false
+    },
+    "sourceCompare": {
+      "ok": true,
+      "url": "file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/NotoSansSC-wght-Dz1u1FRy.ttf",
+      "oursStatus": "loaded",
+      "systemStatus": "loaded",
+      "sample": "思源黑体字体验收 Septcats 0123456789 Wm@#",
+      "app": 344.094,
+      "ours": 344.094,
+      "system": 344.094,
+      "appW650": 354.219,
+      "oursW650": 354.219
+    },
+    "holdTest": {
+      "target": "h1.sc-block--heading",
+      "apply": {
+        "applied": true,
+        "immediate": "serif",
+        "styleAttr": "font-family: serif !important;"
+      },
+      "after500ms": {
+        "later": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+        "styleAttr": null
+      },
+      "restored": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    "shots": [
+      {
+        "theme": "light",
+        "themed": true,
+        "themeAttr": "light",
+        "settingsClosed": true,
+        "ready": true,
+        "reopened": {
+          "clicked": true,
+          "row": "side-node-01M321V83M1FG7PV9VA5EYTNPA",
+          "after": {
+            "settingsPage": false,
+            "editor": true
+          }
+        },
+        "computed": {
+          "body": {
+            "sel": "body",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "500",
+            "fontSize": "13px",
+            "tag": "BODY",
+            "cls": null,
+            "text": "\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik"
+          },
+          "paragraph": {
+            "sel": ".ProseMirror p",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "400",
+            "fontSize": "16px",
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+          },
+          "heading": {
+            "sel": "h1.sc-block--heading",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "650",
+            "fontSize": "28px",
+            "tag": "H1",
+            "cls": "sc-block sc-block--heading",
+            "text": "一级标题 思源黑体"
+          },
+          "code": {
+            "sel": ".sc-block--code",
+            "fontFamily": "\"Geist Mono\", \"Sarasa Mono SC\", \"Microsoft YaHei Mono\", Consolas, monospace",
+            "fontWeight": "400",
+            "fontSize": "14px",
+            "tag": "PRE",
+            "cls": "sc-block sc-block--code",
+            "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+          }
+        },
+        "contentNow": [
+          {
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+          },
+          {
+            "tag": "H1",
+            "cls": "sc-block sc-block--heading",
+            "text": "一级标题 思源黑体"
+          },
+          {
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。"
+          },
+          {
+            "tag": "PRE",
+            "cls": "sc-block sc-block--code",
+            "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+          }
+        ],
+        "file": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t50\\t50-01-light-typography.png",
+        "size": 59045
+      },
+      {
+        "theme": "dark",
+        "themed": true,
+        "themeAttr": "dark",
+        "settingsClosed": true,
+        "ready": true,
+        "reopened": {
+          "clicked": true,
+          "row": "side-node-01M321V83M1FG7PV9VA5EYTNPA",
+          "after": {
+            "settingsPage": false,
+            "editor": true
+          }
+        },
+        "computed": {
+          "body": {
+            "sel": "body",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "500",
+            "fontSize": "13px",
+            "tag": "BODY",
+            "cls": null,
+            "text": "\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik"
+          },
+          "paragraph": {
+            "sel": ".ProseMirror p",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "400",
+            "fontSize": "16px",
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+          },
+          "heading": {
+            "sel": "h1.sc-block--heading",
+            "fontFamily": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+            "fontWeight": "650",
+            "fontSize": "28px",
+            "tag": "H1",
+            "cls": "sc-block sc-block--heading",
+            "text": "一级标题 思源黑体"
+          },
+          "code": {
+            "sel": ".sc-block--code",
+            "fontFamily": "\"Geist Mono\", \"Sarasa Mono SC\", \"Microsoft YaHei Mono\", Consolas, monospace",
+            "fontWeight": "400",
+            "fontSize": "14px",
+            "tag": "PRE",
+            "cls": "sc-block sc-block--code",
+            "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+          }
+        },
+        "contentNow": [
+          {
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "字体验收：自托管思源黑体（Noto Sans SC 可变体）"
+          },
+          {
+            "tag": "H1",
+            "cls": "sc-block sc-block--heading",
+            "text": "一级标题 思源黑体"
+          },
+          {
+            "tag": "P",
+            "cls": "sc-block sc-block--paragraph",
+            "text": "正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。"
+          },
+          {
+            "tag": "PRE",
+            "cls": "sc-block sc-block--code",
+            "text": "const 字族 = 'Noto Sans SC'; // mono 不受影响"
+          }
+        ],
+        "file": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t50\\t50-01-dark-typography.png",
+        "size": 60565
+      }
+    ]
+  },
+  "assertions": [
+    {
+      "tag": "G0",
+      "step": "fixture",
+      "name": "[info] 夹具对象（原始）",
+      "ok": null,
+      "raw": "{\"wsId\":\"01M321V64TTNVYGTZ3TCP4ZFJD\",\"plainPageId\":\"01M321V83M1FG7PV9VA5EYTNPA\"}"
+    },
+    {
+      "tag": "G0",
+      "step": "fixture|reload",
+      "name": "[info] 夹具页载入（原始）",
+      "ok": null,
+      "raw": "{\"rowClick\":{\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}},\"editorReady\":true}"
+    },
+    {
+      "tag": "G0",
+      "step": "fixture|reload",
+      "name": "G0-0 夹具自检：普通页在真机渲染出编辑器（键入内容的前提成立）",
+      "ok": true,
+      "raw": "rowClick={\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}}"
+    },
+    {
+      "tag": "G0",
+      "step": "fixture|typing",
+      "name": "[info] 编辑器真内容（原始 DOM）",
+      "ok": null,
+      "raw": "[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}]"
+    },
+    {
+      "tag": "G0",
+      "step": "fixture|typing",
+      "name": "G0-1 夹具内容成立：正文段 / h1 标题 / 代码块三块都在（截图与断言的对象）",
+      "ok": true,
+      "raw": "focused=true hasHeading=true hasPara=true hasCode=true content=[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "[info] document.fonts 面列表（原始）",
+      "ok": null,
+      "raw": "[{\"family\":\"Noto Sans SC\",\"weight\":\"100 900\",\"style\":\"normal\",\"status\":\"loaded\",\"display\":\"swap\"}]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "[info] document.fonts.check 结果（原始）",
+      "ok": null,
+      "raw": "{\"400 16px \\\"Noto Sans SC\\\"\":true,\"450 14px \\\"Noto Sans SC\\\"\":true,\"650 28px \\\"Noto Sans SC\\\"\":true,\"400 16px \\\"Source Han Sans SC\\\"\":true,\"400 14px \\\"Geist Mono\\\"\":true,\"400 16px \\\"__septcats_no_such_family__\\\"\":true}"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "[info] @font-face 规则原文",
+      "ok": null,
+      "raw": "[\"@font-face { font-family: \\\"Noto Sans SC\\\"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(\\\"./NotoSansSC-wght-Dz1u1FRy.ttf\\\") format(\\\"truetype-variations\\\"), url(\\\"./NotoSansSC-wght-Dz1u1FRy.ttf\\\") format(\\\"truetype\\\"); }\"]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "[info] TTF 资源计时条目（原始）",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "[info] out/ 里的 ttf 产物（原始）",
+      "ok": null,
+      "raw": "[{\"name\":\"NotoSansSC-wght-Dz1u1FRy.ttf\",\"size\":17772300}]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "G1-1 FontFaceSet 含捆绑族 \"Noto Sans SC\" 且 status=loaded",
+      "ok": true,
+      "raw": "{\"family\":\"Noto Sans SC\",\"weight\":\"100 900\",\"style\":\"normal\",\"status\":\"loaded\",\"display\":\"swap\"}"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "G1-2 document.fonts.check 对 400 / 450 / 650 三档字重全 true（⚠ 该 API 在本 build 对不存在的族也返回 true，见 G2-4 对照组，此项仅作辅证不做生效依据）",
+      "ok": true,
+      "raw": "{\"400 16px \\\"Noto Sans SC\\\"\":true,\"450 14px \\\"Noto Sans SC\\\"\":true,\"650 28px \\\"Noto Sans SC\\\"\":true,\"400 16px \\\"Source Han Sans SC\\\"\":true,\"400 14px \\\"Geist Mono\\\"\":true,\"400 16px \\\"__septcats_no_such_family__\\\"\":true}"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "G1-3 @font-face 原文：src 指向 NotoSansSC-wght*.ttf（truetype-variations + truetype 兜底）、swap、无 unicode-range",
+      "ok": true,
+      "raw": "[\"@font-face { font-family: \\\"Noto Sans SC\\\"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(\\\"./NotoSansSC-wght-Dz1u1FRy.ttf\\\") format(\\\"truetype-variations\\\"), url(\\\"./NotoSansSC-wght-Dz1u1FRy.ttf\\\") format(\\\"truetype\\\"); }\"]"
+    },
+    {
+      "tag": "G1",
+      "step": "G1|fonts",
+      "name": "G1-4 捆绑字体产物字节数与 §0 指纹一致（17 772 300 B）",
+      "ok": true,
+      "raw": "bundledTtf=[{\"name\":\"NotoSansSC-wght-Dz1u1FRy.ttf\",\"size\":17772300}] expect=17772300"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "[info] computed 族名原文（浅色）",
+      "ok": null,
+      "raw": "{\"body\":{\"sel\":\"body\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"500\",\"fontSize\":\"13px\",\"tag\":\"BODY\",\"cls\":null,\"text\":\"\\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik\"},\"paragraph\":{\"sel\":\".ProseMirror p\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"400\",\"fontSize\":\"16px\",\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},\"heading\":{\"sel\":\"h1.sc-block--heading\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"650\",\"fontSize\":\"28px\",\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},\"code\":{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "[info] canvas 度量对照（原始）",
+      "ok": null,
+      "raw": "{\"sample\":\"思源黑体字体验收 Septcats 0123456789\",\"bundled\":287.629,\"yahei\":295.797,\"serif\":288.655,\"mono\":287.629,\"nonexistent\":287.629}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "[info] DOM 度量对照（权威口径，原始）",
+      "ok": null,
+      "raw": "{\"sample\":\"思源黑体字体验收 Septcats 0123456789\",\"bundled\":287.641,\"nonexistent\":287.641,\"yahei\":295.797,\"sansSerif\":287.641,\"serif\":288.656,\"bundledW650\":295.375,\"nonexistentW650\":296.656,\"cjkBundled\":128,\"cjkNonexistent\":128,\"latinBundled\":156.047,\"latinNonexistent\":156.047,\"latinYahei\":163.063}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "G2-1 body / 正文段 / h1 的 computed fontFamily 均以 \"Noto Sans SC\" 打头（实际生效族 = 捆绑族）",
+      "ok": true,
+      "raw": "{\"body\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"paragraph\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"heading\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "G2-2 mono 未被动：代码块 computed fontFamily 仍以 \"Geist Mono\" 打头且不含 Noto Sans SC",
+      "ok": true,
+      "raw": "{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "G2-3 DOM 度量具区分力：捆绑族宽度 ≠「Microsoft YaHei」宽度（整串与西文子串两路都不同）→ 度量本身能分辨字体",
+      "ok": true,
+      "raw": "{\"sample\":\"思源黑体字体验收 Septcats 0123456789\",\"bundled\":287.641,\"nonexistent\":287.641,\"yahei\":295.797,\"sansSerif\":287.641,\"serif\":288.656,\"bundledW650\":295.375,\"nonexistentW650\":296.656,\"cjkBundled\":128,\"cjkNonexistent\":128,\"latinBundled\":156.047,\"latinNonexistent\":156.047,\"latinYahei\":163.063}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "G2-4 对照组披露：document.fonts.check() 对本机不存在的族同样返回 true → 该 API 在本 build 不具区分力，不作生效依据",
+      "ok": true,
+      "raw": "check(nonexistent)=true checks={\"400 16px \\\"Noto Sans SC\\\"\":true,\"450 14px \\\"Noto Sans SC\\\"\":true,\"650 28px \\\"Noto Sans SC\\\"\":true,\"400 16px \\\"Source Han Sans SC\\\"\":true,\"400 14px \\\"Geist Mono\\\"\":true,\"400 16px \\\"__septcats_no_such_family__\\\"\":true}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "[info] FontFace 摘除/还原实验（原始）",
+      "ok": null,
+      "raw": "{\"found\":true,\"sample\":\"思源黑体字体验收 Septcats 0123456789 Wm@#\",\"withFace\":344.094,\"withoutFace\":344.094,\"afterRestore\":344.094,\"restoreOk\":true,\"bundledFileIsTheOneRendering\":false}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|computed",
+      "name": "G2-4b 判定性实验：摘掉本页 @font-face 后同串宽度变化 = 捆绑文件确实在渲染；不变 = 本机系统亦有同族同款字（两者都可接受，但必须如实定性）",
+      "ok": true,
+      "raw": "{\"found\":true,\"sample\":\"思源黑体字体验收 Septcats 0123456789 Wm@#\",\"withFace\":344.094,\"withoutFace\":344.094,\"afterRestore\":344.094,\"restoreOk\":true,\"bundledFileIsTheOneRendering\":false}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "[info] 源对照 app/ours/system（原始）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"url\":\"file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/NotoSansSC-wght-Dz1u1FRy.ttf\",\"oursStatus\":\"loaded\",\"systemStatus\":\"loaded\",\"sample\":\"思源黑体字体验收 Septcats 0123456789 Wm@#\",\"app\":344.094,\"ours\":344.094,\"system\":344.094,\"appW650\":354.219,\"oursW650\":354.219}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "G2-5 源对照：应用族名的度量 = 直接指向 out/ 里 NotoSansSC-wght*.ttf 的族名度量（400 与 650 两档都等）→ 应用用的就是捆绑文件",
+      "ok": true,
+      "raw": "{\"ok\":true,\"url\":\"file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/out/renderer/assets/NotoSansSC-wght-Dz1u1FRy.ttf\",\"oursStatus\":\"loaded\",\"systemStatus\":\"loaded\",\"sample\":\"思源黑体字体验收 Septcats 0123456789 Wm@#\",\"app\":344.094,\"ours\":344.094,\"system\":344.094,\"appW650\":354.219,\"oursW650\":354.219}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "[info] 源对照之「本机系统同族字」定性",
+      "ok": null,
+      "raw": "system(local \"Noto Sans SC\")=344.094 status=loaded；app=344.094 ours=344.094 → 系统那份与本文件同形（渲染不可分辨）"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "[info] 浮层样本（原始）",
+      "ok": null,
+      "raw": "[{\"id\":\"noto\",\"family\":\"\\\"Noto Sans SC\\\"\",\"rect\":{\"x\":26,\"y\":591,\"width\":516,\"height\":40}},{\"id\":\"yahei\",\"family\":\"\\\"Microsoft YaHei\\\"\",\"rect\":{\"x\":26,\"y\":630,\"width\":516,\"height\":40}},{\"id\":\"consolas\",\"family\":\"Consolas\",\"rect\":{\"x\":26,\"y\":669,\"width\":516,\"height\":40}}]"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "G2-6 浮层像素：同一串文字在「Noto Sans SC」与「Microsoft YaHei」「Consolas」下同区域截图**互不相同**（族名真的换到了字形，不是只写在栈里）",
+      "ok": true,
+      "raw": "[{\"id\":\"noto\",\"family\":\"\\\"Noto Sans SC\\\"\",\"bytes\":10771},{\"id\":\"yahei\",\"family\":\"\\\"Microsoft YaHei\\\"\",\"bytes\":11238},{\"id\":\"consolas\",\"family\":\"Consolas\",\"bytes\":9476}]"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "[info] 内联样式保持性体检（原始）",
+      "ok": null,
+      "raw": "{\"target\":\"h1.sc-block--heading\",\"apply\":{\"applied\":true,\"immediate\":\"serif\",\"styleAttr\":\"font-family: serif !important;\"},\"after500ms\":{\"later\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"styleAttr\":null},\"restored\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}"
+    },
+    {
+      "tag": "G2",
+      "step": "G2|pixels",
+      "name": "G2-7 体检结论：应用元素上的内联 font-family 会被上层重渲染抹掉（immediate≠later）→ 应用元素不能做像素对照；G2-6 的浮层样本承担该职责",
+      "ok": true,
+      "raw": "{\"target\":\"h1.sc-block--heading\",\"apply\":{\"applied\":true,\"immediate\":\"serif\",\"styleAttr\":\"font-family: serif !important;\"},\"after500ms\":{\"later\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"styleAttr\":null},\"restored\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "shot|light|capture",
+      "name": "[info] 截图 light（原始）",
+      "ok": null,
+      "raw": "{\"theme\":\"light\",\"themed\":true,\"themeAttr\":\"light\",\"settingsClosed\":true,\"ready\":true,\"reopened\":{\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}},\"computed\":{\"body\":{\"sel\":\"body\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"500\",\"fontSize\":\"13px\",\"tag\":\"BODY\",\"cls\":null,\"text\":\"\\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik\"},\"paragraph\":{\"sel\":\".ProseMirror p\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"400\",\"fontSize\":\"16px\",\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},\"heading\":{\"sel\":\"h1.sc-block--heading\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"650\",\"fontSize\":\"28px\",\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},\"code\":{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}},\"contentNow\":[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}],\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t50\\\\t50-01-light-typography.png\",\"size\":59045}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "shot|dark|capture",
+      "name": "[info] 截图 dark（原始）",
+      "ok": null,
+      "raw": "{\"theme\":\"dark\",\"themed\":true,\"themeAttr\":\"dark\",\"settingsClosed\":true,\"ready\":true,\"reopened\":{\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}},\"computed\":{\"body\":{\"sel\":\"body\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"500\",\"fontSize\":\"13px\",\"tag\":\"BODY\",\"cls\":null,\"text\":\"\\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik\"},\"paragraph\":{\"sel\":\".ProseMirror p\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"400\",\"fontSize\":\"16px\",\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},\"heading\":{\"sel\":\"h1.sc-block--heading\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"650\",\"fontSize\":\"28px\",\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},\"code\":{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}},\"contentNow\":[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}],\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t50\\\\t50-01-dark-typography.png\",\"size\":60565}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "shot|dark|capture",
+      "name": "G3 浅色整页截图已产出（data-theme=light + 正文/标题/代码块三块可见 + 文件非空）",
+      "ok": true,
+      "raw": "{\"theme\":\"light\",\"themed\":true,\"themeAttr\":\"light\",\"settingsClosed\":true,\"ready\":true,\"reopened\":{\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}},\"computed\":{\"body\":{\"sel\":\"body\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"500\",\"fontSize\":\"13px\",\"tag\":\"BODY\",\"cls\":null,\"text\":\"\\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik\"},\"paragraph\":{\"sel\":\".ProseMirror p\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"400\",\"fontSize\":\"16px\",\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},\"heading\":{\"sel\":\"h1.sc-block--heading\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"650\",\"fontSize\":\"28px\",\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},\"code\":{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}},\"contentNow\":[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}],\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t50\\\\t50-01-light-typography.png\",\"size\":59045}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "shot|dark|capture",
+      "name": "G4 深色整页截图已产出（data-theme=dark + 正文/标题/代码块三块可见 + 文件非空）",
+      "ok": true,
+      "raw": "{\"theme\":\"dark\",\"themed\":true,\"themeAttr\":\"dark\",\"settingsClosed\":true,\"ready\":true,\"reopened\":{\"clicked\":true,\"row\":\"side-node-01M321V83M1FG7PV9VA5EYTNPA\",\"after\":{\"settingsPage\":false,\"editor\":true}},\"computed\":{\"body\":{\"sel\":\"body\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"500\",\"fontSize\":\"13px\",\"tag\":\"BODY\",\"cls\":null,\"text\":\"\\n    T50 字体验收页已同步 · 刚刚个人工作区新建页面收藏0最近1Wik\"},\"paragraph\":{\"sel\":\".ProseMirror p\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"400\",\"fontSize\":\"16px\",\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},\"heading\":{\"sel\":\"h1.sc-block--heading\",\"fontFamily\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"fontWeight\":\"650\",\"fontSize\":\"28px\",\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},\"code\":{\"sel\":\".sc-block--code\",\"fontFamily\":\"\\\"Geist Mono\\\", \\\"Sarasa Mono SC\\\", \\\"Microsoft YaHei Mono\\\", Consolas, monospace\",\"fontWeight\":\"400\",\"fontSize\":\"14px\",\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}},\"contentNow\":[{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"字体验收：自托管思源黑体（Noto Sans SC 可变体）\"},{\"tag\":\"H1\",\"cls\":\"sc-block sc-block--heading\",\"text\":\"一级标题 思源黑体\"},{\"tag\":\"P\",\"cls\":\"sc-block sc-block--paragraph\",\"text\":\"正文段落：中文正文、标点，。！？—— 数字 0123456789，西文 ABCdef。\"},{\"tag\":\"PRE\",\"cls\":\"sc-block sc-block--code\",\"text\":\"const 字族 = 'Noto Sans SC'; // mono 不受影响\"}],\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t50\\\\t50-01-dark-typography.png\",\"size\":60565}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "shot|dark|capture",
+      "name": "G4-1 深色下族名同样以 \"Noto Sans SC\" 打头（主题切换不换字）",
+      "ok": true,
+      "raw": "{\"paragraph\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"heading\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}"
+    },
+    {
+      "tag": "G3-G4",
+      "step": "teardown",
+      "name": "退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

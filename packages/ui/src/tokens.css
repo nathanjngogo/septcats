@@ -24,8 +24,8 @@
   --sc-color-selection: #E8DDBC;
 
   /* typography：字体族 + 复合字阶（font shorthand，含中文系统栈） */
-  --sc-font-ui: Geist, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  --sc-font-serif-note: Geist, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --sc-font-ui: "Noto Sans SC", "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --sc-font-serif-note: "Noto Sans SC", "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   --sc-font-mono: "Geist Mono", "Sarasa Mono SC", "Microsoft YaHei Mono", Consolas, monospace;
   --sc-text-editor-body: 400 16px/1.75 var(--sc-font-ui);
   --sc-tracking-editor-body: 0.01em;
