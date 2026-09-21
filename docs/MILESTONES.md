@@ -3,6 +3,7 @@
 > PM 维护。每条 = 已真实验证（命令输出/真机取证），非口头。
 
 | 里程碑 | 日期 | 状态 | 证据 |
+| R10-① T54-01 关闭自动保存+托盘询问框 | 09-22 | ✅ PM 复跑 **29 PASS/0 FAIL** | closeGuard 状态机 先冲刷后弹框（flush ack 2s 兜底）；像素模态三钮+记住选择(trayClose)+Esc；Tray 左键 toggle 右键 显示/退出；不丢数据双路径实证（五段文本重启完整在库）；core/sync 零改动；desktop 693 无红；提交 171e5f7 |
 | └ T53-01 像素风立体+黑白灰 | 09-21 | ✅ PM 复跑 **41 PASS/0 FAIL + T52 回归 23/23** | DESIGN.md 全轴灰阶（名未改值全改，浅 #F5F5F5/#1A1A1A 系、深 #141414/#EDEDED 系）+bevel/shadow/pixel token 组；门禁 32 对全 ≥4.5（浅最差 4.55）；14 组件 CSS 吃立体语法（按压下沉 2px+亮暗对调实测 matrix(1,0,0,1,2,2)）；语义色只留红绿两粒；D-1~D-8 全追认；孤儿 node 锁 ABI 坑入 skill |
 | └ T52-01 布局融合三件 | 09-21 | ✅ PM 复跑 **23 PASS / 0 FAIL** | 侧栏通高 sideTop=0/高=innerHeight；钮 24px 标签行最左 Δy=0；活动标签与 pv-root 同色连通+冒泡命中；四宽度零滚动/收起 0px/gutter12 全复验；首轮揪出并修复折叠态隐式列缺陷；desktop 651→663 |
 | └ T51-01 重命名 blur 提交+菜单本地化 | 09-21 | ✅ PM 复跑 **16 PASS / 0 FAIL** | 三键语义齐（Enter/Esc/blur）空值回退；真实 ApplicationMenu zh 全中/en 全英 23 label 同构；File→New Page 真可用；Ctrl+W 关标签不关窗（无 role:close）；D-3 registerAccelerator:false 追认；desktop 651 全仓无红 |
