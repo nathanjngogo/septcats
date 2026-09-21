@@ -516,7 +516,7 @@ type Op = {
    Dials（product-UI 变体，非落地页基线）：`DESIGN_VARIANCE 4`（产品 UI 讲纪律）、`MOTION_INTENSITY 4`（动效只服务反馈）、`VISUAL_DENSITY 3`（编辑画布）/ `6`（数据库表格）。
 3. **双主题一等公民**：浅色/深色**同时设计、同时验收**；禁纯 `#000`/`#fff`；每个颜色 token 必须给双值；PR 未附双主题截图 = 未送审。
 4. **四态必交付**：空态（有构图、指明出口）/ 加载（骨架屏，形似最终布局，禁通用转圈）/ 错误（内联、可重试、说人话）/ 成功。缺任一态即「功能未完成」，不得计入进度。
-5. **排版**：UI 与正文 = Geist Sans（自托管 Latin）+ CJK 系统栈（PingFang SC / Microsoft YaHei / Noto Sans CJK SC）；正文 16px / line-height 1.75 / 最大 72ch；数字与日期 Geist Mono；中英混排自动空格与标点挤压规则写进 DESIGN.md prose。**禁止 Google Fonts CDN**（离线红线）。
+5. **排版（2026-09-21 老板全局规则更新）**：UI 与正文 = **思源黑体（Source Han Sans / Noto Sans CJK）**，**自托管捆绑**（可变字体 `apps/desktop/src/renderer/assets/fonts/NotoSansSC-wght.ttf`，一份覆盖全字重轴），不依赖系统字体；栈序 `"Source Han Sans SC", "Noto Sans SC", …, "Microsoft YaHei", sans-serif`。正文 16px / line-height 1.75 / 最大 72ch；**等宽（数字/日期/代码）暂保留现状**（老板未指定，如需改另立单）；中英混排规则写进 DESIGN.md prose。**禁止 Google Fonts CDN / 任何在线字体**（离线红线）。落地单：T50-01。
 6. **图标**：`@phosphor-icons/react` 单族，全局 `strokeWidth 1.5`，禁混族、禁手绘杂集（品牌猫标例外，走 §17 独立评审）。
 7. **动效**：仅 spring（`stiffness≈100 / damping≈20` 家族），仅 animate `transform/opacity`；每个动效须能一句话回答「它表达了什么」（层级/反馈/状态迁移），答不出即删除；全部包 `prefers-reduced-motion` 降级。
 8. **细节强制项**：`:focus-visible` 环必须存在且键盘全程可达；`:active` 有 1px 按压位移；圆角体系全应用一致（禁混用）；滚动容器不裁切焦点环；zh-CN 文案无翻译腔、不堆破折号（PM 过一遍 humanizer）；空/错误文案禁止卖萌。
