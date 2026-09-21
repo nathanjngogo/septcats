@@ -1,7 +1,8 @@
 /*
  * LayoutSection.css —— 设置页「布局」区块（TASK-T39-01）。
- * 只用 var(--sc-*) token（no-magic 门禁：无字面 hex、无非 1px 重复裸 px、无 transition
- * —— 后者免去 reduced-motion 兜底块，与 AiChatPanel.css 同口径）。
+ * 只用 var(--sc-*) token（no-magic 门禁：无字面 hex、无非 1px 重复裸 px）。
+ * T53-01：预设卡吃像素立体 token，本文件自 T53 起引入 transition → 按 T27-01 §0.B.2
+ * 补 prefers-reduced-motion 兜底块（每文件自查，不依赖 tokens.css 全局兜底）。
  */
 
 .layout-presets {
@@ -26,6 +27,12 @@
   cursor: pointer;
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
+  /* T53-01 像素立体：预设卡 = 可点按钮面（hover 凸 / 按压凹） */
+  box-shadow: var(--sc-bevel-out);
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    border-color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .layout-preset-card:hover {
@@ -34,12 +41,15 @@
 
 .layout-preset-card:active {
   background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-bevel-in);
 }
 
+/* T53-01：选中态不再走 accent 色相 → 描边提墨 + 凹陷面（明度差方案） */
 .layout-preset-card--active,
 .layout-preset-card--active:hover {
-  border-color: var(--sc-color-accent);
+  border-color: var(--sc-color-ink);
   background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-bevel-in);
 }
 
 .layout-preset-name {
@@ -89,4 +99,11 @@
   margin: var(--sc-space-sm) 0 0;
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-danger);
+}
+
+/* T27-01 §0.B.2：reduced-motion 兜底（关掉本文件引入的过渡） */
+@media (prefers-reduced-motion: reduce) {
+  .layout-preset-card {
+    transition: none;
+  }
 }

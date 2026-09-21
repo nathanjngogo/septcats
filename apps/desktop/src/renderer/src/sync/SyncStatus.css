@@ -30,7 +30,8 @@
   background: var(--sc-color-surface);
 }
 
-/* T27-01 §0.B：按压反馈（active → accent-soft） */
+/* T27-01 §0.B：按压反馈（active → accent-soft；T53-01 起 accent-soft 本身已灰阶化，
+ * 但它仍是「浅一档的中性按压底」，故按压口径保持不动，只换值不改用法） */
 .sc-sync-status__pill:active {
   background: var(--sc-color-accent-soft);
 }
@@ -53,16 +54,17 @@
   color: var(--sc-color-ink-faint);
 }
 
-/* syncing：琥珀呼吸点 */
+/* syncing：T53-01 §0 —— 同步语义色保留 success 绿一粒（原 accent 琥珀点灰阶后与闲置灰点
+ * 不可辨），进行中与完成靠呼吸动画区分（ok 为静态绿点）。 */
 .sc-sync-status__pill--syncing {
-  color: var(--sc-color-accent);
+  color: var(--sc-color-success);
 }
 .sc-sync-status__pill--syncing .sc-sync-status__dot {
-  background: var(--sc-color-accent);
+  background: var(--sc-color-success);
   animation: sc-sync-breathe 1.2s var(--sc-ease-out) infinite;
 }
 
-/* ok：绿点 */
+/* ok：绿点（同步绿第二落点：完成态，静态） */
 .sc-sync-status__pill--ok {
   color: var(--sc-color-ink-secondary);
 }
@@ -70,13 +72,14 @@
   background: var(--sc-color-success);
 }
 
-/* degraded：橙点 */
+/* degraded：T53-01 —— 原 accent 橙点灰阶化后改用「明度差 + 描边环」表达（灰点 + 2px 环），
+ * 与 idle 的裸灰点在观感上明确分档，同时不动用两粒语义色。 */
 .sc-sync-status__pill--degraded {
-  color: var(--sc-color-accent);
+  color: var(--sc-color-ink);
 }
 .sc-sync-status__pill--degraded .sc-sync-status__dot {
-  background: var(--sc-color-accent);
-  box-shadow: 0 0 0 2px var(--sc-color-accent-soft);
+  background: var(--sc-color-ink-secondary);
+  box-shadow: 0 0 0 2px var(--sc-color-surface-active);
 }
 
 /* error：红点 */
@@ -204,21 +207,29 @@
   color: var(--sc-color-ink);
   font: var(--sc-text-ui-xs);
   cursor: pointer;
+  /* T53-01 像素立体：面板内按钮 = 凸起硬边亮暗面 */
+  box-shadow: var(--sc-bevel-out);
   /* T27-01 §0.B：token 化短过渡（hover/active 反馈） */
   transition:
     background-color var(--sc-motion-fast) ease-out,
     border-color var(--sc-motion-fast) ease-out,
-    color var(--sc-motion-fast) ease-out;
+    color var(--sc-motion-fast) ease-out,
+    box-shadow var(--sc-motion-fast) ease-out,
+    transform var(--sc-motion-fast) ease-out;
 }
 
+/* T53-01：hover 由「accent 色相」改为「描边加深 + 文字提墨」的明度差方案 */
 .sc-sync-status__button:hover:not(:disabled) {
-  border-color: var(--sc-color-accent);
-  color: var(--sc-color-accent);
+  border-color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface);
 }
 
-/* T27-01 §0.B：按压反馈补缺（active → accent-soft 底） */
+/* T53-01：按压 = 下沉 2px + 亮暗对调（旧「active → accent-soft 底」退役） */
 .sc-sync-status__button:active:not(:disabled) {
-  background: var(--sc-color-accent-soft);
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-bevel-in);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }
 
 .sc-sync-status__button:disabled {

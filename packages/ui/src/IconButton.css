@@ -9,16 +9,20 @@
   transition:
     background var(--sc-motion-fast) var(--sc-ease-out),
     color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out),
     transform var(--sc-motion-fast) var(--sc-ease-out);
 }
 
+/* T53-01 像素立体：hover 给硬边亮暗面（透明底不挂 offset 投影，工具条成排不互相压影） */
 .sc-iconbtn:hover:not(:disabled) {
   background: var(--sc-color-surface);
   color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-out);
 }
 
 .sc-iconbtn:active:not(:disabled) {
-  transform: translateY(1px);
+  box-shadow: var(--sc-bevel-in);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }
 
 .sc-iconbtn:disabled {

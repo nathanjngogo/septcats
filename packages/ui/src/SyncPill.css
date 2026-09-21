@@ -17,12 +17,13 @@
   background: var(--sc-color-ink-faint);
 }
 
+/* T53-01 §0：同步语义色保留绿一粒（原 accent 琥珀呼吸点退役——灰阶下与闲置灰点不可辨） */
 .sc-sync--busy {
-  color: var(--sc-color-accent);
+  color: var(--sc-color-success);
 }
 
 .sc-sync--busy .sc-sync__dot {
-  background: var(--sc-color-accent);
+  background: var(--sc-color-success);
   animation: sc-breathe 1.2s var(--sc-ease-out) infinite;
 }
 

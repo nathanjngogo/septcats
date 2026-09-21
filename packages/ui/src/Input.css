@@ -17,7 +17,11 @@
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
   font: var(--sc-text-ui-sm);
-  transition: border-color var(--sc-motion-fast) var(--sc-ease-out);
+  /* T53-01 像素风：静止态即凹陷面（bevel-in），焦点靠「描边加深」而非色相 */
+  box-shadow: var(--sc-bevel-in);
+  transition:
+    border-color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .sc-field__control::placeholder {
@@ -28,8 +32,10 @@
   border-color: var(--sc-color-hairline-strong);
 }
 
+/* T53-01：focus 不再走 accent（已灰阶），改走「描边提到 ink + 凹陷加强」的明度差方案 */
 .sc-field__control:focus-visible {
-  border-color: var(--sc-color-accent);
+  border-color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-in);
 }
 
 .sc-field__control:disabled {

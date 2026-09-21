@@ -70,6 +70,20 @@
   display: grid;
   place-items: center;
   cursor: grab;
+  border-radius: var(--sc-radius-sm);
+  /* T53-01 像素立体：整簇（拖拽壳 + 内部两键）hover 时读作一块凸起的像素控件；
+     静止态不挂影 → T33/T36 装订线/簇宽几何一字不动（box-shadow 不参与布局）。
+     注：簇内真正的两个按键（.sc-blockcontrol__add/__handle）住 packages/editor，
+     属本单红线禁区 → 立体感由本壳承载（见报告 DEVIATION）。 */
+  transition: box-shadow var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.pv-handle:hover {
+  box-shadow: var(--sc-bevel-out);
+}
+
+.pv-handle:active {
+  box-shadow: var(--sc-bevel-in);
 }
 
 .pv-dropline {
@@ -136,6 +150,12 @@
   background: var(--sc-color-surface-active);
 }
 
+/* T53-01 AA 收敛：行 hover 底升到 surface-active 后，行内弱化上下文提一档到 ink-secondary
+ * （ink-faint 对 surface-active 实测 4.00，是门禁配对表之外的真实落点）。 */
+.pv-backlinks__item:hover .pv-backlinks__context {
+  color: var(--sc-color-ink-secondary);
+}
+
 .pv-backlinks__source {
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-accent);
@@ -147,4 +167,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* T27-01 §0.B.2：reduced-motion 兜底（关掉本文件引入的过渡） */
+@media (prefers-reduced-motion: reduce) {
+  .pv-handle {
+    transition: none;
+  }
 }

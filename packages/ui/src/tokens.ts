@@ -4,47 +4,53 @@
  */
 
 export const colors = {
-  canvas: "#F9F8F7",
-  surface: "#F1F0EF",
+  canvas: "#F5F5F5",
+  surface: "#EDEDED",
   "surface-raised": "#FFFFFF",
   content: "#FFFFFF",
-  "surface-active": "#EEECEB",
-  ink: "#2C2C2B",
-  "ink-secondary": "#5F5E59",
-  "ink-faint": "#6B6964",
-  "icon-faint": "#8E8B86",
-  hairline: "#EAE8E6",
-  "hairline-strong": "#D2D2CC",
-  accent: "#A16207",
-  "accent-soft": "#F6EEDD",
+  "surface-active": "#DFDFDF",
+  ink: "#1A1A1A",
+  "ink-secondary": "#595959",
+  "ink-faint": "#6B6B6B",
+  "icon-faint": "#9A9A9A",
+  hairline: "#DDDDDD",
+  "hairline-strong": "#C4C4C4",
+  accent: "#333333",
+  "accent-soft": "#E6E6E6",
   "on-accent": "#FFFFFF",
   danger: "#8A2B1C",
-  "danger-soft": "#FBEFEC",
+  "danger-soft": "#F5E5E1",
   success: "#3F6B34",
-  "focus-ring": "#A16207",
-  selection: "#E8DDBC"
+  "focus-ring": "#1A1A1A",
+  selection: "#D4D4D4",
+  "bevel-hi": "#FFFFFF",
+  "bevel-lo": "#A9A9A9",
+  "shadow-pixel": "#C6C6C6"
 } as const;
 
 export const colorsDark = {
-  canvas: "#202020",
-  surface: "#252525",
-  "surface-raised": "#2E2E2E",
-  content: "#191919",
-  "surface-active": "#2C2C2C",
-  ink: "#E9E9E9",
-  "ink-secondary": "#A9A7A1",
-  "ink-faint": "#9C9A94",
-  "icon-faint": "#8B8B8B",
-  hairline: "#2F2F2F",
-  "hairline-strong": "#424242",
-  accent: "#D9A441",
-  "accent-soft": "#33290F",
-  "on-accent": "#1C1E21",
+  canvas: "#141414",
+  surface: "#1E1E1E",
+  "surface-raised": "#262626",
+  content: "#0A0A0A",
+  "surface-active": "#2A2A2A",
+  ink: "#EDEDED",
+  "ink-secondary": "#A8A8A8",
+  "ink-faint": "#909090",
+  "icon-faint": "#6E6E6E",
+  hairline: "#2E2E2E",
+  "hairline-strong": "#3F3F3F",
+  accent: "#D4D4D4",
+  "accent-soft": "#333333",
+  "on-accent": "#141414",
   danger: "#F2B8AD",
   "danger-soft": "#3A1E1A",
   success: "#9CCB8F",
-  "focus-ring": "#D9A441",
-  selection: "#42381C"
+  "focus-ring": "#EDEDED",
+  selection: "#3A3A3A",
+  "bevel-hi": "#565656",
+  "bevel-lo": "#0A0A0A",
+  "shadow-pixel": "#050505"
 } as const;
 
 export const typography = {
@@ -111,11 +117,11 @@ export const typography = {
 } as const;
 
 export const rounded = {
-  xs: "4px",
-  sm: "6px",
-  md: "8px",
-  lg: "12px",
-  xl: "16px",
+  xs: "2px",
+  sm: "2px",
+  md: "4px",
+  lg: "6px",
+  xl: "8px",
   full: "999px"
 } as const;
 
@@ -135,7 +141,11 @@ export const spacing = {
 export const elevation = {
   "shadow-popover": "0 8px 24px -12px rgba(28,30,33,0.18), 0 2px 6px rgba(28,30,33,0.06)",
   "shadow-modal": "0 24px 64px -16px rgba(28,30,33,0.28), 0 4px 12px rgba(28,30,33,0.08)",
-  "shadow-tinted-light": "0 1px 2px rgba(28,30,33,0.05)"
+  "shadow-tinted-light": "0 1px 2px rgba(28,30,33,0.05)",
+  "bevel-out": "inset 2px 2px 0 0 var(--sc-color-bevel-hi), inset -2px -2px 0 0 var(--sc-color-bevel-lo)",
+  "bevel-in": "inset 2px 2px 0 0 var(--sc-color-bevel-lo), inset -2px -2px 0 0 var(--sc-color-bevel-hi)",
+  "pixel-out": "2px 2px 0 0 var(--sc-color-shadow-pixel), inset 2px 2px 0 0 var(--sc-color-bevel-hi), inset -2px -2px 0 0 var(--sc-color-bevel-lo)",
+  "pixel-flat": "2px 2px 0 0 var(--sc-color-shadow-pixel)"
 } as const;
 
 export const motion = {
@@ -163,7 +173,7 @@ export const zIndex = {
 
 export const easeOut = 'cubic-bezier(0.16,1,0.3,1)';
 
-export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection'] as const;
+export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection', 'bevel-hi', 'bevel-lo', 'shadow-pixel'] as const;
 
 export const TOKEN_PREFIX = '--sc-';
 

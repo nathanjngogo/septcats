@@ -1,12 +1,13 @@
+/* T53-01 像素风：键帽 = 硬边亮暗面（旧「下边框 2px」的字面几何退役，改走 token） */
 .sc-kbd {
   display: inline-block;
   padding: 1px 5px;
   border: 1px solid var(--sc-color-hairline-strong);
-  border-bottom-width: 2px;
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);
   font: var(--sc-text-ui-xs);
   font-family: var(--sc-font-mono);
+  box-shadow: var(--sc-bevel-out);
   white-space: nowrap;
 }

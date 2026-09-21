@@ -12,11 +12,15 @@
   transition:
     background var(--sc-motion-fast) var(--sc-ease-out),
     border-color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out),
     transform var(--sc-motion-fast) var(--sc-ease-out);
 }
 
+/* T53-01 像素按压：整体下沉 2px（= offset 投影量，视觉上「压进自己的影子里」）
+ * + 亮暗面对调（bevel-in）——旧口径的 translateY(1px) 升级为下沉 + 对调。 */
 .sc-btn:active:not(:disabled) {
-  transform: translateY(1px);
+  box-shadow: var(--sc-bevel-in);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }
 
 .sc-btn:disabled {
@@ -33,6 +37,7 @@
 .sc-btn--primary {
   background: var(--sc-color-accent);
   color: var(--sc-color-on-accent);
+  box-shadow: var(--sc-pixel-out);
 }
 
 .sc-btn--primary:hover:not(:disabled) {
@@ -43,12 +48,14 @@
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
   border-color: var(--sc-color-hairline-strong);
+  box-shadow: var(--sc-pixel-out);
 }
 
 .sc-btn--secondary:hover:not(:disabled) {
   background: var(--sc-color-surface);
 }
 
+/* ghost：透明底不挂 offset 投影（工具条上一排钮会互相压影），hover 只给硬边亮暗面 */
 .sc-btn--ghost {
   color: var(--sc-color-ink-secondary);
 }
@@ -56,11 +63,13 @@
 .sc-btn--ghost:hover:not(:disabled) {
   background: var(--sc-color-surface);
   color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-out);
 }
 
 .sc-btn--destructive {
   background: var(--sc-color-danger);
   color: var(--sc-color-on-accent);
+  box-shadow: var(--sc-pixel-out);
 }
 
 .sc-btn--destructive:hover:not(:disabled) {

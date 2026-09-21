@@ -23,11 +23,23 @@
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
   font: var(--sc-text-ui-xs);
-  transition: background var(--sc-motion-fast) var(--sc-ease-out);
+  /* T53-01 像素风：按钮面 = 凸起（硬边亮暗面） */
+  box-shadow: var(--sc-bevel-out);
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out),
+    transform var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .sc-select__trigger:hover:not(:disabled) {
   background: var(--sc-color-surface);
+}
+
+/* T53-01：按压 = 下沉 2px + 亮暗对调 */
+.sc-select__trigger:active:not(:disabled) {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-bevel-in);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }
 
 .sc-select__trigger:disabled {

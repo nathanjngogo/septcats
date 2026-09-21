@@ -28,19 +28,25 @@
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-on-accent);
+  /* T53-01 像素风：未选中 = 凹槽（bevel-in）；选中 = 凸起（bevel-out），状态靠亮暗对调 */
+  box-shadow: var(--sc-bevel-in);
   transition:
     background var(--sc-motion-fast) var(--sc-ease-out),
-    border-color var(--sc-motion-fast) var(--sc-ease-out);
+    border-color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .sc-cbx__input:checked + .sc-cbx__box,
 .sc-cbx__input:indeterminate + .sc-cbx__box {
   background: var(--sc-color-accent);
   border-color: var(--sc-color-accent);
+  box-shadow: var(--sc-bevel-out);
 }
 
+/* 焦点环走 outline（不用 box-shadow）→ 不覆盖上面两态的 bevel 立体 */
 .sc-cbx__input:focus-visible + .sc-cbx__box {
-  box-shadow: 0 0 0 2px var(--sc-color-focus-ring);
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .sc-cbx__input:disabled + .sc-cbx__box {

@@ -5,6 +5,8 @@
   background: var(--sc-color-surface);
   border: 1px solid var(--sc-color-hairline-strong);
   border-radius: var(--sc-radius-md);
+  /* T53-01 像素风：分段控件底座 = 凹槽 */
+  box-shadow: var(--sc-bevel-in);
 }
 
 .sc-radio {
@@ -20,7 +22,8 @@
   cursor: pointer;
   transition:
     background var(--sc-motion-fast) var(--sc-ease-out),
-    color var(--sc-motion-fast) var(--sc-ease-out);
+    color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .sc-radio__input {
@@ -30,10 +33,11 @@
   opacity: 0;
 }
 
+/* T53-01：选中项从凹槽里凸出来（亮暗面），替掉旧 tinted 软影 */
 .sc-radio--on {
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
-  box-shadow: var(--sc-shadow-tinted-light);
+  box-shadow: var(--sc-bevel-out);
 }
 
 .sc-radio:hover:not(.sc-radio--on) {

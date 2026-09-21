@@ -164,6 +164,13 @@ html, body {
   color: var(--sc-color-ink-faint);
 }
 
+/* T53-01 AA 收敛：选中行底升到 surface-active 后，行内弱化计数提一档到 ink-secondary ——
+ * ink-faint 对 surface-active 实测 4.00，是门禁配对表之外的真实落点，
+ * 按「ink-faint 禁用于任何必读信息 + 弱化面须过 AA」收敛（数值见 T53-01 报告）。 */
+.app-nav-row--active .app-nav-count {
+  color: var(--sc-color-ink-secondary);
+}
+
 .app-nav-row--head .app-nav-ic {
   color: var(--sc-color-icon-faint);
 }
@@ -205,7 +212,7 @@ html, body {
   color: var(--sc-color-ink-faint);
 }
 
-/* 行内重命名输入框（T21-02：最小实现，只走既有 token；T34-01 底改白（surface-raised）） */
+/* 行内重命名输入框（T21-02：最小实现，只走既有 token；T53-01 改凹陷面 bevel-in） */
 .app-nav-input {
   flex: 1;
   min-width: 0;
@@ -216,6 +223,7 @@ html, body {
   border-radius: var(--sc-radius-sm);
   outline: none;
   padding: 0 var(--sc-space-xxs);
+  box-shadow: var(--sc-bevel-in);
 }
 
 /* 收藏/最近为空时的空态行（T22-01 §0.C：与 .search-empty/.trash-empty 同 token 组合） */
@@ -238,16 +246,20 @@ html, body {
   border-radius: var(--sc-radius-sm);
   color: var(--sc-color-ink-faint);
   cursor: pointer;
-  transition: color var(--sc-motion-fast) ease-out;
+  /* T53-01：像素立体反馈（hover 凸 / active 凹）；旧的「active 走 accent 色相」退役 */
+  transition:
+    color var(--sc-motion-fast) ease-out,
+    box-shadow var(--sc-motion-fast) ease-out;
 }
 
 .app-nav-suffix:hover {
   color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-out);
 }
 
-/* T27-01 §0.B：图标钮按压反馈（hover 加深 → active 用 accent 收口） */
 .app-nav-suffix:active {
-  color: var(--sc-color-accent);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-in);
 }
 
 /* T24-01 §0.A：页面行「⋯」菜单（hover/选中/展开时露出；定位壳同 .tpl-menu-wrap） */

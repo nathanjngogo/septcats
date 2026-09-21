@@ -1,14 +1,17 @@
 /**
- * contrast.test.ts —— 对比度红线真门禁（TASK-T20-01 §1）。
+ * contrast.test.ts —— 对比度红线真门禁（TASK-T20-01 §1；TASK-T53-01 灰阶色板复核）。
  *
  * 背景：DESIGN.md 曾自称「对比度红线（CI lint 验证）」但仓库里并不存在该
  * lint（PM 实测发现）。本文件把这条红线变成真的：
  *  - 真源：仓库根 DESIGN.md（front matter 浅色 + 「深色主题映射」表深色）；
  *  - 产物：packages/ui/src/tokens.css（先断言与 DESIGN.md 逐 token 一致，防手改产物）；
  *  - 断言（两主题）：ink / ink-secondary / ink-faint 对 canvas / surface /
- *    surface-raised 全 ≥4.5；on-accent 对 accent、accent / danger / success
- *    对 canvas 全 ≥4.5；失败信息打印「token 对 + 实测比值 + 阈值」；
+ *    surface-raised / content 全 ≥4.5；on-accent 对 accent、accent / danger /
+ *    success 对 canvas 全 ≥4.5；失败信息打印「token 对 + 实测比值 + 阈值」；
  *  - ink-faint ≠ ink-secondary（防两档灰合并，层次塌陷）。
+ * T53-01：配对表**不改**（口径同 T34「配对表以门禁为准」）。`accent` 灰阶化不改变
+ * 门禁结构——`accent` 现在也是灰阶色，但既有的 accent/canvas 与 on-accent/accent
+ * 断言照原样生效（灰也要过 AA）。ink-faint 按 §2 提档预案落到 #6B6B6B/#909090。
  * WCAG 相对亮度公式与 tokens/build-tokens.mjs 的提取口径一致：hex → sRGB →
  * 线性化 → L = 0.2126R + 0.7152G + 0.0722B；比值 = (亮 + 0.05) / (暗 + 0.05)。
  */
@@ -169,18 +172,28 @@ describe('对比度红线（DESIGN.md ↔ tokens.css ↔ WCAG AA）', () => {
     });
   }
 
-  it('本轮裁决值锚定：ink-faint 浅色 #6B6964 / 深色 #9C9A94（T34-01 Notion 对齐，防回归到旧值）', () => {
-    expect(fromCss.light['ink-faint']).toBe('#6B6964');
-    expect(fromCss.dark['ink-faint']).toBe('#9C9A94');
+  it('本轮裁决值锚定：ink-faint 浅色 #6B6B6B / 深色 #909090（T53-01 灰阶化提档，防回归）', () => {
+    expect(fromCss.light['ink-faint']).toBe('#6B6B6B');
+    expect(fromCss.dark['ink-faint']).toBe('#909090');
   });
 
-  it('报告口径：文字 token 两主题 × 四平面的实测比值（打进测试输出供报告引用）', () => {
+  it('报告口径：两主题 × 门禁全配对实测比值（12 文字对 + 4 语义/强调对，打进测试输出供报告引用）', () => {
+    const statusPairs: ReadonlyArray<readonly [string, string]> = [
+      ['accent', 'canvas'],
+      ['danger', 'canvas'],
+      ['success', 'canvas'],
+      ['on-accent', 'accent'],
+    ];
     for (const theme of ['light', 'dark'] as const) {
       for (const fg of TEXT_TOKENS) {
         for (const bg of BACKDROPS) {
           // eslint-disable-next-line no-console -- 报告引用数据
           console.log(`  ${theme} ${fg}/${bg} = ${ratio(theme, fg, bg).toFixed(2)}`);
         }
+      }
+      for (const [fg, bg] of statusPairs) {
+        // eslint-disable-next-line no-console -- 报告引用数据
+        console.log(`  ${theme} ${fg}/${bg} = ${ratio(theme, fg, bg).toFixed(2)}`);
       }
     }
   });

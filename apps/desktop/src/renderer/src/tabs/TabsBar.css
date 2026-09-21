@@ -60,25 +60,33 @@
   user-select: none;
   /* T52-01 §1.3：非活动标签沉 surface 灰底（行底 canvas 之上的一档凹陷） */
   background: var(--sc-color-surface);
+  /* T53-01 像素立体：非活动标签 = 凸起硬边亮暗面（不位移——标签底对齐是 T52 融合语义） */
+  box-shadow: var(--sc-bevel-out);
   /* T27-01 §0.B 过渡纪律：token 化短过渡 */
   transition:
     background-color var(--sc-motion-fast) ease-out,
-    color var(--sc-motion-fast) ease-out;
+    color var(--sc-motion-fast) ease-out,
+    box-shadow var(--sc-motion-fast) ease-out;
 }
 
-/* hover / 按压同档（调色板里比 surface 更深的一档只有 surface-active；按压不再加档） */
+/* hover / 按压同档（调色板里比 surface 更深的一档只有 surface-active；按压不再加档）
+ * T53-01：按压 = 亮暗面对调（凹进去），不位移（标签底边贴正文，位移会撕开融合缝） */
 .tabsbar-tab:hover,
 .tabsbar-tab:active {
   background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-bevel-in);
 }
 
 /* 当前标签（T52-01 §1.3）：content 白底 = `.pv-root` 同 token → 与编辑区连通无缝，
- * 底边不设分隔线（活动列「冒泡」进正文）。 */
+ * 底边不设分隔线（活动列「冒泡」进正文）。
+ * T53-01：活动标签**不挂 bevel**——inset 亮暗面会在下缘画出一条内部暗边，
+ * 正是 T52「标签与正文连通、无隔离带」要消除的东西（融合语义优先于立体语法）。 */
 .tabsbar-tab--active,
 .tabsbar-tab--active:hover,
 .tabsbar-tab--active:active {
   background: var(--sc-color-content);
   font-weight: 500;
+  box-shadow: none;
 }
 
 .tabsbar-title {
@@ -106,15 +114,25 @@
   cursor: pointer;
   transition:
     background-color var(--sc-motion-fast) ease-out,
-    color var(--sc-motion-fast) ease-out;
+    color var(--sc-motion-fast) ease-out,
+    box-shadow var(--sc-motion-fast) ease-out;
 }
 
 /* T52-01 §1.3：标签底色改为 surface/content 后，× 的 hover 底须在两色上都可见
- * （原 surface-raised 白底在活动标签白底上不可见）→ 统一 surface-active */
+ * （原 surface-raised 白底在活动标签白底上不可见）→ 统一 surface-active
+ * T53-01：加像素立体（hover 凸 / active 凹） */
 .tabsbar-close:hover,
 .tabsbar-close:active {
   background: var(--sc-color-surface-active);
   color: var(--sc-color-ink);
+}
+
+.tabsbar-close:hover {
+  box-shadow: var(--sc-bevel-out);
+}
+
+.tabsbar-close:active {
+  box-shadow: var(--sc-bevel-in);
 }
 
 /* T27-01 §0.C：reduced-motion 兜底（本文件引入的过渡关掉） */

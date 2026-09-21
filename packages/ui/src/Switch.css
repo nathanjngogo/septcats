@@ -5,7 +5,12 @@
   flex: none;
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-hairline-strong);
-  transition: background var(--sc-motion-fast) var(--sc-ease-out);
+  /* T53-01 像素风：轨是凹槽 */
+  box-shadow: var(--sc-bevel-in);
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out),
+    transform var(--sc-motion-fast) var(--sc-ease-out);
 }
 
 .sc-switch__knob {
@@ -16,7 +21,8 @@
   height: var(--sc-space-lg);
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-surface-raised);
-  box-shadow: var(--sc-shadow-tinted-light);
+  /* T53-01：滑块改吃实心 offset 投影（无 blur 的像素影） */
+  box-shadow: var(--sc-pixel-flat);
   transition: transform var(--sc-motion-fast) var(--sc-ease-out);
 }
 
@@ -33,6 +39,7 @@
   opacity: 0.55;
 }
 
+/* T53-01：按压 = 下沉 2px（旧 translateY(1px) 升级） */
 .sc-switch:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }

@@ -1,0 +1,678 @@
+{
+  "task": "TASK-T53-01 真机取证（像素风立体按钮 + 全局黑白灰化；含 T52 23 条回归电池原样复跑）",
+  "ranAt": "2026-09-21T17:17:31.882Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/按压/截图 + Emulation.setDeviceMetricsOverride 四宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t53-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t53-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t53-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t53-01-editor-light.png",
+    "t53-01-side-tabs-light.png",
+    "t53-01-db-light.png",
+    "t53-01-settings-light.png",
+    "t53-01-editor-dark.png",
+    "t53-01-side-tabs-dark.png",
+    "t53-01-db-dark.png",
+    "t53-01-settings-dark.png"
+  ],
+  "pass": 41,
+  "fail": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "fusion": {
+      "sideTop": 0,
+      "sideLeft": 0,
+      "sideHeight": 735,
+      "asideTop": 0,
+      "asideWidth": 240,
+      "topbarLeft": 240,
+      "topbarRight": 1184,
+      "topbarTop": 0,
+      "innerHeight": 735,
+      "innerWidth": 1184,
+      "outerHeight": 800,
+      "outerWidth": 1200,
+      "nativeChromeH": 65,
+      "shellBtnDisplay": "none"
+    },
+    "toggle": {
+      "btnCenterX": 260,
+      "btnCenterY": 58,
+      "btnW": 24,
+      "barLeft": 248,
+      "barRight": 1176,
+      "barCenterY": 58,
+      "barTop": 40,
+      "barHeight": 36,
+      "activeCenterY": 62,
+      "inViewport": true
+    },
+    "colors": {
+      "barBg": "rgb(245, 245, 245)",
+      "barBorderBottom": "0px",
+      "activeBg": "rgb(255, 255, 255)",
+      "activeBorderBottom": "0px",
+      "inactiveBg": "rgb(237, 237, 237)",
+      "pvBg": "rgb(255, 255, 255)",
+      "pvTop": 76,
+      "barBottom": 76,
+      "belowActive": "pv-root"
+    },
+    "widths": [
+      {
+        "w": 1280,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1280,
+        "winClientW": 1280,
+        "sideTop": 0,
+        "sidebarW": 240
+      },
+      {
+        "w": 900,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 900,
+        "winClientW": 900,
+        "sideTop": 0,
+        "sidebarW": 240
+      },
+      {
+        "w": 760,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 760,
+        "winClientW": 760,
+        "sideTop": 0,
+        "sidebarW": 240
+      },
+      {
+        "w": 640,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 640,
+        "winClientW": 640,
+        "sideTop": 0,
+        "sidebarW": 240
+      }
+    ],
+    "collapsed": {
+      "sidebarW": 0,
+      "sidebarDisplay": "none",
+      "appSideVisible": false,
+      "mainW": 1184,
+      "mainLeft": 0,
+      "topbarLeft": 0,
+      "topbarRight": 1184,
+      "winW": 1184,
+      "btnRect": {
+        "x": 8,
+        "y": 46,
+        "w": 24,
+        "h": 24
+      },
+      "btnInViewport": true
+    },
+    "gutter": {
+      "bodyPaddingLeft": "70px",
+      "gutter": 12,
+      "overlap": false,
+      "clusterW": 58,
+      "clusterH": 28
+    },
+    "tokensLight": {
+      "colors": {
+        "canvas": "#F5F5F5",
+        "surface": "#EDEDED",
+        "surface-raised": "#FFFFFF",
+        "content": "#FFFFFF",
+        "surface-active": "#DFDFDF",
+        "ink": "#1A1A1A",
+        "ink-secondary": "#595959",
+        "ink-faint": "#6B6B6B",
+        "icon-faint": "#9A9A9A",
+        "hairline": "#DDDDDD",
+        "hairline-strong": "#C4C4C4",
+        "accent": "#333333",
+        "accent-soft": "#E6E6E6",
+        "selection": "#D4D4D4",
+        "bevel-hi": "#FFFFFF",
+        "bevel-lo": "#A9A9A9",
+        "shadow-pixel": "#C6C6C6",
+        "danger": "#8A2B1C",
+        "success": "#3F6B34",
+        "on-accent": "#FFFFFF",
+        "focus-ring": "#1A1A1A",
+        "danger-soft": "#F5E5E1"
+      },
+      "raw": {
+        "bevel-out": "inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9",
+        "bevel-in": "inset 2px 2px 0 0 #A9A9A9, inset -2px -2px 0 0 #FFFFFF",
+        "pixel-out": "2px 2px 0 0 #C6C6C6, inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9",
+        "pixel-flat": "2px 2px 0 0 #C6C6C6",
+        "shadow-popover": "0 8px 24px -12px rgba(28,30,33,0.18), 0 2px 6px rgba(28,30,33,0.06)",
+        "radius-sm": "2px",
+        "radius-xs": "2px",
+        "radius-md": "4px",
+        "radius-lg": "6px",
+        "radius-xl": "8px",
+        "font-ui": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+        "ease-out": "cubic-bezier(0.16,1,0.3,1)",
+        "motion-fast": "120ms",
+        "motion-spring-stiffness": "100",
+        "motion-spring-damping": "20",
+        "theme": "light",
+        "bodyFont": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    "pixelLight": {
+      "inactiveTabRadius": "2px",
+      "inactiveTabShadow": "rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset",
+      "activeTabShadow": "none",
+      "toggleRadius": "2px",
+      "toggleShadow": "none"
+    },
+    "press": {
+      "rest": {
+        "shadow": "none",
+        "transform": "none"
+      },
+      "hover": {
+        "shadow": "rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset",
+        "transform": "none"
+      },
+      "down": {
+        "shadow": "rgb(169, 169, 169) 2px 2px 0px 0px inset, rgb(255, 255, 255) -2px -2px 0px 0px inset",
+        "transform": "matrix(1, 0, 0, 1, 2, 2)"
+      },
+      "box": {
+        "x": 260,
+        "y": 58
+      }
+    },
+    "tokensDark": {
+      "colors": {
+        "canvas": "#141414",
+        "surface": "#1E1E1E",
+        "surface-raised": "#262626",
+        "content": "#0A0A0A",
+        "surface-active": "#2A2A2A",
+        "ink": "#EDEDED",
+        "ink-secondary": "#A8A8A8",
+        "ink-faint": "#909090",
+        "icon-faint": "#6E6E6E",
+        "hairline": "#2E2E2E",
+        "hairline-strong": "#3F3F3F",
+        "accent": "#D4D4D4",
+        "accent-soft": "#333333",
+        "selection": "#3A3A3A",
+        "bevel-hi": "#565656",
+        "bevel-lo": "#0A0A0A",
+        "shadow-pixel": "#050505",
+        "danger": "#F2B8AD",
+        "success": "#9CCB8F",
+        "on-accent": "#141414",
+        "focus-ring": "#EDEDED",
+        "danger-soft": "#3A1E1A"
+      },
+      "raw": {
+        "bevel-out": "inset 2px 2px 0 0 #565656, inset -2px -2px 0 0 #0A0A0A",
+        "bevel-in": "inset 2px 2px 0 0 #0A0A0A, inset -2px -2px 0 0 #565656",
+        "pixel-out": "2px 2px 0 0 #050505, inset 2px 2px 0 0 #565656, inset -2px -2px 0 0 #0A0A0A",
+        "pixel-flat": "2px 2px 0 0 #050505",
+        "shadow-popover": "0 8px 24px -12px rgba(28,30,33,0.45), 0 2px 6px rgba(28,30,33,0.15)",
+        "radius-sm": "2px",
+        "radius-xs": "2px",
+        "radius-md": "4px",
+        "radius-lg": "6px",
+        "radius-xl": "8px",
+        "font-ui": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif",
+        "ease-out": "cubic-bezier(0.16,1,0.3,1)",
+        "motion-fast": "120ms",
+        "motion-spring-stiffness": "100",
+        "motion-spring-damping": "20",
+        "theme": "dark",
+        "bodyFont": "\"Noto Sans SC\", \"Source Han Sans SC\", \"Noto Sans CJK SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    "darkColors": {
+      "barBg": "rgb(20, 20, 20)",
+      "barBorderBottom": "0px",
+      "activeBg": "rgb(10, 10, 10)",
+      "activeBorderBottom": "0px",
+      "inactiveBg": "rgb(30, 30, 30)",
+      "pvBg": "rgb(10, 10, 10)",
+      "pvTop": 76,
+      "barBottom": 76,
+      "belowActive": "pv-root"
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t53-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t53-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真点「新建页面」×3 → 3 标签 / 3 存活页",
+      "ok": true,
+      "raw": "tabs=3 pages=3"
+    },
+    {
+      "step": "G1|sidebar-full-height",
+      "name": "[info] 融合量测（原始）",
+      "ok": null,
+      "raw": "{\"sideTop\":0,\"sideLeft\":0,\"sideHeight\":735,\"asideTop\":0,\"asideWidth\":240,\"topbarLeft\":240,\"topbarRight\":1184,\"topbarTop\":0,\"innerHeight\":735,\"innerWidth\":1184,\"outerHeight\":800,\"outerWidth\":1200,\"nativeChromeH\":65,\"shellBtnDisplay\":\"none\"}"
+    },
+    {
+      "step": "G1|sidebar-full-height",
+      "name": "G1-1 §2①：.app-side / .sc-shell__sidebar 顶端 = 内容区第 0 行（原生菜单下沿；窗口 chrome 高 > 0 佐证菜单在 y<0）",
+      "ok": true,
+      "raw": "sideTop=0 asideTop=0 nativeChromeH=65（outerH 800 − innerH 735）"
+    },
+    {
+      "step": "G1|sidebar-full-height",
+      "name": "G1-2 侧栏通高：高度 ≈ 内容区高（不再被顶栏压掉 40px）",
+      "ok": true,
+      "raw": "sideHeight=735 innerHeight=735"
+    },
+    {
+      "step": "G1|sidebar-full-height",
+      "name": "G1-3 §2①：顶栏左缘 = 侧栏右缘（只覆盖右侧，不再通栏横切侧栏上方）",
+      "ok": true,
+      "raw": "topbarLeft=240 sidebarW=240 topbarRight=1184 winW=1184"
+    },
+    {
+      "step": "G1|sidebar-full-height",
+      "name": "G1-4 编辑器视图：顶栏自带折叠钮被 .app-shell--fused 隐藏（display:none，唯一入口在标签行）",
+      "ok": true,
+      "raw": "display=none"
+    },
+    {
+      "step": "G2|toggle-position",
+      "name": "[info] 折叠钮量测（原始）",
+      "ok": null,
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barRight\":1176,\"barCenterY\":58,\"barTop\":40,\"barHeight\":36,\"activeCenterY\":62,\"inViewport\":true}"
+    },
+    {
+      "step": "G2|toggle-position",
+      "name": "G2-1 §2②：钮中心 x ∈ [标签条左, 标签条左+64] 且钮 = 24px 图标位（§1.2）",
+      "ok": true,
+      "raw": "btnCenterX=260 barLeft=248 barRight=1176 btnW=24"
+    },
+    {
+      "step": "G2|toggle-position",
+      "name": "G2-2 §2②：钮中心 y 与标签条行中心差 ≤ 2px",
+      "ok": true,
+      "raw": "btnCenterY=58 barCenterY=58 Δ=0.0"
+    },
+    {
+      "step": "G2|toggle-position",
+      "name": "[info] 参考：钮中心 y 与活动标签中心差（标签底对齐，非验收项）",
+      "ok": null,
+      "raw": "btnCenterY=58 activeCenterY=62 Δ=4.0"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "[info] 融合色值/分隔线（原始）",
+      "ok": null,
+      "raw": "{\"barBg\":\"rgb(245, 245, 245)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(237, 237, 237)\",\"pvBg\":\"rgb(255, 255, 255)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "G3-1 §2③：标签行与活动标签底边均无分隔线（border-bottom-width = 0）",
+      "ok": true,
+      "raw": "barBorderBottom=0px activeBorderBottom=0px"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "G3-2 §2③：活动标签背景 = .pv-root 背景（连通无缝，贴色值）",
+      "ok": true,
+      "raw": "activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245) inactiveBg=rgb(237, 237, 237)"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "G3-3 非活动标签沉 surface（≠ 活动标签色、≠ 行底色）",
+      "ok": true,
+      "raw": "inactiveBg=rgb(237, 237, 237) activeBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245)"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "G3-4 §2③：活动标签下缘正下方 elementFromPoint 命中正文容器（活动列「冒泡」进编辑区，无隔离带元素）",
+      "ok": true,
+      "raw": "belowActive=\"pv-root\" barBottom=76 pvTop=76"
+    },
+    {
+      "step": "G3|fusion",
+      "name": "[info] 活动标签（原始）",
+      "ok": null,
+      "raw": "{\"count\":3,\"activeIndex\":2,\"activeText\":\"未命名\"}"
+    },
+    {
+      "step": "G4|four-widths",
+      "name": "[info] 四宽度零滚动（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1280,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1280,\"winClientW\":1280,\"sideTop\":0,\"sidebarW\":240},{\"w\":900,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":900,\"winClientW\":900,\"sideTop\":0,\"sidebarW\":240},{\"w\":760,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":760,\"winClientW\":760,\"sideTop\":0,\"sidebarW\":240},{\"w\":640,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":640,\"winClientW\":640,\"sideTop\":0,\"sidebarW\":240}]"
+    },
+    {
+      "step": "G4|four-widths",
+      "name": "G4-1 §2④：1280/900/760/640 四宽度窗口均零滚动（纵向 + 横向）",
+      "ok": true,
+      "raw": "1280:{h 800/800,w 1280/1280} 900:{h 800/800,w 900/900} 760:{h 800/800,w 760/760} 640:{h 800/800,w 640/640}"
+    },
+    {
+      "step": "G4|four-widths",
+      "name": "G4-2 §2④：四宽度下侧栏顶端恒为 0（通高不随窗口尺寸退化）",
+      "ok": true,
+      "raw": "1280:top=0 900:top=0 760:top=0 640:top=0"
+    },
+    {
+      "step": "G5|collapsed",
+      "name": "[info] 收起态量测（原始）",
+      "ok": null,
+      "raw": "{\"sidebarW\":0,\"sidebarDisplay\":\"none\",\"appSideVisible\":false,\"mainW\":1184,\"mainLeft\":0,\"topbarLeft\":0,\"topbarRight\":1184,\"winW\":1184,\"btnRect\":{\"x\":8,\"y\":46,\"w\":24,\"h\":24},\"btnInViewport\":true}"
+    },
+    {
+      "step": "G5|collapsed",
+      "name": "G5-1 §2⑤：收起后 .sc-shell__sidebar 宽度 = 0 且 display:none、.app-side 不可见、主区占满（T30-01 红线）",
+      "ok": true,
+      "raw": "width=0 display=none appSideVisible=false mainW=1184 winW=1184"
+    },
+    {
+      "step": "G5|collapsed",
+      "name": "G5-1b 收起后顶栏同步占满（grid-column 回第 1 列；防「隐式列」把主区挤窄）",
+      "ok": true,
+      "raw": "topbarLeft=0 topbarRight=1184 winW=1184 mainLeft=0"
+    },
+    {
+      "step": "G5|collapsed",
+      "name": "G5-2 收起态钮仍可达：仍在视口内（编辑区左上），点击可再展开",
+      "ok": true,
+      "raw": "btnRect={\"x\":8,\"y\":46,\"w\":24,\"h\":24} inViewport=true"
+    },
+    {
+      "step": "G5|collapsed",
+      "name": "G5-3 再点同一钮可展开（侧栏宽度恢复 ≈ 240）",
+      "ok": true,
+      "raw": "width=240 display=block"
+    },
+    {
+      "step": "G6|gutter",
+      "name": "[info] 装订线量测（原始）",
+      "ok": null,
+      "raw": "{\"bodyPaddingLeft\":\"70px\",\"gutter\":12,\"overlap\":false,\"clusterW\":58,\"clusterH\":28}"
+    },
+    {
+      "step": "G6|gutter",
+      "name": "G6-1 T33 红线：.pv-body 左侧装订线 = 70px（28+2+28+12 token 派生）",
+      "ok": true,
+      "raw": "bodyPaddingLeft=70px"
+    },
+    {
+      "step": "G6|gutter",
+      "name": "G6-2 T33/T36 红线：手柄簇右缘 ↔ 文本左缘 gutter = 12 且无重叠（overlap=false）",
+      "ok": true,
+      "raw": "gutter=12 overlap=false cluster=58×28"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "[info] 浅色 token（原始）",
+      "ok": null,
+      "raw": "{\"colors\":{\"canvas\":\"#F5F5F5\",\"surface\":\"#EDEDED\",\"surface-raised\":\"#FFFFFF\",\"content\":\"#FFFFFF\",\"surface-active\":\"#DFDFDF\",\"ink\":\"#1A1A1A\",\"ink-secondary\":\"#595959\",\"ink-faint\":\"#6B6B6B\",\"icon-faint\":\"#9A9A9A\",\"hairline\":\"#DDDDDD\",\"hairline-strong\":\"#C4C4C4\",\"accent\":\"#333333\",\"accent-soft\":\"#E6E6E6\",\"selection\":\"#D4D4D4\",\"bevel-hi\":\"#FFFFFF\",\"bevel-lo\":\"#A9A9A9\",\"shadow-pixel\":\"#C6C6C6\",\"danger\":\"#8A2B1C\",\"success\":\"#3F6B34\",\"on-accent\":\"#FFFFFF\",\"focus-ring\":\"#1A1A1A\",\"danger-soft\":\"#F5E5E1\"},\"raw\":{\"bevel-out\":\"inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9\",\"bevel-in\":\"inset 2px 2px 0 0 #A9A9A9, inset -2px -2px 0 0 #FFFFFF\",\"pixel-out\":\"2px 2px 0 0 #C6C6C6, inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9\",\"pixel-flat\":\"2px 2px 0 0 #C6C6C6\",\"shadow-popover\":\"0 8px 24px -12px rgba(28,30,33,0.18), 0 2px 6px rgba(28,30,33,0.06)\",\"radius-sm\":\"2px\",\"radius-xs\":\"2px\",\"radius-md\":\"4px\",\"radius-lg\":\"6px\",\"radius-xl\":\"8px\",\"font-ui\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"ease-out\":\"cubic-bezier(0.16,1,0.3,1)\",\"motion-fast\":\"120ms\",\"motion-spring-stiffness\":\"100\",\"motion-spring-damping\":\"20\",\"theme\":\"light\",\"bodyFont\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}}"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-1a 浅色：门禁色板逐 token = 裁决值（附录 A 起板 + ink-faint 提档 #6B6B6B）",
+      "ok": true,
+      "raw": "19/19 命中"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-2 浅色：「黑白灰」形式证明 —— 中性/强调/立体 18 枚 token 全为纯灰（r=g=b）",
+      "ok": true,
+      "raw": "17/17 纯灰"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-3 浅色：「两粒语义色」形式证明 —— danger / success 带彩（未被灰阶化吃掉）",
+      "ok": true,
+      "raw": "danger=#8A2B1C success=#3F6B34"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-4 立体语法 token 在位且语义正确：bevel-out 上/左 = bevel-hi、下/右 = bevel-lo；bevel-in 对调；pixel-* 以 shadow-pixel 起手",
+      "ok": true,
+      "raw": "bevel-out=\"inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9\" | bevel-in=\"inset 2px 2px 0 0 #A9A9A9, inset -2px -2px 0 0 #FFFFFF\" | pixel-out=\"2px 2px 0 0 #C6C6C6, inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0 #A9A9A9\" | pixel-flat=\"2px 2px 0 0 #C6C6C6\""
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-5a 像素几何：offset 投影 blur = 0 且位移 = 2px；bevel 档位 = 2px",
+      "ok": true,
+      "raw": "pixel-flat=\"2px 2px 0 0 #C6C6C6\" bevel-out=\"inset 2px 2px 0 0 #FFFFFF, inset -2px -2px 0 0…\""
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-5b 像素圆角：控件档 2px（xs/sm）、浮层档 4/6/8px，禁大圆角胶囊化",
+      "ok": true,
+      "raw": "xs=2px sm=2px md=4px lg=6px xl=8px"
+    },
+    {
+      "step": "G9|tokens-light",
+      "name": "G9-7 §16 红线未被观感改动碰掉：字体族仍自托管思源黑体（Noto Sans SC）、动效仍 spring 参数 + ease-out token",
+      "ok": true,
+      "raw": "font-ui=\"Noto Sans SC\", \"Source Han Sans SC\", \"N… bodyFont=\"Noto Sans SC\", \"Source Han Sa… spring=100/20 ease=cubic-bezier(0.16,1,0.3,1)"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "[info] 像素立体 computed（浅色）",
+      "ok": null,
+      "raw": "{\"inactiveTabRadius\":\"2px\",\"inactiveTabShadow\":\"rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset\",\"activeTabShadow\":\"none\",\"toggleRadius\":\"2px\",\"toggleShadow\":\"none\"}"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "G9-6a 非活动标签：圆角 2px + 硬边亮暗面（inset 2px 2px 0 0 亮 / -2px -2px 0 0 暗）",
+      "ok": true,
+      "raw": "radius=2px shadow=rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "G9-6b 活动标签**不挂 bevel**（T52 融合语义优先：inset 会在下缘画出内部暗边，破坏与正文连通）",
+      "ok": true,
+      "raw": "activeTabShadow=none"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "G9-6c 折叠钮（IconButton）圆角 = 2px 图标位",
+      "ok": true,
+      "raw": "radius=2px"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "[info] 真机按压（浅色，原始）",
+      "ok": null,
+      "raw": "{\"rest\":{\"shadow\":\"none\",\"transform\":\"none\"},\"hover\":{\"shadow\":\"rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 169, 169) -2px -2px 0px 0px inset\",\"transform\":\"none\"},\"down\":{\"shadow\":\"rgb(169, 169, 169) 2px 2px 0px 0px inset, rgb(255, 255, 255) -2px -2px 0px 0px inset\",\"transform\":\"matrix(1, 0, 0, 1, 2, 2)\"},\"box\":{\"x\":260,\"y\":58}}"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "G9-6d 真机按压立体：hover 凸起（上/左 insets）→ mousedown 下沉 2px + 亮暗面对调（旧 translateY(1px) 已退役）",
+      "ok": true,
+      "raw": "rest=none hover=rgb(255, 255, 255) 2px 2px 0px 0px inset, rgb(169, 1… down=rgb(169, 169, 169) 2px 2px 0px 0px inset, rgb(255, 2… downTransform=matrix(1, 0, 0, 1, 2, 2)"
+    },
+    {
+      "step": "G9|pixel-light",
+      "name": "G9-6e 按压探针无副作用：侧栏宽度仍是 240（鼠标移开后才松手，未触发开合）",
+      "ok": true,
+      "raw": "sidebarW=240"
+    },
+    {
+      "step": "G10|screens-light",
+      "name": "[info] 多维数据页夹具",
+      "ok": null,
+      "raw": "{\"dbPageId\":\"pg-01M32FG3FJEW1RS5P3EC839T3Z\"}"
+    },
+    {
+      "step": "G10|screens-light",
+      "name": "[info] 多维数据视图命中（浅色）",
+      "ok": null,
+      "raw": "{\"dbpage\":true}"
+    },
+    {
+      "step": "G10|screens-light",
+      "name": "[info] 设置页打开（浅色）",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "[info] 深色主题属性",
+      "ok": null,
+      "raw": "dark"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "[info] 深色 token（原始）",
+      "ok": null,
+      "raw": "{\"colors\":{\"canvas\":\"#141414\",\"surface\":\"#1E1E1E\",\"surface-raised\":\"#262626\",\"content\":\"#0A0A0A\",\"surface-active\":\"#2A2A2A\",\"ink\":\"#EDEDED\",\"ink-secondary\":\"#A8A8A8\",\"ink-faint\":\"#909090\",\"icon-faint\":\"#6E6E6E\",\"hairline\":\"#2E2E2E\",\"hairline-strong\":\"#3F3F3F\",\"accent\":\"#D4D4D4\",\"accent-soft\":\"#333333\",\"selection\":\"#3A3A3A\",\"bevel-hi\":\"#565656\",\"bevel-lo\":\"#0A0A0A\",\"shadow-pixel\":\"#050505\",\"danger\":\"#F2B8AD\",\"success\":\"#9CCB8F\",\"on-accent\":\"#141414\",\"focus-ring\":\"#EDEDED\",\"danger-soft\":\"#3A1E1A\"},\"raw\":{\"bevel-out\":\"inset 2px 2px 0 0 #565656, inset -2px -2px 0 0 #0A0A0A\",\"bevel-in\":\"inset 2px 2px 0 0 #0A0A0A, inset -2px -2px 0 0 #565656\",\"pixel-out\":\"2px 2px 0 0 #050505, inset 2px 2px 0 0 #565656, inset -2px -2px 0 0 #0A0A0A\",\"pixel-flat\":\"2px 2px 0 0 #050505\",\"shadow-popover\":\"0 8px 24px -12px rgba(28,30,33,0.45), 0 2px 6px rgba(28,30,33,0.15)\",\"radius-sm\":\"2px\",\"radius-xs\":\"2px\",\"radius-md\":\"4px\",\"radius-lg\":\"6px\",\"radius-xl\":\"8px\",\"font-ui\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\",\"ease-out\":\"cubic-bezier(0.16,1,0.3,1)\",\"motion-fast\":\"120ms\",\"motion-spring-stiffness\":\"100\",\"motion-spring-damping\":\"20\",\"theme\":\"dark\",\"bodyFont\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"Microsoft YaHei\\\", sans-serif\"}}"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G9-1b 深色：门禁色板逐 token = 裁决值（ink-faint 提档 #909090）",
+      "ok": true,
+      "raw": "19/19 命中"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G9-2b 深色：「黑白灰」形式证明 —— 中性/强调/立体 token 全为纯灰（r=g=b）",
+      "ok": true,
+      "raw": "17/17 纯灰"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G9-3b 深色：danger / success 仍带彩（两粒语义色两主题成立）",
+      "ok": true,
+      "raw": "danger=#F2B8AD success=#9CCB8F"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G9-4b 深色：立体语法语义正确（bevel/pixel 三色双主题各自换值，几何不变）",
+      "ok": true,
+      "raw": "bevel-out=\"inset 2px 2px 0 0 #565656, inset -2px -2px 0 0 #0A0A0A\" | pixel-flat=\"2px 2px 0 0 #050505\""
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "[info] 多维数据视图命中（深色）",
+      "ok": null,
+      "raw": "{\"dbpage\":true}"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "[info] 设置页打开（深色）",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G10-1 双主题 4 关键屏 8 张截图全部落盘且**逐张拍在对的视图**（编辑区 / 侧栏+标签行 / 多维数据表 / 设置 × 浅深）",
+      "ok": true,
+      "raw": "t53-01-editor-light.png(editor)ok{\"pvRoot\":true,\"dbpage\":false,\"settings\":false,\"tabRow\":true} t53-01-side-tabs-light.png(side-tabs)ok{\"pvRoot\":true,\"dbpage\":false,\"settings\":false,\"tabRow\":true} t53-01-db-light.png(db)ok{\"pvRoot\":false,\"dbpage\":true,\"settings\":false,\"tabRow\":true} t53-01-settings-light.png(settings)ok{\"pvRoot\":false,\"dbpage\":false,\"settings\":true,\"tabRow\":false} t53-01-editor-dark.png(editor)ok{\"pvRoot\":true,\"dbpage\":false,\"settings\":false,\"tabRow\":true} t53-01-side-tabs-dark.png(side-tabs)ok{\"pvRoot\":true,\"dbpage\":false,\"settings\":false,\"tabRow\":true} t53-01-db-dark.png(db)ok{\"pvRoot\":false,\"dbpage\":true,\"settings\":false,\"tabRow\":true} t53-01-settings-dark.png(settings)ok{\"pvRoot\":false,\"dbpage\":false,\"settings\":true,\"tabRow\":false}"
+    },
+    {
+      "step": "G10|screens-dark",
+      "name": "G10-2 两个数据视图真机命中（逐主题各一张实拍，非空态占位）",
+      "ok": true,
+      "raw": "light=true dark=true"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] G7 前置：视图归位编辑器",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G7|screens",
+      "name": "G7-1 「无标签」态（布局隐藏标签条）：.tabsbar 不渲染但行宿主与折叠钮仍在（钮不丢）",
+      "ok": true,
+      "raw": "{\"tabsbar\":false,\"row\":true,\"toggle\":true}"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] G7 前置：标签条恢复后视图归位编辑器",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G7|screens",
+      "name": "G7-2 窗口级补充截图（含标题栏 + 原生菜单栏，侧栏顶到菜单下沿）",
+      "ok": true,
+      "raw": "bytes=46305 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] 浅色标签行 3x 放大截图",
+      "ok": null,
+      "raw": "{\"bytes\":5003,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] 深色主题属性（标签行块）",
+      "ok": null,
+      "raw": "dark"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] G7 深色前置：视图归位编辑器",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] 深色融合色值（原始）",
+      "ok": null,
+      "raw": "{\"barBg\":\"rgb(20, 20, 20)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(10, 10, 10)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(30, 30, 30)\",\"pvBg\":\"rgb(10, 10, 10)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+    },
+    {
+      "step": "G7|screens",
+      "name": "G7-3 深色主题下同样成立：活动标签底 = .pv-root 底、无边线（同一 token 双主题）",
+      "ok": true,
+      "raw": "activeBg=rgb(10, 10, 10) pvBg=rgb(10, 10, 10) barBorder=0px"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] 深色标签行 3x 放大截图",
+      "ok": null,
+      "raw": "{\"bytes\":5135,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+    },
+    {
+      "step": "G7|screens",
+      "name": "[info] 退出前布局存储（原始）",
+      "ok": null,
+      "raw": "{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}"
+    },
+    {
+      "step": "teardown",
+      "name": "G8-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    }
+  ]
+}
