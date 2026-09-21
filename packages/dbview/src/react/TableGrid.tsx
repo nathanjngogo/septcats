@@ -350,12 +350,34 @@ export function TableGrid(props: TableGridProps) {
           event.preventDefault();
           moveFocus(focusedCell.rowIndex, focusedCell.prop, 0, -1);
           return;
-        case 'Enter':
+        case 'Enter': {
+          // 焦点只落在外层 gridcell（内层 .sc-dbc 无 tabIndex、永不获焦），
+          // CellEditor 的按键分支收不到事件 → 两条键盘语义都在网格层补：
+          // - checkbox（T40-01-1）：直接切换，经既有 onChangeCell 通道提交；
+          // - 其余可编辑格（TASK-T49-01）：进入编辑态，再按 Enter 由编辑器按
+          //   既有语义提交（title 列维持双击改名，file 列一期只读）。
+          if (focusedCell.prop === schema.title_pid) {
+            return;
+          }
+          const property = properties.find((item) => item.id === focusedCell.prop);
+          const row = rows[focusedCell.rowIndex];
+          if (property === undefined || row === undefined) {
+            return;
+          }
+          if (property.type === 'file') {
+            return;
+          }
+          event.preventDefault();
+          if (property.type === 'checkbox') {
+            onChangeCell?.(row.id, property.id, row.values[property.id] === true ? null : true);
+            return;
+          }
+          onBeginEdit?.(focusedCell.rowIndex, property.id);
+          return;
+        }
         case ' ': {
-          // checkbox 格（T40-01-1）：焦点只落在外层 gridcell（内层 .sc-dbc 无
-          // tabIndex），CellEditor 的 Enter 分支收不到事件 → 在网格层补切换，
-          // 经既有 onChangeCell 通道提交。仅 checkbox 生效；其余类型不加任何
-          // 行为（text 等的 Enter 进编辑仍由 CellEditor 在内层收敛，不受影响）。
+          // Space 仅 checkbox 切换（T40-01-1）；其余类型**不进编辑**，避免与
+          // 滚动/多选抢键（TASK-T49-01 维持现状）。
           if (onChangeCell === undefined || focusedCell.prop === schema.title_pid) {
             return;
           }
@@ -372,7 +394,7 @@ export function TableGrid(props: TableGridProps) {
           return;
       }
     },
-    [editingCell, focusedCell, moveFocus, onChangeCell, properties, rows, schema.title_pid],
+    [editingCell, focusedCell, moveFocus, onBeginEdit, onChangeCell, properties, rows, schema.title_pid],
   );
 
   const onPaste = useCallback(

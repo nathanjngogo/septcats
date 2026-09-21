@@ -9,6 +9,7 @@
  * - DbView：标题/记录数、筛选后空态提示、计算行显示平均值、ErrorPanel 重试。
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   collectionEntitySchema,
@@ -841,3 +842,237 @@ describe('勾选列值写入（T40-01-1）', () => {
     expect(onChangeCell).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// 可编辑格 Enter 进编辑（TASK-T49-01）
+//
+// 根因（T47 尾巴）：焦点只落在外层 gridcell（内层 .sc-dbc 无 tabIndex、永不获焦），
+// CellEditor 的 `onCellKeyDown`（非 checkbox 的 Enter → onBeginEdit，CellEditor.tsx）
+// 收不到事件；而 TableGrid 网格层此前只给 Enter 开了 checkbox 分支 →
+// 数字/文本/日期等可编辑格在未编辑态按 Enter **无动作**（不进入编辑态）。
+// 修复：网格层 Enter 分支扩为「checkbox 切换 / file 只读 / 其余可编辑格 → onBeginEdit」，
+// Space 维持**仅** checkbox 切换（不进编辑）；方向键/Esc 分支一字未改。
+// ---------------------------------------------------------------------------
+
+const P_URL = propertySchema.parse({ id: 'p_url', name: '链接', type: 'url' });
+const P_FILE = propertySchema.parse({ id: 'p_file', name: '附件', type: 'file' });
+const P_MULTI = propertySchema.parse({
+  id: 'p_multi',
+  name: '标签',
+  type: 'multi_select',
+  options: [{ id: 'o-1', name: '甲' }],
+});
+const P_REL = propertySchema.parse({ id: 'p_rel', name: '关联', type: 'relation' });
+
+const KB_SCHEMA = collectionSchemaSchema.parse({
+  properties: {
+    p_title: P_TITLE,
+    p_check: P_CHECK,
+    p_note: P_NOTE,
+    p_score: P_SCORE,
+    p_date: P_DATE,
+    p_status: P_STATUS,
+    p_multi: P_MULTI,
+    p_url: P_URL,
+    p_rel: P_REL,
+    p_file: P_FILE,
+  },
+  title_pid: 'p_title',
+});
+
+const KB_ROW = makeRecord('rec-1', { p_title: '时间简史', p_check: true, p_score: 5, p_status: 's-read' }, 'A1');
+
+/** Enter 进编辑的格（可编辑类型全集）；file 只读、checkbox 直切、title 双击改名。 */
+const EDIT_ON_ENTER = [
+  { pid: 'p_note', type: 'text' },
+  { pid: 'p_score', type: 'number' },
+  { pid: 'p_date', type: 'date' },
+  { pid: 'p_status', type: 'select' },
+  { pid: 'p_multi', type: 'multi_select' },
+  { pid: 'p_url', type: 'url' },
+  { pid: 'p_rel', type: 'relation' },
+];
+
+describe('可编辑格键盘矩阵（TASK-T49-01）', () => {
+  const scrollIntoViewStub = vi.fn();
+  const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
+  beforeAll(() => {
+    HTMLElement.prototype.scrollIntoView = scrollIntoViewStub;
+  });
+  afterAll(() => {
+    HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  });
+
+  function renderKbGrid(focusedProp: string, rows: RecordEntity[] = [KB_ROW]) {
+    const onChangeCell = vi.fn();
+    const onBeginEdit = vi.fn();
+    const view = render(
+      <TableGrid
+        schema={KB_SCHEMA}
+        rows={rows}
+        widths={{}}
+        status="ready"
+        selectedIds={new Set()}
+        focusedCell={{ rowIndex: 0, prop: focusedProp }}
+        editingCell={null}
+        onChangeCell={onChangeCell}
+        onBeginEdit={onBeginEdit}
+        onCreateRecord={NOOP}
+      />,
+    );
+    const body = view.container.querySelector('.sc-dbgrid__body') as HTMLElement;
+    return { onChangeCell, onBeginEdit, view, body };
+  }
+
+  it.each(EDIT_ON_ENTER)('$type 格：Enter → onBeginEdit(rowIndex,pid) 且不经 onChangeCell', ({ pid }) => {
+    const { onBeginEdit, onChangeCell, body, view } = renderKbGrid(pid);
+    fireEvent.keyDown(body, { key: 'Enter' });
+    expect(onBeginEdit).toHaveBeenCalledTimes(1);
+    expect(onBeginEdit).toHaveBeenCalledWith(0, pid);
+    expect(onChangeCell).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it.each(EDIT_ON_ENTER)('$type 格：Space 进不了编辑、也不改值（维持现状）', ({ pid }) => {
+    const { onBeginEdit, onChangeCell, body, view } = renderKbGrid(pid);
+    fireEvent.keyDown(body, { key: ' ' });
+    expect(onBeginEdit).not.toHaveBeenCalled();
+    expect(onChangeCell).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  // 勾选格回归红线（T47 四格必须仍全绿）：Enter/Space × {true→null, null→true}
+  it.each([
+    { key: 'Enter', before: true, expect: null },
+    { key: 'Enter', before: null, expect: true },
+    { key: ' ', before: true, expect: null },
+    { key: ' ', before: null, expect: true },
+  ])('勾选格回归：$key 前=$before → 落库 $expect，且不进编辑态', ({ key, before, expect: expected }) => {
+    const { onBeginEdit, onChangeCell, body, view } = renderKbGrid('p_check', [
+      makeRecord('rec-1', { p_title: '时间简史', p_check: before }, 'A1'),
+    ]);
+    fireEvent.keyDown(body, { key });
+    expect(onChangeCell).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).toHaveBeenCalledWith('rec-1', 'p_check', expected);
+    expect(onBeginEdit).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it('file 格：Enter/Space 均无动作（一期只读，不进编辑不改值）', () => {
+    for (const key of ['Enter', ' ']) {
+      const { onBeginEdit, onChangeCell, body, view } = renderKbGrid('p_file');
+      fireEvent.keyDown(body, { key });
+      expect(onBeginEdit).not.toHaveBeenCalled();
+      expect(onChangeCell).not.toHaveBeenCalled();
+      view.unmount();
+    }
+  });
+
+  it('标题列：Enter/Space 不抢键（维持双击改名，不动编辑/改值通道）', () => {
+    for (const key of ['Enter', ' ']) {
+      const { onBeginEdit, onChangeCell, body, view } = renderKbGrid('p_title');
+      fireEvent.keyDown(body, { key });
+      expect(onBeginEdit).not.toHaveBeenCalled();
+      expect(onChangeCell).not.toHaveBeenCalled();
+      view.unmount();
+    }
+  });
+
+  it('事件落点：Enter 打在单元格内层 .sc-dbc 上仍只触发一次 onBeginEdit（网格层不重复处理）', () => {
+    const { onBeginEdit, onChangeCell, view } = renderKbGrid('p_score');
+    const dbc = view.container.querySelector('.sc-dbc[data-type="number"]') as HTMLElement;
+    expect(dbc).not.toBeNull();
+    fireEvent.keyDown(dbc, { key: 'Enter' });
+    expect(onBeginEdit).toHaveBeenCalledTimes(1);
+    expect(onBeginEdit).toHaveBeenCalledWith(0, 'p_score');
+    expect(onChangeCell).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it('方向键语义不变：Enter 分支未抢方向键（ArrowDown 仍走 onFocusCell）', () => {
+    const onFocusCell = vi.fn();
+    const { container } = render(
+      <TableGrid
+        schema={KB_SCHEMA}
+        rows={[KB_ROW, makeRecord('rec-2', { p_title: '物种起源' }, 'A2')]}
+        widths={{}}
+        status="ready"
+        selectedIds={new Set()}
+        focusedCell={{ rowIndex: 0, prop: 'p_score' }}
+        editingCell={null}
+        onFocusCell={onFocusCell}
+        onCreateRecord={NOOP}
+      />,
+    );
+    const body = container.querySelector('.sc-dbgrid__body') as HTMLElement;
+    fireEvent.keyDown(body, { key: 'ArrowDown' });
+    expect(onFocusCell).toHaveBeenCalledWith(1, 'p_score');
+  });
+
+  it('端到端语义：Enter 进编辑（data-editing=true + 输入框挂载）→ 改值 → 再按 Enter 提交并退出编辑', () => {
+    const onChangeCell = vi.fn();
+    function StatefulGrid() {
+      const [editing, setEditing] = useState<{ rowIndex: number; prop: string } | null>(null);
+      return (
+        <TableGrid
+          schema={KB_SCHEMA}
+          rows={[KB_ROW]}
+          widths={{}}
+          status="ready"
+          selectedIds={new Set()}
+          focusedCell={{ rowIndex: 0, prop: 'p_score' }}
+          editingCell={editing}
+          onChangeCell={onChangeCell}
+          onBeginEdit={(rowIndex, prop) => {
+            setEditing({ rowIndex, prop });
+          }}
+          onEndEdit={() => {
+            setEditing(null);
+          }}
+          onCreateRecord={NOOP}
+        />
+      );
+    }
+    const { container } = render(<StatefulGrid />);
+    const body = container.querySelector('.sc-dbgrid__body') as HTMLElement;
+    const dbcNow = () => container.querySelector('.sc-dbc[data-type="number"]') as HTMLElement;
+
+    expect(dbcNow().getAttribute('data-editing')).toBe('false');
+    fireEvent.keyDown(body, { key: 'Enter' });
+    expect(dbcNow().getAttribute('data-editing')).toBe('true');
+
+    const input = container.querySelector('.sc-dbc-input--num') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('5'); // 进入编辑态时带原值
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onChangeCell).toHaveBeenCalledTimes(1);
+    expect(onChangeCell).toHaveBeenCalledWith('rec-1', 'p_score', 7); // 再按 Enter = 既有提交语义
+    expect(dbcNow().getAttribute('data-editing')).toBe('false');
+  });
+
+  it('Esc 语义不变：编辑态内 Esc 取消，不提交、退出编辑', () => {
+    const onChangeCell = vi.fn();
+    const { container } = render(
+      <TableGrid
+        schema={KB_SCHEMA}
+        rows={[KB_ROW]}
+        widths={{}}
+        status="ready"
+        selectedIds={new Set()}
+        focusedCell={{ rowIndex: 0, prop: 'p_score' }}
+        editingCell={{ rowIndex: 0, prop: 'p_score' }}
+        onChangeCell={onChangeCell}
+        onEndEdit={NOOP}
+        onCreateRecord={NOOP}
+      />,
+    );
+    const input = container.querySelector('.sc-dbc-input--num') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '9' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(onChangeCell).not.toHaveBeenCalled();
+  });
+});
+

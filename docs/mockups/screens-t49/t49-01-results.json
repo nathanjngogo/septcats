@@ -1,0 +1,1208 @@
+{
+  "task": "TASK-T49-01 真机矩阵（数字格 Enter 进编辑 / 勾选格回归）",
+  "ranAt": "2026-09-21T12:56:09.354Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "appBundleMtime": "Mon Sep 21 2026 20:32:01 GMT+0800 (中国标准时间)",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t49-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t49-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t49-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "pass": 8,
+  "fail": 0,
+  "matrix": [
+    {
+      "label": "number · Enter · 5→5",
+      "kind": "number",
+      "key": "Enter",
+      "before": 5,
+      "expectValue": 5,
+      "expectEdit": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": 5,
+      "afterValue": 5,
+      "beforeDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "BODY",
+          "cls": null,
+          "dataType": "checkbox"
+        }
+      },
+      "afterDom": {
+        "kind": "number",
+        "dataEditing": "true",
+        "hasInput": true,
+        "inputValue": "5",
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "INPUT",
+          "cls": "sc-dbc-input sc-dbc-input--num",
+          "dataType": null
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "number · Enter · null→null",
+      "kind": "number",
+      "key": "Enter",
+      "before": null,
+      "expectValue": null,
+      "expectEdit": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": null,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "afterDom": {
+        "kind": "number",
+        "dataEditing": "true",
+        "hasInput": true,
+        "inputValue": "",
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "INPUT",
+          "cls": "sc-dbc-input sc-dbc-input--num",
+          "dataType": null
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "number · Space · 5→5",
+      "kind": "number",
+      "key": "Space",
+      "before": 5,
+      "expectValue": 5,
+      "expectEdit": false,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": 5,
+      "afterValue": 5,
+      "beforeDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "afterDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "number · Space · null→null",
+      "kind": "number",
+      "key": "Space",
+      "before": null,
+      "expectValue": null,
+      "expectEdit": false,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": null,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "afterDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "checkbox · Enter · true→null",
+      "kind": "checkbox",
+      "key": "Enter",
+      "before": true,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": true,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 0,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true,
+      "expectEdit": false,
+      "expectValue": null
+    },
+    {
+      "label": "checkbox · Enter · false→true",
+      "kind": "checkbox",
+      "key": "Enter",
+      "before": false,
+      "expect": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": false,
+      "afterValue": true,
+      "beforeDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 0,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true,
+      "expectEdit": false,
+      "expectValue": true
+    },
+    {
+      "label": "checkbox · Space · true→null",
+      "kind": "checkbox",
+      "key": "Space",
+      "before": true,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": true,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 0,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true,
+      "expectEdit": false,
+      "expectValue": null
+    },
+    {
+      "label": "checkbox · Space · false→true",
+      "kind": "checkbox",
+      "key": "Space",
+      "before": false,
+      "expect": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": false,
+      "afterValue": true,
+      "beforeDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 0,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true,
+      "expectEdit": false,
+      "expectValue": true
+    }
+  ],
+  "quiet": [
+    {
+      "boot": 1,
+      "gracefulExited": true
+    }
+  ],
+  "phases": {
+    "g3": {
+      "g3prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M320GJCDXG4H0SR1ZZB40Y5V",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 242,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": false
+          }
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+          "how": "playwright",
+          "hit": {
+            "rect": {
+              "x": 8,
+              "y": 278,
+              "w": 223,
+              "h": 36
+            },
+            "viewport": "1184x735",
+            "topTag": "SPAN",
+            "topCls": "app-nav-tx",
+            "topIsSelfOrInside": true
+          },
+          "after": {
+            "settingsPage": false,
+            "dbpage": true
+          }
+        },
+        "ready": true
+      },
+      "g3Focus": {
+        "ok": true,
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "g3BeforeDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "g3EditDom": {
+        "kind": "number",
+        "dataEditing": "true",
+        "hasInput": true,
+        "inputValue": "5",
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "INPUT",
+          "cls": "sc-dbc-input sc-dbc-input--num",
+          "dataType": null
+        }
+      },
+      "g3TypedDom": {
+        "kind": "number",
+        "dataEditing": "true",
+        "hasInput": true,
+        "inputValue": "7",
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "INPUT",
+          "cls": "sc-dbc-input sc-dbc-input--num",
+          "dataType": null
+        }
+      },
+      "g3AfterDom": {
+        "kind": "number",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 1,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "g3Before": 5,
+      "g3After": 7
+    },
+    "clickPath": {
+      "clickBefore": true,
+      "clickWritten": null,
+      "afterKeyValue": true,
+      "afterClickDom": {
+        "kind": "checkbox",
+        "dataEditing": "false",
+        "hasInput": false,
+        "inputValue": null,
+        "checkboxOn": 0,
+        "theme": "light",
+        "rowCount": 1,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      }
+    },
+    "shots": [
+      {
+        "theme": "light",
+        "themed": true,
+        "themeAttr": "light",
+        "settingsOpened": true,
+        "settingsClosed": true,
+        "rowsReady": true,
+        "navProbe": [
+          {
+            "attempt": 0,
+            "clicked": {
+              "clicked": true,
+              "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+              "how": "playwright",
+              "hit": {
+                "rect": {
+                  "x": 8,
+                  "y": 278,
+                  "w": 223,
+                  "h": 36
+                },
+                "viewport": "1184x735",
+                "topTag": "SPAN",
+                "topCls": "app-nav-tx",
+                "topIsSelfOrInside": true
+              },
+              "after": {
+                "settingsPage": false,
+                "dbpage": true
+              }
+            },
+            "probe": {
+              "appSide": true,
+              "sideNodes": 2,
+              "dbpage": true,
+              "settingsPage": false,
+              "tabbar": 2,
+              "rows": 1,
+              "skeleton": false
+            }
+          }
+        ],
+        "focus": {
+          "ok": true,
+          "arrow": "ArrowRightx2",
+          "active": {
+            "tag": "DIV",
+            "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+            "dataType": "number"
+          }
+        },
+        "dom": {
+          "kind": "number",
+          "dataEditing": "true",
+          "hasInput": true,
+          "inputValue": "7",
+          "checkboxOn": 1,
+          "theme": "light",
+          "rowCount": 1,
+          "active": {
+            "tag": "INPUT",
+            "cls": "sc-dbc-input sc-dbc-input--num",
+            "dataType": null
+          }
+        },
+        "file": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t49\\t49-01-light-number-enter-edit.png",
+        "size": 50416
+      },
+      {
+        "theme": "dark",
+        "themed": true,
+        "themeAttr": "dark",
+        "settingsOpened": true,
+        "settingsClosed": true,
+        "rowsReady": true,
+        "navProbe": [
+          {
+            "attempt": 0,
+            "clicked": {
+              "clicked": true,
+              "row": "side-node-pg-01M320GJCJPSJXR55E3GS3JSHT",
+              "how": "playwright",
+              "hit": {
+                "rect": {
+                  "x": 8,
+                  "y": 278,
+                  "w": 223,
+                  "h": 36
+                },
+                "viewport": "1184x735",
+                "topTag": "SPAN",
+                "topCls": "app-nav-tx",
+                "topIsSelfOrInside": true
+              },
+              "after": {
+                "settingsPage": false,
+                "dbpage": true
+              }
+            },
+            "probe": {
+              "appSide": true,
+              "sideNodes": 2,
+              "dbpage": true,
+              "settingsPage": false,
+              "tabbar": 2,
+              "rows": 1,
+              "skeleton": false
+            }
+          }
+        ],
+        "focus": {
+          "ok": true,
+          "arrow": "ArrowRightx2",
+          "active": {
+            "tag": "DIV",
+            "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+            "dataType": "number"
+          }
+        },
+        "dom": {
+          "kind": "number",
+          "dataEditing": "true",
+          "hasInput": true,
+          "inputValue": "7",
+          "checkboxOn": 1,
+          "theme": "dark",
+          "rowCount": 1,
+          "active": {
+            "tag": "INPUT",
+            "cls": "sc-dbc-input sc-dbc-input--num",
+            "dataType": null
+          }
+        },
+        "file": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t49\\t49-01-dark-number-enter-edit.png",
+        "size": 49750
+      }
+    ]
+  },
+  "assertions": [
+    {
+      "tag": "G1-G4",
+      "step": "fixture",
+      "name": "[info] 夹具对象（原始）",
+      "ok": null,
+      "raw": "{\"wsId\":\"01M320GGBR60GMV9XXD6N91KB5\",\"plainPageId\":\"01M320GJCDXG4H0SR1ZZB40Y5V\",\"dbPageId\":\"pg-01M320GJCJPSJXR55E3GS3JSHT\",\"titlePid\":\"p01M320GJCJPSJXR55E3GS3JSHW\",\"checkboxPid\":\"p01M320GJCMK5HQTMB4F76W7VP9\",\"numberPid\":\"p01M320GJCQWF101KAKSAFNXTY3\",\"recordId\":\"rec-01M320GJCS5Y4GGYPZARP19D4S\"}"
+    },
+    {
+      "tag": "G1-G4",
+      "step": "fixture|reload",
+      "name": "[info] 夹具 DB 页载入状态（原始）",
+      "ok": null,
+      "raw": "{\"dbRow\":{\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}},\"gridReady\":true,\"fixtureDom\":{\"dbpage\":true,\"rows\":1,\"cellTypes\":[\"checkbox\",\"number\"],\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\",\"数字（number）\"]}}"
+    },
+    {
+      "tag": "G1-G4",
+      "step": "fixture|reload",
+      "name": "夹具自检：多维数据页真机渲染出勾选列与数字列（矩阵前提成立）",
+      "ok": true,
+      "raw": "dbRow={\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}} gridReady=true dom={\"dbpage\":true,\"rows\":1,\"cellTypes\":[\"checkbox\",\"number\"],\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\",\"数字（number）\"]}"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Enter|5",
+      "name": "[info] 数字格 Enter·前=5",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=5 按后=5 dataEditing按前=false dataEditing按后=true hasInput=true inputValue=\"5\" 期望编辑=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Enter|null",
+      "name": "[info] 数字格 Enter·前=null",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=null 按后=null dataEditing按前=false dataEditing按后=true hasInput=true inputValue=\"\" 期望编辑=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Space|5",
+      "name": "[info] 数字格 Space·前=5",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=5 按后=5 dataEditing按前=false dataEditing按后=false hasInput=false inputValue=null 期望编辑=false valueOk=true editOk=true"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Space|null",
+      "name": "[info] 数字格 Space·前=null",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=null 按后=null dataEditing按前=false dataEditing按后=false hasInput=false inputValue=null 期望编辑=false valueOk=true editOk=true"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Space|null",
+      "name": "G1 数字格 Enter 进入编辑态（按后 dataEditing=true + 编辑输入框挂载 + DB 值不变）",
+      "ok": true,
+      "raw": "[{\"label\":\"number · Enter · 5→5\",\"dataEditing\":\"false→true\",\"hasInput\":true,\"inputValue\":\"5\",\"before\":5,\"after\":5,\"focusOk\":true,\"ok\":true},{\"label\":\"number · Enter · null→null\",\"dataEditing\":\"false→true\",\"hasInput\":true,\"inputValue\":\"\",\"before\":null,\"after\":null,\"focusOk\":true,\"ok\":true}]"
+    },
+    {
+      "tag": "G1-G2",
+      "step": "G1G2|number|Space|null",
+      "name": "G2 数字格 Space 维持现状（不进编辑、不改值）",
+      "ok": true,
+      "raw": "[{\"label\":\"number · Space · 5→5\",\"dataEditing\":\"false→false\",\"hasInput\":false,\"before\":5,\"after\":5,\"ok\":true},{\"label\":\"number · Space · null→null\",\"dataEditing\":\"false→false\",\"hasInput\":false,\"before\":null,\"after\":null,\"ok\":true}]"
+    },
+    {
+      "tag": "G3",
+      "step": "G3|number|Enter|5→7",
+      "name": "[info] G3 数字格 Enter→编辑→改值→Enter（原始）",
+      "ok": null,
+      "raw": "{\"prime\":{\"away\":{\"clicked\":true,\"row\":\"side-node-01M320GJCDXG4H0SR1ZZB40Y5V\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":242,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":false}},\"back\":{\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}},\"ready\":true},\"focus\":{\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}},\"before\":5,\"dataEditing按前\":\"false\",\"进编辑后dataEditing\":\"true\",\"进编辑后input\":\"5\",\"键入后input\":\"7\",\"提交后dataEditing\":\"false\",\"提交后DB\":7}"
+    },
+    {
+      "tag": "G3",
+      "step": "G3|number|Enter|5→7",
+      "name": "G3 数字格「Enter 进编辑 → 改值 → 再 Enter」走既有提交语义并落库（DB 读回 7）",
+      "ok": true,
+      "raw": "按前=5 按前dataEditing=false 进编辑后dataEditing=true input=\"5\"→\"7\" 提交后dataEditing=false 提交后DB=7"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|checkbox|Enter|true",
+      "name": "[info] 勾选格 Enter·前=true",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=true 按后=null dataEditing=false checkboxOn=0 期望=null valueOk=true editOk=true"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|checkbox|Enter|false",
+      "name": "[info] 勾选格 Enter·前=false",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=false 按后=true dataEditing=false checkboxOn=1 期望=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|checkbox|Space|true",
+      "name": "[info] 勾选格 Space·前=true",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=true 按后=null dataEditing=false checkboxOn=0 期望=null valueOk=true editOk=true"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|checkbox|Space|false",
+      "name": "[info] 勾选格 Space·前=false",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=false 按后=true dataEditing=false checkboxOn=1 期望=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|checkbox|Space|false",
+      "name": "G4 勾选格回归红线：Enter/Space × 双向切换落库 + dataEditing 恒 false（T47 四格全绿）",
+      "ok": true,
+      "raw": "[{\"label\":\"checkbox · Enter · true→null\",\"before\":true,\"after\":null,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Enter · false→true\",\"before\":false,\"after\":true,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Space · true→null\",\"before\":true,\"after\":null,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Space · false→true\",\"before\":false,\"after\":true,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true}]"
+    },
+    {
+      "tag": "G4",
+      "step": "G4|单击后按键",
+      "name": "G4-真实路径 单击勾选格后按 Enter 仍能切换（焦点不因 reload 丢失，T47 焦点记忆未回归）",
+      "ok": true,
+      "raw": "单击前=true 单击后=null 再按 Enter 后=true 单击后 activeElement={\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}"
+    },
+    {
+      "tag": "G5",
+      "step": "G5|截图",
+      "name": "[info] 截图（原始）",
+      "ok": null,
+      "raw": "[{\"theme\":\"light\",\"themed\":true,\"themeAttr\":\"light\",\"settingsOpened\":true,\"settingsClosed\":true,\"rowsReady\":true,\"navProbe\":[{\"attempt\":0,\"clicked\":{\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}},\"probe\":{\"appSide\":true,\"sideNodes\":2,\"dbpage\":true,\"settingsPage\":false,\"tabbar\":2,\"rows\":1,\"skeleton\":false}}],\"focus\":{\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}},\"dom\":{\"kind\":\"number\",\"dataEditing\":\"true\",\"hasInput\":true,\"inputValue\":\"7\",\"checkboxOn\":1,\"theme\":\"light\",\"rowCount\":1,\"active\":{\"tag\":\"INPUT\",\"cls\":\"sc-dbc-input sc-dbc-input--num\",\"dataType\":null}},\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t49\\\\t49-01-light-number-enter-edit.png\",\"size\":50416},{\"theme\":\"dark\",\"themed\":true,\"themeAttr\":\"dark\",\"settingsOpened\":true,\"settingsClosed\":true,\"rowsReady\":true,\"navProbe\":[{\"attempt\":0,\"clicked\":{\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}},\"probe\":{\"appSide\":true,\"sideNodes\":2,\"dbpage\":true,\"settingsPage\":false,\"tabbar\":2,\"rows\":1,\"skeleton\":false}}],\"focus\":{\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}},\"dom\":{\"kind\":\"number\",\"dataEditing\":\"true\",\"hasInput\":true,\"inputValue\":\"7\",\"checkboxOn\":1,\"theme\":\"dark\",\"rowCount\":1,\"active\":{\"tag\":\"INPUT\",\"cls\":\"sc-dbc-input sc-dbc-input--num\",\"dataType\":null}},\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t49\\\\t49-01-dark-number-enter-edit.png\",\"size\":49750}]"
+    },
+    {
+      "tag": "G5",
+      "step": "G5|截图",
+      "name": "G5 深色截图已产出（data-theme=dark + 数字格编辑态 + 文件非空）",
+      "ok": true,
+      "raw": "{\"theme\":\"dark\",\"themed\":true,\"themeAttr\":\"dark\",\"settingsOpened\":true,\"settingsClosed\":true,\"rowsReady\":true,\"navProbe\":[{\"attempt\":0,\"clicked\":{\"clicked\":true,\"row\":\"side-node-pg-01M320GJCJPSJXR55E3GS3JSHT\",\"how\":\"playwright\",\"hit\":{\"rect\":{\"x\":8,\"y\":278,\"w\":223,\"h\":36},\"viewport\":\"1184x735\",\"topTag\":\"SPAN\",\"topCls\":\"app-nav-tx\",\"topIsSelfOrInside\":true},\"after\":{\"settingsPage\":false,\"dbpage\":true}},\"probe\":{\"appSide\":true,\"sideNodes\":2,\"dbpage\":true,\"settingsPage\":false,\"tabbar\":2,\"rows\":1,\"skeleton\":false}}],\"focus\":{\"ok\":true,\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}},\"dom\":{\"kind\":\"number\",\"dataEditing\":\"true\",\"hasInput\":true,\"inputValue\":\"7\",\"checkboxOn\":1,\"theme\":\"dark\",\"rowCount\":1,\"active\":{\"tag\":\"INPUT\",\"cls\":\"sc-dbc-input sc-dbc-input--num\",\"dataType\":null}},\"file\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\docs\\\\mockups\\\\screens-t49\\\\t49-01-dark-number-enter-edit.png\",\"size\":49750}"
+    },
+    {
+      "tag": "G5",
+      "step": "teardown",
+      "name": "退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}

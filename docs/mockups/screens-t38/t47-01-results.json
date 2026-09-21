@@ -1,0 +1,1118 @@
+{
+  "task": "T47-01 严复测（E2 英文重启四处文案 / E3 navigator.language 落点 / F5-F6 键盘矩阵）",
+  "ranAt": "2026-09-20T18:53:15.695Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "appBundleMtime": "Mon Sep 21 2026 02:45:25 GMT+0800 (中国标准时间)",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t47-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t47-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t47-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789808566516.3271",
+    "realRootMtimeAfter": "1789808566516.3271",
+    "untouched": true
+  },
+  "pass": 11,
+  "fail": 0,
+  "matrix": [
+    {
+      "label": "checkbox · Enter · true→null",
+      "kind": "checkbox",
+      "key": "Enter",
+      "before": true,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": true,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "checkbox",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "BODY",
+          "cls": null,
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "checkboxOn": 0,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "checkbox · Enter · false→true",
+      "kind": "checkbox",
+      "key": "Enter",
+      "before": false,
+      "expect": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": false,
+      "afterValue": true,
+      "beforeDom": {
+        "kind": "checkbox",
+        "checkboxOn": 0,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "checkbox · Space · true→null",
+      "kind": "checkbox",
+      "key": "Space",
+      "before": true,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": true,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "checkbox",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "checkboxOn": 0,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "checkbox · Space · false→true",
+      "kind": "checkbox",
+      "key": "Space",
+      "before": false,
+      "expect": true,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx1",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        }
+      },
+      "beforeValue": false,
+      "afterValue": true,
+      "beforeDom": {
+        "kind": "checkbox",
+        "checkboxOn": 0,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "checkbox",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "number · Enter · 5→5",
+      "kind": "number",
+      "key": "Enter",
+      "before": 5,
+      "expect": 5,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": 5,
+      "afterValue": 5,
+      "beforeDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": false,
+      "focusOk": true
+    },
+    {
+      "label": "number · Enter · null→null",
+      "kind": "number",
+      "key": "Enter",
+      "before": null,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": null,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": false,
+      "focusOk": true
+    },
+    {
+      "label": "number · Space · 5→5",
+      "kind": "number",
+      "key": "Space",
+      "before": 5,
+      "expect": 5,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": 5,
+      "afterValue": 5,
+      "beforeDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    },
+    {
+      "label": "number · Space · null→null",
+      "kind": "number",
+      "key": "Space",
+      "before": null,
+      "expect": null,
+      "prime": {
+        "away": {
+          "clicked": true,
+          "row": "side-node-01M302FCTFP3VGM1HR0AH0XCWJ"
+        },
+        "back": {
+          "clicked": true,
+          "row": "side-node-pg-01M302FCTNNV4CJE878DK09A5G"
+        },
+        "ready": true
+      },
+      "focus": {
+        "ok": true,
+        "layout": [
+          {
+            "index": 0,
+            "type": "check"
+          },
+          {
+            "index": 1,
+            "type": "title"
+          },
+          {
+            "index": 2,
+            "type": "checkbox"
+          },
+          {
+            "index": 3,
+            "type": "number"
+          }
+        ],
+        "arrow": "ArrowRightx2",
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        }
+      },
+      "beforeValue": null,
+      "afterValue": null,
+      "beforeDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "afterDom": {
+        "kind": "number",
+        "checkboxOn": 1,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--num sc-dbcell--focused",
+          "dataType": "number"
+        },
+        "rowCount": 1
+      },
+      "valueOk": true,
+      "editOk": true,
+      "focusOk": true
+    }
+  ],
+  "quiet": [
+    {
+      "boot": 1,
+      "gracefulExited": true
+    },
+    {
+      "boot": 2,
+      "gracefulExited": true
+    },
+    {
+      "boot": 3,
+      "gracefulExited": true
+    },
+    {
+      "boot": 4,
+      "gracefulExited": true
+    }
+  ],
+  "phases": {
+    "clickPath": {
+      "clickBefore": true,
+      "clickWritten": null,
+      "afterKeyValue": true,
+      "afterClickDom": {
+        "kind": "checkbox",
+        "checkboxOn": 0,
+        "dataEditing": "false",
+        "hasInput": false,
+        "active": {
+          "tag": "DIV",
+          "cls": "sc-dbcell sc-dbcell--focused",
+          "dataType": "checkbox"
+        },
+        "rowCount": 1
+      }
+    },
+    "boot1LangBefore": {
+      "navLang": "zh-CN",
+      "langs": [
+        "zh-CN",
+        "zh-Hans-CN",
+        "en-US"
+      ],
+      "pref": null,
+      "entryLabels": [
+        "设置"
+      ],
+      "sideText": "个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站",
+      "palette": {
+        "aria": "命令面板",
+        "text": "Esc 关闭 命令 新建页面 在根层创建空白页 切换工作区 切换到下一个工作区 打开设置 偏好与应用设置 切换主题：浅色 界面主题 切换主题：深色 界面主题 切换主题：跟随系统 界面主题 导出 导出当前工作区快照 回收站 查看已删除页面 同步面板 查看同步状态 导入 从 Notion 导出包 / Markdown / CSV 导入 AI 续写 基于选中文本或当前块继续写 AI 摘要 压缩为要点摘要 AI 改写 保持原意改写 AI 翻译 "
+      },
+      "menuLabels": [
+        "固定宽度",
+        "转为 Wiki",
+        "删除"
+      ]
+    },
+    "boot1AfterEn": {
+      "settingsTitleAfterEn": "Settings",
+      "settingsFileAfterEn": {
+        "locale": "en-US"
+      }
+    },
+    "boot2": {
+      "navLang": "zh-CN",
+      "langs": [
+        "zh-CN",
+        "zh-Hans-CN",
+        "en-US"
+      ],
+      "pref": "en-US",
+      "entryLabels": [
+        "Settings"
+      ],
+      "sideText": "Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash",
+      "palette": {
+        "aria": "Command Palette",
+        "text": "Esc to close Commands New Page Create a blank page at the top level Switch Workspace Switch to the next workspace Open Settings Preferences and app settings Switch Theme: Light Interface theme Switch Theme: Dark Interfac"
+      },
+      "menuLabels": [
+        "Fixed width",
+        "Convert to Wiki",
+        "Delete"
+      ]
+    },
+    "boot2System": {
+      "clickedSystem": {
+        "clicked": true,
+        "pref": "system",
+        "checked": [
+          "system"
+        ]
+      },
+      "afterSystem": {
+        "pref": "system",
+        "navLang": "zh-CN"
+      },
+      "settingsFileAfterSystem": {
+        "locale": "zh-CN"
+      }
+    },
+    "boot3": {
+      "sample": {
+        "navLang": "zh-CN",
+        "langs": [
+          "zh-CN",
+          "zh-Hans-CN",
+          "en-US"
+        ],
+        "pref": "system",
+        "entryLabels": [
+          "设置"
+        ],
+        "sideText": "个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站",
+        "palette": {
+          "aria": "命令面板",
+          "text": "Esc 关闭 命令 新建页面 在根层创建空白页 切换工作区 切换到下一个工作区 打开设置 偏好与应用设置 切换主题：浅色 界面主题 切换主题：深色 界面主题 切换主题：跟随系统 界面主题 导出 导出当前工作区快照 回收站 查看已删除页面 同步面板 查看同步状态 导入 从 Notion 导出包 / Markdown / CSV 导入 AI 续写 基于选中文本或当前块继续写 AI 摘要 压缩为要点摘要 AI 改写 保持原意改写 AI 翻译 "
+        },
+        "menuLabels": [
+          "固定宽度",
+          "转为 Wiki",
+          "删除"
+        ]
+      },
+      "decode": {
+        "places": {
+          "entry": {
+            "hit": "zh-CN",
+            "en": false,
+            "zh": true,
+            "raw": [
+              "设置"
+            ]
+          },
+          "sidebar": {
+            "hit": "zh-CN",
+            "en": [],
+            "zh": [
+              "个人工作区",
+              "新建页面",
+              "收藏",
+              "最近",
+              "回收站"
+            ],
+            "raw": "个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站"
+          },
+          "palette": {
+            "hit": "zh-CN",
+            "en": false,
+            "zh": true,
+            "raw": "命令面板"
+          },
+          "pageMenu": {
+            "hit": "zh-CN",
+            "en": [],
+            "zh": [
+              "固定宽度",
+              "转为 Wiki",
+              "删除"
+            ],
+            "raw": [
+              "固定宽度",
+              "转为 Wiki",
+              "删除"
+            ]
+          }
+        },
+        "actual": "zh-CN"
+      },
+      "expected": "zh-CN"
+    },
+    "boot4": {
+      "sample": {
+        "navLang": "en-US",
+        "langs": [
+          "en-US",
+          "zh-Hans-CN"
+        ],
+        "pref": "system",
+        "entryLabels": [
+          "Settings"
+        ],
+        "sideText": "Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash",
+        "palette": {
+          "aria": "Command Palette",
+          "text": "Esc to close Commands New Page Create a blank page at the top level Switch Workspace Switch to the next workspace Open Settings Preferences and app settings Switch Theme: Light Interface theme Switch Theme: Dark Interfac"
+        },
+        "menuLabels": [
+          "Fixed width",
+          "Convert to Wiki",
+          "Delete"
+        ]
+      },
+      "decode": {
+        "places": {
+          "entry": {
+            "hit": "en-US",
+            "en": true,
+            "zh": false,
+            "raw": [
+              "Settings"
+            ]
+          },
+          "sidebar": {
+            "hit": "en-US",
+            "en": [
+              "Personal Workspace",
+              "New Page",
+              "Favorites",
+              "Recent",
+              "Trash"
+            ],
+            "zh": [],
+            "raw": "Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash"
+          },
+          "palette": {
+            "hit": "en-US",
+            "en": true,
+            "zh": false,
+            "raw": "Command Palette"
+          },
+          "pageMenu": {
+            "hit": "en-US",
+            "en": [
+              "Fixed width",
+              "Convert to Wiki",
+              "Delete"
+            ],
+            "zh": [],
+            "raw": [
+              "Fixed width",
+              "Convert to Wiki",
+              "Delete"
+            ]
+          }
+        },
+        "actual": "en-US"
+      },
+      "expected": "en-US"
+    }
+  },
+  "assertions": [
+    {
+      "tag": "boot1",
+      "step": "boot",
+      "name": "[info] 夹具 settings（启动时）",
+      "ok": null,
+      "raw": "{\"locale\":\"zh-CN\",\"rootPath\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t47-01\\\\data\"}"
+    },
+    {
+      "tag": "boot1",
+      "step": "fixture",
+      "name": "[info] 夹具对象（原始）",
+      "ok": null,
+      "raw": "{\"wsId\":\"01M302FASAWPEC8YYGXE788HG8\",\"plainPageId\":\"01M302FCTFP3VGM1HR0AH0XCWJ\",\"dbPageId\":\"pg-01M302FCTNNV4CJE878DK09A5G\",\"titlePid\":\"p01M302FCTNNV4CJE878DK09A5J\",\"checkboxPid\":\"p01M302FCTS0S089G072D8S81R3\",\"numberPid\":\"p01M302FCTWT5RZ547HJ1AWDFJ5\",\"recordId\":\"rec-01M302FCTYEX2Z9KPB647Q9FBR\"}"
+    },
+    {
+      "tag": "boot1",
+      "step": "fixture|reload",
+      "name": "[info] 夹具侧栏行（原始）",
+      "ok": null,
+      "raw": "[\"side-node-01M302FCTFP3VGM1HR0AH0XCWJ\",\"side-node-pg-01M302FCTNNV4CJE878DK09A5G\"]"
+    },
+    {
+      "tag": "boot1",
+      "step": "fixture|reload",
+      "name": "[info] 夹具 DB 页载入状态（原始）",
+      "ok": null,
+      "raw": "{\"dbRow\":{\"clicked\":true,\"row\":\"side-node-pg-01M302FCTNNV4CJE878DK09A5G\"},\"gridReady\":true,\"fixtureDom\":{\"dbpage\":true,\"rows\":1,\"cellTypes\":[\"checkbox\",\"number\"],\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\",\"数字（number）\"]}}"
+    },
+    {
+      "tag": "boot1",
+      "step": "fixture|reload",
+      "name": "夹具自检：多维数据页真机渲染出勾选列与数字列（矩阵前提成立）",
+      "ok": true,
+      "raw": "dbRow={\"clicked\":true,\"row\":\"side-node-pg-01M302FCTNNV4CJE878DK09A5G\"} gridReady=true dom={\"dbpage\":true,\"rows\":1,\"cellTypes\":[\"checkbox\",\"number\"],\"headers\":[null,\"名称（text）\",\"勾选（checkbox）\",\"数字（number）\"]}"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|checkbox|Enter|true",
+      "name": "[info] 矩阵格 checkbox·Enter·前=true",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=true 按后=null dataEditing=false checkboxOn=0 rowCount=1 期望=null valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|checkbox|Enter|false",
+      "name": "[info] 矩阵格 checkbox·Enter·前=false",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=false 按后=true dataEditing=false checkboxOn=1 rowCount=1 期望=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|checkbox|Space|true",
+      "name": "[info] 矩阵格 checkbox·Space·前=true",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=true 按后=null dataEditing=false checkboxOn=0 rowCount=1 期望=null valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|checkbox|Space|false",
+      "name": "[info] 矩阵格 checkbox·Space·前=false",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx1\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}} 按前=false 按后=true dataEditing=false checkboxOn=1 rowCount=1 期望=true valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Enter|5",
+      "name": "[info] 矩阵格 number·Enter·前=5",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=5 按后=5 dataEditing=false checkboxOn=1 rowCount=1 期望=5 valueOk=true editOk=false"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Enter|null",
+      "name": "[info] 矩阵格 number·Enter·前=null",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=null 按后=null dataEditing=false checkboxOn=1 rowCount=1 期望=null valueOk=true editOk=false"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|5",
+      "name": "[info] 矩阵格 number·Space·前=5",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=5 按后=5 dataEditing=false checkboxOn=1 rowCount=1 期望=5 valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|null",
+      "name": "[info] 矩阵格 number·Space·前=null",
+      "ok": null,
+      "raw": "focus={\"ok\":true,\"layout\":[{\"index\":0,\"type\":\"check\"},{\"index\":1,\"type\":\"title\"},{\"index\":2,\"type\":\"checkbox\"},{\"index\":3,\"type\":\"number\"}],\"arrow\":\"ArrowRightx2\",\"active\":{\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--num sc-dbcell--focused\",\"dataType\":\"number\"}} 按前=null 按后=null dataEditing=false checkboxOn=1 rowCount=1 期望=null valueOk=true editOk=true"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|null",
+      "name": "F5 勾选格键盘双向切换且落库（Enter/Space × true→false、false→true 四格全绿）",
+      "ok": true,
+      "raw": "[{\"label\":\"checkbox · Enter · true→null\",\"before\":true,\"after\":null,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Enter · false→true\",\"before\":false,\"after\":true,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Space · true→null\",\"before\":true,\"after\":null,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true},{\"label\":\"checkbox · Space · false→true\",\"before\":false,\"after\":true,\"dataEditing\":\"false\",\"focusOk\":true,\"ok\":true}]"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|null",
+      "name": "F6 数字格键盘不误切换（Enter/Space 均不得改动值）",
+      "ok": true,
+      "raw": "[{\"label\":\"number · Enter · 5→5\",\"before\":5,\"after\":5,\"valueOk\":true},{\"label\":\"number · Enter · null→null\",\"before\":null,\"after\":null,\"valueOk\":true},{\"label\":\"number · Space · 5→5\",\"before\":5,\"after\":5,\"valueOk\":true},{\"label\":\"number · Space · null→null\",\"before\":null,\"after\":null,\"valueOk\":true}]"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|null",
+      "name": "[info] F6-附注 数字格 Enter 未进入编辑态（既有行为，登记为范围内缺陷候选）",
+      "ok": null,
+      "raw": "[{\"label\":\"number · Enter · 5→5\",\"dataEditing\":\"false\",\"hasInput\":false,\"value\":5},{\"label\":\"number · Enter · null→null\",\"dataEditing\":\"false\",\"hasInput\":false,\"value\":null}]"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "matrix|number|Space|null",
+      "name": "[info] F6-附注 数字格 Space 无动作（值恒不变）",
+      "ok": null,
+      "raw": "[{\"label\":\"number · Space · 5→5\",\"dataEditing\":\"false\",\"value\":5},{\"label\":\"number · Space · null→null\",\"dataEditing\":\"false\",\"value\":null}]"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "F5|单击后按键",
+      "name": "F5-真实路径 单击勾选格后按 Enter 仍能切换（焦点不因 reload 丢失）",
+      "ok": true,
+      "raw": "单击前=true 单击后=null 再按 Enter 后=true 单击后 activeElement={\"tag\":\"DIV\",\"cls\":\"sc-dbcell sc-dbcell--focused\",\"dataType\":\"checkbox\"}"
+    },
+    {
+      "tag": "F5-F6",
+      "step": "shots|双主题",
+      "name": "[info] 双主题截图（原始）",
+      "ok": null,
+      "raw": "[{\"theme\":\"light\",\"ok\":true},{\"theme\":\"dark\",\"ok\":false}]"
+    },
+    {
+      "tag": "E2",
+      "step": "boot1|点 English",
+      "name": "[info] 点 English 前四处文案（原始）",
+      "ok": null,
+      "raw": "{\"decode\":{\"places\":{\"entry\":{\"hit\":\"zh-CN\",\"en\":false,\"zh\":true,\"raw\":[\"设置\"]},\"sidebar\":{\"hit\":\"zh-CN\",\"en\":[],\"zh\":[\"个人工作区\",\"新建页面\",\"收藏\",\"最近\",\"回收站\"],\"raw\":\"个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站\"},\"palette\":{\"hit\":\"zh-CN\",\"en\":false,\"zh\":true,\"raw\":\"命令面板\"},\"pageMenu\":{\"hit\":\"zh-CN\",\"en\":[],\"zh\":[\"固定宽度\",\"转为 Wiki\",\"删除\"],\"raw\":[\"固定宽度\",\"转为 Wiki\",\"删除\"]}},\"actual\":\"zh-CN\"},\"entryLabels\":[\"设置\"],\"palette\":\"命令面板\",\"menu\":[\"固定宽度\",\"转为 Wiki\",\"删除\"],\"side\":\"个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站\",\"pref\":null}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot1|点 English",
+      "name": "[info] 点 English 后设置页标题（原始）",
+      "ok": null,
+      "raw": "{\"openSettingsOk\":true,\"clickedEn\":{\"clicked\":true,\"pref\":\"en-US\",\"checked\":[\"en-US\"]},\"settingsTitleAfterEn\":\"Settings\"}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot1|点 English",
+      "name": "E1 设置里点 English 立刻生效（设置页标题转 Settings + 标记写 en-US）",
+      "ok": true,
+      "raw": "openSettings=true click={\"clicked\":true,\"pref\":\"en-US\",\"checked\":[\"en-US\"]} title=\"Settings\""
+    },
+    {
+      "tag": "E2",
+      "step": "boot1|点 English",
+      "name": "[info] 点 English 后夹具 settings.locale（原始）",
+      "ok": null,
+      "raw": "{\"locale\":\"en-US\"}"
+    },
+    {
+      "tag": "E2",
+      "step": "teardown",
+      "name": "E2-退出 第一次重启前为优雅退出（window.close 生效，未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|重启后四处文案",
+      "name": "[info] E2 重启后（未开设置页）四处文案（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"langs\":[\"zh-CN\",\"zh-Hans-CN\",\"en-US\"],\"pref\":\"en-US\",\"entryLabels\":[\"Settings\"],\"sideText\":\"Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash\",\"palette\":{\"aria\":\"Command Palette\",\"text\":\"Esc to close Commands New Page Create a blank page at the top level Switch Workspace Switch to the next workspace Open Settings Preferences and app settings Switch Theme: Light Interface theme Switch Theme: Dark Interfac\"},\"menuLabels\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"]}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|重启后四处文案",
+      "name": "[info] E2 重启后四处判定（原始）",
+      "ok": null,
+      "raw": "{\"places\":{\"entry\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":[\"Settings\"]},\"sidebar\":{\"hit\":\"en-US\",\"en\":[\"Personal Workspace\",\"New Page\",\"Favorites\",\"Recent\",\"Trash\"],\"zh\":[],\"raw\":\"Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash\"},\"palette\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":\"Command Palette\"},\"pageMenu\":{\"hit\":\"en-US\",\"en\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"],\"zh\":[],\"raw\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"]}},\"actual\":\"en-US\"}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|重启后四处文案",
+      "name": "[info] E2 重启时夹具 settings.locale（原始）",
+      "ok": null,
+      "raw": "{\"locale\":\"en-US\"}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|重启后四处文案",
+      "name": "E2 显式 English 重启后四处文案全英文（设置入口/侧栏/命令面板/页面⋯菜单）",
+      "ok": true,
+      "raw": "四判定={\"entry\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":[\"Settings\"]},\"sidebar\":{\"hit\":\"en-US\",\"en\":[\"Personal Workspace\",\"New Page\",\"Favorites\",\"Recent\",\"Trash\"],\"zh\":[],\"raw\":\"Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash\"},\"palette\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":\"Command Palette\"},\"pageMenu\":{\"hit\":\"en-US\",\"en\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"],\"zh\":[],\"raw\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"]}} actual=en-US pref=en-US entry=[\"Settings\"] palette=\"Command Palette\" menu=[\"Fixed width\",\"Convert to Wiki\",\"Delete\"] side=Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|设置页标题（补充）",
+      "name": "[info] E2 重启后设置页标题（补充，原文）",
+      "ok": null,
+      "raw": "\"Settings\""
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|切 system",
+      "name": "[info] 切「跟随系统」后（原始）",
+      "ok": null,
+      "raw": "{\"clickedSystem\":{\"clicked\":true,\"pref\":\"system\",\"checked\":[\"system\"]},\"afterSystem\":{\"pref\":\"system\",\"navLang\":\"zh-CN\"},\"settingsFileAfterSystem\":{\"locale\":\"zh-CN\"}}"
+    },
+    {
+      "tag": "E2",
+      "step": "boot2|切 system",
+      "name": "E3-前置 切「跟随系统」写 system 标记（+ settings.locale 落最近解析值）",
+      "ok": true,
+      "raw": "click={\"clicked\":true,\"pref\":\"system\",\"checked\":[\"system\"]} pref=system navLang=zh-CN settings={\"locale\":\"zh-CN\"}"
+    },
+    {
+      "tag": "E2",
+      "step": "teardown",
+      "name": "E3-退出 第二次重启前为优雅退出（window.close 生效，未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true}"
+    },
+    {
+      "tag": "E3",
+      "step": "boot3|系统语言落点",
+      "name": "[info] E3 重启后（system 标记，未开设置页）四处文案（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"langs\":[\"zh-CN\",\"zh-Hans-CN\",\"en-US\"],\"pref\":\"system\",\"entryLabels\":[\"设置\"],\"sideText\":\"个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站\",\"palette\":{\"aria\":\"命令面板\",\"text\":\"Esc 关闭 命令 新建页面 在根层创建空白页 切换工作区 切换到下一个工作区 打开设置 偏好与应用设置 切换主题：浅色 界面主题 切换主题：深色 界面主题 切换主题：跟随系统 界面主题 导出 导出当前工作区快照 回收站 查看已删除页面 同步面板 查看同步状态 导入 从 Notion 导出包 / Markdown / CSV 导入 AI 续写 基于选中文本或当前块继续写 AI 摘要 压缩为要点摘要 AI 改写 保持原意改写 AI 翻译 \"},\"menuLabels\":[\"固定宽度\",\"转为 Wiki\",\"删除\"]}"
+    },
+    {
+      "tag": "E3",
+      "step": "boot3|系统语言落点",
+      "name": "[info] E3 三方关系（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"zh-CN\",\"langs\":[\"zh-CN\",\"zh-Hans-CN\",\"en-US\"],\"pref\":\"system\",\"uiActual\":\"zh-CN\",\"expected\":\"zh-CN\"}"
+    },
+    {
+      "tag": "E3",
+      "step": "boot3|系统语言落点",
+      "name": "E3 system 标记下重启落点 == navigator.language（三方一致，非 unknown）",
+      "ok": true,
+      "raw": "navLang=zh-CN languages=[\"zh-CN\",\"zh-Hans-CN\",\"en-US\"] expected=zh-CN uiActual=zh-CN pref=system 四判定={\"entry\":{\"hit\":\"zh-CN\",\"en\":false,\"zh\":true,\"raw\":[\"设置\"]},\"sidebar\":{\"hit\":\"zh-CN\",\"en\":[],\"zh\":[\"个人工作区\",\"新建页面\",\"收藏\",\"最近\",\"回收站\"],\"raw\":\"个人工作区 新建页面 收藏 0 最近 2 Wiki 0 暂无 Wiki 页 T47复核普通页 T47复核数据页 回收站\"},\"palette\":{\"hit\":\"zh-CN\",\"en\":false,\"zh\":true,\"raw\":\"命令面板\"},\"pageMenu\":{\"hit\":\"zh-CN\",\"en\":[],\"zh\":[\"固定宽度\",\"转为 Wiki\",\"删除\"],\"raw\":[\"固定宽度\",\"转为 Wiki\",\"删除\"]}}"
+    },
+    {
+      "tag": "E3-对照",
+      "step": "boot4|--lang 对照",
+      "name": "[info] E3 对照 --lang=en-US 后（原始）",
+      "ok": null,
+      "raw": "{\"navLang\":\"en-US\",\"langs\":[\"en-US\",\"zh-Hans-CN\"],\"pref\":\"system\",\"uiActual\":\"en-US\",\"expected\":\"en-US\"}"
+    },
+    {
+      "tag": "E3-对照",
+      "step": "boot4|--lang 对照",
+      "name": "E3-对照 --lang=en-US 下 system 落点仍 == navigator.language（跟随而非固定）",
+      "ok": true,
+      "raw": "navLang=en-US expected=en-US uiActual=en-US 四判定={\"entry\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":[\"Settings\"]},\"sidebar\":{\"hit\":\"en-US\",\"en\":[\"Personal Workspace\",\"New Page\",\"Favorites\",\"Recent\",\"Trash\"],\"zh\":[],\"raw\":\"Personal Workspace New Page Favorites 0 Recent 2 Wiki 0 No wiki pages yet T47复核普通页 T47复核数据页 Trash\"},\"palette\":{\"hit\":\"en-US\",\"en\":true,\"zh\":false,\"raw\":\"Command Palette\"},\"pageMenu\":{\"hit\":\"en-US\",\"en\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"],\"zh\":[],\"raw\":[\"Fixed width\",\"Convert to Wiki\",\"Delete\"]}}"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": []
+}
