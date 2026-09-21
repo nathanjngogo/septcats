@@ -1,32 +1,38 @@
-# CHECKPOINT（老板更新 Hermes 客户端前，2026-09-19 晚）
+# CHECKPOINT · 2026-09-21 深夜（老板睡前存档）
 
-## 在飞
-- **T38-01（AI 对话框）**：CodeBuddy 后台进程 PID 35820（`proc_951e32acf9c8`），派发词见会话记录。**客户端重启可能杀掉它**。
-- 已落盘未提交（**不要当成完整交付提交**，重启后先核对完整性）：
-  - 新增 `apps/desktop/src/renderer/src/ai/{AiChatPanel.tsx,AiChatPanel.css,chatBridge.ts,chatContext.ts,chatState.ts}`
-  - 改动 `App.tsx`、`App.css`、`pages/PageView.tsx`、`palette/commands.ts`、`i18n/{zh-CN,en-US}.ts`
-- WIP 快照：`_scratch/wip-t38-*.patch`（`git diff`）、`_scratch/wip-files.txt`（文件清单）。快照里**不含新增未跟踪文件的内容**，那 5 个 ai/* 文件在工作树里是完整的。
+> 老板指令 = 「继续工作，明早见」+ 先不发版。醒来看 rc.28 + 晨报。
 
-## 恢复步骤（客户端更新后）
-1. `git log --oneline -1` 应为 `9712ffa`；`git status` 核对上列文件是否仍在。
-2. 判断 T38-01 是否完成：看有没有 `docs/tasks/TASK-T38-01-report.md`；有则按老流程验收（全仓 DoD → 重打包 → 真机双主题 → 提交）；**没有则重派 T38-01**（先 `git checkout -- .` 清掉半成品或让工程师自己覆盖）。
-3. 之后按队列续：T40-01 字段（P1 插队）→ T39-01 布局设计器 → T41-01 全宽开关 → T43-01 改称多维数据 → T42-01 转 Wiki → T44-01 双链。
+## 已完成（勿重做）
 
-## 当前基线
-- 提交链尾：`9712ffa`；最近交付 rc.12（多页签，真机 8/8）。
-- 全仓 1090 无红（desktop 471）；typecheck 9/9；双门禁 ✓。
-- 队列单全部就绪：T38-01 / T39-01 / T40-01 / T42-01 / T44-01（T41-01、T43-01 待写）。
+- **0.3.0 已正式发布**（feed latest=0.3.0、tag Latest、匿名 sha512 逐字节 ✓、正式包启动冒烟 55 PASS/0 FAIL）。`docs/发布记录-0.3.0.md`
+- T49 键盘 / T50 思源黑体 → rc.27（97.7MB，打包冒烟 54 PASS/0 FAIL，asar 字体条目 ✓）
+- T51（重命名 blur 提交 + 原生菜单本地化）✅ `61c233c`，真机 16/16
+- T52（标签融合/侧栏通高/折叠钮搬家）✅ `244fc37`，真机 23/23，顺带修折叠态隐式列缺陷
+- 老板 UI 五条：①②→T51 ✅；④⑤→T52 ✅；③→T53 🔄；补充两条已立项 T54（关闭自动保存+退出/托盘询问框）、T55（3D 像素布偶猫图标），任务书提交 `59e1519`
+- 新纪律：max-turns 200；PM 只审核/git/验收，写码一律 CB
 
+## 在跑
 
-## 夜间续推（09-19 23:40 起，老板睡前指令「按流程走下去」）
+- **T53-01 像素风黑白灰**（`proc_02722d9c047b`）：工作树已见 DESIGN.md 灰阶化、tokens、12 组件 CSS 吃 bevel、t34 测试→t53 灰阶版。收口三板斧：灰阶对照审 + 对比度亲算 + **复跑 T52 探针 23 条不许破**。
 
-- ✅ **T38-01 已提交** `2707c69` → **rc.13**（93,415,016 字节，sha256 `4cd963b039b3712344f6c989283821a5202962f930dbf86e33ff6f3adb3b21dc`）；全仓 1125 无红。
-- 🚧 **T40-01（数据库字段 P1）**：工程师进程 `proc_e9a159331672` 在跑。
-- 🚧 **T38 真机三项**（LM Studio 3 轮 / 隐私现场数值 / 重启还原 + 双主题截图）：已派独立工作流 `deleg_d9737b2f`（只写探针与截图，不改源码、不 commit）。产出后 PM 复核 → 再补 §PM 复跑。
-- 明早待办顺序：T40 验收（全仓→rc.14→真机 11 类型表→提交）→ T39-01 布局设计器 → T41-01 全宽开关（待写单）→ T43-01 改称多维数据（待写单）→ T42-01 转 Wiki → T44-01 双链。
+## 口径（未否决前按此执行）
 
-## 夜间追加（09-19 深夜）
+- T53：语义色保留**错误红+同步绿**两粒，其余全灰；icon-faint 走非文字口径。
+- T55 默认变体 = C（isometric 趴卧体素），报告留三选一区。
 
-- ✅ **T38-01 真机验证入库**：独立工作流 **29 PASS / 0 FAIL**（探针 `docs/mockups/probe-t38-ai.mjs` + 7 截图 `docs/mockups/screens-t38/`），提交 `47ed510`、`5ed0366`。未验证 4 项已如实登记。
-- 🔑 **唯一剩余未验证（真实模型多轮 + 模型自动引用）卡在凭据门**：LM Studio 在跑但要求 Bearer Token；PM 不碰凭据。**等老板二选一**：① LM Studio 关掉 token 校验并给端点；② 授权用其真实配置档案跑只读探针。详见 `docs/tasks/TASK-T38-01-report.md` 末尾节。
-- 🚧 **T40-01（字段 P1）**：仍在跑（已改 `main/dbview.ts`、`renderer/db/*`、`packages/dbview/src/react/{CellEditor,DbView,PropBar}.tsx` + CSS、ipc/preload/window.d.ts、i18n）。**注**：单元格编辑器组件本就住在 `packages/dbview/src/react/`，PM 任务书红线写「不碰 packages/dbview」过严 → 交付时按实际审（只查 `VALUE_SCHEMA_BY_TYPE` 等既有语义是否被改）。
+## 明早目标（顺序固定）
+
+1. T53 收口 → 派 T54（TASK-T54-01.md：flush-ack 不丢数据硬证 + 自绘像素模态 + Tray）
+2. T54 收口 → 派 T55（32×32 体素猫，3 变体×4 尺寸，16px 目检，接 ico+托盘）
+3. 全仓 DoD → bump **rc.28** → dist（**先 ensure-abi electron + unset 代理**）→ 打包冒烟（probe-rc26-smoke 复用）+ T52 探针复跑 + 询问框/新图标窗口级截图
+4. 台账/交接文档收账 → 晨报：七条状态表 + rc.28 路径 + 待决点（T55 三选一、零彩加码否）
+
+## 红线备忘
+
+feed 不动（保持 0.3.0）；真实档案只读；core/sync 零触碰；密钥不进文件/日志；同仓单飞；modelscope 委派 429 未恢复→取证自跑探针。
+
+tip = `59e1519`（main）
+
+---
+## 历史存档（09-19 checkpoint，已闭环，仅留线索）
+T38 rc.13 / T40 字段 / 队列 T39→T44 → 全部已完成（rc.13–rc.23 链），详见 MILESTONES。
