@@ -1,6 +1,6 @@
 {
   "task": "TASK-T48-01 rc.26 打包产物启动冒烟 + 包内代码验证",
-  "ranAt": "2026-09-21T00:21:33.751Z",
+  "ranAt": "2026-09-21T14:24:15.631Z",
   "exe": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe",
   "asar": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar",
   "isolatedFrom": "C:\\Users\\Administrator\\.septcats",
@@ -11,7 +11,7 @@
     "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud\\septcats.settings.json"
   },
   "static": {
-    "asarFiles": 7293,
+    "asarFiles": 7294,
     "mainFiles": [
       {
         "path": "out/main/chunks/rpc-ZjInI5ck.js",
@@ -31,8 +31,8 @@
     ],
     "rendererAssets": [
       {
-        "path": "out/renderer/assets/index-CDyXm5n7.js",
-        "size": 1953467
+        "path": "out/renderer/assets/index-jR33wiKF.js",
+        "size": 1954161
       }
     ],
     "checks": {
@@ -133,20 +133,20 @@
     }
   },
   "smoke": {
-    "pid": 19900,
-    "cdpAttachMs": 587,
+    "pid": 3364,
+    "cdpAttachMs": 786,
     "sample": {
       "windowMs": 10000,
-      "sampleCount": 49,
+      "sampleCount": 48,
       "firstSample": {
-        "atMs": 635,
-        "textLen": 81,
-        "head": "当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+        "atMs": 843,
+        "textLen": 0,
+        "head": ""
       },
       "lastSample": {
-        "atMs": 10512,
-        "textLen": 76,
-        "head": "个人工作区 同步中 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+        "atMs": 10712,
+        "textLen": 81,
+        "head": "个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
       },
       "hits": {
         "dbFailed": {
@@ -164,20 +164,20 @@
           "firstContext": null
         },
         "loading": {
-          "occurrences": 1,
-          "firstAtMs": 635,
-          "lastAtMs": 635,
+          "occurrences": 0,
+          "firstAtMs": null,
+          "lastAtMs": null,
           "observedMs": 0,
-          "firstContext": "当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+          "firstContext": null
         }
       }
     },
     "settledBodyText": "个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。",
     "readiness": {
-      "ping": "2026-09-21T00:21:24.969Z",
+      "ping": "2026-09-21T14:24:06.816Z",
       "appMeta": {
         "name": "@septcats/desktop",
-        "version": "0.3.0-rc.26",
+        "version": "0.3.0-rc.27",
         "schemaVersion": 3,
         "layoutRoot": "data"
       },
@@ -188,15 +188,15 @@
         "errors": 0,
         "pendingOps": 0
       },
-      "syncStatusRaw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1789950084763,\"devices\":[{\"actorId\":\"01m30nd7tt6gdw3n4y6gvdx18k\",\"lastLamport\":0,\"lastSeenAt\":1789950084759,\"clientVer\":\"0.3.0-rc.26\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}",
+      "syncStatusRaw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1790000646660,\"devices\":[{\"actorId\":\"01m325m8nd7xt482zfkn11k548\",\"lastLamport\":0,\"lastSeenAt\":1790000646657,\"clientVer\":\"0.3.0-rc.27\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}",
       "workspaces": {
         "items": [
           {
-            "id": "01M30ND80571BEZ409RHHWBQZR",
+            "id": "01M325M8TY8R8MV7G14AEN41MC",
             "name": "个人工作区"
           }
         ],
-        "activeId": "01M30ND80571BEZ409RHHWBQZR"
+        "activeId": "01M325M8TY8R8MV7G14AEN41MC"
       },
       "tree": [],
       "links": null,
@@ -301,8 +301,8 @@
       "dataDir": 15,
       "udDir": 71
     },
-    "stderrTail": "thub.com\",\n  \"strict-transport-security\": \"max-age=31536000; includeSubdomains; preload\",\n  \"vary\": \"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\",\n  \"x-content-type-options\": \"nosniff\",\n  \"x-frame-options\": \"deny\",\n  \"x-github-edge-region\": \"southeastasia\",\n  \"x-github-request-id\": \"E2E0:2025D1:2AA5B67:2F40BFF:6AB07880\",\n  \"x-xss-protection\": \"0\"\n}\n    at createHttpError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:53:12)\n    at ElectronHttpExecutor.handleResponse (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:157:20)\n    at ClientRequest.<anonymous> (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:122:26)\n    at ClientRequest.emit (node:events:519:28)\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\n    at newError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\error.js:5:19)\n    at GenericProvider.getLatestVersion (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\providers\\GenericProvider.js:27:63)\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:389:19)\n    at async NsisUpdater.doCheckForUpdates (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:402:24)\n    at async check (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\out\\main\\index.js:1049:7)\n",
-    "stdoutTail": "\r\nChecking for update\nGenerated new staging user ID: 177010bc-8eb3-5447-a44b-b48fd50520c8\n",
+    "stderrTail": "github.com\",\n  \"strict-transport-security\": \"max-age=31536000; includeSubdomains; preload\",\n  \"vary\": \"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\",\n  \"x-content-type-options\": \"nosniff\",\n  \"x-frame-options\": \"deny\",\n  \"x-github-edge-region\": \"southeastasia\",\n  \"x-github-request-id\": \"4AFC:E48D0:FB3A9C:10B52F6:6AB13E03\",\n  \"x-xss-protection\": \"0\"\n}\n    at createHttpError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:53:12)\n    at ElectronHttpExecutor.handleResponse (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:157:20)\n    at ClientRequest.<anonymous> (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:122:26)\n    at ClientRequest.emit (node:events:519:28)\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\n    at newError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\error.js:5:19)\n    at GenericProvider.getLatestVersion (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\providers\\GenericProvider.js:27:63)\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:389:19)\n    at async NsisUpdater.doCheckForUpdates (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:402:24)\n    at async check (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\out\\main\\index.js:1049:7)\n",
+    "stdoutTail": "\r\nChecking for update\nGenerated new staging user ID: e2f09859-2818-5a87-89a2-74c7ee4a2ca3\n",
     "updaterCheckError": "Error: Error: Cannot find channel \"rc.yml\" update info: HttpError: 404 "
   },
   "fatal": false,
@@ -314,21 +314,21 @@
       "step": "preflight",
       "name": "打包产物存在（win-unpacked/Septcats.exe）",
       "ok": true,
-      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe size=204521984 mtime=1789930444749.7832"
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe size=204521984 mtime=1789996826400.669"
     },
     {
       "phase": "static",
       "step": "preflight",
       "name": "包存在（resources/app.asar）",
       "ok": true,
-      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar size=46510913 mtime=1789930444451.224"
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar size=64287188 mtime=1789996826096.6067"
     },
     {
       "phase": "static",
       "step": "asar-parse",
       "name": "[info] asar 头解析成功",
       "ok": null,
-      "raw": "dataOffset=1889792 headerSize=1889784 strLen=1889774 条目数=7293"
+      "raw": "dataOffset=1890336 headerSize=1890328 strLen=1890318 条目数=7294"
     },
     {
       "phase": "static",
@@ -419,7 +419,7 @@
       "step": "renderer-t44-t41",
       "name": "[info] out/renderer/assets/*.js 包内清单",
       "ok": null,
-      "raw": "[{\"path\":\"out/renderer/assets/index-CDyXm5n7.js\",\"size\":1953467}]"
+      "raw": "[{\"path\":\"out/renderer/assets/index-jR33wiKF.js\",\"size\":1954161}]"
     },
     {
       "phase": "static",
@@ -510,7 +510,7 @@
       "step": "launch",
       "name": "[info] 真实数据根 mtime（启动前）",
       "ok": null,
-      "raw": "C:\\Users\\Administrator\\.septcats → 1789808566516.3271"
+      "raw": "C:\\Users\\Administrator\\.septcats → 1789991614995.1055"
     },
     {
       "phase": "smoke",
@@ -531,14 +531,14 @@
       "step": "launch",
       "name": "应用进程已拉起（有 PID）",
       "ok": true,
-      "raw": "pid=19900"
+      "raw": "pid=3364"
     },
     {
       "phase": "smoke",
       "step": "launch",
       "name": "CDP 连上打包产物",
       "ok": true,
-      "raw": "cdpAttachMs=587 url=file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/dist/win-unpacked/resources/app.asar/out/renderer/index.html"
+      "raw": "cdpAttachMs=786 url=file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/dist/win-unpacked/resources/app.asar/out/renderer/index.html"
     },
     {
       "phase": "smoke",
@@ -552,14 +552,14 @@
       "step": "a-failure-text",
       "name": "[info] a) 采样首帧",
       "ok": null,
-      "raw": "{\"atMs\":635,\"textLen\":81,\"head\":\"当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\"}"
+      "raw": "{\"atMs\":843,\"textLen\":0,\"head\":\"\"}"
     },
     {
       "phase": "smoke",
       "step": "a-failure-text",
       "name": "[info] a) 采样末帧",
       "ok": null,
-      "raw": "{\"atMs\":10512,\"textLen\":76,\"head\":\"个人工作区 同步中 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\"}"
+      "raw": "{\"atMs\":10712,\"textLen\":81,\"head\":\"个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\"}"
     },
     {
       "phase": "smoke",
@@ -580,7 +580,7 @@
       "step": "a-failure-text",
       "name": "a) 「加载中」仅瞬态出现（≤3s 内退场，非滞留）",
       "ok": true,
-      "raw": "命中=1 首次=635ms 末次=635ms 观测跨度=0ms 首次上下文=\"当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\""
+      "raw": "命中=0 首次=nullms 末次=nullms 观测跨度=0ms 首次上下文=null"
     },
     {
       "phase": "smoke",
@@ -594,28 +594,28 @@
       "step": "b-readiness",
       "name": "[info] b) ping 原始返回值",
       "ok": null,
-      "raw": "\"2026-09-21T00:21:24.969Z\""
+      "raw": "\"2026-09-21T14:24:06.816Z\""
     },
     {
       "phase": "smoke",
       "step": "b-readiness",
       "name": "[info] b) appMeta 原始返回值",
       "ok": null,
-      "raw": "{\"name\":\"@septcats/desktop\",\"version\":\"0.3.0-rc.26\",\"schemaVersion\":3,\"layoutRoot\":\"data\"}"
+      "raw": "{\"name\":\"@septcats/desktop\",\"version\":\"0.3.0-rc.27\",\"schemaVersion\":3,\"layoutRoot\":\"data\"}"
     },
     {
       "phase": "smoke",
       "step": "b-readiness",
       "name": "[info] b) sync.status() 原始返回值",
       "ok": null,
-      "raw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1789950084763,\"devices\":[{\"actorId\":\"01m30nd7tt6gdw3n4y6gvdx18k\",\"lastLamport\":0,\"lastSeenAt\":1789950084759,\"clientVer\":\"0.3.0-rc.26\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}"
+      "raw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1790000646660,\"devices\":[{\"actorId\":\"01m325m8nd7xt482zfkn11k548\",\"lastLamport\":0,\"lastSeenAt\":1790000646657,\"clientVer\":\"0.3.0-rc.27\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}"
     },
     {
       "phase": "smoke",
       "step": "b-readiness",
       "name": "[info] b) workspaces.list() 原始返回值",
       "ok": null,
-      "raw": "{\"items\":[{\"id\":\"01M30ND80571BEZ409RHHWBQZR\",\"name\":\"个人工作区\"}],\"activeId\":\"01M30ND80571BEZ409RHHWBQZR\"}"
+      "raw": "{\"items\":[{\"id\":\"01M325M8TY8R8MV7G14AEN41MC\",\"name\":\"个人工作区\"}],\"activeId\":\"01M325M8TY8R8MV7G14AEN41MC\"}"
     },
     {
       "phase": "smoke",
@@ -643,7 +643,7 @@
       "step": "b-readiness",
       "name": "b) ping 通道返回时间戳",
       "ok": true,
-      "raw": "\"2026-09-21T00:21:24.969Z\""
+      "raw": "\"2026-09-21T14:24:06.816Z\""
     },
     {
       "phase": "smoke",
@@ -657,7 +657,7 @@
       "step": "b-readiness",
       "name": "b) workspaces.list() 返回活动工作区（DB 服务活着）",
       "ok": true,
-      "raw": "{\"items\":[{\"id\":\"01M30ND80571BEZ409RHHWBQZR\",\"name\":\"个人工作区\"}],\"activeId\":\"01M30ND80571BEZ409RHHWBQZR\"}"
+      "raw": "{\"items\":[{\"id\":\"01M325M8TY8R8MV7G14AEN41MC\",\"name\":\"个人工作区\"}],\"activeId\":\"01M325M8TY8R8MV7G14AEN41MC\"}"
     },
     {
       "phase": "smoke",
@@ -832,7 +832,7 @@
       "step": "isolation",
       "name": "真实数据根 C:\\Users\\Administrator\\.septcats 未被触碰（mtime 不变）",
       "ok": true,
-      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+      "raw": "before=1789991614995.1055 after=1789991614995.1055"
     },
     {
       "phase": "smoke",
@@ -846,14 +846,14 @@
       "step": "isolation",
       "name": "[info] 应用 stderr 尾部（原文，最多 2000 字）",
       "ok": null,
-      "raw": "\"thub.com\\\",\\n  \\\"strict-transport-security\\\": \\\"max-age=31536000; includeSubdomains; preload\\\",\\n  \\\"vary\\\": \\\"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\\\",\\n  \\\"x-content-type-options\\\": \\\"nosniff\\\",\\n  \\\"x-frame-options\\\": \\\"deny\\\",\\n  \\\"x-github-edge-region\\\": \\\"southeastasia\\\",\\n  \\\"x-github-request-id\\\": \\\"E2E0:2025D1:2AA5B67:2F40BFF:6AB07880\\\",\\n  \\\"x-xss-protection\\\": \\\"0\\\"\\n}\\n    at createHttpError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:53:12)\\n    at ElectronHttpExecutor.handleResponse (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:157:20)\\n    at ClientRequest.<anonymous> (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:122:26)\\n    at ClientRequest.emit (node:events:519:28)\\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\\n    at newError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\error.js:5:19)\\n    at GenericProvider.getLatestVersion (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\providers\\\\GenericProvider.js:27:63)\\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:389:19)\\n    at async NsisUpdater.doCheckForUpdates (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:402:24)\\n    at async check (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\out\\\\main\\\\index.js:1049:7)\\n\""
+      "raw": "\"github.com\\\",\\n  \\\"strict-transport-security\\\": \\\"max-age=31536000; includeSubdomains; preload\\\",\\n  \\\"vary\\\": \\\"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\\\",\\n  \\\"x-content-type-options\\\": \\\"nosniff\\\",\\n  \\\"x-frame-options\\\": \\\"deny\\\",\\n  \\\"x-github-edge-region\\\": \\\"southeastasia\\\",\\n  \\\"x-github-request-id\\\": \\\"4AFC:E48D0:FB3A9C:10B52F6:6AB13E03\\\",\\n  \\\"x-xss-protection\\\": \\\"0\\\"\\n}\\n    at createHttpError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:53:12)\\n    at ElectronHttpExecutor.handleResponse (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:157:20)\\n    at ClientRequest.<anonymous> (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:122:26)\\n    at ClientRequest.emit (node:events:519:28)\\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\\n    at newError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\error.js:5:19)\\n    at GenericProvider.getLatestVersion (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\providers\\\\GenericProvider.js:27:63)\\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:389:19)\\n    at async NsisUpdater.doCheckForUpdates (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:402:24)\\n    at async check (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\out\\\\main\\\\index.js:1049:7)\\n\""
     },
     {
       "phase": "smoke",
       "step": "isolation",
       "name": "[info] 应用 stdout 尾部（原文，最多 2000 字）",
       "ok": null,
-      "raw": "\"\\r\\nChecking for update\\nGenerated new staging user ID: 177010bc-8eb3-5447-a44b-b48fd50520c8\\n\""
+      "raw": "\"\\r\\nChecking for update\\nGenerated new staging user ID: e2f09859-2818-5a87-89a2-74c7ee4a2ca3\\n\""
     },
     {
       "phase": "smoke",
@@ -875,13 +875,13 @@
       "file": "rc26-smoke-01-boot.png",
       "width": 1184,
       "height": 735,
-      "bytes": 18755
+      "bytes": 23092
     },
     {
       "file": "rc26-smoke-02-page-menu.png",
       "width": 1184,
       "height": 735,
-      "bytes": 29953
+      "bytes": 35568
     }
   ],
   "pageErrors": [],
