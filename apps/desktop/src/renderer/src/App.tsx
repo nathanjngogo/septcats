@@ -7,6 +7,7 @@ import {
   IconButton,
   MagnifyingGlass,
   Plus,
+  SidebarSimple,
   Sparkle,
 } from '@septcats/ui';
 import { AiChatPanel } from './ai/AiChatPanel';
@@ -287,23 +288,44 @@ export function App() {
   const inSettings = view === 'settings';
   const inImport = view === 'import';
 
+  // T51-01：侧栏开合的唯一出口（顶栏/标签条按钮 + 原生菜单 View→折叠侧栏 共用），
+  // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
+  const sidebarToggle = (
+    <IconButton
+      icon={SidebarSimple}
+      label={collapsed ? t('app.expandSidebar') : t('app.collapseSidebar')}
+      aria-expanded={!collapsed}
+      data-testid="side-toggle"
+      className="app-tabrow-toggle"
+      onClick={toggleSidebar}
+    />
+  );
+
   // T22-01 §0.A：pages 视图面包屑真路径（trash → 「回收站」；选中页 → 祖先链；
   // 无选中 → 工作区名）。settings/importWizard 保持既有文案；整份 state 订阅
   // （引用稳定，见 store.ts 选择器约束）。
   const pagesState = usePages((state) => state);
 
+  // T52-01 §1.1/§1.2：编辑器视图 = 标签条行存在的那一支（设置/导入/回收站/搜索页各有
+  // 自己的顶栏语义，顶栏折叠钮仍由 AppShell 渲染）。编辑器视图下：
+  //   ① 顶栏左侧不再显示「工作区名」兜底（名字常驻侧栏头部）；
+  //   ② 折叠钮搬到标签条行最左（`sidebarToggle`），顶栏的同名钮由 `.app-shell--fused` 隐藏。
+  const editorView = !inSettings && !inImport && pagesState.view === 'pages' && !searchOpen;
+
+  // T52-01 §1.1：工作区名改由侧栏头部常驻承载 → 顶栏左端不再渲染「只剩工作区名」的兜底。
   const breadcrumb =
     inSettings ? (
       <Breadcrumb items={[{ label: t('settings.title') }]} />
     ) : inImport ? (
       <Breadcrumb items={[{ label: t('importWizard.title') }]} />
-    ) : (
+    ) : pagesState.view === 'pages' && pagesState.selectedId === null ? null : (
       <Breadcrumb items={pagesBreadcrumbItems(pagesState)} />
     );
 
   return (
     <>
       <AppShell
+        className={editorView ? 'app-shell--fused' : ''}
         sidebarCollapsed={collapsed}
         onToggleSidebar={toggleSidebar}
         breadcrumb={breadcrumb}
@@ -360,13 +382,15 @@ export function App() {
         ) : searchOpen ? (
           <SearchPage />
         ) : (
-          // T37-01：编辑列容器闭合高度链（T30 零滚动红线）——标签条定高 flex:none，
+          // T37-01：编辑列容器闭合高度链（T30 零滚动红线）——标签条行定高 flex:none，
           // PageView flex:1 吃剩余高度，窗口滚动仍只发生在 .pv-root 内部。
+          // T52-01 §1.2/§1.3：标签条行总是渲染（布局隐藏标签条时只留行 + 折叠钮插槽，
+          // 收起态钮仍可达）；活动标签 content 白底与 .pv-root 连通（TabsBar.css）。
           // T38-01：编辑列 + AI 对话侧栏同行（收起 = 不渲染，主区自动变宽）。
           // T39-01：AI 面板位置=底部 → 主行转纵向（面板定高在下）；隐藏 → 不渲染。
           <div className={`app-main-row${aiPosition === 'bottom' ? ' app-main-row--ai-bottom' : ''}`}>
             <div className="app-editor-col">
-              {tabsVisible ? <TabsBar /> : null}
+              <TabsBar showTabs={tabsVisible} leading={sidebarToggle} />
               <PageView />
             </div>
             {chatOpen && !aiHidden ? <AiChatPanel /> : null}

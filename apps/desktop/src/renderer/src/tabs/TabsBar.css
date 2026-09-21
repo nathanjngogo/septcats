@@ -1,22 +1,48 @@
 /*
- * TabsBar 样式（TASK-T37-01 §0.2；apps 侧，只用 var(--sc-*) token）。
- * 视觉口径与侧栏行同构（Notion 式页签）：canvas 底 + hairline 分隔线 +
- * hover=surface / 当前=surface-active；四态齐备（默认/hover/按压/当前，
- * focus 环由全局 :focus-visible 兜底）。
+ * TabsBar 样式（TASK-T37-01 §0.2；TASK-T52-01 §1.3 融合重写；apps 侧，只用 var(--sc-*) token）。
+ *
+ * 结构：行宿主 `.app-tabrow`（定高、canvas 底、总是渲染）内嵌 `.tabsbar`（可横滚标签列表）。
+ * 视觉口径（T52-01 §1.3：标签条并入编辑区）：
+ *  - 行底 = canvas（与侧栏/顶栏同 chrome 面），**去掉横贯整行的硬分隔线**；
+ *  - 活动标签 = content 白底（与 `.pv-root` 同 token）→ 与正文连通无缝、底边无断裂；
+ *  - 非活动标签沉 surface 灰底；hover/按压升到 surface-active；
+ *  - 行最左 `.tabsbar-leading` = 侧栏开合钮插槽（sticky 钉在行左，横滚不移位）。
  */
 
-.tabsbar {
+.app-tabrow {
   flex: none;
+  display: flex;
+  align-items: center;
+  /* 行高与改前 `.tabsbar` 一致（control-sm + space-sm；四态齐备见下） */
+  height: calc(var(--sc-size-control-sm) + var(--sc-space-sm));
+  min-width: 0;
+  padding: 0 var(--sc-space-sm);
+  background: var(--sc-color-canvas);
+}
+
+.tabsbar {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
   display: flex;
   align-items: flex-end;
   /* 溢出横向滚动、不换行（§0.2） */
   overflow-x: auto;
   overflow-y: hidden;
-  height: calc(var(--sc-size-control-sm) + var(--sc-space-sm));
-  padding: 0 var(--sc-space-sm);
-  background: var(--sc-color-canvas);
-  border-bottom: 1px solid var(--sc-color-hairline);
   white-space: nowrap;
+  background: var(--sc-color-canvas);
+}
+
+/* T52-01 §1.2：行最左插槽（一个 --sc-space-lg 图标位）——sticky 使标签横滚时它不动 */
+.tabsbar-leading {
+  flex: none;
+  position: sticky;
+  left: 0;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin-right: var(--sc-space-xs);
+  background: var(--sc-color-canvas);
 }
 
 .tabsbar-tab {
@@ -32,24 +58,26 @@
   color: var(--sc-color-ink);
   cursor: pointer;
   user-select: none;
+  /* T52-01 §1.3：非活动标签沉 surface 灰底（行底 canvas 之上的一档凹陷） */
+  background: var(--sc-color-surface);
   /* T27-01 §0.B 过渡纪律：token 化短过渡 */
   transition:
     background-color var(--sc-motion-fast) ease-out,
     color var(--sc-motion-fast) ease-out;
 }
 
-.tabsbar-tab:hover {
-  background: var(--sc-color-surface);
-}
-
+/* hover / 按压同档（调色板里比 surface 更深的一档只有 surface-active；按压不再加档） */
+.tabsbar-tab:hover,
 .tabsbar-tab:active {
   background: var(--sc-color-surface-active);
 }
 
-/* 当前标签：既有 surface-active token 高亮（与侧栏选中行同口径） */
+/* 当前标签（T52-01 §1.3）：content 白底 = `.pv-root` 同 token → 与编辑区连通无缝，
+ * 底边不设分隔线（活动列「冒泡」进正文）。 */
 .tabsbar-tab--active,
-.tabsbar-tab--active:hover {
-  background: var(--sc-color-surface-active);
+.tabsbar-tab--active:hover,
+.tabsbar-tab--active:active {
+  background: var(--sc-color-content);
   font-weight: 500;
 }
 
@@ -81,11 +109,9 @@
     color var(--sc-motion-fast) ease-out;
 }
 
-.tabsbar-close:hover {
-  background: var(--sc-color-surface-raised);
-  color: var(--sc-color-ink);
-}
-
+/* T52-01 §1.3：标签底色改为 surface/content 后，× 的 hover 底须在两色上都可见
+ * （原 surface-raised 白底在活动标签白底上不可见）→ 统一 surface-active */
+.tabsbar-close:hover,
 .tabsbar-close:active {
   background: var(--sc-color-surface-active);
   color: var(--sc-color-ink);

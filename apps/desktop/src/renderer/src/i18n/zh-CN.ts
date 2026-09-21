@@ -19,6 +19,9 @@ export const zhCN = {
     settingsLabel: '设置',
     noWorkspaceToSwitch: '没有可切换的工作区',
     aiChatLabel: 'AI 对话（Ctrl+J）',
+    // T52-01 §1.2：侧栏开合钮（搬到标签条行最左）的可访问名，随开合态翻转
+    collapseSidebar: '收起侧栏',
+    expandSidebar: '展开侧栏',
   },
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）

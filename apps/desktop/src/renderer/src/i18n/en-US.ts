@@ -18,6 +18,9 @@ export const enUS = {
     settingsLabel: 'Settings',
     noWorkspaceToSwitch: 'No workspace to switch to',
     aiChatLabel: 'AI chat (Ctrl+J)',
+    // T52-01 §1.2: accessible name of the sidebar toggle (now at the tab row's far left)
+    collapseSidebar: 'Collapse sidebar',
+    expandSidebar: 'Expand sidebar',
   },
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it

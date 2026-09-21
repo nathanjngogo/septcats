@@ -81,6 +81,26 @@ html, body {
   min-height: 0;
 }
 
+/*
+ * T52-01 §1.2：标签条行最左的侧栏开合钮 = 一个 --sc-space-xl（24px）图标位。
+ * 语义与顶栏同名钮完全一致（aria-expanded 随开合态翻转、点击走同一 toggleSidebar），
+ * 收起态仍在编辑区左上可达（T30-01「完全收起 = 0px」红线不破：钮在编辑列内，不占侧栏列）。
+ */
+.app-tabrow-toggle {
+  width: var(--sc-space-xl);
+  height: var(--sc-space-xl);
+}
+
+/*
+ * T52-01 §1.1：编辑器视图下顶栏只剩右侧功能区（搜索/AI/同步/新建/设置）——
+ * AppShell 自渲染的折叠钮（顶栏首个子元素）在此隐藏：同一个开合动作只保留
+ * 标签条行最左这一处入口（两处同名按钮 = 重复可达路径 + 视觉分叉）。
+ * 设置/导入/回收站/搜索视图不挂此类 → 顶栏钮照旧（收起态可达性不变）。
+ */
+.app-shell--fused .sc-shell__topbar > .sc-iconbtn:first-child {
+  display: none;
+}
+
 .app-side {
   display: flex;
   flex-direction: column;
@@ -88,11 +108,13 @@ html, body {
   min-height: 0;
 }
 
+/* T52-01 §1.1：侧栏通高后，头部（工作区名）与右侧顶栏同一行高（--sc-layout-topbar）——
+ * 两列 chrome 面的横向分界线对齐，且工作区名就位在窗口内容区最上一行。 */
 .app-side-head {
   display: flex;
   align-items: center;
   gap: var(--sc-space-sm);
-  height: 36px;
+  height: var(--sc-layout-topbar);
   padding: 0 var(--sc-layout-density-pad);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-secondary);

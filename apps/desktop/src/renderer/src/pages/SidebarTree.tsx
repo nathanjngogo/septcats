@@ -170,6 +170,12 @@ export function SidebarTree() {
   const favoriteIds = usePages((state) => state.favoriteIds);
   const recentIds = usePages((state) => state.recentIds);
   const view = usePages((state) => state.view);
+  // T52-01 §1.1：工作区名移进侧栏头部（顶栏左端不再承载）——显示**真实**工作区名
+  // （store 里已加载的 name），未就绪时回落 i18n 默认名（原静态文案，行为不变）。
+  const workspaceId = usePages((state) => state.workspaceId);
+  const workspaces = usePages((state) => state.workspaces);
+  const workspaceName =
+    workspaces.find((item) => item.id === workspaceId)?.name ?? t('sidebar.workspace');
   // T23-02 §C.1：「新建页面 ▾」模板子菜单展开态（本地视图态；列表订阅 templates slice）
   const [tplOpen, setTplOpen] = useState(false);
   // T24-01 §0.A：页面行「⋯」菜单展开态（本地视图态；每树同时至多一个）
@@ -408,9 +414,9 @@ export function SidebarTree() {
 
   return (
     <div className="app-side">
-      <div className="app-side-head">
+      <div className="app-side-head" data-testid="side-workspace">
         <Icon icon={FolderSimple} size="sm" />
-        {t('sidebar.workspace')}
+        {workspaceName}
       </div>
       <div className="app-side-scroll">
         {/* T23-02 §C.1：主体点击仍 = 新建空白页；右侧箭头展开模板子菜单 */}
