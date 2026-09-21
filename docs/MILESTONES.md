@@ -3,6 +3,7 @@
 > PM 维护。每条 = 已真实验证（命令输出/真机取证），非口头。
 
 | 里程碑 | 日期 | 状态 | 证据 |
+| └ T48-01 打包产物启动冒烟 + 包内代码验证 | 09-21 | ✅ **rc.26 与正式 0.3.0 包均 55 PASS / 0 FAIL** | 打包产物启动：无「数据库服务启动失败/同步运行时不可用」、`sync.status()` state=ok/errors=0、UI 就绪、pageerror 0、优雅退出；**包内代码验证**（自写 asar 解析）：CSP 含 `127.0.0.1`、`chatConfig`/`setChatConfig`/「等待超过」、双链/反向链接/全宽文案全部命中；登记 3 条（updater 预发布通道 rc.yml 404、Ctrl+K 需人工按、加载中 633ms 瞬态） |
 | └ T47-01 三项严复测（E2/E3/F5-F6）| 09-21 | ✅ **全部定论：11 PASS / 0 FAIL，5 项 FAIL 全为探针侧（产品无缺陷）** | E2：重启后四处文案全英文（入口/侧栏/命令面板/页面⋯菜单）；E3：`pref=system` → `uiActual==navigator.language`（zh-CN，三方一致，不再 unknown）+ `--lang=en-US` 对照跟随生效；F5：勾选格 Enter/Space × true↔false 四格全绿（含真实路径单击后 Enter）+ F6 数字格不误切换；全仓 **1275 无红**（desktop 638）、typecheck 9/9、双门禁 ✓；版本 → 0.3.0-rc.26 |
 |---|---|---|---|
 | G0 PRD 定稿 | 2026-09-12 | ✅ | 老板答复 Q1–Q9（PROJECT_PLAN §14） |

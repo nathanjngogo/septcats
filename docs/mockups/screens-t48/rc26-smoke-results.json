@@ -1,0 +1,889 @@
+{
+  "task": "TASK-T48-01 rc.26 打包产物启动冒烟 + 包内代码验证",
+  "ranAt": "2026-09-21T00:21:33.751Z",
+  "exe": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe",
+  "asar": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar",
+  "isolatedFrom": "C:\\Users\\Administrator\\.septcats",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t48-01\\data",
+    "port": 9481,
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud\\septcats.settings.json"
+  },
+  "static": {
+    "asarFiles": 7293,
+    "mainFiles": [
+      {
+        "path": "out/main/chunks/rpc-ZjInI5ck.js",
+        "size": 31900,
+        "unpacked": false
+      },
+      {
+        "path": "out/main/dbServer.js",
+        "size": 75768,
+        "unpacked": false
+      },
+      {
+        "path": "out/main/index.js",
+        "size": 1004441,
+        "unpacked": false
+      }
+    ],
+    "rendererAssets": [
+      {
+        "path": "out/renderer/assets/index-CDyXm5n7.js",
+        "size": 1953467
+      }
+    ],
+    "checks": {
+      "csp": {
+        "metaTag": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: attachment:; font-src 'self' data:; connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*\" />",
+        "content": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: attachment:; font-src 'self' data:; connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*",
+        "connectSrc": "connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*"
+      },
+      "main": {
+        "chatConfig": {
+          "count": 11,
+          "firstOffset": 1059980,
+          "snippet": "LE\"; } class AiService { credentials; getSettings; client; log; now; cache; chatConfigStore; fallbackChatTimeoutMs; constructor(options) { this.credentials = options.cr"
+        },
+        "setChatConfig": {
+          "count": 5,
+          "firstOffset": 132331,
+          "snippet": "tKey\"; const CHANNEL_AI_CLEAR_KEY = \"ai:clearKey\"; const CHANNEL_AI_SET_CHAT_CONFIG = \"ai:setChatConfig\"; const CHANNEL_COLLAB_ATTACH = \"collab:attach\"; const CHANNEL_COLLAB_DETACH = \"collab:de"
+        },
+        "ai:setChatConfig": {
+          "count": 2,
+          "firstOffset": 132328,
+          "snippet": ":setKey\"; const CHANNEL_AI_CLEAR_KEY = \"ai:clearKey\"; const CHANNEL_AI_SET_CHAT_CONFIG = \"ai:setChatConfig\"; const CHANNEL_COLLAB_ATTACH = \"collab:attach\"; const CHANNEL_COLLAB_DETACH = \"collab:de"
+        },
+        "ai-chat-config.json": {
+          "count": 1,
+          "firstOffset": 1049922,
+          "snippet": "OKENS_MIN = 1; const AI_MAX_OUTPUT_TOKENS_MAX = 131072; const AI_CHAT_CONFIG_FILE_NAME = \"ai-chat-config.json\"; const AI_CHAT_CONFIG_VERSION = 1; const DEFAULT_AI_CHAT_RUNTIME_CONFIG = { requestTim"
+        },
+        "等待超过": {
+          "count": 1,
+          "firstOffset": 1056533,
+          "snippet": "ode === \"E_AI_TIMEOUT\") { throw new AiError( \"E_AI_TIMEOUT\", `等待超过 ${describeTimeoutSeconds(timeoutMs)} 秒已中止（${hostOf$1(baseUrl)}）` ); } "
+        }
+      },
+      "renderer": {
+        "链接到页面 · 输入以过滤": {
+          "count": 1,
+          "firstOffset": 350857,
+          "snippet": "e: \"还没有页面。在左侧栏「新建页面」，或从模板开始。\", // T44-01：双链（Obsidian 式 [[ ]]） wikilinkMenuTitle: \"链接到页面 · 输入以过滤\", wikilinkMenuEmpty: \"无匹配页面\", backlinksTitle: \"反向链接\", backlinksEmpty: \"暂无页面引用"
+        },
+        "无匹配页面": {
+          "count": 1,
+          "firstOffset": 350897,
+          "snippet": "4-01：双链（Obsidian 式 [[ ]]） wikilinkMenuTitle: \"链接到页面 · 输入以过滤\", wikilinkMenuEmpty: \"无匹配页面\", backlinksTitle: \"反向链接\", backlinksEmpty: \"暂无页面引用本页\", backlinksJumpAria: \"跳转到"
+        },
+        "反向链接": {
+          "count": 1,
+          "firstOffset": 350926,
+          "snippet": " wikilinkMenuTitle: \"链接到页面 · 输入以过滤\", wikilinkMenuEmpty: \"无匹配页面\", backlinksTitle: \"反向链接\", backlinksEmpty: \"暂无页面引用本页\", backlinksJumpAria: \"跳转到引用位置\" }, tabs: { bar"
+        },
+        "暂无页面引用本页": {
+          "count": 1,
+          "firstOffset": 350954,
+          "snippet": " 输入以过滤\", wikilinkMenuEmpty: \"无匹配页面\", backlinksTitle: \"反向链接\", backlinksEmpty: \"暂无页面引用本页\", backlinksJumpAria: \"跳转到引用位置\" }, tabs: { barLabel: \"打开的页面标签\", close: \"关闭"
+        },
+        "跳转到引用位置": {
+          "count": 1,
+          "firstOffset": 350989,
+          "snippet": "配页面\", backlinksTitle: \"反向链接\", backlinksEmpty: \"暂无页面引用本页\", backlinksJumpAria: \"跳转到引用位置\" }, tabs: { barLabel: \"打开的页面标签\", close: \"关闭标签页\" }, pageWidth: { // T4"
+        },
+        "固定宽度": {
+          "count": 5,
+          "firstOffset": 351150,
+          "snippet": ", pageWidth: { // T41-01：页面 ⋯ 菜单项的两种状态文案（✓ 前缀 = 当前页为全宽） full: \"全宽\", fixed: \"固定宽度\" }, pageDelete: { title: \"删除页面\", body: \"「{name}」将移入回收站，可随时在回收站中恢复。\", body"
+        },
+        "全宽 / 固定宽度": {
+          "count": 2,
+          "firstOffset": 363745,
+          "snippet": "new: \"新建页面\", saveAsTemplate: \"另存为模板\", delete: \"删除页面\", toggleFullWidth: \"全宽 / 固定宽度\" }, workspace: { switch: \"切换工作区\" }, app: { settings: \"打开设置\", "
+        },
+        "模型未返回正文（仅推理内容）": {
+          "count": 1,
+          "firstOffset": 361513,
+          "snippet": " \"还没有对话，问问当前页面的内容吧。\", contextUnavailable: \"（当前没有可用的页面上下文）\", reasoningOnlyNotice: \"模型未返回正文（仅推理内容）\", emptyReplyNotice: \"模型未返回正文（可重试，或调大「最大输出 tokens」）\", lengthNotice: \"达到输出上限，可增大 ma"
+        },
+        "模型未返回正文（可重试，或调大「最大输出 tokens」）": {
+          "count": 1,
+          "firstOffset": 361553,
+          "snippet": "able: \"（当前没有可用的页面上下文）\", reasoningOnlyNotice: \"模型未返回正文（仅推理内容）\", emptyReplyNotice: \"模型未返回正文（可重试，或调大「最大输出 tokens」）\", lengthNotice: \"达到输出上限，可增大 max_tokens 或重试\", reasoningShow: \"查看推理内容（{n} 字符）\", "
+        },
+        "可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。": {
+          "count": 1,
+          "firstOffset": 361767,
+          "snippet": "oningHide: \"收起推理内容\", reasoningTruncated: \"…（推理内容较长，此处仅保留前 {n} 字符）\", timeoutHint: \"可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。\", timeoutHintBare: \"可在设置 › AI 助手中调大「请求超时」。\", promptRole: \"你是 Septcats 笔记应用内置的 AI "
+        },
+        "可在设置 › AI 助手中调大「请求超时」。": {
+          "count": 1,
+          "firstOffset": 361824,
+          "snippet": "仅保留前 {n} 字符）\", timeoutHint: \"可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。\", timeoutHintBare: \"可在设置 › AI 助手中调大「请求超时」。\", promptRole: \"你是 Septcats 笔记应用内置的 AI 助手，回答简洁、准确，使用与用户相同的语言。\", promptContextHeade"
+        },
+        "请求超时已设为 {n} 秒": {
+          "count": 1,
+          "firstOffset": 358915,
+          "snippet": "；本机慢模型（推理型）可调大，避免对话中途被中止。\", requestTimeoutSave: \"保存超时\", requestTimeoutSaved: \"请求超时已设为 {n} 秒\", maxTokens: \"最大输出 tokens（可选）\", maxTokensDesc: \"范围 {min}–{max}；留空 = 请求不带 max_"
+        }
+      }
+    }
+  },
+  "smoke": {
+    "pid": 19900,
+    "cdpAttachMs": 587,
+    "sample": {
+      "windowMs": 10000,
+      "sampleCount": 49,
+      "firstSample": {
+        "atMs": 635,
+        "textLen": 81,
+        "head": "当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+      },
+      "lastSample": {
+        "atMs": 10512,
+        "textLen": 76,
+        "head": "个人工作区 同步中 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+      },
+      "hits": {
+        "dbFailed": {
+          "occurrences": 0,
+          "firstAtMs": null,
+          "lastAtMs": null,
+          "observedMs": 0,
+          "firstContext": null
+        },
+        "syncUnavailable": {
+          "occurrences": 0,
+          "firstAtMs": null,
+          "lastAtMs": null,
+          "observedMs": 0,
+          "firstContext": null
+        },
+        "loading": {
+          "occurrences": 1,
+          "firstAtMs": 635,
+          "lastAtMs": 635,
+          "observedMs": 0,
+          "firstContext": "当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。"
+        }
+      }
+    },
+    "settledBodyText": "个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。",
+    "readiness": {
+      "ping": "2026-09-21T00:21:24.969Z",
+      "appMeta": {
+        "name": "@septcats/desktop",
+        "version": "0.3.0-rc.26",
+        "schemaVersion": 3,
+        "layoutRoot": "data"
+      },
+      "syncStatus": {
+        "state": "ok",
+        "enabled": true,
+        "devices": 1,
+        "errors": 0,
+        "pendingOps": 0
+      },
+      "syncStatusRaw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1789950084763,\"devices\":[{\"actorId\":\"01m30nd7tt6gdw3n4y6gvdx18k\",\"lastLamport\":0,\"lastSeenAt\":1789950084759,\"clientVer\":\"0.3.0-rc.26\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}",
+      "workspaces": {
+        "items": [
+          {
+            "id": "01M30ND80571BEZ409RHHWBQZR",
+            "name": "个人工作区"
+          }
+        ],
+        "activeId": "01M30ND80571BEZ409RHHWBQZR"
+      },
+      "tree": [],
+      "links": null,
+      "aiSetChatConfig": {
+        "chatTimeoutSec": 45,
+        "maxOutputTokens": null
+      },
+      "errors": []
+    },
+    "ui": {
+      "shellTopbar": 1,
+      "appSide": 1,
+      "shellSidebar": 1,
+      "appMainRow": 1,
+      "appEditorCol": 1,
+      "pvRoot": 1,
+      "pvBody": 0,
+      "pvEmpty": 1,
+      "proserMirror": 0,
+      "tabsbar": 0,
+      "tabsbarTab": 0,
+      "sideTreeRows": 0,
+      "syncPill": 1,
+      "syncPillLabel": "已同步 · 刚刚",
+      "bodyTextHead": "个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。",
+      "winW": 1184,
+      "winH": 735,
+      "rootHtmlHead": "<div class=\"sc-shell\"><header class=\"sc-shell__topbar\"><button type=\"button\" aria-label=\"收起侧栏\" title=\"收起侧栏\" class=\"sc-ic"
+    },
+    "uiAfterCreate": {
+      "shellTopbar": 1,
+      "appSide": 1,
+      "shellSidebar": 1,
+      "appMainRow": 1,
+      "appEditorCol": 1,
+      "pvRoot": 1,
+      "pvBody": 1,
+      "pvEmpty": 0,
+      "proserMirror": 1,
+      "tabsbar": 1,
+      "tabsbarTab": 1,
+      "sideTreeRows": 1,
+      "syncPill": 1,
+      "syncPillLabel": "已同步 · 刚刚",
+      "bodyTextHead": "T48 冒烟页 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 1 Wiki 0 暂无 Wiki 页 T48 冒烟页 回收站 T48 冒烟页 🔭 T48 冒烟页 转为多维数据 反向链接 暂无页面引用本页",
+      "winW": 1184,
+      "winH": 735,
+      "rootHtmlHead": "<div class=\"sc-shell\"><header class=\"sc-shell__topbar\"><button type=\"button\" aria-label=\"收起侧栏\" title=\"收起侧栏\" class=\"sc-ic"
+    },
+    "menuLabels": [
+      "固定宽度",
+      "转为 Wiki",
+      "删除"
+    ],
+    "palette": {
+      "aria": "命令面板",
+      "rows": [
+        "新建页面",
+        "切换工作区",
+        "打开设置",
+        "切换主题：浅色",
+        "切换主题：深色",
+        "切换主题：跟随系统",
+        "导出",
+        "回收站",
+        "同步面板",
+        "导入",
+        "AI 续写",
+        "AI 摘要",
+        "AI 改写",
+        "AI 翻译",
+        "另存为模板",
+        "删除页面",
+        "打开 / 关闭 AI 对话",
+        "切换布局预设",
+        "全宽 / 固定宽度"
+      ]
+    },
+    "paletteDiag": {
+      "attempts": [
+        {
+          "how": "Control+k（playwright press）",
+          "panel": true,
+          "overlay": true,
+          "active": "INPUT."
+        }
+      ],
+      "activeElement": "INPUT."
+    },
+    "backlinks": {
+      "dom": {
+        "title": "反向链接",
+        "empty": "暂无页面引用本页",
+        "items": 0
+      },
+      "ipc": {
+        "entries": []
+      }
+    },
+    "gracefulExited": true,
+    "fixtureFiles": {
+      "dataDir": 15,
+      "udDir": 71
+    },
+    "stderrTail": "thub.com\",\n  \"strict-transport-security\": \"max-age=31536000; includeSubdomains; preload\",\n  \"vary\": \"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\",\n  \"x-content-type-options\": \"nosniff\",\n  \"x-frame-options\": \"deny\",\n  \"x-github-edge-region\": \"southeastasia\",\n  \"x-github-request-id\": \"E2E0:2025D1:2AA5B67:2F40BFF:6AB07880\",\n  \"x-xss-protection\": \"0\"\n}\n    at createHttpError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:53:12)\n    at ElectronHttpExecutor.handleResponse (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:157:20)\n    at ClientRequest.<anonymous> (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\httpExecutor.js:122:26)\n    at ClientRequest.emit (node:events:519:28)\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\n    at newError (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\builder-util-runtime\\out\\error.js:5:19)\n    at GenericProvider.getLatestVersion (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\providers\\GenericProvider.js:27:63)\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:389:19)\n    at async NsisUpdater.doCheckForUpdates (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\node_modules\\electron-updater\\out\\AppUpdater.js:402:24)\n    at async check (E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar\\out\\main\\index.js:1049:7)\n",
+    "stdoutTail": "\r\nChecking for update\nGenerated new staging user ID: 177010bc-8eb3-5447-a44b-b48fd50520c8\n",
+    "updaterCheckError": "Error: Error: Cannot find channel \"rc.yml\" update info: HttpError: 404 "
+  },
+  "fatal": false,
+  "pass": 54,
+  "fail": 0,
+  "assertions": [
+    {
+      "phase": "static",
+      "step": "preflight",
+      "name": "打包产物存在（win-unpacked/Septcats.exe）",
+      "ok": true,
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe size=204521984 mtime=1789930444749.7832"
+    },
+    {
+      "phase": "static",
+      "step": "preflight",
+      "name": "包存在（resources/app.asar）",
+      "ok": true,
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar size=46510913 mtime=1789930444451.224"
+    },
+    {
+      "phase": "static",
+      "step": "asar-parse",
+      "name": "[info] asar 头解析成功",
+      "ok": null,
+      "raw": "dataOffset=1889792 headerSize=1889784 strLen=1889774 条目数=7293"
+    },
+    {
+      "phase": "static",
+      "step": "asar-parse",
+      "name": "原生模块 .node 全部标记 unpacked 且不在 asar 数据区（无「留在包内、ABI 不匹配」残留）",
+      "ok": true,
+      "raw": "asar 头 .node 条目=[{\"path\":\"node_modules/better-sqlite3/build/Release/better_sqlite3.node\",\"unpacked\":true,\"hasDataOffset\":false,\"size\":1918976}]；异常条目=[]"
+    },
+    {
+      "phase": "static",
+      "step": "asar-parse",
+      "name": "app.asar.unpacked/ 下存在 better_sqlite3.node（原生模块随包交付，走打包产物自带 electron ABI）",
+      "ok": true,
+      "raw": "path=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\app.asar.unpacked\\node_modules\\better-sqlite3\\build\\Release\\better_sqlite3.node size=1918976"
+    },
+    {
+      "phase": "static",
+      "step": "csp",
+      "name": "② i) index.html CSP meta 存在且含 connect-src",
+      "ok": true,
+      "raw": "meta=\"<meta http-equiv=\\\"Content-Security-Policy\\\" content=\\\"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: attachment:; font-src 'self' data:; connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*\\\" />\""
+    },
+    {
+      "phase": "static",
+      "step": "csp",
+      "name": "② i) CSP connect-src 含 127.0.0.1（AI 本地端点放行）",
+      "ok": true,
+      "raw": "connect-src 原文=\"connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*\""
+    },
+    {
+      "phase": "static",
+      "step": "csp",
+      "name": "[info] ② i) CSP content 全文原文",
+      "ok": null,
+      "raw": "content=\"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: attachment:; font-src 'self' data:; connect-src 'self' asset: attachment: ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*\""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "[info] out/main/** 包内清单",
+      "ok": null,
+      "raw": "[{\"path\":\"out/main/chunks/rpc-ZjInI5ck.js\",\"size\":31900,\"unpacked\":false},{\"path\":\"out/main/dbServer.js\",\"size\":75768,\"unpacked\":false},{\"path\":\"out/main/index.js\",\"size\":1004441,\"unpacked\":false}]"
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "② ii) main 侧存在 chatConfig（模块/标识）",
+      "ok": true,
+      "raw": "命中 11 次；首处原文片段=\"LE\\\"; } class AiService { credentials; getSettings; client; log; now; cache; chatConfigStore; fallbackChatTimeoutMs; constructor(options) { this.credentials = options.cr\""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "② ii) main 侧存在 setChatConfig（通道/方法名）",
+      "ok": true,
+      "raw": "命中 5 次；首处原文片段=\"tKey\\\"; const CHANNEL_AI_CLEAR_KEY = \\\"ai:clearKey\\\"; const CHANNEL_AI_SET_CHAT_CONFIG = \\\"ai:setChatConfig\\\"; const CHANNEL_COLLAB_ATTACH = \\\"collab:attach\\\"; const CHANNEL_COLLAB_DETACH = \\\"collab:de\""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "② ii) main 侧存在 ai:setChatConfig（IPC 通道名）",
+      "ok": true,
+      "raw": "命中 2 次；首处原文片段=\":setKey\\\"; const CHANNEL_AI_CLEAR_KEY = \\\"ai:clearKey\\\"; const CHANNEL_AI_SET_CHAT_CONFIG = \\\"ai:setChatConfig\\\"; const CHANNEL_COLLAB_ATTACH = \\\"collab:attach\\\"; const CHANNEL_COLLAB_DETACH = \\\"collab:de\""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "② ii) main 侧存在 ai-chat-config.json（T46 落盘文件名）",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"OKENS_MIN = 1; const AI_MAX_OUTPUT_TOKENS_MAX = 131072; const AI_CHAT_CONFIG_FILE_NAME = \\\"ai-chat-config.json\\\"; const AI_CHAT_CONFIG_VERSION = 1; const DEFAULT_AI_CHAT_RUNTIME_CONFIG = { requestTim\""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "② ii) main 侧存在 「等待超过」（T46 超时文案）",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"ode === \\\"E_AI_TIMEOUT\\\") { throw new AiError( \\\"E_AI_TIMEOUT\\\", `等待超过 ${describeTimeoutSeconds(timeoutMs)} 秒已中止（${hostOf$1(baseUrl)}）` ); } \""
+    },
+    {
+      "phase": "static",
+      "step": "main-t46",
+      "name": "[info] ② ii) main 侧「模型未返回正文」",
+      "ok": null,
+      "raw": "命中 0 次（该文案主要在 renderer i18n，见 ②iii）"
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "[info] out/renderer/assets/*.js 包内清单",
+      "ok": null,
+      "raw": "[{\"path\":\"out/renderer/assets/index-CDyXm5n7.js\",\"size\":1953467}]"
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T44 双链菜单标题「链接到页面 · 输入以过滤」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"e: \\\"还没有页面。在左侧栏「新建页面」，或从模板开始。\\\", // T44-01：双链（Obsidian 式 [[ ]]） wikilinkMenuTitle: \\\"链接到页面 · 输入以过滤\\\", wikilinkMenuEmpty: \\\"无匹配页面\\\", backlinksTitle: \\\"反向链接\\\", backlinksEmpty: \\\"暂无页面引用\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T44 双链菜单空态「无匹配页面」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"4-01：双链（Obsidian 式 [[ ]]） wikilinkMenuTitle: \\\"链接到页面 · 输入以过滤\\\", wikilinkMenuEmpty: \\\"无匹配页面\\\", backlinksTitle: \\\"反向链接\\\", backlinksEmpty: \\\"暂无页面引用本页\\\", backlinksJumpAria: \\\"跳转到\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T44 反向链接标题「反向链接」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\" wikilinkMenuTitle: \\\"链接到页面 · 输入以过滤\\\", wikilinkMenuEmpty: \\\"无匹配页面\\\", backlinksTitle: \\\"反向链接\\\", backlinksEmpty: \\\"暂无页面引用本页\\\", backlinksJumpAria: \\\"跳转到引用位置\\\" }, tabs: { bar\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T44 反向链接空态「暂无页面引用本页」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\" 输入以过滤\\\", wikilinkMenuEmpty: \\\"无匹配页面\\\", backlinksTitle: \\\"反向链接\\\", backlinksEmpty: \\\"暂无页面引用本页\\\", backlinksJumpAria: \\\"跳转到引用位置\\\" }, tabs: { barLabel: \\\"打开的页面标签\\\", close: \\\"关闭\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T44 反向链接跳转 aria「跳转到引用位置」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"配页面\\\", backlinksTitle: \\\"反向链接\\\", backlinksEmpty: \\\"暂无页面引用本页\\\", backlinksJumpAria: \\\"跳转到引用位置\\\" }, tabs: { barLabel: \\\"打开的页面标签\\\", close: \\\"关闭标签页\\\" }, pageWidth: { // T4\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T41 页面 ⋯ 菜单「固定宽度」",
+      "ok": true,
+      "raw": "命中 5 次；首处原文片段=\", pageWidth: { // T41-01：页面 ⋯ 菜单项的两种状态文案（✓ 前缀 = 当前页为全宽） full: \\\"全宽\\\", fixed: \\\"固定宽度\\\" }, pageDelete: { title: \\\"删除页面\\\", body: \\\"「{name}」将移入回收站，可随时在回收站中恢复。\\\", body\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T41 命令面板「全宽 / 固定宽度」",
+      "ok": true,
+      "raw": "命中 2 次；首处原文片段=\"new: \\\"新建页面\\\", saveAsTemplate: \\\"另存为模板\\\", delete: \\\"删除页面\\\", toggleFullWidth: \\\"全宽 / 固定宽度\\\" }, workspace: { switch: \\\"切换工作区\\\" }, app: { settings: \\\"打开设置\\\", \""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T46「模型未返回正文（仅推理内容）」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\" \\\"还没有对话，问问当前页面的内容吧。\\\", contextUnavailable: \\\"（当前没有可用的页面上下文）\\\", reasoningOnlyNotice: \\\"模型未返回正文（仅推理内容）\\\", emptyReplyNotice: \\\"模型未返回正文（可重试，或调大「最大输出 tokens」）\\\", lengthNotice: \\\"达到输出上限，可增大 ma\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T46「模型未返回正文（可重试，或调大「最大输出 tokens」）」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"able: \\\"（当前没有可用的页面上下文）\\\", reasoningOnlyNotice: \\\"模型未返回正文（仅推理内容）\\\", emptyReplyNotice: \\\"模型未返回正文（可重试，或调大「最大输出 tokens」）\\\", lengthNotice: \\\"达到输出上限，可增大 max_tokens 或重试\\\", reasoningShow: \\\"查看推理内容（{n} 字符）\\\", \""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T46 超时指引「可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"oningHide: \\\"收起推理内容\\\", reasoningTruncated: \\\"…（推理内容较长，此处仅保留前 {n} 字符）\\\", timeoutHint: \\\"可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。\\\", timeoutHintBare: \\\"可在设置 › AI 助手中调大「请求超时」。\\\", promptRole: \\\"你是 Septcats 笔记应用内置的 AI \""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T46 超时指引（无秒数）「可在设置 › AI 助手中调大「请求超时」。」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"仅保留前 {n} 字符）\\\", timeoutHint: \\\"可在设置 › AI 助手中调大「请求超时」（当前 {n} 秒）。\\\", timeoutHintBare: \\\"可在设置 › AI 助手中调大「请求超时」。\\\", promptRole: \\\"你是 Septcats 笔记应用内置的 AI 助手，回答简洁、准确，使用与用户相同的语言。\\\", promptContextHeade\""
+    },
+    {
+      "phase": "static",
+      "step": "renderer-t44-t41",
+      "name": "② iii) 渲染层存在 T46 设置页保存反馈「请求超时已设为 {n} 秒」",
+      "ok": true,
+      "raw": "命中 1 次；首处原文片段=\"；本机慢模型（推理型）可调大，避免对话中途被中止。\\\", requestTimeoutSave: \\\"保存超时\\\", requestTimeoutSaved: \\\"请求超时已设为 {n} 秒\\\", maxTokens: \\\"最大输出 tokens（可选）\\\", maxTokensDesc: \\\"范围 {min}–{max}；留空 = 请求不带 max_\""
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "[info] 真实数据根 mtime（启动前）",
+      "ok": null,
+      "raw": "C:\\Users\\Administrator\\.septcats → 1789808566516.3271"
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "[info] 夹具就位（自建，不碰真实数据根）",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t48-01\\data settings=E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud\\septcats.settings.json"
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "[info] 启动命令",
+      "ok": null,
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe --user-data-dir=E:\\Hermes Agent工作空间\\_scratch\\t48-01\\ud --remote-debugging-port=9481 --force-device-scale-factor=1"
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "应用进程已拉起（有 PID）",
+      "ok": true,
+      "raw": "pid=19900"
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "CDP 连上打包产物",
+      "ok": true,
+      "raw": "cdpAttachMs=587 url=file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/dist/win-unpacked/resources/app.asar/out/renderer/index.html"
+    },
+    {
+      "phase": "smoke",
+      "step": "launch",
+      "name": "[info] CDP 页面 url",
+      "ok": null,
+      "raw": "file:///E:/Hermes%20Agent%E5%B7%A5%E4%BD%9C%E7%A9%BA%E9%97%B4/Septcats/apps/desktop/dist/win-unpacked/resources/app.asar/out/renderer/index.html"
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "[info] a) 采样首帧",
+      "ok": null,
+      "raw": "{\"atMs\":635,\"textLen\":81,\"head\":\"当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "[info] a) 采样末帧",
+      "ok": null,
+      "raw": "{\"atMs\":10512,\"textLen\":76,\"head\":\"个人工作区 同步中 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "a) 10s 内不出现「数据库服务启动失败」",
+      "ok": true,
+      "raw": "命中=0 首次={\"occurrences\":0,\"firstAtMs\":null,\"lastAtMs\":null,\"observedMs\":0,\"firstContext\":null}"
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "a) 10s 内不出现「同步运行时不可用」",
+      "ok": true,
+      "raw": "命中=0 首次={\"occurrences\":0,\"firstAtMs\":null,\"lastAtMs\":null,\"observedMs\":0,\"firstContext\":null}"
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "a) 「加载中」仅瞬态出现（≤3s 内退场，非滞留）",
+      "ok": true,
+      "raw": "命中=1 首次=635ms 末次=635ms 观测跨度=0ms 首次上下文=\"当前工作区 同步状态加载中… 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\""
+    },
+    {
+      "phase": "smoke",
+      "step": "a-failure-text",
+      "name": "a) 10s 末「加载中」已退场（未卡在加载态）",
+      "ok": true,
+      "raw": "末次 body 文本原文（前 400 字）=\"个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\""
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) ping 原始返回值",
+      "ok": null,
+      "raw": "\"2026-09-21T00:21:24.969Z\""
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) appMeta 原始返回值",
+      "ok": null,
+      "raw": "{\"name\":\"@septcats/desktop\",\"version\":\"0.3.0-rc.26\",\"schemaVersion\":3,\"layoutRoot\":\"data\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) sync.status() 原始返回值",
+      "ok": null,
+      "raw": "{\"state\":\"ok\",\"enabled\":true,\"lastSyncAt\":1789950084763,\"devices\":[{\"actorId\":\"01m30nd7tt6gdw3n4y6gvdx18k\",\"lastLamport\":0,\"lastSeenAt\":1789950084759,\"clientVer\":\"0.3.0-rc.26\"}],\"pendingOps\":0,\"pendingSegs\":0,\"conflicts\":0,\"errors\":[]}"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) workspaces.list() 原始返回值",
+      "ok": null,
+      "raw": "{\"items\":[{\"id\":\"01M30ND80571BEZ409RHHWBQZR\",\"name\":\"个人工作区\"}],\"activeId\":\"01M30ND80571BEZ409RHHWBQZR\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) pages.tree() 原始返回值（节点数）",
+      "ok": null,
+      "raw": "nodes=0 titles=[]"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) ai.setChatConfig({requestTimeoutSec:45}) 原始返回值",
+      "ok": null,
+      "raw": "{\"chatTimeoutSec\":45,\"maxOutputTokens\":null}"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "[info] b) 就绪探测期间收集到的 IPC 错误",
+      "ok": null,
+      "raw": "[]"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) ping 通道返回时间戳",
+      "ok": true,
+      "raw": "\"2026-09-21T00:21:24.969Z\""
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) sync.status() 返回快照（非 E_INVARIANT「同步运行时不可用」）",
+      "ok": true,
+      "raw": "state=ok enabled=true devices=1 errors=0"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) workspaces.list() 返回活动工作区（DB 服务活着）",
+      "ok": true,
+      "raw": "{\"items\":[{\"id\":\"01M30ND80571BEZ409RHHWBQZR\",\"name\":\"个人工作区\"}],\"activeId\":\"01M30ND80571BEZ409RHHWBQZR\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) pages.tree() 返回数组（DB 读路径活着）",
+      "ok": true,
+      "raw": "tree=Array(0)"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) 就绪探测零 IPC 错误（无 E_INVARIANT / E_DB_UNAVAILABLE）",
+      "ok": true,
+      "raw": "[]"
+    },
+    {
+      "phase": "smoke",
+      "step": "b-readiness",
+      "name": "b) 隔离生效：appMeta.layoutRoot === 夹具目录名 \"data\"（非 .septcats）",
+      "ok": true,
+      "raw": "layoutRoot=\"data\""
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "c) 侧栏在 DOM（.app-side / .sc-shell__sidebar）",
+      "ok": true,
+      "raw": ".app-side=1 .sc-shell__sidebar=1"
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "c) 主区在 DOM（.app-main-row + .app-editor-col）",
+      "ok": true,
+      "raw": ".app-main-row=1 .app-editor-col=1"
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "c) 编辑器或空态在 DOM（.pv-body 或 .pv-empty）",
+      "ok": true,
+      "raw": ".pv-body=0 .pv-empty=1 .pv-root=1"
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "c) 同步状态钮在 DOM 且非「加载中」",
+      "ok": true,
+      "raw": ".sc-sync-status__pill=1 label=\"已同步 · 刚刚\""
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "[info] c) 窗口尺寸 / body 文本原文（前 200 字）",
+      "ok": null,
+      "raw": "win=1184x735 bodyText=\"个人工作区 已同步 · 刚刚 个人工作区 新建页面 收藏 0 最近 0 Wiki 0 暂无 Wiki 页 回收站 还没有页面。在左侧栏「新建页面」，或从模板开始。\""
+    },
+    {
+      "phase": "smoke",
+      "step": "c-main-ui",
+      "name": "[info] 截图（启动完成态）",
+      "ok": null,
+      "raw": "rc26-smoke-01-boot.png 1184x735"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 新建页后编辑器渲染（.pv-body + .ProseMirror）",
+      "ok": true,
+      "raw": ".pv-body=1 .ProseMirror=1 .pv-empty=0"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 侧栏树出现页面行（[data-testid^=side-node-]）",
+      "ok": true,
+      "raw": "side-node 行数=1"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 页面 ⋯ 菜单可打开且含菜单项",
+      "ok": true,
+      "raw": "⋯ 按钮数=1 菜单项数组=[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) ⋯ 菜单含 T41「固定宽度」或「✓ 全宽」",
+      "ok": true,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) ⋯ 菜单含 T44 承载转换项（转为 Wiki / 转为普通页）",
+      "ok": true,
+      "raw": "[\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "[info] 截图（⋯ 菜单态）",
+      "ok": null,
+      "raw": "rc26-smoke-02-page-menu.png 1184x735"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "[info] d) 命令面板打开尝试记录",
+      "ok": null,
+      "raw": "{\"attempts\":[{\"how\":\"Control+k（playwright press）\",\"panel\":true,\"overlay\":true,\"active\":\"INPUT.\"}],\"activeElement\":\"INPUT.\"}"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 命令面板可打开（[data-testid=palette-panel]）",
+      "ok": true,
+      "raw": "aria=\"命令面板\" 行数=19"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 命令面板命令项数组非空",
+      "ok": true,
+      "raw": "命令项数组=[\"新建页面\",\"切换工作区\",\"打开设置\",\"切换主题：浅色\",\"切换主题：深色\",\"切换主题：跟随系统\",\"导出\",\"回收站\",\"同步面板\",\"导入\",\"AI 续写\",\"AI 摘要\",\"AI 改写\",\"AI 翻译\",\"另存为模板\",\"删除页面\",\"打开 / 关闭 AI 对话\",\"切换布局预设\",\"全宽 / 固定宽度\"]"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) 命令面板含 T41「全宽 / 固定宽度」",
+      "ok": true,
+      "raw": "[\"新建页面\",\"切换工作区\",\"打开设置\",\"切换主题：浅色\",\"切换主题：深色\",\"切换主题：跟随系统\",\"导出\",\"回收站\",\"同步面板\",\"导入\",\"AI 续写\",\"AI 摘要\",\"AI 改写\",\"AI 翻译\",\"另存为模板\",\"删除页面\",\"打开 / 关闭 AI 对话\",\"切换布局预设\",\"全宽 / 固定宽度\"]"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) T44 反向链接面板在 DOM（标题「反向链接」）",
+      "ok": true,
+      "raw": "{\"title\":\"反向链接\",\"empty\":\"暂无页面引用本页\",\"items\":0}"
+    },
+    {
+      "phase": "smoke",
+      "step": "d-menus",
+      "name": "d) T44 links:backlinks 通道返回 entries 数组",
+      "ok": true,
+      "raw": "{\"entries\":[]}"
+    },
+    {
+      "phase": "smoke",
+      "step": "e-errors",
+      "name": "e) 全程 pageerror 计数 = 0",
+      "ok": true,
+      "raw": "pageErrors=0 []"
+    },
+    {
+      "phase": "smoke",
+      "step": "e-errors",
+      "name": "e) 全程 renderer console error 计数 = 0",
+      "ok": true,
+      "raw": "consoleErrors=0 []"
+    },
+    {
+      "phase": "smoke",
+      "step": "teardown",
+      "name": "f) window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "gracefulExited=true"
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "真实数据根 C:\\Users\\Administrator\\.septcats 未被触碰（mtime 不变）",
+      "ok": true,
+      "raw": "before=1789808566516.3271 after=1789808566516.3271"
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "夹具目录被真实写入（rootPath 生效）",
+      "ok": true,
+      "raw": "rootPath=E:\\Hermes Agent工作空间\\_scratch\\t48-01\\data db=true 文件数=15 logs=true"
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "[info] 应用 stderr 尾部（原文，最多 2000 字）",
+      "ok": null,
+      "raw": "\"thub.com\\\",\\n  \\\"strict-transport-security\\\": \\\"max-age=31536000; includeSubdomains; preload\\\",\\n  \\\"vary\\\": \\\"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With\\\",\\n  \\\"x-content-type-options\\\": \\\"nosniff\\\",\\n  \\\"x-frame-options\\\": \\\"deny\\\",\\n  \\\"x-github-edge-region\\\": \\\"southeastasia\\\",\\n  \\\"x-github-request-id\\\": \\\"E2E0:2025D1:2AA5B67:2F40BFF:6AB07880\\\",\\n  \\\"x-xss-protection\\\": \\\"0\\\"\\n}\\n    at createHttpError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:53:12)\\n    at ElectronHttpExecutor.handleResponse (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:157:20)\\n    at ClientRequest.<anonymous> (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\httpExecutor.js:122:26)\\n    at ClientRequest.emit (node:events:519:28)\\n    at SimpleURLLoaderWrapper.<anonymous> (node:electron/js2c/browser_init:2:123892)\\n    at SimpleURLLoaderWrapper.emit (node:events:519:28)\\n    at newError (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\builder-util-runtime\\\\out\\\\error.js:5:19)\\n    at GenericProvider.getLatestVersion (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\providers\\\\GenericProvider.js:27:63)\\n    at async NsisUpdater.getUpdateInfoAndProvider (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:389:19)\\n    at async NsisUpdater.doCheckForUpdates (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\node_modules\\\\electron-updater\\\\out\\\\AppUpdater.js:402:24)\\n    at async check (E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\out\\\\main\\\\index.js:1049:7)\\n\""
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "[info] 应用 stdout 尾部（原文，最多 2000 字）",
+      "ok": null,
+      "raw": "\"\\r\\nChecking for update\\nGenerated new staging user ID: 177010bc-8eb3-5447-a44b-b48fd50520c8\\n\""
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "[info] 主进程 stderr 中的「启动自动更新检查」失败（原文首行，产品既有行为·非本次引入）",
+      "ok": null,
+      "raw": "line=\"Error: Error: Cannot find channel \\\"rc.yml\\\" update info: HttpError: 404 \" url=\"https://github.com/nathanjngogo/septcats-releases/releases/download/latest/rc.yml\""
+    },
+    {
+      "phase": "smoke",
+      "step": "isolation",
+      "name": "[info] 本次运行是否零外网",
+      "ok": null,
+      "raw": "否——打包产物启动后自身会做一次更新检查（electron-updater），命中 \"https://github.com/nathanjngogo/septcats-releases/releases/download/latest/rc.yml\" 并 404；探针自身未发起任何外网请求"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "rc26-smoke-01-boot.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 18755
+    },
+    {
+      "file": "rc26-smoke-02-page-menu.png",
+      "width": 1184,
+      "height": 735,
+      "bytes": 29953
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": []
+}
