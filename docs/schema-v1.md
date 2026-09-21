@@ -95,3 +95,29 @@
 - 语义：从存活块 content（PM doc JSON）里的 `wikilink` 内联节点派生的**页面互链索引**（Obsidian 式 `[[ ]]`）。链接以 `target_page_id`（目标页稳定 id）为键——页面改名不破链；未解析链接（target=null）不入索引（点击时新建目标页并回填 id）。
 - 维护：设备本地派生态，**不产生 Op、不随同步发布**（口径同 record.backlinks_json / page_block_fts）。增量 = 提交路径按涉及页「`link.clearPage` + `link.insert`」同事务成对维护；全量 = `links.clearAll` + 重扫全部存活块（启动时自动跑一次，一致性判据：`增量维护结果 == 全量重建结果`）。
 - 查询：`links.backlinks`（回链面板）按 `target_page_id` 反查，JOIN 源页 `alive=1` 且同工作区分片。
+
+
+## 7. 版本双轴与迁移史（0.3.0 时点补记）
+
+**两条独立的版本轴，勿混淆**：
+
+| 轴 | 真源 | 0.3.0 现值 | 用途 |
+|---|---|---|---|
+| **Op/数据格式版本（对外）** | core `SCHEMA_VERSION`（`packages/core`） | **3** | 段校验与跨设备兼容口径；发布说明「数据格式升级到 v3」指它；打包产物自报 `schemaVersion:3` |
+| **本地数据库迁移 id（内部）** | `apps/desktop/src/db/migrations.ts` 的 `MIGRATIONS` 末项 | **9** | 仅实现细节，不写进对用户的说明 |
+
+**DB 迁移史（真值抄自 `MIGRATIONS`，逐字 name）**：
+
+| id | name | 内容摘要 |
+|---|---|---|
+| 1 | `v1-schema` | 建表 + FTS + 触发器 + meta 基线 |
+| 2 | `v2-page-tree` | 页面树表/列/索引 |
+| 3 | `v3-record-backlinks` | record 反向链接列 |
+| 4 | `v4-block-body-fts` | 块正文 FTS 管道（触发器整体替换 v1 定义） |
+| 5 | `v5-import-source` | 导入源表 |
+| 6 | `v6-fts-defer` | FTS WHEN 守卫（幂等口径同 #4） |
+| 7 | `v7-template` | 模板账本表（op kind='template'，core schema v3） |
+| 8 | `v8-page-type` | 页面类型列（Wiki 转型承载） |
+| 9 | `v9-page-link-index` | 双链/反向链接派生索引（本地派生态，不进 op payload） |
+
+> 历史口径注记：本文档 §6 原文「`SCHEMA_VERSION = 1`」是 **M3 定稿时点**的 core 常量值；此后 core 升到 2（CRDT op schema）、3（模板 kind），与 DB 迁移 id 各自独立演进。
