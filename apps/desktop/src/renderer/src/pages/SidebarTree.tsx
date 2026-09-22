@@ -29,6 +29,7 @@ import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
 import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
+import { clampMenuRect } from './menuClamp';
 
 /** 行缩进：与既有假树 TreeRow 同式（app-nav-row 的 paddingLeft）。 */
 function indentStyle(depth: number): CSSProperties {
@@ -204,6 +205,9 @@ export function SidebarTree() {
     workspaces.find((item) => item.id === workspaceId)?.name ?? t('sidebar.workspace');
   // T23-02 §C.1：「新建页面 ▾」模板子菜单展开态（本地视图态；列表订阅 templates slice）
   const [tplOpen, setTplOpen] = useState(false);
+  // T64-01：顶栏「新建页」箭头菜单（新建页面 / 新建文件夹 / 从模板新建）展开态 + 锚点
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [newMenuAt, setNewMenuAt] = useState<{ x: number; y: number } | null>(null);
   // T24-01 §0.A：页面行「⋯」菜单展开态（本地视图态；每树同时至多一个）
   const [rowMenuId, setRowMenuId] = useState<string | null>(null);
   /**
@@ -247,10 +251,13 @@ export function SidebarTree() {
     setMovePickId(null);
   };
 
-  /** 右键菜单宿主节点（存活页才有菜单可弹）。 */
-  const ctxNode = useMemo(
-    () => (rowMenuAt !== null && rowMenuId !== null ? byId.get(rowMenuId) ?? null : null),
-    [rowMenuAt, rowMenuId, byId],
+  /**
+   * T64-01：统一菜单宿主节点（仅记录节点；菜单实例在 pageRowMenu / moveTargetMenu
+   * 声明之后、return 前统一构造，见下方 openMenu）。
+   */
+  const openMenuNode = useMemo(
+    () => (rowMenuId !== null ? byId.get(rowMenuId) ?? null : null),
+    [rowMenuId, byId],
   );
 
   /**
@@ -267,21 +274,30 @@ export function SidebarTree() {
       return;
     }
     const rect = host.getBoundingClientRect();
-    const margin = 8;
-    const maxX = Math.max(margin, window.innerWidth - rect.width - margin);
-    const maxY = Math.max(margin, window.innerHeight - rect.height - margin);
-    const x = Math.min(Math.max(rowMenuAt.x, margin), maxX);
-    const y = Math.min(Math.max(rowMenuAt.y, margin), maxY);
-    if (x !== rowMenuAt.x || y !== rowMenuAt.y) {
-      setRowMenuAt({ x, y });
+    const clamped = clampMenuRect({
+      width: rect.width,
+      height: rect.height,
+      anchorX: rowMenuAt.x,
+      anchorY: rowMenuAt.y,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    });
+    if (clamped.x !== rowMenuAt.x || clamped.y !== rowMenuAt.y) {
+      setRowMenuAt(clamped);
     }
   }, [rowMenuAt]);
 
-  /** 收藏/最近 → 存活页节点解析（找不到/已删除的 id 跳过）。 */
+  /**
+   * 收藏/最近 → 存活页节点解析（找不到/已删除的 id 跳过）。
+   * T64-01：folder 不入收藏/最近（容器节点不在这些扁平分组里；已入旧数据在此跳过）。
+   */
   const resolveGroup = (ids: readonly string[]): PageNodeView[] =>
     ids
       .map((id) => byId.get(id))
-      .filter((node): node is PageNodeView => node !== undefined && node.alive === 1);
+      .filter(
+        (node): node is PageNodeView =>
+          node !== undefined && node.alive === 1 && pageTypeOf(node) !== 'folder',
+      );
 
   const favoriteNodes = useMemo(() => resolveGroup(favoriteIds), [byId, favoriteIds]);
   const recentNodes = useMemo(() => resolveGroup(recentIds), [byId, recentIds]);
@@ -402,14 +418,25 @@ export function SidebarTree() {
     node: PageNodeView,
   ): { items: MenuEntry[]; onSelect: (action: string) => void } => {
     const type = pageTypeOf(node);
-    const convertItem =
-      type === 'wiki'
-        ? { id: 'convertToPage', label: t('editor.convertToPage') }
-        : type === 'page'
-          ? { id: 'convertToWiki', label: t('editor.convertToWiki') }
-          : null;
+    const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
+    // T64-01：转换项口径
+    // - folder → 转为普通页面（子页保留挂原位）
+    // - wiki → 转为普通页（既有）
+    // - page → 转为 Wiki（既有）；有子页时额外「转为文件夹」
+    // - database → 无转换项（多维数据不参与）
+    const convertItems: MenuEntry[] = [];
+    if (type === 'folder') {
+      convertItems.push({ id: 'convertToPage', label: t('folder.convertToPage') });
+    } else if (type === 'wiki') {
+      convertItems.push({ id: 'convertToPage', label: t('editor.convertToPage') });
+    } else if (type === 'page') {
+      convertItems.push({ id: 'convertToWiki', label: t('editor.convertToWiki') });
+      if (childCount > 0) {
+        convertItems.push({ id: 'convertToFolder', label: t('folder.convertToFolder') });
+      }
+    }
     // T41-01-1：全宽开关对 DB 页无视觉效果（DbPage 不吃 pageWidth 宽度口径），
-    // 按 convertItem 同款条件构造隐藏，不提供无效控件；普通页/wiki 页照常出现。
+    // 按转换项同款条件构造隐藏，不提供无效控件；普通页/wiki/folder 页照常出现。
     const fullWidthItem =
       type === 'database'
         ? null
@@ -427,10 +454,12 @@ export function SidebarTree() {
         // T61-01 §1.1（PRD-R13 ④）：「新建子页面」= 既有 createPage(该行 id)——
         // 新页挂在行下即成为「文件夹」长相（派生，无新实体）；store 内部已选中并进入重命名。
         { id: 'newSubpage', label: t('sidebar.newSubpage') },
+        // T64-01：新建子文件夹（任意节点行都有；无子层时即挂到该节点下）
+        { id: 'newSubfolder', label: t('folder.newSubfolder') },
         // T61-01 §1.3：「移入…」→ 二级选择（同宿主换列表，见 moveTargetMenu）
         { id: 'moveTo', label: t('sidebar.moveTo') },
         ...(fullWidthItem !== null ? [fullWidthItem] : []),
-        ...(convertItem !== null ? [convertItem] : []),
+        ...convertItems,
         { id: 'delete', label: t('common.delete'), danger: true },
       ],
       onSelect: (action: string): void => {
@@ -446,6 +475,10 @@ export function SidebarTree() {
         if (action === 'newSubpage') {
           void pagesActions.createPage(node.id);
         }
+        // T64-01：在该节点下新建文件夹（标题按 locale 传入）
+        if (action === 'newSubfolder') {
+          void pagesActions.createFolder(node.id, t('folder.newFolder'));
+        }
         if (action === 'fullWidth') {
           pageWidthActions.toggle(node.id);
         }
@@ -454,6 +487,10 @@ export function SidebarTree() {
         }
         if (action === 'convertToPage') {
           void pagesActions.convertPage(node.id, 'page');
+        }
+        // T64-01：普通页（有子页）转为文件夹
+        if (action === 'convertToFolder') {
+          void pagesActions.convertPage(node.id, 'folder');
         }
         if (action === 'delete') {
           pagesActions.requestDeletePage(node.id);
@@ -516,13 +553,9 @@ export function SidebarTree() {
     const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
     const isEditing = editingId === node.id;
     const type = pageTypeOf(node);
-    // T61-01 §1.3：「移入…」二级态与一级共用同一宿主 → 用 key 换实例（老实例在本次
-    // click 事件派发中被卸载，其 document 外点监听按 DOM 规范跳过，不会「刚换列表就关」）；
-    // 换实例同时让 Menu 的「聚焦首项」effect 对新列表重跑（键盘可达性不丢）。
-    const inMovePick = movePickId === node.id;
-    const menu = inMovePick ? moveTargetMenu(node) : pageRowMenu(node);
     return (
-      <NavRow
+      <>
+        <NavRow
         key={node.id}
         testId={`${testIdPrefix}-${node.id}`}
         label={node.title}
@@ -533,13 +566,18 @@ export function SidebarTree() {
            T61-01 §1.2（PRD-R13 ④）：**有活子页的普通页 = 文件夹长相（FolderSimple）** ——
            派生语义（folderIds 由 parentId 反查索引得出），零新实体/零协议改动。 */
         icon={
-          type === 'page'
-            ? folderIds.has(node.id)
-              ? FolderSimple
-              : FileText
-            : depth === 0
-              ? rootIcon
-              : FileText
+          // T64-01：folder（容器节点）一律 FolderSimple（开合态共用一枚图标）；
+          // 普通页有活子页 = 派生 FolderSimple（T61-01），否则 FileText；
+          // wiki/database 行保持现状（depth>0 仍 FileText、wiki 根仍 rootIcon）。
+          type === 'folder'
+            ? FolderSimple
+            : type === 'page'
+              ? folderIds.has(node.id)
+                ? FolderSimple
+                : FileText
+              : depth === 0
+                ? rootIcon
+                : FileText
         }
         depth={depth}
         active={selectedId === node.id}
@@ -547,6 +585,11 @@ export function SidebarTree() {
         open={expanded.has(node.id)}
         labelNode={isEditing ? <RenameInput id={node.id} title={node.title} /> : undefined}
         onClick={() => {
+          // T64-01：folder = 容器节点 → 点击只展开/收起，不 selectPage（不建页签/不进编辑器）
+          if (pageTypeOf(node) === 'folder') {
+            pagesActions.toggleExpand(node.id);
+            return;
+          }
           pagesActions.selectPage(node.id);
           // T61-01 §1.5：折叠态点行 = 选中 + 展开其子树（一次性视图态；点 Caret 的
           // 折叠/展开语义不变——见 onCaretClick，它不冒泡到本 handler）。
@@ -572,7 +615,9 @@ export function SidebarTree() {
         }}
         suffix={
           // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
-          // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）
+          // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）。
+          // T64-01（Phase A）：⋯ 钮 = 贴钮定位——用触发钮 rect 作锚写入 rowMenuAt，
+          // 与右键共用下方 fixed+clamp 宿主（不再渲染老的 absolute 分支）。
           <span
             className={
               rowMenuId === node.id
@@ -590,35 +635,36 @@ export function SidebarTree() {
               aria-expanded={rowMenuId === node.id}
               onClick={(event) => {
                 event.stopPropagation();
-                // ⋯ 钮 = 贴钮定位（rowMenuAt=null），与右键的「光标处」互斥
-                setRowMenuAt(null);
+                // 锚点 = 触发钮 rect（菜单落在钮正下方，clamp 进视口由 useLayoutEffect 收敛）
+                const rect = event.currentTarget.getBoundingClientRect();
+                setRowMenuAt({ x: rect.left, y: rect.bottom });
                 setMovePickId(null);
                 setRowMenuId((current) => (current === node.id ? null : node.id));
               }}
             />
-            {rowMenuId === node.id && rowMenuAt === null ? (
-              <Menu
-                key={inMovePick ? 'move' : 'main'}
-                className="app-nav-menu"
-                label={inMovePick ? t('sidebar.moveToTitle') : t('sidebar.pageActions')}
-                items={menu.items}
-                onSelect={menu.onSelect}
-                onDismiss={closeRowMenu}
-              />
-            ) : null}
           </span>
         }
       />
+        {/* T64-01：空文件夹展开态显示一行灰阶空态文案（无按钮） */}
+        {type === 'folder' && expanded.has(node.id) && childCount === 0 ? (
+          <div className="app-nav-empty" style={indentStyle(depth + 1)} data-testid={`side-folder-empty-${node.id}`}>
+            {t('folder.empty')}
+          </div>
+        ) : null}
+      </>
     );
   };
 
-  /** 右键菜单配置（仅在右键态存在存活目标页时构造一次；二级态同理）。 */
-  const ctxInMovePick = ctxNode !== null && movePickId === ctxNode.id;
-  const ctxMenu =
-    ctxNode !== null && ctxNode.alive === 1
-      ? ctxInMovePick
-        ? moveTargetMenu(ctxNode)
-        : pageRowMenu(ctxNode)
+  /**
+   * T64-01：统一菜单实例（在 pageRowMenu / moveTargetMenu 声明之后构造）。无论由
+   * ⋯ 钮还是右键开，都走 rowMenuId + 同一份 items/onSelect；二级「移入…」同理。
+   */
+  const openInMovePick = openMenuNode !== null && movePickId === openMenuNode.id;
+  const openMenu =
+    openMenuNode !== null && openMenuNode.alive === 1
+      ? openInMovePick
+        ? moveTargetMenu(openMenuNode)
+        : pageRowMenu(openMenuNode)
       : null;
 
   return (
@@ -637,22 +683,56 @@ export function SidebarTree() {
             void pagesActions.createPage(null);
           }}
           suffix={
+            // T64-01：分体钮——主钮=新建页（上方 onClick）；箭头=菜单：
+            // 新建页面 / 新建文件夹 / 从模板新建（复用 tplOpen 展开模板行）。
             <span
               className="app-nav-suffix"
               data-testid="side-new-page-arrow"
               role="button"
-              aria-expanded={tplOpen}
+              aria-expanded={newMenuOpen}
               aria-label={t('sidebar.createFromAria')}
               onClick={(event) => {
                 event.stopPropagation();
-                const next = !tplOpen;
-                setTplOpen(next);
+                const next = !newMenuOpen;
+                const rect = event.currentTarget.getBoundingClientRect();
+                setNewMenuAt({ x: rect.left, y: rect.bottom });
+                setNewMenuOpen(next);
                 if (next) {
                   void templatesActions.loadTemplates();
                 }
               }}
             >
               <Icon icon={CaretDown} size="sm" />
+              {newMenuOpen && newMenuAt !== null ? (
+                <span
+                  style={{
+                    position: 'fixed',
+                    left: `${String(newMenuAt.x)}px`,
+                    top: `${String(newMenuAt.y)}px`,
+                    zIndex: 'var(--sc-z-dropdown)',
+                  }}
+                >
+                  <Menu
+                    label={t('sidebar.newMenuTitle')}
+                    items={[
+                      { id: 'newPage', label: t('commands.page.new') },
+                      { id: 'newFolder', label: t('folder.newFolder') },
+                      { id: 'fromTemplate', label: t('sidebar.fromTemplate') },
+                    ]}
+                    onSelect={(action) => {
+                      setNewMenuOpen(false);
+                      if (action === 'newPage') {
+                        void pagesActions.createPage(null);
+                      } else if (action === 'newFolder') {
+                        void pagesActions.createFolder(null, t('folder.newFolder'));
+                      } else if (action === 'fromTemplate') {
+                        setTplOpen((current) => !current);
+                      }
+                    }}
+                    onDismiss={() => setNewMenuOpen(false)}
+                  />
+                </span>
+              ) : null}
             </span>
           }
         />
@@ -720,7 +800,7 @@ export function SidebarTree() {
           宿主 fixed 定位到光标（clamp 进视口，见上面的 useLayoutEffect）；
           样式只借用 .sc-menu 自身（不再叠 .app-nav-menu 的 absolute/right/top，
           否则会被二次偏移）；z-index 走既有 dropdown token。 */}
-      {ctxMenu !== null && rowMenuAt !== null ? (
+      {openMenu !== null && rowMenuAt !== null ? (
         <span
           ref={ctxHostRef}
           style={{
@@ -731,10 +811,10 @@ export function SidebarTree() {
           }}
         >
           <Menu
-            key={ctxInMovePick ? 'move' : 'main'}
-            label={ctxInMovePick ? t('sidebar.moveToTitle') : t('sidebar.pageActions')}
-            items={ctxMenu.items}
-            onSelect={ctxMenu.onSelect}
+            key={openInMovePick ? 'move' : 'main'}
+            label={openInMovePick ? t('sidebar.moveToTitle') : t('sidebar.pageActions')}
+            items={openMenu.items}
+            onSelect={openMenu.onSelect}
             onDismiss={closeRowMenu}
           />
         </span>

@@ -174,6 +174,33 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
     expect((await h.nodeOf(created.id))?.pageType).toBe('page');
   });
 
+  it('T64-01 转文件夹 / 新建文件夹：page_type=folder 持久化且重开保持；folder→page 转回、子页派生 childIds 不传染', async () => {
+    // 普通页 → 转 folder：注解 folder 且重开保持
+    const created = await h.pages.createPage({ parentId: null });
+    expect((await h.nodeOf(created.id))?.pageType).toBe('page');
+
+    await h.db.convertPage({ pageId: created.id, to: 'folder' });
+    expect((await h.nodeOf(created.id))?.pageType).toBe('folder');
+    await reopen();
+    expect((await h.nodeOf(created.id))?.pageType).toBe('folder');
+
+    // 转回普通页
+    await h.db.convertPage({ pageId: created.id, to: 'page' });
+    expect((await h.nodeOf(created.id))?.pageType).toBe('page');
+
+    // createFolder：直接建文件夹节点，标题来自调用方
+    const folder = await h.pages.createFolder({ parentId: null, title: '资料' });
+    const folderNode = await h.nodeOf(folder.id);
+    expect(folderNode?.pageType).toBe('folder');
+    expect(folderNode?.title).toBe('资料');
+
+    // 子页挂到文件夹下：树派生 childIds，子页类型不随父级传染为 folder
+    const sub = await h.pages.createPage({ parentId: folder.id });
+    const tree = await h.pages.listTree({ workspaceId: WORKSPACE_ID });
+    expect(tree.find((node) => node.id === folder.id)?.childIds).toEqual([sub.id]);
+    expect(tree.find((node) => node.id === sub.id)?.pageType).toBe('page');
+  });
+
   it('落地页简介：setSummary 持久化，重开仍在；非 Wiki 页拒绝', async () => {
     const created = await h.pages.createPage({ parentId: null });
     await h.db.convertPage({ pageId: created.id, to: 'wiki' });

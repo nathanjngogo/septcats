@@ -62,6 +62,9 @@ const api: SeptcatsApi = {
   pages: {
     tree: (input) => ipcRenderer.invoke(PAGES_CHANNELS.tree, input) as ReturnType<SeptcatsApi['pages']['tree']>,
     create: (input) => ipcRenderer.invoke(PAGES_CHANNELS.create, input) as ReturnType<SeptcatsApi['pages']['create']>,
+    // T64-01：新建文件夹
+    createFolder: (input) =>
+      ipcRenderer.invoke(PAGES_CHANNELS.createFolder, input) as ReturnType<SeptcatsApi['pages']['createFolder']>,
     rename: (input) => ipcRenderer.invoke(PAGES_CHANNELS.rename, input) as ReturnType<SeptcatsApi['pages']['rename']>,
     move: (input) => ipcRenderer.invoke(PAGES_CHANNELS.move, input) as ReturnType<SeptcatsApi['pages']['move']>,
     remove: (input) => ipcRenderer.invoke(PAGES_CHANNELS.delete, input) as ReturnType<SeptcatsApi['pages']['remove']>,

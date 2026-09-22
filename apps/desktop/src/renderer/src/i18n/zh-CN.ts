@@ -102,6 +102,9 @@ export const zhCN = {
     // T60-01 ④：行 ⋯ 菜单 / 右键菜单的「重命名」条目
     rename: '重命名',
     pageActions: '页面操作',
+    // T64-01：顶栏「新建页」箭头菜单
+    newMenuTitle: '新建',
+    fromTemplate: '从模板新建',
     // T61-01 §1（PRD-R13 ④）：文件夹派生语义的两条菜单项 +
     // 「移入…」二级选择器的标题与根目标（无新实体，走既有 createPage/movePage）
     newSubpage: '新建子页面',
@@ -129,6 +132,16 @@ export const zhCN = {
     backlinksTitle: '反向链接',
     backlinksEmpty: '暂无页面引用本页',
     backlinksJumpAria: '跳转到引用位置',
+  },
+  // T64-01：文件夹（page_type='folder' 容器节点）
+  folder: {
+    newFolder: '新建文件夹',
+    newSubfolder: '新建子文件夹',
+    empty: '此文件夹为空',
+    convertToFolder: '转为文件夹',
+    convertToPage: '转为普通页面',
+    toastCreated: '文件夹已创建',
+    toastConvertedToFolder: '已转为文件夹',
   },
   tabs: {
     barLabel: '打开的页面标签',

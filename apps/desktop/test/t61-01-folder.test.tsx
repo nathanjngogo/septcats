@@ -231,8 +231,13 @@ describe('T61-01 §1.1「新建子页面」= 既有 createPage(该行 id)', () =
       .getAllByRole('menuitem')
       .map((item) => item.textContent ?? '');
     expect(labels[0]).toContain('重命名');
-    expect(labels[1]).toContain('新建子页面');
-    expect(labels[2]).toContain('移入…');
+    // T64-01 新语义（PM 改）：菜单新增「新建子文件夹」，不再钉死下标，改钉相对顺序。
+    const idxSub = labels.findIndex((l) => l.includes('新建子页面'));
+    const idxFolder = labels.findIndex((l) => l.includes('新建子文件夹'));
+    const idxMove = labels.findIndex((l) => l.includes('移入…'));
+    expect(idxSub).toBeGreaterThan(-1);
+    expect(idxFolder).toBeGreaterThan(idxSub);
+    expect(idxMove).toBeGreaterThan(idxFolder);
     expect(labels[labels.length - 1]).toContain('删除');
     expect(within(menu).getByRole('menuitem', { name: '新建子页面' }).className).not.toContain('danger');
   });

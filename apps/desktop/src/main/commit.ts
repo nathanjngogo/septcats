@@ -147,7 +147,9 @@ function readJsonField(op: Op, key: string, fallback: string): string {
 }
 
 /** page 承载类型全集（T42-01：与 page.upsert 语句参数、schema.v8 列默认值同口径）。 */
-export const PAGE_TYPES: readonly string[] = ['page', 'wiki', 'database'];
+// T64-01：扩 'folder'（与 db/statements.ts 的 z.enum 同步——两处校验必须同清单，
+// 否则 statements 放行、commit 抛「非法 upsert op」；PM 收口时补，CB 会话死于改前一处的半路）
+export const PAGE_TYPES: readonly string[] = ['page', 'wiki', 'database', 'folder'];
 
 /**
  * 读 page upsert payload 的承载类型（T42-01）：缺省 'page'（旧版本 op 重放、

@@ -100,6 +100,9 @@ export const enUS = {
     renameAria: 'Rename page',
     rename: 'Rename',
     pageActions: 'Page actions',
+    // T64-01: "New Page" split-button arrow menu
+    newMenuTitle: 'New',
+    fromTemplate: 'New from template',
     // T61-01 §1 (PRD-R13 ④): derived-folder entries + the "Move to…" second-level picker
     newSubpage: 'New subpage',
     moveTo: 'Move to…',
@@ -125,6 +128,16 @@ export const enUS = {
     backlinksTitle: 'Backlinks',
     backlinksEmpty: 'No pages link here yet',
     backlinksJumpAria: 'Jump to reference',
+  },
+  // T64-01: folder (page_type='folder' container node)
+  folder: {
+    newFolder: 'New Folder',
+    newSubfolder: 'New subfolder',
+    empty: 'This folder is empty',
+    convertToFolder: 'Convert to folder',
+    convertToPage: 'Convert to regular page',
+    toastCreated: 'Folder created',
+    toastConvertedToFolder: 'Converted to folder',
   },
   tabs: {
     barLabel: 'Open page tabs',

@@ -292,13 +292,6 @@ html, body {
   visibility: visible;
 }
 
-.app-nav-menu {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  z-index: var(--sc-z-dropdown);
-}
-
 .app-side-foot {
   display: flex;
   align-items: center;

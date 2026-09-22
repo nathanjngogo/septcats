@@ -178,6 +178,8 @@ export interface SeptcatsPagesApi {
   tree(input: { workspaceId: string }): Promise<PageNodeView[]>;
   /** 新建页（title='未命名'，sort_key=该父下 max+1；父不存在 → E_PARENT_GONE）。 */
   create(input: { parentId: string | null }): Promise<{ id: string; sortKey: string }>;
+  /** T64-01：新建文件夹（page_type='folder'；标题由调用方按 locale 传入）。 */
+  createFolder(input: { parentId: string | null; title: string }): Promise<{ id: string; sortKey: string }>;
   rename(input: { id: string; title: string }): Promise<{ id: string }>;
   /**
    * 移动/排序。`newSortKey` 与 `placeAfterId` 二选一（都不给 = 追加到目标层末尾）；
@@ -200,7 +202,7 @@ export interface SeptcatsPagesApi {
    * 页面承载类型双向转换（TASK-T42-01）：普通页 ↔ Wiki；多维数据页/回收站页拒绝
    * （E_MALFORMED）。正文块/子页/收藏/最近/页签零触碰。
    */
-  convert(input: { pageId: string; to: 'wiki' | 'page' }): Promise<{ ok: true }>;
+  convert(input: { pageId: string; to: 'wiki' | 'page' | 'folder' }): Promise<{ ok: true }>;
   /** Wiki 落地页简介（独立于正文块）；仅 Wiki 页可设（E_MALFORMED）。 */
   setSummary(input: { pageId: string; summary: string }): Promise<{ ok: true }>;
 }

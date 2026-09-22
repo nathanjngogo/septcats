@@ -105,9 +105,10 @@ export function nodeMap<T extends PageNode>(nodes: readonly T[]): Map<string, T>
  * 承载类型读取（T42-01）：注解缺失（夹具/未知来源的 PageNode）一律按普通页理解，
  * 与 main 侧 v8 列默认值同口径。
  */
-export function pageTypeOf(node: PageNode): 'page' | 'wiki' | 'database' {
+// T64-01：承载类型读取扩 'folder'
+export function pageTypeOf(node: PageNode): 'page' | 'wiki' | 'database' | 'folder' {
   const value = (node as Partial<PageNodeView>)['pageType'];
-  return value === 'wiki' || value === 'database' ? value : 'page';
+  return value === 'wiki' || value === 'database' || value === 'folder' ? value : 'page';
 }
 
 /** 祖先链（根 → 父），带 visited 防环。 */
@@ -423,8 +424,26 @@ export const pagesActions = {
     writeTabs(state.workspaceId, tabs, state.selectedId);
   },
 
-  /** 页面选中（既有入口，T37-01 起委托 openInTab：选中即打开页签）。 */
+  /**
+   * 页面选中（既有入口，T37-01 起委托 openInTab：选中即打开页签）。
+   * T64-01 红线：目标是 folder（page_type='folder'）→ 只展开定位（祖先链 + 自身）
+   * 并回到 pages 视图、**不 openInTab（不建页签/不进编辑器/不点开页签）**，
+   * 防搜索结果 / 收藏 / 最近 / 面包屑等旁路点开容器节点。
+   */
   selectPage(id: string): void {
+    const state = pagesStore.getState();
+    const target = nodeMap(state.nodes).get(id);
+    if (target !== undefined && pageTypeOf(target) === 'folder') {
+      pagesStore.setState((current) => {
+        const expanded = new Set(current.expanded);
+        for (const ancestor of ancestorsOf(id, nodeMap(current.nodes))) {
+          expanded.add(ancestor.id);
+        }
+        expanded.add(id);
+        return { ...current, view: 'pages', expanded };
+      });
+      return;
+    }
     pagesActions.openInTab(id);
   },
 
@@ -507,6 +526,30 @@ export const pagesActions = {
     }
   },
 
+  /**
+   * T64-01：新建文件夹（page_type='folder'）。与 createPage 同流程：先建节点 →
+   * refresh 对账 → 进入行内重命名（editingId，独立于 selectedId/页签）；**不 openInTab**
+   * （folder = 容器节点，点开不应建页签）；若挂在某节点下则展开该父使其可见。
+   * 标题由调用方按 locale 传入（t('folder.newFolder')）。
+   */
+  async createFolder(parentId: string | null, title: string): Promise<void> {
+    try {
+      const created = await bridge().pages.createFolder({ parentId, title });
+      await refresh();
+      if (parentId !== null) {
+        pagesActions.toggleExpand(parentId);
+      }
+      pagesStore.setState((state) =>
+        state.nodes.some((node) => node.id === created.id)
+          ? { ...state, editingId: created.id }
+          : state,
+      );
+      pushToast(t('folder.toastCreated'), 'success');
+    } catch (error) {
+      pushToast(describeError(error), 'danger');
+    }
+  },
+
   async renamePage(id: string, title: string): Promise<void> {
     await optimistic({
       apply: (state) => ({
@@ -524,11 +567,18 @@ export const pagesActions = {
    * 最近/页签（内容零丢失）；成功后 refresh() 对账——侧栏分区、落地页、页签标题
    * 全部随 nodes 更新实时生效。
    */
-  async convertPage(id: string, to: 'wiki' | 'page'): Promise<void> {
+  async convertPage(id: string, to: 'wiki' | 'page' | 'folder'): Promise<void> {
     try {
       await bridge().pages.convert({ pageId: id, to });
       await refresh();
-      pushToast(to === 'wiki' ? t('pages.toastConvertedToWiki') : t('pages.toastConvertedToPage'), 'success');
+      // T64-01：folder 方向补一枚 toast；page/wiki 沿用既有键
+      const toast =
+        to === 'wiki'
+          ? t('pages.toastConvertedToWiki')
+          : to === 'folder'
+            ? t('folder.toastConvertedToFolder')
+            : t('pages.toastConvertedToPage');
+      pushToast(toast, 'success');
     } catch (error) {
       pushToast(describeError(error), 'danger');
     }
