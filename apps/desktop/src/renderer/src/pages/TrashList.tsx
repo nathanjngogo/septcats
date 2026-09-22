@@ -14,8 +14,8 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { PageNode } from '@septcats/editor';
-import { ArrowClockwise, Button, Dialog, Icon, Trash } from '@septcats/ui';
-import { nodeMap, pagesActions, trashNodes, usePages } from '../state/pages';
+import { ArrowClockwise, Button, Dialog, FolderSimple, Icon, Trash } from '@septcats/ui';
+import { nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
 import { t } from '../i18n';
 import './TrashList.css';
 
@@ -107,7 +107,12 @@ export function TrashList() {
               data-testid={`trash-row-${row.node.id}`}
               style={indentStyle(row.depth)}
             >
-              <Icon icon={Trash} size="sm" className="trash-row-ic" />
+              {/* T64-01：folder 行显示文件夹图标（容器节点与页面行区分） */}
+              <Icon
+                icon={pageTypeOf(row.node) === 'folder' ? FolderSimple : Trash}
+                size="sm"
+                className="trash-row-ic"
+              />
               <span className="trash-row-tx">
                 {row.node.title.length > 0 ? row.node.title : t('common.untitled')}
               </span>

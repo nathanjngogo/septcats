@@ -119,7 +119,8 @@ ON CONFLICT(id) DO UPDATE SET
       version: versionInt,
       deleted_at: nullableTimestamp,
       updated_at: nullableTimestamp,
-      page_type: z.enum(['page', 'wiki', 'database']).default('page'),
+      // T64-01：扩 'folder'（页面树容器节点，零迁移：列本就 TEXT）
+      page_type: z.enum(['page', 'wiki', 'database', 'folder']).default('page'),
       summary: nullableText,
     }),
   },

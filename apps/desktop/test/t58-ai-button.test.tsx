@@ -239,7 +239,10 @@ describe('T58-01 AI 钮像素化（App 集成）', () => {
     const labels = [...container.querySelectorAll('.sc-shell__actions .sc-iconbtn')].map(
       (node) => node.getAttribute('aria-label') ?? '',
     );
-    expect(labels.indexOf(AI_LABEL)).toBe(1);
-    expect(labels[0]).toContain('搜索');
+    // T66-01 新语义（PM 改）：房子（工作台入口）插在钮组最前，绝对下标失效；
+    // 护栏本意=**相对顺序**：AI 钮仍在搜索钮右侧第 2 位（中间不插新钮）。
+    const idxSearch = labels.findIndex((l) => l.includes('搜索'));
+    expect(idxSearch).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf(AI_LABEL)).toBe(idxSearch + 1);
   });
 });

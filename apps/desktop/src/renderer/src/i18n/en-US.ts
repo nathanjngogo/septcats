@@ -26,6 +26,50 @@ export const enUS = {
     // T61-01 §2: accessible names for the two drag-to-resize splitters (role=separator)
     resizeSidebar: 'Resize sidebar',
     resizeAi: 'Resize AI panel',
+    // T66-01 §1.2: top-bar workbench entry button (house glyph)
+    workbenchLabel: 'Workbench (Alt+H)',
+  },
+  // T66-01: personal workbench (home view) copy.
+  workbench: {
+    title: 'Workbench',
+    close: 'Back to editor view',
+    restoredToast: 'Workbench restored to the editor view (open it again with Alt+H or the house button)',
+    greetingMorning: 'Good morning',
+    greetingAfternoon: 'Good afternoon',
+    greetingEvening: 'Good evening',
+    today: 'Today is {date}',
+    quickNewPage: 'New page',
+    quickNewDatabase: 'New database',
+    quickDailyNote: 'Daily note',
+    dailyNoteTitle: '{date} log',
+    toastDatabaseCreated: 'Database page created',
+    toastDailyNoteCreated: 'Daily note created',
+    cardQuick: 'Quick actions',
+    cardTodo: 'To-dos',
+    cardDatabase: 'Databases',
+    cardRecent: 'Recent',
+    cardFavorites: 'Favorites',
+    todoEmpty: 'No to-dos yet — hit + in the corner to add one',
+    todoPlaceholder: 'Write a to-do…',
+    todoAdd: 'Add to-do',
+    todoDelete: 'Delete to-do',
+    databaseEmpty: 'No database pages yet',
+    databaseNew: 'New database',
+    databaseRows: '{n} rows',
+    databaseRowsLoading: 'counting…',
+    databaseViewAll: 'View all',
+    recentEmpty: 'No recently opened pages yet',
+    favoritesEmpty: 'No favorited pages yet',
+    cardMenu: 'Card options',
+    cardShow: 'Show card',
+    cardHide: 'Hide card',
+    cardMoveUp: 'Move up',
+    cardMoveDown: 'Move down',
+    cardReset: 'Restore defaults',
+    relativeMinutes: '{n} min ago',
+    relativeHours: '{n} hr ago',
+    relativeDays: '{n} d ago',
+    relativeNow: 'just now',
   },
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it
@@ -100,6 +144,9 @@ export const enUS = {
     renameAria: 'Rename page',
     rename: 'Rename',
     pageActions: 'Page actions',
+    // T64-01: "New Page" split-button arrow menu
+    newMenuTitle: 'New',
+    fromTemplate: 'New from template',
     // T61-01 §1 (PRD-R13 ④): derived-folder entries + the "Move to…" second-level picker
     newSubpage: 'New subpage',
     moveTo: 'Move to…',
@@ -125,6 +172,16 @@ export const enUS = {
     backlinksTitle: 'Backlinks',
     backlinksEmpty: 'No pages link here yet',
     backlinksJumpAria: 'Jump to reference',
+  },
+  // T64-01: folder (page_type='folder' container node)
+  folder: {
+    newFolder: 'New Folder',
+    newSubfolder: 'New subfolder',
+    empty: 'This folder is empty',
+    convertToFolder: 'Convert to folder',
+    convertToPage: 'Convert to regular page',
+    toastCreated: 'Folder created',
+    toastConvertedToFolder: 'Converted to folder',
   },
   tabs: {
     barLabel: 'Open page tabs',
@@ -632,6 +689,8 @@ export const enUS = {
       layoutPreset: 'Switch layout preset',
       layoutEditor: 'Layout editor',
       manual: 'User Manual',
+      // T66-01 §1.2: workbench (home view) command
+      workbench: 'Workbench',
     },
     theme: {
       light: 'Switch Theme: Light',
@@ -665,6 +724,8 @@ export const enUS = {
       layoutPreset: 'Cycle between Notion / Focus / Workbench',
       layoutEditor: 'Open the standalone layout editor (presets and every parameter on one page)',
       manual: 'Read the user manual inside the app',
+      // T66-01 §1.2
+      workbench: 'Open the personal workbench (card dashboard, Alt+H)',
     },
     theme: {
       light: 'Interface theme',

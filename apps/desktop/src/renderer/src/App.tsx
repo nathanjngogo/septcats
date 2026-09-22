@@ -36,6 +36,9 @@ import { paletteActions, usePalette } from './state/palette';
 import { templatesActions } from './state/templates';
 import { pageTypeOf, pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, usePages } from './state/pages';
 import { pageWidthActions } from './state/pageWidth';
+import { WorkbenchPage } from './workbench/WorkbenchPage';
+import { workbenchActions, useWorkbench } from './workbench/state';
+import { PixelHomeGlyph } from './workbench/pixelGlyph';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import './App.css';
 
@@ -48,6 +51,7 @@ function useCommandWiring(
   openImport: () => void,
   openManual: () => void,
   openLayoutEditor: () => void,
+  openWorkbench: () => void,
 ): void {
   // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
   const locale = useLocale();
@@ -86,6 +90,8 @@ function useCommandWiring(
             openManual,
             // T57-01：命令面板「布局编辑器」入口（与顶栏布局弹框的「自定义编辑…」同一通道）
             openLayoutEditor,
+            // T66-01 §1.2：命令面板「工作台」入口（go home / workbench）
+            openWorkbench,
             runAiAction: (action): void => {
               // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
               window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
@@ -138,7 +144,7 @@ function useCommandWiring(
     configure();
     const unsubscribe = pagesStore.subscribe(configure);
     return unsubscribe;
-  }, [openSettings, openImport, openManual, openLayoutEditor, locale]);
+  }, [openSettings, openImport, openManual, openLayoutEditor, openWorkbench, locale]);
 }
 
 /**
@@ -170,7 +176,20 @@ export function App() {
     setView('layout');
   }, []);
   const closeLayoutEditor = useCallback(() => setView('editor'), []);
-  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor);
+  // T66-01 §1.1/§1.2：工作台（home）视图态住 workbench slice——覆盖编辑区（标签行内
+  // PageView 换装），侧栏/顶栏/标签条保持可点。入口三件套（房子钮/命令/Alt+H）
+  // 一律先回 editor 视图再开 home——home 与设置/导入/说明书/布局页不叠放。
+  const workbenchView = useWorkbench((state) => state.view);
+  const openWorkbench = useCallback(() => {
+    setView('editor');
+    workbenchActions.openHome();
+  }, []);
+  const closeWorkbench = useCallback(() => workbenchActions.closeHome(), []);
+  const toggleWorkbench = useCallback((): void => {
+    setView('editor');
+    workbenchActions.toggle();
+  }, []);
+  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor, openWorkbench);
 
   // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -253,6 +272,25 @@ export function App() {
     };
   }, [paletteOpenForHotkey, toggleAiPanel]);
 
+  // T66-01 §1.2：快捷键 Alt+H 开合工作台（与既有 Ctrl/Cmd 系键位不相交；
+  // 无统一 keybind 注册面 → 挂 App 级 window keydown，同 Ctrl+J 先例；
+  // 命令面板打开时不劫持——输入焦点在 palette 输入框）。
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'h' || event.key === 'H')) {
+        if (paletteOpenForHotkey) {
+          return;
+        }
+        event.preventDefault();
+        toggleWorkbench();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [paletteOpenForHotkey, toggleWorkbench]);
+
   // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
   useEffect(() => {
     const onOpenSettings = (): void => {
@@ -271,6 +309,70 @@ export function App() {
       window.removeEventListener(OPEN_LAYOUT_EDITOR_EVENT, openLayoutEditor);
     };
   }, [openLayoutEditor]);
+
+  // T66-01 §1.1：挂载对账——读卡配置；上次退出停在 home → 先落 pages 视图 + toast
+  // 防呆提示（home 不是死路；标记已在 init() 里清掉）。
+  useEffect(() => {
+    const { restoredFromHome } = workbenchActions.init();
+    if (restoredFromHome) {
+      pushToast(t('workbench.restoredToast'), 'info');
+    }
+  }, []);
+
+  // T66-01 §1.1/§3 红线「home 不得成为死角」的兜底闸（三通道）：
+  // (A) pagesStore 导航变化——home 打开时以「首个 ready 快照」为基线，任何后续页面
+  //     导航（侧栏/页签/搜索/回收站/新建落点）先收 home 再走既有语义；启动首帧未
+  //     ready 时不抢先关（load() 落 selectedId 属初始基线而非用户导航）。
+  useEffect(() => {
+    if (workbenchView !== 'home') {
+      return;
+    }
+    const snapshotOf = (): { selectedId: string | null; view: string } => {
+      const state = pagesStore.getState();
+      return { selectedId: state.selectedId, view: state.view };
+    };
+    let baseline = pagesStore.getState().status === 'ready' ? snapshotOf() : null;
+    return pagesStore.subscribe(() => {
+      const next = pagesStore.getState();
+      if (next.status !== 'ready') {
+        return;
+      }
+      if (baseline === null) {
+        baseline = snapshotOf();
+        return;
+      }
+      if (next.selectedId !== baseline.selectedId || next.view !== baseline.view) {
+        workbenchActions.closeHome();
+      }
+    });
+  }, [workbenchView]);
+  // (B) 覆盖式弹层（设置/导入/说明书/布局页/搜索页）打开即收 home——
+  //     这些各有自己的顶栏语义，与 home 不同时叠放。
+  useEffect(() => {
+    if (workbenchView !== 'home') {
+      return;
+    }
+    if (view !== 'editor' || searchOpen) {
+      workbenchActions.closeHome();
+    }
+  }, [workbenchView, view, searchOpen]);
+  // (C) 指针捕获——home 打开期间点侧栏任意行 / 标签条任意页签（含**当前已选中页**
+  //     的同页点击：(A) 的 selectedId 快照比对捕捉不到），先收 home 再放行点击原语义。
+  useEffect(() => {
+    if (workbenchView !== 'home') {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.sc-shell__sidebar, .app-tabrow') !== null) {
+        workbenchActions.closeHome();
+      }
+    };
+    window.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [workbenchView]);
 
   // T37-01 §0.3：页签键盘快捷键（编辑器视图内生效；键位与既有 Ctrl/Cmd+K 不相交）。
   // Ctrl/Cmd+W 关当前（相邻回落）· Ctrl/Cmd+Tab 下一个（循环）· Ctrl/Cmd+1..9 跳第 N
@@ -393,6 +495,16 @@ export function App() {
         breadcrumb={breadcrumb}
         actions={
           <>
+            {/* T66-01 §1.2：顶栏房子钮 = 工作台入口（Alt+H / 命令面板同效）。
+                glyph 为 workbench 目录内局部自绘（T65 红线：pixelIcons.tsx 不动；
+                DEVIATION：合并后由 PM 收编进族）。 */}
+            <IconButton
+              icon={PixelHomeGlyph}
+              label={t('app.workbenchLabel')}
+              aria-pressed={workbenchView === 'home'}
+              data-testid="workbench-open"
+              onClick={toggleWorkbench}
+            />
             <IconButton
               icon={MagnifyingGlass}
               label={t('app.searchLabel')}
@@ -478,7 +590,9 @@ export function App() {
           <div className={`app-main-row${aiPosition === 'bottom' ? ' app-main-row--ai-bottom' : ''}`}>
             <div className="app-editor-col">
               <TabsBar showTabs={tabsVisible} leading={sidebarToggle} />
-              <PageView />
+              {/* T66-01 §1.1：home 覆盖编辑区（标签条/侧栏/顶栏保持可见可点——
+                  点页面行/页签经 App 兜底闸先收 home 再走原语义；Esc/关闭钮回 pages） */}
+              {workbenchView === 'home' ? <WorkbenchPage onClose={closeWorkbench} /> : <PageView />}
             </div>
             {/* T61-01 §2：AI 面板左缘拖拽把手（position='right' 才由组件自身渲染；
                 bottom/hidden 不挂——宽度对纵向布局无意义）。 */}

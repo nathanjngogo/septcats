@@ -27,6 +27,50 @@ export const zhCN = {
     // T61-01 §2：两侧拖拽宽度把手的可访问名（aria-label，role=separator）
     resizeSidebar: '调整侧栏宽度',
     resizeAi: '调整 AI 面板宽度',
+    // T66-01 §1.2：顶栏工作台入口钮（房子）
+    workbenchLabel: '工作台（Alt+H）',
+  },
+  // T66-01：个人工作台（home 视图）文案。
+  workbench: {
+    title: '工作台',
+    close: '返回编辑视图',
+    restoredToast: '工作台已恢复为编辑视图（Alt+H 或房子钮可再次打开）',
+    greetingMorning: '早上好',
+    greetingAfternoon: '下午好',
+    greetingEvening: '晚上好',
+    today: '今天是 {date}',
+    quickNewPage: '新建页',
+    quickNewDatabase: '新建库',
+    quickDailyNote: '每日笔记',
+    dailyNoteTitle: '{date} 日志',
+    toastDatabaseCreated: '已新建多维数据页',
+    toastDailyNoteCreated: '已创建每日笔记',
+    cardQuick: '快捷操作',
+    cardTodo: '待办',
+    cardDatabase: '多维数据',
+    cardRecent: '最近',
+    cardFavorites: '收藏',
+    todoEmpty: '暂无待办——点右上角 + 添加一条',
+    todoPlaceholder: '写下一条待办…',
+    todoAdd: '添加待办',
+    todoDelete: '删除待办',
+    databaseEmpty: '还没有多维数据页',
+    databaseNew: '新建库',
+    databaseRows: '{n} 行',
+    databaseRowsLoading: '计数中…',
+    databaseViewAll: '查看全部',
+    recentEmpty: '还没有最近访问的页面',
+    favoritesEmpty: '还没有收藏的页面',
+    cardMenu: '卡片选项',
+    cardShow: '显示卡片',
+    cardHide: '隐藏卡片',
+    cardMoveUp: '上移',
+    cardMoveDown: '下移',
+    cardReset: '恢复默认',
+    relativeMinutes: '{n} 分钟前',
+    relativeHours: '{n} 小时前',
+    relativeDays: '{n} 天前',
+    relativeNow: '刚刚',
   },
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
@@ -102,6 +146,9 @@ export const zhCN = {
     // T60-01 ④：行 ⋯ 菜单 / 右键菜单的「重命名」条目
     rename: '重命名',
     pageActions: '页面操作',
+    // T64-01：顶栏「新建页」箭头菜单
+    newMenuTitle: '新建',
+    fromTemplate: '从模板新建',
     // T61-01 §1（PRD-R13 ④）：文件夹派生语义的两条菜单项 +
     // 「移入…」二级选择器的标题与根目标（无新实体，走既有 createPage/movePage）
     newSubpage: '新建子页面',
@@ -129,6 +176,16 @@ export const zhCN = {
     backlinksTitle: '反向链接',
     backlinksEmpty: '暂无页面引用本页',
     backlinksJumpAria: '跳转到引用位置',
+  },
+  // T64-01：文件夹（page_type='folder' 容器节点）
+  folder: {
+    newFolder: '新建文件夹',
+    newSubfolder: '新建子文件夹',
+    empty: '此文件夹为空',
+    convertToFolder: '转为文件夹',
+    convertToPage: '转为普通页面',
+    toastCreated: '文件夹已创建',
+    toastConvertedToFolder: '已转为文件夹',
   },
   tabs: {
     barLabel: '打开的页面标签',
@@ -615,6 +672,8 @@ export const zhCN = {
       layoutPreset: '切换布局预设',
       layoutEditor: '布局编辑器',
       manual: '使用说明书',
+      // T66-01 §1.2：工作台（home 视图）命令
+      workbench: '工作台',
     },
     theme: {
       light: '切换主题：浅色',
@@ -648,6 +707,8 @@ export const zhCN = {
       layoutPreset: '在 Notion / 专注 / 工作台 之间循环切换',
       layoutEditor: '打开独立布局编辑器（预设与细项参数整页编辑）',
       manual: '在应用内阅读使用说明书',
+      // T66-01 §1.2
+      workbench: '打开个人工作台（卡片流仪表盘，Alt+H）',
     },
     theme: {
       light: '界面主题',

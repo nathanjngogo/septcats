@@ -14,7 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import type { SeptcatsApi } from '../src/types/window';
-import { pagesActions, pagesStore, type PagesState } from '../src/renderer/src/state/pages';
+import { pageTypeOf, pagesActions, pagesStore, type PagesState } from '../src/renderer/src/state/pages';
 import { writeTabs } from '../src/renderer/src/state/tabs';
 
 const WS_ID = 'ws-store-test-1';
@@ -82,6 +82,18 @@ function resetStore(): void {
   pagesStore.setState(() => base);
 }
 
+/** T64-01 PM 收口：提为顶层 helper——CB 会话中断前只在局部 describe 定义，新 describe 够不到。 */
+function installBridgeWithNodes(nodes: PageNode[]): void {
+  (globalThis as { septcats?: SeptcatsApi }).septcats = {
+    workspaces: {
+      list: async () => ({ items: [{ id: WS_ID, name: '个人工作区' }], activeId: WS_ID }),
+    },
+    pages: { tree: async () => nodes },
+    favorites: { list: async () => ({ pageIds: [] }) },
+    recent: { list: async () => ({ pageIds: [] }) },
+  } as unknown as SeptcatsApi;
+}
+
 describe('pages store / load 初始化（TASK-T20-02 §0.B）', () => {
   beforeEach(() => {
     resetStore();
@@ -143,16 +155,6 @@ describe('pages store / load 后初始化选中（TASK-T21-02 §0.2）', () => {
     Reflect.deleteProperty(globalThis, 'septcats');
   });
 
-  function installBridgeWithNodes(nodes: PageNode[]): void {
-    (globalThis as { septcats?: SeptcatsApi }).septcats = {
-      workspaces: {
-        list: async () => ({ items: [{ id: WS_ID, name: '个人工作区' }], activeId: WS_ID }),
-      },
-      pages: { tree: async () => nodes },
-      favorites: { list: async () => ({ pageIds: [] }) },
-      recent: { list: async () => ({ pageIds: [] }) },
-    } as unknown as SeptcatsApi;
-  }
 
   it('load() 后 selectedId===null → 自动选中首个可达根页', async () => {
     installBridgeWithNodes([
@@ -188,5 +190,70 @@ describe('pages store / load 后初始化选中（TASK-T21-02 §0.2）', () => {
 
     expect(pagesStore.getState().status).toBe('ready');
     expect(pagesStore.getState().selectedId).toBeNull();
+  });
+});
+
+describe('T64-01 文件夹（page_type=folder）', () => {
+  beforeEach(() => {
+    resetStore();
+    installBridge();
+  });
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'septcats');
+  });
+
+  it('pageTypeOf 兜底：folder 原样认、缺省/野值回落 page、wiki/database 不变', () => {
+    const folder = { ...pageNode({ id: 'fld', title: '资料', childIds: ['c1'] }), pageType: 'folder' as const };
+    const page = pageNode({ id: 'pg', title: '普通页' });
+    const wiki = { ...pageNode({ id: 'wk', title: 'Wiki' }), pageType: 'wiki' as const };
+    const db = { ...pageNode({ id: 'db', title: '库' }), pageType: 'database' as const };
+    expect(pageTypeOf(folder)).toBe('folder');
+    expect(pageTypeOf(page)).toBe('page');
+    expect(pageTypeOf(wiki)).toBe('wiki');
+    expect(pageTypeOf(db)).toBe('database');
+  });
+
+  it('selectPage 对 folder：只展开定位、不 openInTab（tabs/selectedId 不变）', () => {
+    const folder = { ...pageNode({ id: 'fld', title: '资料', childIds: ['c1'] }), pageType: 'folder' as const };
+    const child = pageNode({ id: 'c1', title: '子页', parentId: 'fld' });
+    installBridgeWithNodes([folder, child]);
+    pagesStore.setState((state) => ({
+      ...state,
+      workspaceId: WS_ID,
+      status: 'ready',
+      nodes: [folder, child],
+      expanded: new Set<string>(),
+      selectedId: null,
+      tabs: [],
+    }));
+    const before = pagesStore.getState();
+    pagesActions.selectPage('fld');
+    const after = pagesStore.getState();
+    expect(after.expanded.has('fld')).toBe(true);
+    expect(after.selectedId).toBe(before.selectedId);
+    expect(after.tabs).toEqual(before.tabs);
+    expect(after.view).toBe('pages');
+  });
+
+  it('selectPage 对普通页：照常 openInTab（建页签、置选中）', () => {
+    const pg = pageNode({ id: 'pg', title: '普通页' });
+    installBridgeWithNodes([pg]);
+    const api = (globalThis as unknown as { septcats: SeptcatsApi }).septcats;
+    api.recent = {
+      list: async () => ({ pageIds: [] }),
+      touch: async () => ({ pageIds: [] }),
+    };
+    pagesStore.setState((state) => ({
+      ...state,
+      workspaceId: WS_ID,
+      status: 'ready',
+      expanded: new Set<string>(),
+      selectedId: null,
+      tabs: [],
+    }));
+    pagesActions.selectPage('pg');
+    const after = pagesStore.getState();
+    expect(after.selectedId).toBe('pg');
+    expect(after.tabs).toEqual(['pg']);
   });
 });

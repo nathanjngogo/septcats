@@ -1,0 +1,168 @@
+{
+  "task": "T66-01",
+  "ranAt": "2026-09-22T17:14:24.543Z",
+  "assertions": [
+    {
+      "step": "T1|三入口",
+      "name": "T1-a 初始非 home（编辑视图）",
+      "ok": true,
+      "raw": "home=false"
+    },
+    {
+      "step": "T1|三入口",
+      "name": "T1-b 房子钮开 home（.wb-root 出现）",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "step": "T1|三入口",
+      "name": "T1-c wb-close 收 home",
+      "ok": true,
+      "raw": "false"
+    },
+    {
+      "step": "T1|三入口",
+      "name": "T1-d Alt+H 开 home",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "step": "T1|三入口",
+      "name": "T1-e 命令面板「工作台」开 home",
+      "ok": true,
+      "raw": "rowFound=true home=true"
+    },
+    {
+      "step": "T2|home非死角",
+      "name": "T2-a home 开着时侧栏在（.app-side 可点）",
+      "ok": true,
+      "raw": "1"
+    },
+    {
+      "step": "T2|home非死角",
+      "name": "T2-b 点侧栏行收 home（回编辑视图）",
+      "ok": true,
+      "raw": "node=01M351RC7EN52XYRZR34JE0BSJ homeAfter=false"
+    },
+    {
+      "step": "T2|home非死角",
+      "name": "T2-c 收 home 后编辑器在场（.pv-root）",
+      "ok": true,
+      "raw": "1"
+    },
+    {
+      "step": "T3|库卡",
+      "name": "T3-a 库卡常驻可见",
+      "ok": true,
+      "raw": "1"
+    },
+    {
+      "step": "T3|库卡",
+      "name": "T3-b1 快捷建库后自动回 pages 开库页",
+      "ok": true,
+      "raw": "home=false dbEditor=true"
+    },
+    {
+      "step": "T3|库卡",
+      "name": "T3-b2 重开 home→库卡新增一行",
+      "ok": true,
+      "raw": "before=0 after=1"
+    },
+    {
+      "step": "T3|库卡",
+      "name": "T3-c 库卡行有行数文案",
+      "ok": true,
+      "raw": "0 行"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "[info] T4 钮盒",
+      "ok": null,
+      "raw": "{\"x\":991,\"y\":620.375,\"width\":28,\"height\":28}"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "[info] T4 命中测试",
+      "ok": null,
+      "raw": "rect={\"x\":991,\"y\":620,\"w\":28,\"h\":28} hit=rect.[object SVGAnimatedString] containsBtn=true"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "[info] T4 页内直点",
+      "ok": null,
+      "raw": "aria=true open@50ms=1 items@50ms=[隐藏卡片,上移,下移,恢复默认] open@350ms=1"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "[info] T4 菜单开现场",
+      "ok": null,
+      "raw": "menuitems=[\"隐藏卡片\",\"上移\",\"下移\",\"恢复默认\"] menuWrapOpen=1"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "[info] T4 页内点隐藏",
+      "ok": null,
+      "raw": "clicked"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "T4-a 隐藏「最近」卡→该 slot 消失",
+      "ok": true,
+      "raw": "cardsAll=5 recentSlotAfter=0"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "T4-b 有隐藏时出现「恢复」钮",
+      "ok": true,
+      "raw": "1"
+    },
+    {
+      "step": "T4|卡显隐重置",
+      "name": "T4-c 恢复→五卡齐",
+      "ok": true,
+      "raw": "after=5"
+    },
+    {
+      "step": "T5|待办卡",
+      "name": "T5-a 待办回车→新增一行",
+      "ok": true,
+      "raw": "rows=1"
+    },
+    {
+      "step": "T5|待办卡",
+      "name": "[info] 勾选后待办态",
+      "ok": null,
+      "raw": "wb-todo__check"
+    },
+    {
+      "step": "T5|待办卡",
+      "name": "T5-b 删除待办→该行移除",
+      "ok": true,
+      "raw": "after=0"
+    },
+    {
+      "step": "T6|重启防呆",
+      "name": "T6-a 退出前 home 开着",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "step": "T6|重启防呆",
+      "name": "T6-b 重启不滞留 home（防呆回 pages）",
+      "ok": true,
+      "raw": "home=false editor=false"
+    },
+    {
+      "step": "T6|重启防呆",
+      "name": "T6-c 重启后 home 仍可开（入口未坏）",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "step": "T7|存活",
+      "name": "T7-1 全流程后应用存活",
+      "ok": true,
+      "raw": "2"
+    }
+  ]
+}

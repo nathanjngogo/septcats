@@ -20,6 +20,7 @@ import {
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
+  CHANNEL_PAGE_CREATE_FOLDER,
   CHANNEL_PAGE_DELETE,
   CHANNEL_PAGE_MOVE,
   CHANNEL_PAGE_PURGE,
@@ -677,6 +678,12 @@ function registerPagesIpc(service: PagesService | null): void {
   );
   on(CHANNEL_PAGE_CREATE, (input) =>
     requireService().createPage({ parentId: readNullableText(input, 'parentId') }),
+  );
+  on(CHANNEL_PAGE_CREATE_FOLDER, (input) =>
+    requireService().createFolder({
+      parentId: readNullableText(input, 'parentId'),
+      title: readText(input, 'title', true),
+    }),
   );
   on(CHANNEL_PAGE_RENAME, (input) =>
     requireService().renamePage({ id: readText(input, 'id'), title: readText(input, 'title', true) }),

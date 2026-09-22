@@ -15,6 +15,8 @@ import {
   type PagesService,
   type StatementExecutor,
 } from '../src/main/pages';
+// T64-01 PM 收口：STATEMENTS 真源在 db/statements（main/pages 不转发；CB 测试 import 笔误）
+import { STATEMENTS } from '../src/db/statements';
 import { describeDb, makeCore, makeTempDb, requestOk, type TempDb } from './helpers';
 
 const ACTOR: ActorId = 'aaaa0001';
@@ -339,5 +341,70 @@ describeDb('pagesApi（页面树 / 回收站 / 工作区）', (ctor) => {
 
     await expectApiError(service.switchWorkspace({ id: 'ghost' }), 'E_NOT_FOUND');
     await expectApiError(service.createWorkspace({ name: '   ' }), 'E_MALFORMED');
+  });
+
+  it('T64-01 statements enum：page.upsert 接受 page_type=folder、缺省回落 page、野值抛错', () => {
+    const validator = STATEMENTS['page.upsert'].params;
+    const ok = validator.parse({
+      id: 'pg-x',
+      workspace_id: 'ws-x',
+      sort_key: 'A00000001',
+      alive: 1,
+      version: 1,
+      page_type: 'folder',
+    });
+    expect(ok.page_type).toBe('folder');
+
+    const def = validator.parse({
+      id: 'pg-y',
+      workspace_id: 'ws-y',
+      sort_key: 'A00000002',
+      alive: 1,
+      version: 1,
+    });
+    expect(def.page_type).toBe('page');
+
+    expect(() =>
+      validator.parse({
+        id: 'pg-z',
+        workspace_id: 'ws-z',
+        sort_key: 'A00000003',
+        alive: 1,
+        version: 1,
+        page_type: 'spreadsheet',
+      }),
+    ).toThrow();
+  });
+
+  it('T64-01 createFolder：建出 folder 节点（page_type=folder，标题来自调用方）；删文件夹级联子页、恢复级联还原', async () => {
+    const folder = await service.createFolder({ parentId: null, title: '资料' });
+    const child = await service.createPage({ parentId: folder.id });
+    await service.createPage({ parentId: child.id });
+
+    const workspaceId = (await service.listWorkspaces()).activeId as string;
+    const nodes = await service.listTree({ workspaceId });
+    const folderNode = nodes.find((node) => node.id === folder.id);
+    expect(folderNode?.pageType).toBe('folder');
+    expect(folderNode?.title).toBe('资料');
+    expect(folderNode?.childIds).toEqual([child.id]);
+
+    const before = await opCount();
+    const deleted = await service.deletePage({ id: folder.id });
+    expect(deleted.deleted).toBe(3);
+    expect(await opCount()).toBe(before + 3);
+
+    // 父仍死 → 后代不能单恢复
+    await expectApiError(service.restorePage({ id: child.id }), 'E_PARENT_GONE');
+
+    // 从顶层恢复 = 自身 + 全部后代
+    const restored = await service.restorePage({ id: folder.id });
+    expect(restored.restored).toBe(3);
+    const trash = await requestOk<AllData>(core, {
+      id: 'trash-folder',
+      t: 'all',
+      sqlId: 'page.listTrash',
+      params: { workspace_id: workspaceId },
+    });
+    expect(trash.rows).toHaveLength(0);
   });
 });

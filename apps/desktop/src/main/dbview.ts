@@ -138,7 +138,8 @@ export interface DbViewService {
    * op 同步、可审计）；正文块/子页/收藏/最近/页签均不触碰（内容零丢失）。
    * 多维数据页（存活 collection 关联）不支持转换（E_MALFORMED），回收站页同理。
    */
-  convertPage(input: { pageId: string; to: 'wiki' | 'page' }): Promise<{ ok: true }>;
+  // T64-01：to 扩 'folder'（普通页 ↔ 文件夹双向；wiki/database 与 folder 互不转换由菜单口径把关）
+  convertPage(input: { pageId: string; to: 'wiki' | 'page' | 'folder' }): Promise<{ ok: true }>;
   /**
    * Wiki 落地页简介（TASK-T42-01）：独立于正文块的 summary 列（migration #8），
    * 同样以整对象 page upsert op 走账本。仅 Wiki 页可设（E_MALFORMED）。
@@ -592,7 +593,8 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       throw new DbViewApiError('E_MALFORMED', '回收站中的页面不支持该操作');
     }
     const rawType = row['page_type'];
-    const pageType = rawType === 'wiki' || rawType === 'database' ? rawType : ('page' as const);
+    const pageType =
+      rawType === 'wiki' || rawType === 'database' || rawType === 'folder' ? rawType : ('page' as const);
     const text = (key: string): string | null => {
       const value = row[key];
       return typeof value === 'string' ? value : null;
@@ -1317,7 +1319,7 @@ interface PageTypeRow {
   alive: 1 | 0;
   deleted_at: number | null;
   version: number;
-  page_type: 'page' | 'wiki' | 'database';
+  page_type: 'page' | 'wiki' | 'database' | 'folder';
   summary: string | null;
 }
 
@@ -1373,7 +1375,7 @@ const DB_INPUT_SCHEMAS = {
   }),
   [CHANNEL_DB_EXPORT_CSV]: z.object({ pageId: zId }),
   // T42-01：页面承载类型两通道（page:convert / page:summary:set）
-  [CHANNEL_PAGE_CONVERT]: z.object({ pageId: zId, to: z.enum(['wiki', 'page']) }),
+  [CHANNEL_PAGE_CONVERT]: z.object({ pageId: zId, to: z.enum(['wiki', 'page', 'folder']) }),
   [CHANNEL_PAGE_SUMMARY_SET]: z.object({ pageId: zId, summary: z.string().max(4000) }),
 } as const;
 

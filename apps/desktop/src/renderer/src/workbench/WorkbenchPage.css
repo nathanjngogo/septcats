@@ -1,0 +1,367 @@
+/*
+ * WorkbenchPage.css —— 个人工作台（home 视图）样式（TASK-T66-01 §1.5）。
+ *
+ * 像素纪律（同 ManualView.css 基准）：黑框线 = 2px var(--sc-color-ink-edge)、
+ * 卡壳抬升 = var(--sc-pixel-out)、hover 语义与全站一致；零字面 hex（no-magic/
+ * ui-interaction-audit 门禁：renderer/src 扫描面内）、间距/字号只走 var(--sc-*)。
+ * 高度链闭合于 .sc-shell__main（grid 1fr 定高）——本视图内部滚动，窗口零滚动红线不变。
+ */
+
+.wb-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--sc-color-content);
+  color: var(--sc-color-ink);
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+ * 头部（标题 + 恢复默认/关闭）
+ * -------------------------------------------------------------------------- */
+
+.wb-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-lg);
+  padding: var(--sc-space-sm) var(--sc-space-xl);
+  background: var(--sc-color-surface);
+  border-bottom: 2px solid var(--sc-color-ink-edge);
+}
+
+.wb-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  margin: 0;
+  font: var(--sc-text-h2);
+}
+
+.wb-title__glyph {
+  color: var(--sc-color-ink-secondary);
+}
+
+.wb-head__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.wb-close {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sc-space-xs);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.wb-close:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.wb-close:active {
+  box-shadow: var(--sc-pixel-flat);
+}
+
+/* --------------------------------------------------------------------------
+ * 卡片流（内部滚动列）
+ * -------------------------------------------------------------------------- */
+
+.wb-flow {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-lg);
+  padding: var(--sc-space-xl);
+  max-width: var(--sc-space-editor-measure);
+  margin-inline: auto;
+  inline-size: 100%;
+}
+
+/* --------------------------------------------------------------------------
+ * 欢迎条
+ * -------------------------------------------------------------------------- */
+
+.wb-welcome {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-md);
+}
+
+.wb-welcome__glyph {
+  color: var(--sc-color-ink-secondary);
+  flex: none;
+}
+
+.wb-welcome__title {
+  margin: 0;
+  font: var(--sc-text-h3);
+}
+
+.wb-welcome__date {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* --------------------------------------------------------------------------
+ * 卡片壳（§1.5：黑框线 + hover 抬升与 --sc-pixel-out 语法一致）
+ * -------------------------------------------------------------------------- */
+
+.wb-card {
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.wb-card:hover {
+  box-shadow: 4px 4px 0 0 var(--sc-color-shadow-pixel), inset 2px 2px 0 0 var(--sc-color-bevel-hi),
+    inset -2px -2px 0 0 var(--sc-color-bevel-lo);
+}
+
+.wb-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border-bottom: 2px solid var(--sc-color-ink-edge); /* T62 纪律：框轮廓=黑线 */
+}
+
+.wb-card__title {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  letter-spacing: var(--sc-tracking-editor-body);
+}
+
+.wb-card__head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+}
+
+.wb-card__menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.wb-card__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+}
+
+.wb-card__body {
+  padding: var(--sc-space-md);
+}
+
+/* --------------------------------------------------------------------------
+ * 快捷行
+ * -------------------------------------------------------------------------- */
+
+.wb-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sc-space-sm);
+}
+
+.wb-pixbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding: var(--sc-space-xs) var(--sc-space-md);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.wb-pixbtn:hover {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.wb-pixbtn:active {
+  box-shadow: var(--sc-bevel-in);
+}
+
+.wb-pixbtn__glyph {
+  display: inline-flex;
+  color: var(--sc-color-ink-secondary);
+}
+
+/* --------------------------------------------------------------------------
+ * 待办卡
+ * -------------------------------------------------------------------------- */
+
+.wb-todo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+}
+
+.wb-todo__glyph {
+  position: absolute;
+  top: var(--sc-space-xxs);
+  right: var(--sc-space-xxs);
+  color: var(--sc-color-icon-faint);
+  pointer-events: none;
+}
+
+.wb-todo__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+.wb-todo__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.wb-todo__check {
+  display: inline-flex;
+  color: var(--sc-color-ink-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.wb-todo__text {
+  flex: 1;
+  min-width: 0;
+  font: var(--sc-text-ui-md);
+}
+
+.wb-todo__item--done .wb-todo__text {
+  color: var(--sc-color-ink-faint);
+  text-decoration: line-through;
+}
+
+.wb-todo__del {
+  display: inline-flex;
+  color: var(--sc-color-ink-faint);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.wb-todo__del:hover {
+  color: var(--sc-color-danger);
+}
+
+.wb-todo__input {
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+}
+
+.wb-todo__input:focus {
+  border-color: var(--sc-color-ink-edge);
+}
+
+/* --------------------------------------------------------------------------
+ * 列表卡（数据库/最近）与网格卡（收藏）
+ * -------------------------------------------------------------------------- */
+
+.wb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+.wb-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--sc-layout-sidebar), 1fr));
+  gap: var(--sc-space-xxs);
+}
+
+.wb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  width: 100%;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  text-align: start;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: var(--sc-radius-sm);
+}
+
+.wb-row:hover {
+  background: var(--sc-color-surface);
+  border-color: var(--sc-color-ink-edge);
+}
+
+.wb-row__icon {
+  flex: none;
+  color: var(--sc-color-ink-secondary);
+}
+
+.wb-row__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-row__path {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.wb-row__meta {
+  flex: none;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.wb-row--more .wb-row__title {
+  text-align: center;
+  color: var(--sc-color-ink-secondary);
+}
+
+/* --------------------------------------------------------------------------
+ * 空态（与 .pv-empty/.trash-empty 同 token 口径——ui-interaction-audit ④）
+ * -------------------------------------------------------------------------- */
+
+.wb-empty {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}

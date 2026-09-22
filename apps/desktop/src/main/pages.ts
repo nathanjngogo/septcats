@@ -65,7 +65,8 @@ export interface WorkspaceSummary {
  * - `wiki`：Wiki 页（落地页 = 标题 + 简介 + 子页索引）；
  * - `database`：行内数据库页（既有范式：存活 collection 行存在，T7b）。
  */
-export type PageType = 'page' | 'wiki' | 'database';
+// T64-01：扩 'folder'（页面树容器节点）
+export type PageType = 'page' | 'wiki' | 'database' | 'folder';
 
 /**
  * 树节点 + 承载注解（T42-01）：`PageNode` 之上追加 renderer 直接可用的三类字段。
@@ -108,6 +109,8 @@ export interface PagesService {
 
   listTree(input: { workspaceId: string }): Promise<PageNodeView[]>;
   createPage(input: { parentId: string | null }): Promise<{ id: string; sortKey: string }>;
+  /** T64-01：新建文件夹（page_type='folder'，标题由调用方按 locale 传入）。 */
+  createFolder(input: { parentId: string | null; title: string }): Promise<{ id: string; sortKey: string }>;
   renamePage(input: { id: string; title: string }): Promise<{ id: string }>;
   movePage(input: MovePageInput): Promise<MovePageResult>;
   deletePage(input: { id: string }): Promise<{ deleted: number }>;
@@ -206,7 +209,7 @@ function toPageRow(row: unknown): PageRow {
 function toNode(row: PageRow, dbPageIds: ReadonlySet<string>): PageNodeView {
   const pageType: PageType = dbPageIds.has(row.id)
     ? 'database'
-    : row.page_type === 'wiki' || row.page_type === 'database'
+    : row.page_type === 'wiki' || row.page_type === 'database' || row.page_type === 'folder'
       ? row.page_type
       : 'page';
   return {
@@ -359,7 +362,11 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
       .sort(comparePageOrder);
   }
 
-  function upsertOp(node: Omit<PageNode, 'childIds' | 'depth'>, c: TreeContext): Op {
+  function upsertOp(
+    node: Omit<PageNode, 'childIds' | 'depth'>,
+    c: TreeContext,
+    pageType: PageType = 'page',
+  ): Op {
     return {
       op_id: ulid(c.now),
       lamport: { c: Math.max(1, node.version + 1), d: c.actor },
@@ -377,6 +384,8 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         alive: node.alive,
         deleted_at: node.deletedAt,
         updated_at: c.now,
+        // T64-01：page_type 随整对象 upsert 落库（folder = 树容器节点）
+        page_type: pageType,
       },
     };
   }
@@ -501,6 +510,50 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
           deletedAt: null,
         },
         c,
+      );
+      await commitOps(executor, [op], { workspaceId });
+      return { id, sortKey };
+    },
+
+    async createFolder(input) {
+      const workspaceId = await requireActiveWorkspace();
+      const nodes = await loadNodes(workspaceId);
+      const c = ctx();
+
+      if (input.parentId !== null) {
+        const parent = nodes.find((node) => node.id === input.parentId);
+        if (parent === undefined || parent.alive === 0) {
+          throw new PagesApiError('E_PARENT_GONE', `父页面不存在或已删除：${input.parentId}`);
+        }
+      }
+
+      const siblings = siblingsOf(nodes, input.parentId, null);
+      let sortKey: string;
+      try {
+        sortKey = sortBetween(siblings[siblings.length - 1]?.sortKey ?? null, null);
+      } catch (error) {
+        throw new PagesApiError(
+          'E_INVARIANT',
+          `无法在父层生成排序键：${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+
+      const id = ulid(c.now);
+      const op = upsertOp(
+        {
+          id,
+          title: input.title,
+          icon: null,
+          cover: null,
+          workspaceId,
+          parentId: input.parentId,
+          sortKey,
+          version: 0,
+          alive: 1,
+          deletedAt: null,
+        },
+        c,
+        'folder',
       );
       await commitOps(executor, [op], { workspaceId });
       return { id, sortKey };

@@ -158,7 +158,7 @@ export function PageView({ page }: PageViewProps) {
    * （main 侧权威判定：存活 collection 行 → database；否则 page_type 列）。
    * 重开/重载后树重拉，库页仍是 database 页（不再依赖当次会话的 dbPageId 本地态）。
    */
-  const activeNodeType: 'page' | 'wiki' | 'database' =
+  const activeNodeType: 'page' | 'wiki' | 'database' | 'folder' =
     page !== undefined
       ? (page.kind ?? 'page')
       : selectedNode !== null

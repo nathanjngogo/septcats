@@ -30,6 +30,8 @@ export type BlocksChannel = (typeof BLOCKS_CHANNELS)[keyof typeof BLOCKS_CHANNEL
 
 export const CHANNEL_PAGE_TREE = 'page:tree';
 export const CHANNEL_PAGE_CREATE = 'page:create';
+// T64-01：新建文件夹（page_type='folder'，标题由 renderer 按 locale 传）
+export const CHANNEL_PAGE_CREATE_FOLDER = 'page:createFolder';
 export const CHANNEL_PAGE_RENAME = 'page:rename';
 export const CHANNEL_PAGE_MOVE = 'page:move';
 export const CHANNEL_PAGE_DELETE = 'page:delete';
@@ -40,6 +42,7 @@ export const CHANNEL_PAGE_PURGE = 'page:purge';
 export const PAGES_CHANNELS = {
   tree: CHANNEL_PAGE_TREE,
   create: CHANNEL_PAGE_CREATE,
+  createFolder: CHANNEL_PAGE_CREATE_FOLDER,
   rename: CHANNEL_PAGE_RENAME,
   move: CHANNEL_PAGE_MOVE,
   delete: CHANNEL_PAGE_DELETE,

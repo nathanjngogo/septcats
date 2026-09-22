@@ -12,7 +12,7 @@
  * - 设置页「模板」区块：行渲染、重命名/删除回调、空态。
  * 纪律：window.septcats 用 vi.stubGlobal 假桥；断言落在 store 状态与假桥调用。
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import type { TemplateMeta } from '../src/main/templates';
@@ -367,11 +367,18 @@ describe('侧栏「新建页面 ▾」（§C.1）', () => {
     await waitFor(() => expect(bridge.pagesCreate).toHaveBeenCalledWith({ parentId: null }));
   });
 
-  it('右侧箭头展开模板子菜单（懒加载列表），行 = 图标 + 模板名', async () => {
+  // T64-01 新语义（PM 改）：分体钮——箭头点开「新建」三选菜单（新建页面/新建文件夹/
+  // 从模板新建），选「从模板新建」才展开模板行列表（懒加载仍由箭头点击触发）。
+  it('箭头 → 新建菜单含三项；选「从模板新建」展开模板行（懒加载列表）= 图标 + 模板名', async () => {
     render(<SidebarTree />);
     expect(screen.queryByTestId('side-tpl-item-0')).toBeNull();
     fireEvent.click(screen.getByTestId('side-new-page-arrow'));
+    const menu = await screen.findByRole('menu', { name: '新建' });
+    const labels = within(menu).getAllByRole('menuitem').map((el) => el.textContent ?? '');
+    expect(labels.some((l) => l.includes('新建页面'))).toBe(true);
+    expect(labels.some((l) => l.includes('新建文件夹'))).toBe(true);
     await waitFor(() => expect(bridge.templatesList).toHaveBeenCalled());
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /从模板新建/ }));
     const item = await screen.findByTestId('side-tpl-item-0');
     expect(item.textContent).toContain('研究模板');
     // 数据 icon（emoji）以文本展示；空 icon 按 kind 回落 ui 图标
@@ -379,9 +386,11 @@ describe('侧栏「新建页面 ▾」（§C.1）', () => {
     expect(screen.getByTestId('side-tpl-item-1').textContent).toContain('台账模板');
   });
 
-  it('点击模板项 → createPage({templateId,parentId:null}) → 选中新页 → 菜单关闭', async () => {
+  it('点击模板项 → createPage({templateId,parentId:null}) → 选中新页 → 列表收起', async () => {
     render(<SidebarTree />);
     fireEvent.click(screen.getByTestId('side-new-page-arrow'));
+    const menu = await screen.findByRole('menu', { name: '新建' });
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /从模板新建/ }));
     const item = await screen.findByTestId('side-tpl-item-1');
     fireEvent.click(item);
     await waitFor(() => expect(bridge.templatesCreatePage).toHaveBeenCalledWith({ templateId: 'tpl-2', parentId: null }));
@@ -389,10 +398,13 @@ describe('侧栏「新建页面 ▾」（§C.1）', () => {
     expect(screen.queryByTestId('side-tpl-item-0')).toBeNull();
   });
 
-  it('模板为空：空态行「暂无模板」（与既有空态同 token）', async () => {
-    seedTemplatesStore([]);
+  it('模板为空：走菜单后空态行「暂无模板」（与既有空态同 token）', async () => {
+    // 箭头点击会 loadTemplates() 覆写 store（假桥返回 templatesDb）→ 清空假桥数据源而非只 seed store。
+    templatesDb = [];
     render(<SidebarTree />);
     fireEvent.click(screen.getByTestId('side-new-page-arrow'));
+    const menu = await screen.findByRole('menu', { name: '新建' });
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /从模板新建/ }));
     await waitFor(() => expect(screen.getByTestId('side-tpl-empty').textContent).toBe('暂无模板'));
   });
 });
