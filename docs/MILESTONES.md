@@ -264,6 +264,7 @@
 | R11-② T55 像素猫图标（设计=PM/接线=CB） | 09-22 | ✅ PM 复跑 **14 PASS/0 FAIL** | 设计：浮雕法三变体+T 子型（判读 C=8/10 默认）；接线：tray/window 命中 icon-tray.png/icon.png、ico 五层 [16,24,32,48,256]、extraResources 四份（**修 0.3.0 包托盘空图真缺陷**）；§17 品牌决议改写；desktop 704 无红；打包冒烟加验真托盘。**09-22 老板拍板：三选一=C（零改动，即当前默认）** |
 | R11-① T56 使用说明书 | 09-22 | ✅ PM 复跑 **18 PASS/0 FAIL** | 双语 md（PM 撰写逐条实证）嵌入帮助菜单+命令面板；?raw 打包零 fs 零网络；自写 md 渲染器 13 单测；锚点章表+像素风阅读视图；desktop 727 |
 | R11-③ T57 布局弹框+编辑器 | 09-22 | ✅ PM 复跑 **28 PASS/0 FAIL** | 代码 CB（150 轮耗尽未交报告=第 2 次，PM 接手代写）：LayoutPicker 像素模态 3 卡 CSS 抽象预览零位图 + LayoutEditorPage 整页编辑器（滑杆 DOM 实测 240→320 跟随）+ T52 五红线全复跑 + 1184/894 零滚动；新纯函数 6/单测 +28；教训→后续单 max-turns 200+报告骨架前置 |
+| R13-⑨ 0.4.1-rc.2 打包冒烟（PM 亲跑） | 09-22 | ✅ **54 PASS / 0 FAIL** | 复用 probe-rc26-smoke 打 win-unpacked（19:22 构建=Setup 0.4.1-rc.2.exe 同源）：包自报 `version:0.4.1-rc.2, schemaVersion:3`；T55 四资产 `<resources>/build/` 在位且与仓内 **sha256 逐字节一致**（icon.png/icon.ico/icon-tray×2）；?raw 说明书双语正文、pixelIcons 族、open-layout-editor 通道全命中包内；updater 404=rc 通道无 yml，预期行为（0.4.0 已发 latest 不受影响） |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
