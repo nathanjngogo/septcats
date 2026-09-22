@@ -19,12 +19,17 @@
 - 全仓 `pnpm -r test`：无红（desktop 857 / core 51 / dbview 122 / editor 200 / importer 59 / platform 41+1skip / schema 3 / sync 109 / ui 156）
 - `pnpm -C apps/desktop typecheck`：**0 错误**；`node packages/ui/tokens/no-magic.mjs`：✓
 
-## 真机（cdp-e2e-t64-01.mjs）
-- 段计划：A 菜单 clamp 盒四边 ≥8px（首/末行 ⋯ + 右键）；B 分体钮→folder 行→展开无新页签→挂子页；C 拖入/面包屑/转页；D 重启还原；E 搜索/回收站回归。截图 ≥6 → screens-t64/。
-- 结果：**待补（PM 接手写探针并跑）**。
+## 真机（cdp-e2e-t64-01.mjs · PM 亲写亲跑）
+- **15 PASS / 0 FAIL**；截图 6 张 → screens-t64/；结果 JSON=t64-01-results.json；真实数据根 untouched=true；electron 归零。
+- A：侧栏拖到最小 200 → 首行 ⋯ 盒 {left:156,right:366,top:238,bottom:498}、末行右键盒 {left:32,top:295,bottom:555}，四边 ≥8px 全过（修复前同场景实测 left=−26 越屏）。
+- B：箭头菜单→「新建文件夹」新增行（diff 法）→点行 tabs 6→6 不建页签→「新建子页面」挂其下可见。
+- C：子页面包屑=`新建文件夹/T64子页`；folder「转为普通页面」后点行 tabs 4→5 恢复开页签。
+- D：优雅退出重启：folder 行仍在（glyph rect 签名在）、点行仍不建页签（10→10）。
+- E：搜索命中 folder 点击不白屏。
+- 探针侧修账（非产品缺陷）：B2 行文本匹配在窄栏下不稳→改行集合 diff；tab 计数选择器误吞 tab-close-*（+2 假红）→:not() 收紧。
 
 ## 手测（PM/CB 真机记录）
-- 待真机段完成后补。
+- 真机段即 PM 亲跑（见上）；老板目检项：最小侧栏任意行开 ⋯/右键不越屏、文件夹创建/展开/挂子页/转换/重启还原。
 
 ## DEVIATION
 1. CB 漏改 `main/commit.ts:150` 的 `PAGE_TYPES` 校验闸门（只改了 statements 的 z.enum）→ folder upsert 被 op 校验抛「非法」；**PM 补**，两处校验现同清单。
@@ -34,4 +39,5 @@
 
 ## PM 复跑节（PM 补）
 - 单测/typecheck/全仓：数值见上，PM 实跑。
-- 真机探针：待补。
+- 真机探针：PM 亲写 cdp-e2e-t64-01.mjs 并跑 = 15 PASS/0 FAIL（00:35，夹具 _scratch/t64-01/，electron 归零、真实根未触碰、node 孤儿差分=0）。命令：`node apps/desktop/scripts/ensure-abi.mjs electron && node docs/mockups/cdp-e2e-t64-01.mjs`。
+- **判定：T64 验收通过。**

@@ -1,0 +1,138 @@
+{
+  "task": "T64-01",
+  "ranAt": "2026-09-22T16:32:36.024Z",
+  "assertions": [
+    {
+      "step": "A|clamp",
+      "name": "A0 找到侧栏拖拽柄",
+      "ok": true,
+      "raw": "{\"x\":238,\"y\":0,\"width\":4,\"height\":735}"
+    },
+    {
+      "step": "A|clamp",
+      "name": "A1 侧栏拖到最小宽（≈200）",
+      "ok": true,
+      "raw": "side=200"
+    },
+    {
+      "step": "A|clamp",
+      "name": "[info] 首行 ⋯ 盒",
+      "ok": null,
+      "raw": "{\"left\":156,\"right\":366,\"top\":238,\"bottom\":498,\"w\":210,\"h\":260,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "A|clamp",
+      "name": "A2 首行 ⋯ 菜单四边在视口内（≥8px 余量）",
+      "ok": true,
+      "raw": "{\"left\":156,\"right\":366,\"top\":238,\"bottom\":498,\"w\":210,\"h\":260,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "A|clamp",
+      "name": "[info] 末行 右键盒",
+      "ok": null,
+      "raw": "{\"left\":32,\"right\":242,\"top\":295,\"bottom\":555,\"w\":210,\"h\":260,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "A|clamp",
+      "name": "A3 末行右键菜单四边在视口内",
+      "ok": true,
+      "raw": "{\"left\":32,\"right\":242,\"top\":295,\"bottom\":555,\"w\":210,\"h\":260,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "B|folder",
+      "name": "[info] 分体菜单开盒",
+      "ok": null,
+      "raw": "{\"left\":168,\"right\":378,\"top\":68,\"bottom\":184,\"w\":210,\"h\":116,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "B|folder",
+      "name": "B1 箭头菜单含「新建文件夹」",
+      "ok": true,
+      "raw": "{\"left\":168,\"right\":378,\"top\":68,\"bottom\":184,\"w\":210,\"h\":116,\"innerW\":1184,\"innerH\":735}"
+    },
+    {
+      "step": "B|folder",
+      "name": "B2 点「新建文件夹」后树新增一行=文件夹",
+      "ok": true,
+      "raw": "newId=01M34ZBTGWKGS39P14ZWZNEBGT rowsBefore=3"
+    },
+    {
+      "step": "B|folder",
+      "name": "[info] 文件夹行文本",
+      "ok": null,
+      "raw": ""
+    },
+    {
+      "step": "B|folder",
+      "name": "[info] 文件夹行图标签名",
+      "ok": null,
+      "raw": "<rect x=\"1\" y=\"3\" width=\"8\" height=\"1\" f"
+    },
+    {
+      "step": "B|folder",
+      "name": "B3 点 folder 行不建新页签（tabs 不变）",
+      "ok": true,
+      "raw": "before=3 after=3"
+    },
+    {
+      "step": "B|folder",
+      "name": "[info] folder 展开态",
+      "ok": null,
+      "raw": "false"
+    },
+    {
+      "step": "B|folder",
+      "name": "B4 子页挂在文件夹下且可见",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "step": "C|convert",
+      "name": "C1 点子页正常开编辑器（.pv-root 在）",
+      "ok": true,
+      "raw": "新建文件夹/T64子页"
+    },
+    {
+      "step": "C|convert",
+      "name": "C2 面包屑含文件夹名",
+      "ok": true,
+      "raw": "bc=新建文件夹/T64子页 folder=新建文件夹"
+    },
+    {
+      "step": "C|convert",
+      "name": "[info] C3 现场",
+      "ok": null,
+      "raw": "before=4 after=5 activeBefore=side-node-01M34ZBXWQ6WKNAPJXNJA2F68D"
+    },
+    {
+      "step": "C|convert",
+      "name": "C3 转普通页后点行恢复开页签（新页签出现且选中该页）",
+      "ok": true,
+      "raw": "before=4 after=5"
+    },
+    {
+      "step": "E|search-trash",
+      "name": "E1 搜索命中 folder 点击不白屏（#root 非空）",
+      "ok": true,
+      "raw": "root children=2"
+    },
+    {
+      "step": "E|search-trash",
+      "name": "E2 命令面板/搜索操作后应用仍存活",
+      "ok": true,
+      "raw": "2"
+    },
+    {
+      "step": "D|restart",
+      "name": "D1 重启后文件夹行仍在",
+      "ok": true,
+      "raw": "<rect x=\"1\" y=\"3\" width=\"8\" height=\"1\" f"
+    },
+    {
+      "step": "D|restart",
+      "name": "D2 重启后点 folder 行仍不建页签",
+      "ok": true,
+      "raw": "before=5 after=5"
+    }
+  ]
+}
