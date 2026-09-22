@@ -268,6 +268,7 @@
 | R13-⑩ 装包态托盘图标取证（D-1 承诺项闭环） | 09-22 | ✅ **7 PASS / 0 FAIL** | 新探针 `cdp-e2e-t55-02-packed.mjs` 直打 win-unpacked/Septcats.exe（isPackaged=true）：托盘解析命中 `<resources>/build/icon-tray.png` 且存在✓、窗口 `<resources>/build/icon.png`✓、候选序列 icon-tray@0 先于 icon.ico@3（名字优先于目录在装包态复现）✓、退出进程清零、真档案未写 |
 | R14（老板 09-22 晚：全程序像素黑框线） | 09-22 | ✅ **T62 收口** | 口径=外框 2px/内网格 1px 全走 ink-edge、focus 黑线加粗禁彩晕；PM 盘点 352 处 border 仅 17 已吃（ui 控件族+dbview 40+editor 21+面板页 ~110 欠账）；coverage/mockups 不动 |
 | R14-① T62 全局像素黑框线 | 09-22 | ✅ **PM 真机 83 PASS/0 FAIL** | CB 26 CSS+纪律测试(292行带理由白名单)落盘后死于上游 429（非任务失败）；PM 收尾：探针 4 缺陷定探针侧修复（query 前置/JSON Dialog/激活页还原/node 基线差分）→83/0；DbView 网格像素实测 1px/外框 2px 分层成立；抽噪 inkShare=2.63%；T59/T52 零回归；全仓 desktop 844/ui 156/editor 200/dbview 122 无红三门禁 selftest ✓；D-1~D-4 全追认（danger 红框保留语义=T53 立法） |
+| R14-② 0.4.1-rc.3 出包+冒烟（PM） | 09-22 | ✅ **54 PASS / 0 FAIL** | bump 43b8524；Setup 102,535,157 B sha256 `f4a087d3521c8cc4…`；win-unpacked 自报 0.4.1-rc.3；本地交付包（feed 未动=0.4.0），老板装它即含 R14 黑框线 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
