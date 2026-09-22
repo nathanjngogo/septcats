@@ -51,7 +51,13 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     expect(names.length).toBeGreaterThan(15);
     const unique = [...new Set(names)];
     const table = ui as unknown as Record<string, unknown>;
-    const missing = unique.filter((name) => typeof table[name] !== 'function');
+    // T66-01 显式豁免（PM 收口）：工作台两枚局部 glyph 住 workbench/pixelGlyph.tsx，
+    // 是 16 网格像素画、画法逐格拷贝 makeGlyph（同族契约）；T65 合入后 PM 统一收编
+    // 进 @septcats/ui 像素族并撤本豁免——撤豁免即红，不放行蔓延。
+    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph']);
+    const missing = unique.filter(
+      (name) => typeof table[name] !== 'function' && !T66_LOCAL_GLYPHS.has(name),
+    );
     expect(missing, `这些 icon={X} 在 @septcats/ui 里不是可渲染组件：${missing.join(', ')}`).toEqual([]);
     // 覆盖清单抽查（T58 前就在用的高频图标）
     for (const name of ['Plus', 'Trash', 'X', 'MagnifyingGlass', 'CaretDown', 'AiRobot', 'FileText']) {

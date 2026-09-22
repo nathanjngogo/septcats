@@ -20,6 +20,8 @@ import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
 import { closeTabFallback, moveTab, openInTabs, pruneTabs, readTabs, writeTabs } from './tabs';
 import { pageWidthActions } from './pageWidth';
+// T66-01 PM 收口：openInTab 收 home 用（workbench/state 仅依赖 ./store，无循环）。
+import { workbenchActions, workbenchStore } from '../workbench/state';
 
 export type PagesStatus = 'loading' | 'ready' | 'error';
 export type TreeScope = 'all' | 'favorites' | 'recent';
@@ -383,6 +385,11 @@ export const pagesActions = {
    * 附带既有副作用：祖先展开、touchRecent、回到 pages 视图；并持久化页签快照。
    */
   openInTab(id: string): void {
+    // T66-01 PM 收口：home（工作台）打开时，任何"打开页面"旁路（侧栏行/搜索/收藏/
+    // 最近/面包屑/命令面板）都先收 home 再开页——红线：home 不是死角。
+    if (workbenchStore.getState().view === 'home') {
+      workbenchActions.closeHome();
+    }
     const before = pagesStore.getState();
     const { tabs } = openInTabs(before.tabs, id);
     pagesStore.setState((state) => {
