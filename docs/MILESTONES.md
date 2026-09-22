@@ -273,6 +273,7 @@
 | R15-② rc.4 出包 | 09-22 | ✅ 冒烟 54/0 | `Septcats Setup 0.4.1-rc.4.exe` 102,535,625 B sha256 7cefc1cce5200044…（= rc.3 + T63 全宽修正；feed 未动） |
 | R16（老板 09-22 晚：侧栏两修） | 09-22 | 🔄 T64 立项 | ①侧栏最小宽(200)时行 ⋯ 菜单超屏（实测 left=-26px；⋯ 路径走老 absolute、右键 T60 已 clamp→统一 fixed+clamp）②侧栏新建文件夹=page_type'folder'（TEXT 列零迁移；树容器语义：点击展开不建页签、selectPage 兜底、FolderSimple 像素图标复用） |
 | R17（老板 09-22 晚：主题+工作台选型） | 09-22 | 🔄 T65/T66 派子Agent | 主题=方案①画廊（palette 派系 data-palette 覆写块+LayoutPicker 同款弹框；语义色不动）；工作台=方案A+库（home 视图+数据库卡常驻+待办/最近/收藏卡，现有模式↔工作台一键切换）；两单在独立 worktree feat/t65-theme-gallery / feat/t66-workbench 并行（CB 忙时改派子 Agent=老板新规则），探针由 PM 合并后统一跑 |
+| R18（老板 09-22 深夜：页面密码锁） | 09-22 | 📋 T67 立项排队 | 锁=真加密：v10 新表 page_lock（scrypt N=2^17 派生页面 DEK+AES-256-GCM 信封复用 sync/crypto）、正文块落库加密、锁卡 UI+恢复码兜底+限速；限制声明=标题明文/锁页不进搜索；等 T64 合入后派 CB（主树文件面重叠） |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
