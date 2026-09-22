@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
@@ -47,7 +47,16 @@ import { applyApplicationMenu } from './menu';
 import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
 import { createCloseGuard, parseCloseDecision, type CloseGuard } from './closeGuard';
 import { buildTrayMenuTemplate } from './trayTemplate';
-import { createTray, destroyTray, getTray, getTrayMenu, refreshTrayMenu } from './tray';
+import {
+  createTray,
+  destroyTray,
+  getTray,
+  getTrayMenu,
+  refreshTrayMenu,
+  resolveTrayIconPath,
+  trayIconBaseDirs,
+} from './tray';
+import { iconCandidatePaths, pickFirstExisting, TRAY_ICON_NAMES, WINDOW_ICON_NAMES } from './iconAssets';
 import {
   parseFeedUrlFromYml,
   registerUpdaterIpc,
@@ -164,15 +173,28 @@ function captureStartupPerf(userDataDir: string): void {
 /** device_id 缺失/异常时的兜底 actor（[a-z0-9]{8,32}；正常路径取 meta.device_id 的小写形式）。 */
 const FALLBACK_ACTOR: ActorId = 'desktop0001';
 
+/**
+ * 窗口图标路径（T55-02 §1③）：查找序列与 tray.ts 同构（`iconAssets.ts` 纯函数展开，
+ * 打包 resourcesPath → appPath → out/main 上溯两位）。找不到 → null = 交回可执行文件
+ * 默认图标（不因缺图阻断建窗，口径同托盘）。
+ */
+function resolveWindowIconPath(): string | null {
+  return pickFirstExisting(iconCandidatePaths(WINDOW_ICON_NAMES, trayIconBaseDirs(), join), existsSync);
+}
+
 function createWindow(): void {
+  const iconPath = resolveWindowIconPath();
+  platformContext?.logger.forModule('main').info(`窗口图标解析：${iconPath ?? '(未找到，用可执行文件默认图标)'}`);
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 720,
     minHeight: 480,
     show: false,
-    backgroundColor: '#FBFBFA',
+    // T53-01 灰阶谱内的 chrome 面（#FBFBFA 是暖白漏网项，与 DESIGN.md canvas #F5F5F5 对齐）
+    backgroundColor: '#F5F5F5',
     title: 'Septcats',
+    ...(iconPath === null ? {} : { icon: iconPath }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
@@ -1100,4 +1122,20 @@ export const t54Probe = {
     menu.popup({ window, x, y });
     return true;
   },
+};
+
+// --- T55-02 真机取证口 -------------------------------------------------------
+/**
+ * 图标「解析到哪个文件」的只读取证口（TASK-T55-02 §1⑥）：探针据此断言托盘/窗口
+ * 图标真的命中新像素资产，而不是回落空图或旧 `.ico`。等价于在 main 进程里调一次
+ * 真机解析，无副作用、不被产品代码路径调用。
+ */
+export const t55Probe = {
+  trayIconPath: resolveTrayIconPath,
+  windowIconPath: resolveWindowIconPath,
+  /** 两份候选序列原文（探针据此断言「icon-tray.png 恒排在 icon.ico 之前」）。 */
+  iconCandidates: (): { tray: string[]; window: string[] } => ({
+    tray: iconCandidatePaths(TRAY_ICON_NAMES, trayIconBaseDirs(), join),
+    window: iconCandidatePaths(WINDOW_ICON_NAMES, trayIconBaseDirs(), join),
+  }),
 };

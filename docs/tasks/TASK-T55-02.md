@@ -12,7 +12,7 @@
 
 ## 1. 必须做到（全部接线）
 
-1. **装包资源生成**：新脚本 `apps/desktop/scripts/pixel-icons.mjs`（import 根 scripts/pixel-png.mjs 的现成函数，勿重复实现）：
+1. **装包资源生成**（PM 注：D-2 追认后撤回本小节脚本要求——根 `scripts/build-pixel-ico.mjs` 已直出 build 四份，桌面侧不新增脚本；以下为当时预设内容存档）：
    - `apps/desktop/build/icon.png` ← `png/C-256.png`
    - `apps/desktop/build/icon-tray.png` ← `png/T-16.png`、`icon-tray@2x.png` ← `T-32.png`
    - **Windows `.ico` 纯 stdlib 组装**（Vista+ 支持 PNG 表项；参考 make-icon.mjs 里 buildIco 的思路但输入是现成 PNG 文件）→ `apps/desktop/build/icon.ico`，含 16/24/32/48/256 五层，**16/24/32 层用 T 原生图、48/256 用 C**。断言：解析回读层数与逐层尺寸一致。

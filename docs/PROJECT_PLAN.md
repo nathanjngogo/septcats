@@ -526,11 +526,17 @@ type Op = {
 10. **PM 执行 UI 工作时必须加载的技能**：`design-md`、`design-taste-frontend`、`apple-design`、`emil-design-eng`、`animate`、`claude-design`/`sketch`（mockup）、`popular-web-designs`（参照系）、`humanizer`（文案）。
 
 ## 17. 品牌规范：Septcats
+
+> **T55-02 决议（2026-09-22，覆盖本节旧「单线描猫 + 琥珀铃铛」全部条款）**：老板 09-21 指令「重新设计图标：3D像素画风，布偶猫图像，正方形圆角，白底，黑白灰图案。」→ 图形标改为 **3D 像素浮雕布偶猫 · 白底圆角 · 黑白灰**；托盘用 **16px 原生简化子型**。旧线猫草案与琥珀铃铛一并退役（铃铛色随 T53-01 灰阶化）；旧草案留痕于 `docs/brand/`（未接线，不得再引用）。
+
 | 项 | 规格 |
 |---|---|
 | 名称 | **Septcats**（用户定名，Q8）。包名/深链统一小写：`septcats`、`septcats://`；旧代号「砚台」退役 |
-| 图形标 | **单线描猫**：坐姿 3/4 侧影，闭合轮廓，双须各二，圆头端点 + 圆角连接，**白底**；唯一彩色元素 = 颈圈铃铛 `{colors.accent}`。属 §16.6 的唯一例外（品牌资产，非 UI 图标），需单独评审 |
+| 图形标 | **3D 像素浮雕布偶猫**：正面 28×28 像素语法，右下 1 格挤出浮雕 + 每格上/左亮 bevel、下/右暗 bevel；**白底圆角**、**黑白灰零彩色**（布偶猫特征靠明度差：重点色深灰 / 身体浅灰 / 胸毛袜白 / 眼黑带白高光）。属 §16.6 的唯一例外（品牌资产，非 UI 图标），需单独评审 |
+| 三变体 | **A** 侧坐全身（尾巴左绕）/ **B** 正面大头（小尺寸最稳）/ **C** 正面坐姿 + 环绕尾（**默认接线版**，8/10 一眼布偶猫）。三选一决策区 + 换型一行命令见 `assets/brand/README.md` |
+| 托盘子型 | **T** = 16×16 原生简化子型（1 格 = 1 物理像素，直角满幅，只保「双尖耳 + 面罩大眼 + 圆头」）；`icon-tray.png`（T-16）+ `icon-tray@2x.png`（T-32） |
 | 字标 | `Septcats`，Geist Sans Medium，紧字距；**无 tagline**（反 AI 味） |
-| 应用图标 | SVG master → `scripts/build-icons.mjs` 生成 `.ico`（16–256 多尺寸）+ `.icns`（含深色底变体），纳入 CI 构建 |
-| 主题呼应 | 浅色主题即「白底线猫」；深色主题换银线；设置页 About 展示猫标大图 |
-| 冻结流程 | PM 出 3 版 SVG 草案 → 你选 1 → 冻结至 `assets/brand/septcats.svg`，此后改动需你重新批准 |
+| 应用图标 | SVG master（`assets/brand/septcats-3dpix-{A,B,C,T}.svg`）→ `node scripts/generate-pixel-icons.mjs` + `node scripts/build-pixel-ico.mjs` → `apps/desktop/build/icon.ico`（**五层 PNG 表项：T16/T24/T32 + C48/C256**）、`icon.png`（C-256）、`icon-tray[@2x].png`；随包经 `electron-builder.yml` 的 `extraResources` 落到 `<resources>/build/` |
+| 尺寸档 | A/B/C：16/32/48/256；T：16/24/32（产物在 `assets/brand/dist/png/`） |
+| 主题呼应 | 品牌标不随主题变色（白底黑白灰一份通用）；UI 不消费品牌色——`accent` 自 T53-01 起为深灰实心，两粒语义色 `danger`/`success` 与品牌无关 |
+| 冻结流程 | PM 出资产 → 老板三选一 → 冻结并接线（当前 = C）；此后改动需重新批准。生成/质检命令与换型路径见 `assets/brand/README.md` |

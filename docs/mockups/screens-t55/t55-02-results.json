@@ -1,0 +1,224 @@
+{
+  "task": "TASK-T55-02 真机取证（像素布偶猫图标接线）",
+  "ranAt": "2026-09-22T05:11:39.044Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) + main-process Node inspector (--inspect) 读 require.cache 的 t55Probe/t54Probe + desktopCapturer 裁剪抓屏",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t55-02\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t55-02\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t55-02\\ud\\septcats.settings.json"
+  },
+  "expected": {
+    "trayIcon": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png",
+    "windowIcon": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png",
+    "backgroundColor": "#f5f5f5"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t55-02-taskbar.png",
+    "t55-02-taskbar-buttons-zoom.png",
+    "t55-02-tray.png",
+    "t55-02-tray-overflow.png",
+    "t55-02-tray-icon-zoom.png"
+  ],
+  "electronProcessesAfterQuit": 0,
+  "pass": 14,
+  "fail": 0,
+  "quiet": [
+    {
+      "gracefulExited": true,
+      "forced": false,
+      "pid": 27516
+    }
+  ],
+  "phases": {
+    "icon": {
+      "moduleCached": true,
+      "probe": true,
+      "trayIcon": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png",
+      "trayIconExists": true,
+      "windowIcon": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png",
+      "windowIconExists": true,
+      "candidates": {
+        "tray": [
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\node_modules\\electron\\dist\\resources\\build\\icon-tray.png",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\node_modules\\electron\\dist\\resources\\build\\icon.ico",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.ico",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.ico"
+        ],
+        "window": [
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\node_modules\\electron\\dist\\resources\\build\\icon.png",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png",
+          "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png"
+        ]
+      },
+      "trayBounds": {
+        "x": 2314,
+        "y": 1392,
+        "width": 32,
+        "height": 48
+      },
+      "trayDestroyed": false,
+      "title": "Septcats",
+      "backgroundColor": "#F5F5F5"
+    },
+    "display": {
+      "id": 3814614191,
+      "scale": 1,
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1440
+      },
+      "workArea": {
+        "x": 0,
+        "y": 0,
+        "width": 2560,
+        "height": 1392
+      },
+      "taskbarHeight": 48,
+      "all": [
+        {
+          "id": 3814614191,
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 2560,
+            "height": 1440
+          },
+          "scale": 1
+        }
+      ]
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t55-02\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t55-02\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "boot",
+      "name": "[info] 期望资产",
+      "ok": null,
+      "raw": "托盘=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png 窗口=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|boot",
+      "name": "G0-1 夹具成立：独立 userData/rootPath 起应用，渲染面就绪（.app-side + pages API）",
+      "ok": true,
+      "raw": "userData=E:\\Hermes Agent工作空间\\_scratch\\t55-02\\ud"
+    },
+    {
+      "step": "G0|boot",
+      "name": "G0-2 夹具数据根已物化（未触碰真实档案）",
+      "ok": true,
+      "raw": "root exists=true"
+    },
+    {
+      "step": "G1|tray-icon",
+      "name": "[info] 图标解析（原始）",
+      "ok": null,
+      "raw": "{\"moduleCached\":true,\"probe\":true,\"trayIcon\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon-tray.png\",\"trayIconExists\":true,\"windowIcon\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon.png\",\"windowIconExists\":true,\"candidates\":{\"tray\":[\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\node_modules\\\\electron\\\\dist\\\\resources\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\node_modules\\\\electron\\\\dist\\\\resources\\\\build\\\\icon.ico\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon.ico\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon.ico\"],\"window\":[\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\node_modules\\\\electron\\\\dist\\\\resources\\\\build\\\\icon.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\build\\\\icon.png\"]},\"trayBounds\":{\"x\":2314,\"y\":1392,\"width\":32,\"height\":48},\"trayDestroyed\":false,\"title\":\"Septcats\",\"backgroundColor\":\"#F5F5F5\"}"
+    },
+    {
+      "step": "G1|tray-icon",
+      "name": "G1-1 托盘图标真机解析命中 icon-tray.png（不是旧 icon.ico、不是空图）",
+      "ok": true,
+      "raw": "trayIcon=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon-tray.png"
+    },
+    {
+      "step": "G1|tray-icon",
+      "name": "G1-2 解析到的托盘图标文件存在（existsSync 真机为真）",
+      "ok": true,
+      "raw": "exists=true"
+    },
+    {
+      "step": "G1|tray-icon",
+      "name": "G1-3 候选序列口径成立：三个基目录的 icon-tray.png 全部排在 icon.ico 之前（名字优先于目录）",
+      "ok": true,
+      "raw": "candidates=[\"E:/Hermes Agent工作空间/Septcats/apps/desktop/node_modules/electron/dist/resources/build/icon-tray.png\",\"E:/Hermes Agent工作空间/Septcats/apps/desktop/build/icon-tray.png\",\"E:/Hermes Agent工作空间/Septcats/apps/desktop/build/icon-tray.png\",\"E:/Hermes Agent工作空间/Septcats/apps/desktop/node_modules/electron/dist/resources/build/icon.ico\",\"E:/Hermes Agent工作空间/Septcats/apps/desktop/build/icon.ico\",\"E:/Hermes Agent工作空间/Septcats/apps/desktop/build/icon.ico\"]"
+    },
+    {
+      "step": "G1|tray-icon",
+      "name": "G1-4 托盘实例存在且已装图（icon bounds 宽高 > 0；空图会是 0×0）",
+      "ok": true,
+      "raw": "destroyed=false bounds={\"x\":2314,\"y\":1392,\"width\":32,\"height\":48}"
+    },
+    {
+      "step": "G2|window",
+      "name": "[info] 置顶（原始）",
+      "ok": null,
+      "raw": "{\"visible\":true,\"focused\":true,\"title\":\"Septcats\",\"bounds\":{\"x\":680,\"y\":296,\"width\":1200,\"height\":800}}"
+    },
+    {
+      "step": "G2|window",
+      "name": "G2-1 窗口 title 正常（main 侧 getTitle = Septcats）",
+      "ok": true,
+      "raw": "title=\"Septcats\""
+    },
+    {
+      "step": "G2|window",
+      "name": "G2-2 窗口图标真机解析命中 icon.png 且文件存在",
+      "ok": true,
+      "raw": "windowIcon=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\build\\icon.png exists=true"
+    },
+    {
+      "step": "G2|window",
+      "name": "G2-3 窗口 backgroundColor = #F5F5F5（T53-01 灰阶漏网项已修：不再是 #FBFBFA）",
+      "ok": true,
+      "raw": "backgroundColor=\"#F5F5F5\""
+    },
+    {
+      "step": "G3|shots",
+      "name": "[info] 主显示器（原始）",
+      "ok": null,
+      "raw": "{\"id\":3814614191,\"scale\":1,\"bounds\":{\"x\":0,\"y\":0,\"width\":2560,\"height\":1440},\"workArea\":{\"x\":0,\"y\":0,\"width\":2560,\"height\":1392},\"taskbarHeight\":48,\"all\":[{\"id\":3814614191,\"bounds\":{\"x\":0,\"y\":0,\"width\":2560,\"height\":1440},\"scale\":1}]}"
+    },
+    {
+      "step": "G3|shots",
+      "name": "G3-1 任务栏区窗口级截图已产出（置顶窗口 → 任务栏出现 Septcats 按钮）",
+      "ok": true,
+      "raw": "rect={\"x\":0,\"y\":1392,\"width\":2560,\"height\":48} bytes=8769 source=3814614191 err=null"
+    },
+    {
+      "step": "G3|shots",
+      "name": "G3-1b 任务栏按钮群 6× 放大截图已产出（白底像素猫 = 窗口 icon.png 落地）",
+      "ok": true,
+      "raw": "rect={\"x\":1080,\"y\":1392,\"width\":400,\"height\":48} bytes=11327 err=null"
+    },
+    {
+      "step": "G3|shots",
+      "name": "G3-2 托盘区窗口级截图已产出（通知区条带）",
+      "ok": true,
+      "raw": "rect={\"x\":2140,\"y\":1392,\"width\":420,\"height\":48} bytes=2549 source=3814614191 err=null"
+    },
+    {
+      "step": "G3|shots",
+      "name": "G3-3（增强）真点通知区溢出按钮 → 浮层打开 → 截图（含 3× 最近邻放大版）可见托盘 T 子型图标",
+      "ok": true,
+      "raw": "trayBounds={\"x\":2314,\"y\":1392,\"width\":32,\"height\":48} click=(2330,1416) flyout={\"x\":2120,\"y\":962,\"width\":440,\"height\":430} before=16050B after=19869B zoom3x=33324B ps_status=0"
+    },
+    {
+      "step": "teardown",
+      "name": "G4-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false,\"pid\":27516}"
+    }
+  ]
+}

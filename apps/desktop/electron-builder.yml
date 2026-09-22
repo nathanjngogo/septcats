@@ -19,6 +19,20 @@ files:
   - out/**
   - package.json
 
+# —— 运行时品牌图标（TASK-T55-02 §1④）——
+# `directories.buildResources`（build/）只服务 builder 生成 exe 图标与安装器素材，**不进包**：
+# 0.3.0 产物实测 `dist/win-unpacked/resources/` 无 build/、app.asar 顶层仅 node_modules/out/package.json。
+# 而 tray.ts / main/index.ts 按 `<resourcesPath>/build/<name>` 探测（打包态首选位），故显式复制四份。
+# 体积：四文件合计 <6 KB（T55 新图，无感）。
+extraResources:
+  - from: build
+    to: build
+    filter:
+      - icon.png
+      - icon.ico
+      - icon-tray.png
+      - icon-tray@2x.png
+
 # —— Win：NSIS per-user（免管理员，支持 /S 静默安装/卸载）——
 win:
   icon: build/icon.ico
