@@ -1,6 +1,6 @@
 {
   "task": "TASK-T52-01 真机取证（布局融合三件）",
-  "ranAt": "2026-09-21T17:18:08.918Z",
+  "ranAt": "2026-09-22T08:31:18.713Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 四宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -54,21 +54,21 @@
       "btnW": 24,
       "barLeft": 248,
       "barRight": 1176,
-      "barCenterY": 58,
+      "barCenterY": 59,
       "barTop": 40,
-      "barHeight": 36,
-      "activeCenterY": 62,
+      "barHeight": 38,
+      "activeCenterY": 63,
       "inViewport": true
     },
     "colors": {
-      "barBg": "rgb(245, 245, 245)",
+      "barBg": "rgba(0, 0, 0, 0)",
       "barBorderBottom": "0px",
       "activeBg": "rgb(255, 255, 255)",
       "activeBorderBottom": "0px",
       "inactiveBg": "rgb(237, 237, 237)",
       "pvBg": "rgb(255, 255, 255)",
       "pvTop": 76,
-      "barBottom": 76,
+      "barBottom": 78,
       "belowActive": "pv-root"
     },
     "widths": [
@@ -134,14 +134,14 @@
       "clusterH": 28
     },
     "darkColors": {
-      "barBg": "rgb(20, 20, 20)",
+      "barBg": "rgba(0, 0, 0, 0)",
       "barBorderBottom": "0px",
       "activeBg": "rgb(10, 10, 10)",
       "activeBorderBottom": "0px",
       "inactiveBg": "rgb(30, 30, 30)",
       "pvBg": "rgb(10, 10, 10)",
       "pvTop": 76,
-      "barBottom": 76,
+      "barBottom": 78,
       "belowActive": "pv-root"
     }
   },
@@ -198,7 +198,7 @@
       "step": "G2|toggle-position",
       "name": "[info] 折叠钮量测（原始）",
       "ok": null,
-      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barRight\":1176,\"barCenterY\":58,\"barTop\":40,\"barHeight\":36,\"activeCenterY\":62,\"inViewport\":true}"
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barRight\":1176,\"barCenterY\":59,\"barTop\":40,\"barHeight\":38,\"activeCenterY\":63,\"inViewport\":true}"
     },
     {
       "step": "G2|toggle-position",
@@ -210,19 +210,19 @@
       "step": "G2|toggle-position",
       "name": "G2-2 §2②：钮中心 y 与标签条行中心差 ≤ 2px",
       "ok": true,
-      "raw": "btnCenterY=58 barCenterY=58 Δ=0.0"
+      "raw": "btnCenterY=58 barCenterY=59 Δ=1.0"
     },
     {
       "step": "G2|toggle-position",
       "name": "[info] 参考：钮中心 y 与活动标签中心差（标签底对齐，非验收项）",
       "ok": null,
-      "raw": "btnCenterY=58 activeCenterY=62 Δ=4.0"
+      "raw": "btnCenterY=58 activeCenterY=63 Δ=5.0"
     },
     {
       "step": "G3|fusion",
       "name": "[info] 融合色值/分隔线（原始）",
       "ok": null,
-      "raw": "{\"barBg\":\"rgb(245, 245, 245)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(237, 237, 237)\",\"pvBg\":\"rgb(255, 255, 255)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+      "raw": "{\"barBg\":\"rgba(0, 0, 0, 0)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(237, 237, 237)\",\"pvBg\":\"rgb(255, 255, 255)\",\"pvTop\":76,\"barBottom\":78,\"belowActive\":\"pv-root\"}"
     },
     {
       "step": "G3|fusion",
@@ -234,19 +234,19 @@
       "step": "G3|fusion",
       "name": "G3-2 §2③：活动标签背景 = .pv-root 背景（连通无缝，贴色值）",
       "ok": true,
-      "raw": "activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245) inactiveBg=rgb(237, 237, 237)"
+      "raw": "activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) barBg=rgba(0, 0, 0, 0) inactiveBg=rgb(237, 237, 237)"
     },
     {
       "step": "G3|fusion",
       "name": "G3-3 非活动标签沉 surface（≠ 活动标签色、≠ 行底色）",
       "ok": true,
-      "raw": "inactiveBg=rgb(237, 237, 237) activeBg=rgb(255, 255, 255) barBg=rgb(245, 245, 245)"
+      "raw": "inactiveBg=rgb(237, 237, 237) activeBg=rgb(255, 255, 255) barBg=rgba(0, 0, 0, 0)"
     },
     {
       "step": "G3|fusion",
       "name": "G3-4 §2③：活动标签下缘正下方 elementFromPoint 命中正文容器（活动列「冒泡」进编辑区，无隔离带元素）",
       "ok": true,
-      "raw": "belowActive=\"pv-root\" barBottom=76 pvTop=76"
+      "raw": "belowActive=\"pv-root\" barBottom=78 pvTop=76"
     },
     {
       "step": "G3|fusion",
@@ -330,13 +330,13 @@
       "step": "G7|screens",
       "name": "G7-2 窗口级补充截图（含标题栏 + 原生菜单栏，侧栏顶到菜单下沿）",
       "ok": true,
-      "raw": "bytes=42281 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
+      "raw": "bytes=41301 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
     },
     {
       "step": "G7|screens",
       "name": "[info] 浅色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2852,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2738,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",
@@ -348,7 +348,7 @@
       "step": "G7|screens",
       "name": "[info] 深色融合色值（原始）",
       "ok": null,
-      "raw": "{\"barBg\":\"rgb(20, 20, 20)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(10, 10, 10)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(30, 30, 30)\",\"pvBg\":\"rgb(10, 10, 10)\",\"pvTop\":76,\"barBottom\":76,\"belowActive\":\"pv-root\"}"
+      "raw": "{\"barBg\":\"rgba(0, 0, 0, 0)\",\"barBorderBottom\":\"0px\",\"activeBg\":\"rgb(10, 10, 10)\",\"activeBorderBottom\":\"0px\",\"inactiveBg\":\"rgb(30, 30, 30)\",\"pvBg\":\"rgb(10, 10, 10)\",\"pvTop\":76,\"barBottom\":78,\"belowActive\":\"pv-root\"}"
     },
     {
       "step": "G7|screens",
@@ -360,7 +360,7 @@
       "step": "G7|screens",
       "name": "[info] 深色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2922,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2830,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",

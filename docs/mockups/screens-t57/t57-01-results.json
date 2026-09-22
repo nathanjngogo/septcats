@@ -1,6 +1,6 @@
 {
   "task": "TASK-T57-01 真机取证（布局选择弹框 + 独立布局编辑器）",
-  "ranAt": "2026-09-22T06:34:34.754Z",
+  "ranAt": "2026-09-22T08:32:01.994Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/拖动/截图 + Emulation.setDeviceMetricsOverride 两宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -70,7 +70,7 @@
       "sidebarDisplay": "block",
       "sidebarLeft": 0,
       "sidebarTop": 0,
-      "appSideWidth": 239,
+      "appSideWidth": 240,
       "topbarLeft": 240,
       "topbarRight": 1184,
       "mainWidth": 944,
@@ -116,7 +116,7 @@
         "sidebarDisplay": "block",
         "sidebarLeft": 0,
         "sidebarTop": 0,
-        "appSideWidth": 239,
+        "appSideWidth": 240,
         "topbarLeft": 240,
         "topbarRight": 1184,
         "mainWidth": 944,
@@ -134,7 +134,7 @@
         "sidebarDisplay": "block",
         "sidebarLeft": 0,
         "sidebarTop": 0,
-        "appSideWidth": 319,
+        "appSideWidth": 320,
         "topbarLeft": 320,
         "topbarRight": 1184,
         "mainWidth": 864,
@@ -152,7 +152,7 @@
       "sidebarDisplay": "block",
       "sidebarLeft": 0,
       "sidebarTop": 0,
-      "appSideWidth": 299,
+      "appSideWidth": 300,
       "topbarLeft": 300,
       "topbarRight": 1184,
       "mainWidth": 884,
@@ -170,7 +170,7 @@
         "sidebarDisplay": "block",
         "sidebarLeft": 0,
         "sidebarTop": 0,
-        "appSideWidth": 239,
+        "appSideWidth": 240,
         "topbarLeft": 240,
         "topbarRight": 1184,
         "mainWidth": 944,
@@ -200,7 +200,7 @@
       "sidebarDisplay": "block",
       "sidebarLeft": 0,
       "sidebarTop": 0,
-      "appSideWidth": 239,
+      "appSideWidth": 240,
       "topbarLeft": 240,
       "topbarRight": 1184,
       "mainWidth": 944,
@@ -217,7 +217,7 @@
       "btnCenterY": 58,
       "btnW": 24,
       "barLeft": 248,
-      "barCenterY": 58,
+      "barCenterY": 59,
       "inViewport": true
     },
     "colors": {
@@ -379,7 +379,7 @@
       "step": "G3|apply-focus",
       "name": "[info] 选卡前侧栏（原始）",
       "ok": null,
-      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":239,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":240,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
     },
     {
       "step": "G3|apply-focus",
@@ -391,7 +391,7 @@
       "step": "G3|apply-focus",
       "name": "G3-1 §1.7：点 focus → 主窗口侧栏 getBoundingClientRect 实测变窄（240 → 0，display:none）",
       "ok": true,
-      "raw": "before=240px after=0px display=none appSide=239→0"
+      "raw": "before=240px after=0px display=none appSide=240→0"
     },
     {
       "step": "G3|apply-focus",
@@ -439,13 +439,13 @@
       "step": "G5|slider",
       "name": "G5-1 §1.7：真实鼠标拖动宽度滑杆 → 主窗口 .sc-shell__sidebar / .app-side 实测宽度跟随（DOM 实测）",
       "ok": true,
-      "raw": "dragValue=320 sidebar 240→320 var=320px appSide=319"
+      "raw": "dragValue=320 sidebar 240→320 var=320px appSide=320"
     },
     {
       "step": "G5|slider",
       "name": "[info] 滑杆精确回写 300（原始）",
       "ok": null,
-      "raw": "{\"setValue\":\"300\",\"sidebarWidth\":300,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":299,\"topbarLeft\":300,\"topbarRight\":1184,\"mainWidth\":884,\"mainLeft\":300,\"layoutSidebarVar\":\"300px\",\"layoutMeasureVar\":\"900px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+      "raw": "{\"setValue\":\"300\",\"sidebarWidth\":300,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":300,\"topbarLeft\":300,\"topbarRight\":1184,\"mainWidth\":884,\"mainLeft\":300,\"layoutSidebarVar\":\"300px\",\"layoutMeasureVar\":\"900px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
     },
     {
       "step": "G5|slider",
@@ -481,7 +481,7 @@
       "step": "G8|t52-redlines",
       "name": "[info] T52 通高量测（原始）",
       "ok": null,
-      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":239,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":240,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
     },
     {
       "step": "G8|t52-redlines",
@@ -499,13 +499,13 @@
       "step": "G8|t52-redlines",
       "name": "[info] 折叠钮量测（原始）",
       "ok": null,
-      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barCenterY\":58,\"inViewport\":true}"
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barCenterY\":59,\"inViewport\":true}"
     },
     {
       "step": "G8|t52-redlines",
       "name": "G8-3 T52 红线：折叠钮在标签行最左（中心 x ∈ [行左, 行左+64]、|Δy(行中心)| ≤ 2、24px 图标位、在视口内）",
       "ok": true,
-      "raw": "centerX=260 barLeft=248 Δy=0.0 w=24 inViewport=true"
+      "raw": "centerX=260 barLeft=248 Δy=1.0 w=24 inViewport=true"
     },
     {
       "step": "G8|t52-redlines",
@@ -559,7 +559,7 @@
       "step": "G10|i18n-en",
       "name": "G10-2 窗口级补充截图（含标题栏 + 原生菜单栏）",
       "ok": true,
-      "raw": "bytes=52674 err=null"
+      "raw": "bytes=51717 err=null"
     },
     {
       "step": "G10|i18n-en",

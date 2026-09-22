@@ -29,6 +29,8 @@ colors:
   bevel-hi: "#FFFFFF"      # 上/左 2px 硬边高亮
   bevel-lo: "#A9A9A9"      # 下/右 2px 硬边暗部
   shadow-pixel: "#C6C6C6"  # offset 投影唯一来源（无 blur）
+  # ---- T59-01 像素边框色（区域边界唯一色源；与 ink 同值但语义独立，详见「Pixel Borders」）----
+  ink-edge: "#1A1A1A"      # 区域边界描边（浅色 = 黑边）
   # ---- 深色主题覆盖值不写在这里：由 tokens 构建脚本从 colors-dark 组生成 [data-theme=dark] ----
 typography:
   font-ui:
@@ -163,6 +165,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 | bevel-hi | #FFFFFF | #565656 | 像素高亮面 |
 | bevel-lo | #A9A9A9 | #0A0A0A | 像素暗部 |
 | shadow-pixel | #C6C6C6 | #050505 | 实心 offset 投影 |
+| ink-edge | #1A1A1A | #EDEDED | 区域边界描边（T59-01）。**深色取亮边**：近黑底（#141414/#0A0A0A）上黑描边等于不可见，改以亮边描述轮廓——见「Pixel Borders」 |
 | shadow 族 | 墨色 12–28% | 提深至 40–60%，加 1px hairline-strong 上缘高光 | 仅 popover/modal/tinted-light 三处浮层阴影；按钮立体走 bevel/pixel 组 |
 
 对比度红线（门禁：packages/ui/test/contrast.test.ts，WCAG AA 全部 ≥4.5）：T53-01 灰阶化后重测——门禁配对表**逐对全过**，最差对为浅色 ink-faint/surface 4.55（提档前 #757575 仅 3.94）；其余文字对（ink、ink-secondary 两主题 × canvas/surface/surface-raised/content）与 `on-accent/accent`、`accent|danger|success` 对 canvas 两主题均 ≥4.5。**icon-faint（#9A9A9A/#6E6E6E）不是文字 token，禁用于任何正文级文字**（浅色对 canvas 仅 2.58），只准用于图标、三角、装饰性非文字元素。
@@ -174,6 +177,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - **accent（灰阶 #333333/#D4D4D4）**：T53-01 琥珀退役后，`accent` 只表达「实心强调底」（主按钮、勾选框选中底、开关 on 态、进度填充、spinner 头）。**强调态一律靠明度差 + 描边**（活动标签 = content 底 + 无分隔线；选中行 = surface-active + 字重；焦点 = focus-ring 外环）；**禁止**大面积铺色、禁止渐变、禁止发光晕（glow）。
 - **两粒语义色**：`danger`（错误红）落点 = 删除确认/冲突/同步失败/表单错误/危险菜单项；`success`（同步绿）落点 = 同步进行中呼吸点/同步完成点/toast 成功图标。两处之外禁用色相。
 - **bevel-hi / bevel-lo / shadow-pixel**：像素立体的三个色源——高亮面、暗部、实心投影。只准被 `elevation.bevel-*` / `elevation.pixel-*` 组合引用。
+- **ink-edge**：**区域边界**（面板接缝、浮层外轮廓）的唯一色源，与文字色 `ink` 语义分离（同值仅为巧合，可独立微调）。只准用于 2px 结构描边——控件不上 ink-edge（见「Pixel Borders」）。
 - **hairline**：1px 分隔线唯一来源。表格用横向 hairline，纵向不用。
 
 ## Typography
@@ -209,6 +213,27 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - 圆角家族（T53-01 像素化）：控件 xs/sm(2px) · 浮层 md(4px) · 模态 lg(6px) · 大浮层 xl(8px) · chip/full pill。同层组件必须同圆角；混用需书面理由。
 - **像素风约束**：交互件圆角一律 ≤2px（直角或 2px 微圆角），禁止大圆角胶囊化按钮；`full` 只留给 pill（标签/状态点/开关轨/进度条）。
 - 猫形语言仅一处例外：顶栏同步状态点（旧称「铃铛」，T53-01 已灰阶化为纯圆点）用 `full` + 呼吸动画（motion.fast 淡入淡出，reduced-motion 下静态）。
+
+## Pixel Borders（T59-01 · R12：老板 09-22「像素风黑色边框」）
+
+- **`ink-edge` = 区域边界的唯一色源**。与 `ink` 同值不同义：`ink` 是文字色，`ink-edge` 是结构线色，两者可独立微调（故独立成 token，不共用 `ink`）。
+- **2px 宽度谱**：**区域边界**（面板接缝、浮层外轮廓）一律 `2px solid {colors.ink-edge}`——与 `bevel-*` 硬边、模态描边的 2px 同谱（像素风 = 2px 网格，禁 1px 半吊子、禁 1.5px 混谱）。
+- **深色主题 = 亮边（口径与原因）**：浅色 `#1A1A1A`（老板点名的"黑色边框"）。深色底 `canvas #141414` / `content #0A0A0A` 上用黑描边对比度 ≈1.05，等于**看不见**，故深色取 `#EDEDED`（亮边）——像素游戏 dark 关卡以亮边描述轮廓的惯例：**边界的语义是"结构分界"，靠与相邻面的明度差成立，不靠"黑"这个色相本身**。两主题因此是「结构反转」，不是同一支色的两档透明度。*（老板终审项：深色=亮边）*
+- **相邻边只画一次**：接缝由**跨该缝更长的一侧独占绘制**，禁止两枚相邻元素各画一半（会叠出 4px 粗缝）。接缝归属表（网格容器上显式定死）：
+
+  | 接缝 | 画线者 | 线 |
+  |---|---|---|
+  | 顶栏 ↔ 主区（右列横向） | `.sc-shell__topbar` | `border-bottom` |
+  | 侧栏 ↔ 主区（纵向，通全高） | `.sc-shell__sidebar` | 右缘 2px 描边条（`::after` 定位条，位置等价 `border-right`） |
+  | 标签条 ↔ 正文（横向） | `.pv-root` | `border-top` |
+  | 编辑列 ↔ AI 面板（右侧布局，纵向） | `.ai-chat` | `border-left` |
+  | 编辑列 ↔ AI 面板（底部布局，横向） | `.ai-chat` | `border-top` |
+
+  编辑列自身**不补**左/右/下描边：左/右接缝已由侧栏 / AI 面板绘制，窗口边缘不需要线（"边框只在两个 chrome 面相接处画"）。
+  **接缝条不得占用盒模型**：侧栏这类"通高、内含满宽子元素"的容器若用 `border-right` 画线，内层会被压窄 2px，破坏既有宽度契约 —— 此时改用同位置的定位描边条（零盒影响，且绘制层级在行 hover 底 / 滚动条之上，线恒可见）。
+- **T52 标签融合规则（红线）**：正文顶边（`.pv-root` 的 `border-top`）在**活动标签处必须断开**——活动标签下缘下沉 2px 压住该描边，底色 = `content`，左右 + 顶部 2px `ink-edge` 成 **∏ 形轮廓且下缘无缝**（NES 窗口标题签观感，标签"骑缝融合"进正文）；**非活动标签**以 2px `ink-edge` 左描边彼此分隔，底边停在正文顶边**之上**（不压线、不破缝）。
+- **浮层族统一** `2px ink-edge`：Dialog / Menu / Popover / Tooltip / Select 下拉 / Toast + CloseAskDialog / LayoutPicker（模态）——原 1px `hairline` 与 2px `hairline-strong` 一律换掉（模态与 popover 共用同一条边界语言）。命令面板 / 同步状态面板两处浮层待后续单并入（不在 T59-01 枚举内）。
+- **不动清单**：控件描边（按钮 / 输入框 / 开关轨道 / 下拉触发器）、callout 与引用块左竖条、虚线空态、`hr`、编辑器内部块级样式——都不是"区域边界"，加黑边会与 bevel 立体打架。
 
 ## Components
 

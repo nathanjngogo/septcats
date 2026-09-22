@@ -25,6 +25,7 @@
   --sc-color-bevel-hi: #FFFFFF;
   --sc-color-bevel-lo: #A9A9A9;
   --sc-color-shadow-pixel: #C6C6C6;
+  --sc-color-ink-edge: #1A1A1A;
 
   /* typography：字体族 + 复合字阶（font shorthand，含中文系统栈） */
   --sc-font-ui: "Noto Sans SC", "Source Han Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
@@ -122,6 +123,7 @@
   --sc-color-bevel-hi: #565656;
   --sc-color-bevel-lo: #0A0A0A;
   --sc-color-shadow-pixel: #050505;
+  --sc-color-ink-edge: #EDEDED;
 
   /* elevation：表「shadow 族」——几何与基色不变，透明度按 40–60% 提深 */
   --sc-shadow-popover: 0 8px 24px -12px rgba(28,30,33,0.45), 0 2px 6px rgba(28,30,33,0.15);

@@ -266,6 +266,43 @@ describe('T52-01 ③ 标签条并入编辑区（无整行分隔线 + 活动标�
 });
 
 // ---------------------------------------------------------------------------
+// ④ T59-01 追加：像素边框（2px ink-edge）下的骑缝融合
+//    T52 §1.3「标签与正文连通、无隔离带」在本单不能破：正文顶边新增 2px 描边后，
+//    活动标签必须下沉压住它（接缝只在此处断开），否则老板一眼看到破相。
+// ---------------------------------------------------------------------------
+
+describe('T59-01 追加：正文顶边描边 + 活动标签骑缝融合（T52 红线延续）', () => {
+  it('正文顶边 = `.pv-root` 的 border-top 2px ink-edge；标签条与行宿主不得再画（只画一次）', () => {
+    const pvRoot = ruleBody(appCss, '.app-editor-col .pv-root');
+    expect(pvRoot, '正文顶边缺 2px ink-edge').toContain('border-top: 2px solid var(--sc-color-ink-edge)');
+    expect(ruleBody(tabsCss, '.app-tabrow'), '行宿主补了下描边 → 与正文顶边叠成 4px').not.toContain('border-bottom');
+    expect(ruleBody(tabsCss, '.tabsbar'), '标签条补了下描边 → 破「无整行分隔线」').not.toContain('border-bottom');
+  });
+
+  it('活动标签下沉 2px 压住该描边（探出带 = 裁剪安全带），下缘无边 → 接缝在活动标签处断开', () => {
+    const tabsbar = ruleBody(tabsCss, '.tabsbar');
+    expect(tabsbar, '标签条盒未探出行底 → 压缝的 2px 会被 overflow 剪掉').toContain(
+      'height: calc(100% + var(--sc-space-xxs))',
+    );
+    expect(tabsbar, '探出的 2px 必须划进 padding 安全带').toContain('padding-bottom: var(--sc-space-xxs)');
+    expect(tabsCss).toMatch(
+      /\.tabsbar-tab--active[^{]*\{[^}]*margin-bottom:\s*calc\(var\(--sc-space-xxs\) \* -1\)/,
+    );
+    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-top:\s*2px solid var\(--sc-color-ink-edge\)/);
+    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-right:\s*2px solid var\(--sc-color-ink-edge\)/);
+    expect(tabsCss, '活动标签下缘必须留空（下缘无缝）').not.toMatch(
+      /\.tabsbar-tab--active[^{]*\{[^}]*border-bottom:/,
+    );
+  });
+
+  it('非活动标签只吃左描边（相邻两枚之间恰好 2px，不叠成 4px 粗缝）', () => {
+    const tab = ruleBody(tabsCss, '.tabsbar-tab');
+    expect(tab).toContain('border-left: 2px solid var(--sc-color-ink-edge)');
+    expect(tab).not.toMatch(/border-right:\s*[1-9]/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // App 接线
 // ---------------------------------------------------------------------------
 

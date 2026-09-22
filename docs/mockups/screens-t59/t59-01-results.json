@@ -1,0 +1,1032 @@
+{
+  "task": "TASK-T59-01 真机取证（主区域像素风黑色边框 + T52 骑缝融合）",
+  "ranAt": "2026-09-22T08:49:03.565Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/截图 + Emulation.setDeviceMetricsOverride 两宽度与 dsf=1 像素量测 + Page.captureScreenshot clip.scale 放大取证 + main 进程 --inspect desktopCapturer 窗口级补拍",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t59-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t59-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t59-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t59-01-light-main.png",
+    "t59-01-light-main-1184.png",
+    "t59-01-light-main-894.png",
+    "t59-01-light-seam-zoom6x.png",
+    "t59-01-light-modal.png",
+    "t59-01-light-ai.png",
+    "t59-01-dark-main.png",
+    "t59-01-dark-seam-zoom6x.png",
+    "t59-01-dark-modal.png",
+    "t59-01-dark-ai.png",
+    "t59-01-window-dark.png"
+  ],
+  "pass": 45,
+  "fail": 0,
+  "electronFinal": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "borders_light": {
+      "ink": {
+        "hex": "#1A1A1A",
+        "rgb": [
+          26,
+          26,
+          26
+        ]
+      },
+      "topbar": {
+        "bottom": "2px solid rgb(26, 26, 26)",
+        "top": "0px none rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "sidebar": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "0px none rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "sidebarSeam": {
+        "width": "2px",
+        "height": "735px",
+        "bg": "rgb(26, 26, 26)",
+        "right": "0px",
+        "pointerEvents": "none"
+      },
+      "pvRoot": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "2px solid rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "aiChat": null,
+      "mainRow": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "0px none rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "tabrow": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "0px none rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "tabsbar": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "0px none rgb(26, 26, 26)",
+        "left": "0px none rgb(26, 26, 26)",
+        "right": "0px none rgb(26, 26, 26)"
+      },
+      "activeTab": {
+        "bottom": "0px none rgb(26, 26, 26)",
+        "top": "2px solid rgb(26, 26, 26)",
+        "left": "2px solid rgb(26, 26, 26)",
+        "right": "2px solid rgb(26, 26, 26)"
+      },
+      "theme": "light",
+      "inkEdge": "#1A1A1A"
+    },
+    "pixel_light": {
+      "sidebarClip": {
+        "x": 232,
+        "y": 300,
+        "width": 16,
+        "height": 40
+      },
+      "topbarClip": {
+        "x": 420,
+        "y": 32,
+        "width": 40,
+        "height": 16
+      },
+      "seamClip": {
+        "x": 1104,
+        "y": 68,
+        "width": 40,
+        "height": 16
+      },
+      "w1": {
+        "size": {
+          "w": 16,
+          "h": 40
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      },
+      "w2": {
+        "size": {
+          "w": 40,
+          "h": 16
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      },
+      "w3": {
+        "size": {
+          "w": 40,
+          "h": 16
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          8,
+          9
+        ]
+      },
+      "vp": {
+        "w": 1184,
+        "h": 735
+      }
+    },
+    "seam_light": {
+      "activeRect": {
+        "x": 347,
+        "y": 48,
+        "w": 73,
+        "h": 30,
+        "bottom": 78
+      },
+      "pvRect": {
+        "x": 240,
+        "y": 76,
+        "w": 944,
+        "bottom": 735
+      },
+      "barRect": {
+        "x": 248,
+        "y": 40,
+        "bottom": 78
+      },
+      "overlapPx": 2,
+      "inactiveBottom": 78,
+      "activeBg": "rgb(255, 255, 255)",
+      "pvBg": "rgb(255, 255, 255)",
+      "activeBorder": "2px/2px/0px/2px",
+      "sampleActive": {
+        "x": 384,
+        "y": 77
+      },
+      "sampleBlank": {
+        "x": 444,
+        "y": 77
+      },
+      "appSideTop": 40,
+      "pvScrollTop": 0,
+      "pvBodyTop": 220.89,
+      "stackBelow": [
+        {
+          "tag": "active",
+          "x": 384,
+          "y": 79,
+          "stack": [
+            "pv-root",
+            "app-editor-col",
+            "app-main-row"
+          ]
+        },
+        {
+          "tag": "blank",
+          "x": 444,
+          "y": 79,
+          "stack": [
+            "pv-root",
+            "app-editor-col",
+            "app-main-row"
+          ]
+        }
+      ]
+    },
+    "seamSample_light": {
+      "activePx": [
+        255,
+        255,
+        255
+      ],
+      "blankPx": [
+        26,
+        26,
+        26
+      ],
+      "points": {
+        "a": {
+          "x": 384,
+          "y": 77
+        },
+        "b": {
+          "x": 444,
+          "y": 77
+        }
+      }
+    },
+    "fusionColors_light": {
+      "barBorderBottom": "0px",
+      "activeBorderBottom": "0px",
+      "activeBg": "rgb(255, 255, 255)",
+      "pvBg": "rgb(255, 255, 255)",
+      "belowActive": "pv-root"
+    },
+    "shell": {
+      "sidebarWidth": 240,
+      "sidebarDisplay": "block",
+      "sidebarTop": 0,
+      "appSideWidth": 240,
+      "topbarLeft": 240,
+      "topbarRight": 1184,
+      "mainWidth": 944,
+      "layoutSidebarVar": "240px",
+      "layoutMeasureVar": "650px",
+      "innerWidth": 1184,
+      "innerHeight": 735,
+      "outerHeight": 800,
+      "nativeChromeH": 65
+    },
+    "toggle": {
+      "btnCenterX": 260,
+      "btnCenterY": 58,
+      "btnW": 24,
+      "barLeft": 248,
+      "barCenterY": 59,
+      "inViewport": true
+    },
+    "gutter": {
+      "bodyPaddingLeft": "70px",
+      "gutter": 12,
+      "overlap": false,
+      "clusterW": 58
+    },
+    "widths": [
+      {
+        "w": 1184,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1184,
+        "winClientW": 1184,
+        "sideTop": 0
+      },
+      {
+        "w": 894,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 894,
+        "winClientW": 894,
+        "sideTop": 0
+      }
+    ],
+    "modal": {
+      "role": "dialog",
+      "borderTop": "2px solid rgb(26, 26, 26)",
+      "borderLeft": "2px solid rgb(26, 26, 26)",
+      "rect": {
+        "x": 312,
+        "y": 195.9,
+        "w": 560,
+        "h": 343.3
+      }
+    },
+    "modalPixel": {
+      "mbClip": {
+        "x": 306,
+        "y": 363,
+        "width": 14,
+        "height": 10
+      },
+      "mw": {
+        "size": {
+          "w": 14,
+          "h": 10
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      }
+    },
+    "aiBorder": {
+      "left": "2px solid rgb(26, 26, 26)",
+      "width": 320
+    },
+    "aiPixel": {
+      "aiClip": {
+        "x": 856,
+        "y": 382,
+        "width": 16,
+        "height": 12
+      },
+      "aiW": {
+        "size": {
+          "w": 16,
+          "h": 12
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          8,
+          9
+        ]
+      }
+    },
+    "borders_dark": {
+      "ink": {
+        "hex": "#EDEDED",
+        "rgb": [
+          237,
+          237,
+          237
+        ]
+      },
+      "topbar": {
+        "bottom": "2px solid rgb(237, 237, 237)",
+        "top": "0px none rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "sidebar": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "0px none rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "sidebarSeam": {
+        "width": "2px",
+        "height": "735px",
+        "bg": "rgb(237, 237, 237)",
+        "right": "0px",
+        "pointerEvents": "none"
+      },
+      "pvRoot": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "2px solid rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "aiChat": null,
+      "mainRow": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "0px none rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "tabrow": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "0px none rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "tabsbar": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "0px none rgb(237, 237, 237)",
+        "left": "0px none rgb(237, 237, 237)",
+        "right": "0px none rgb(237, 237, 237)"
+      },
+      "activeTab": {
+        "bottom": "0px none rgb(237, 237, 237)",
+        "top": "2px solid rgb(237, 237, 237)",
+        "left": "2px solid rgb(237, 237, 237)",
+        "right": "2px solid rgb(237, 237, 237)"
+      },
+      "theme": "dark",
+      "inkEdge": "#EDEDED"
+    },
+    "pixel_dark": {
+      "sidebarClip": {
+        "x": 232,
+        "y": 300,
+        "width": 16,
+        "height": 40
+      },
+      "topbarClip": {
+        "x": 420,
+        "y": 32,
+        "width": 40,
+        "height": 16
+      },
+      "seamClip": {
+        "x": 1104,
+        "y": 68,
+        "width": 40,
+        "height": 16
+      },
+      "w1": {
+        "size": {
+          "w": 16,
+          "h": 40
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      },
+      "w2": {
+        "size": {
+          "w": 40,
+          "h": 16
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      },
+      "w3": {
+        "size": {
+          "w": 40,
+          "h": 16
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          8,
+          9
+        ]
+      },
+      "vp": {
+        "w": 1184,
+        "h": 735
+      }
+    },
+    "seam_dark": {
+      "activeRect": {
+        "x": 347,
+        "y": 48,
+        "w": 73,
+        "h": 30,
+        "bottom": 78
+      },
+      "pvRect": {
+        "x": 240,
+        "y": 76,
+        "w": 944,
+        "bottom": 735
+      },
+      "barRect": {
+        "x": 248,
+        "y": 40,
+        "bottom": 78
+      },
+      "overlapPx": 2,
+      "inactiveBottom": 78,
+      "activeBg": "rgb(10, 10, 10)",
+      "pvBg": "rgb(10, 10, 10)",
+      "activeBorder": "2px/2px/0px/2px",
+      "sampleActive": {
+        "x": 384,
+        "y": 77
+      },
+      "sampleBlank": {
+        "x": 444,
+        "y": 77
+      },
+      "appSideTop": 40,
+      "pvScrollTop": 0,
+      "pvBodyTop": 220.89,
+      "stackBelow": [
+        {
+          "tag": "active",
+          "x": 384,
+          "y": 79,
+          "stack": [
+            "pv-root",
+            "app-editor-col",
+            "app-main-row"
+          ]
+        },
+        {
+          "tag": "blank",
+          "x": 444,
+          "y": 79,
+          "stack": [
+            "pv-root",
+            "app-editor-col",
+            "app-main-row"
+          ]
+        }
+      ]
+    },
+    "seamSample_dark": {
+      "activePx": [
+        10,
+        10,
+        10
+      ],
+      "blankPx": [
+        237,
+        237,
+        237
+      ],
+      "points": {
+        "a": {
+          "x": 384,
+          "y": 77
+        },
+        "b": {
+          "x": 444,
+          "y": 77
+        }
+      }
+    },
+    "fusionColors_dark": {
+      "barBorderBottom": "0px",
+      "activeBorderBottom": "0px",
+      "activeBg": "rgb(10, 10, 10)",
+      "pvBg": "rgb(10, 10, 10)",
+      "belowActive": "pv-root"
+    },
+    "darkModal": {
+      "borderTop": "2px solid rgb(237, 237, 237)",
+      "rect": {
+        "x": 312,
+        "y": 195.9,
+        "w": 560,
+        "h": 343.3
+      }
+    },
+    "darkModalPixel": {
+      "mbClip": {
+        "x": 306,
+        "y": 363,
+        "width": 14,
+        "height": 10
+      },
+      "mw": {
+        "size": {
+          "w": 14,
+          "h": 10
+        },
+        "exact": 2,
+        "near": 2,
+        "exactIdx": [
+          6,
+          7
+        ]
+      }
+    },
+    "electron": {
+      "before": 5,
+      "after": 0
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t59-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t59-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "boot",
+      "name": "[info] electron 进程（开跑前）",
+      "ok": null,
+      "raw": "0"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真点「新建页面」×2 + 键入正文两段 → 2 标签 / 2 存活页",
+      "ok": true,
+      "raw": "tabs=2 pages=2"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-2 浅色主题就位（夹具 settings.theme=light）",
+      "ok": true,
+      "raw": "data-theme=light"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "[info] light ink-edge（原始）",
+      "ok": null,
+      "raw": "{\"hex\":\"#1A1A1A\",\"rgb\":[26,26,26]}"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "[info] light 五处边界 computed（原始）",
+      "ok": null,
+      "raw": "{\"topbar\":{\"bottom\":\"2px solid rgb(26, 26, 26)\",\"top\":\"0px none rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"sidebar\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"0px none rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"sidebarSeam\":{\"width\":\"2px\",\"height\":\"735px\",\"bg\":\"rgb(26, 26, 26)\",\"right\":\"0px\",\"pointerEvents\":\"none\"},\"pvRoot\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"2px solid rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"aiChat\":null,\"mainRow\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"0px none rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"tabrow\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"0px none rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"tabsbar\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"0px none rgb(26, 26, 26)\",\"left\":\"0px none rgb(26, 26, 26)\",\"right\":\"0px none rgb(26, 26, 26)\"},\"activeTab\":{\"bottom\":\"0px none rgb(26, 26, 26)\",\"top\":\"2px solid rgb(26, 26, 26)\",\"left\":\"2px solid rgb(26, 26, 26)\",\"right\":\"2px solid rgb(26, 26, 26)\"},\"theme\":\"light\",\"inkEdge\":\"#1A1A1A\"}"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "G1-1[light] §1.2 顶栏下沿 = 2px 实线 + ink-edge 色（#1A1A1A）",
+      "ok": true,
+      "raw": "topbar.bottom=2px solid rgb(26, 26, 26)"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "G1-2[light] §1.2 侧栏右缘 = 2px ink-edge 接缝条（定位条口径：不占盒模型 —— .app-side 仍 240）",
+      "ok": true,
+      "raw": "seam={\"width\":\"2px\",\"height\":\"735px\",\"bg\":\"rgb(26, 26, 26)\",\"right\":\"0px\",\"pointerEvents\":\"none\"} sidebar.borderRight=0px none rgb(26, 26, 26)"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "G1-3[light] §1.2 编辑区顶边（.pv-root）= 2px ink-edge，且编辑列不自画左右描边（只画一次）",
+      "ok": true,
+      "raw": "pv.root top=2px solid rgb(26, 26, 26) left=0px none rgb(26, 26, 26) right=0px none rgb(26, 26, 26)"
+    },
+    {
+      "step": "G1|light-borders",
+      "name": "G1-4[light] §1.2 相邻边只画一次：标签条行宿主/标签条零下描边（接缝归 .pv-root 独占）",
+      "ok": true,
+      "raw": "tabrow.bottom=0px none rgb(26, 26, 26) tabsbar.bottom=0px none rgb(26, 26, 26)"
+    },
+    {
+      "step": "G2|light-pixels",
+      "name": "[info] light 像素线宽（原始）",
+      "ok": null,
+      "raw": "{\"sidebar\":{\"size\":{\"w\":16,\"h\":40},\"exact\":2,\"near\":2,\"exactIdx\":[6,7]},\"topbar\":{\"size\":{\"w\":40,\"h\":16},\"exact\":2,\"near\":2,\"exactIdx\":[6,7]},\"seam\":{\"size\":{\"w\":40,\"h\":16},\"exact\":2,\"near\":2,\"exactIdx\":[8,9]}}"
+    },
+    {
+      "step": "G2|light-pixels",
+      "name": "G2-1[light] 像素实测：侧栏右缘纵向整列纯 ink 像素 = 2（非 4）",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[6,7] clip={\"x\":232,\"y\":300,\"width\":16,\"height\":40}"
+    },
+    {
+      "step": "G2|light-pixels",
+      "name": "G2-2[light] 像素实测：顶栏下沿横向整行纯 ink 像素 = 2",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[6,7] clip={\"x\":420,\"y\":32,\"width\":40,\"height\":16}"
+    },
+    {
+      "step": "G2|light-pixels",
+      "name": "G2-3[light] 像素实测：编辑区顶边横向整行纯 ink 像素 = 2（活动标签之外的空白处）",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[8,9] clip={\"x\":1104,\"y\":68,\"width\":40,\"height\":16}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "[info] 正文滚动位复位（接缝采样前置）",
+      "ok": null,
+      "raw": "{\"before\":171,\"after\":0}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "[info] 浅色骑缝几何（原始）",
+      "ok": null,
+      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(255, 255, 255)\",\"pvBg\":\"rgb(255, 255, 255)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":220.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "[info] light 接缝像素采样（原始）",
+      "ok": null,
+      "raw": "{\"activePx\":[255,255,255],\"blankPx\":[26,26,26],\"points\":{\"a\":{\"x\":384,\"y\":77},\"b\":{\"x\":444,\"y\":77}},\"inkRgbStr\":\"rgb(26, 26, 26)\"}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "G3-1[light] §1.3 接缝采样：活动标签中心处像素 = 编辑区底色（非 ink-edge）→ 接缝在此断开",
+      "ok": true,
+      "raw": "采样=[255,255,255] pv-bg=rgb(255, 255, 255) ink=[26,26,26]"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "G3-2[light] §1.3 接缝采样：活动标签右侧空白处像素 = ink-edge → 接缝在其余处可见",
+      "ok": true,
+      "raw": "采样=[26,26,26] ink=[26,26,26]"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "G3-3[light] §1.3 骑缝几何：活动标签盒与 .pv-root 顶边重叠/贴边（rect 实测 ≥2px）",
+      "ok": true,
+      "raw": "activeBottom-pvTop=2px activeRect={\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78} pvRect={\"x\":240,\"y\":76,\"w\":944,\"bottom\":735}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "G3-4[light] §1.3 活动标签 ∏ 轮廓：顶/左/右 2px、下缘 0px、底色 = 编辑区底色",
+      "ok": true,
+      "raw": "border(上/右/下/左)=2px/2px/0px/2px activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255)"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "[info] light T57 G8-4 原式（原始）",
+      "ok": null,
+      "raw": "{\"barBorderBottom\":\"0px\",\"activeBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"pvBg\":\"rgb(255, 255, 255)\",\"belowActive\":\"pv-root\"}"
+    },
+    {
+      "step": "G3|light-seam",
+      "name": "G3-5[light] T57 G8-4 复跑：标签连通（无整行分隔线 + 活动标签无下描边 + 底同色 + 下缘命中 pv-root）",
+      "ok": true,
+      "raw": "barBorder=0px activeBorder=0px activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) below=\"pv-root\""
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "[info] T52 通高量测（原始）",
+      "ok": null,
+      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarTop\":0,\"appSideWidth\":240,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "G4-1 T52 红线：侧栏通高（top=0 / 宽 240 / 原生菜单 chrome 高 > 0）",
+      "ok": true,
+      "raw": "sidebarTop=0 sidebarW=240 chromeH=65"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "G4-2 T52 红线：顶栏左缘 = 侧栏右缘（顶栏不通栏横切侧栏上方）",
+      "ok": true,
+      "raw": "topbarLeft=240 sidebarW=240 winW=1184"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "[info] 折叠钮量测（原始）",
+      "ok": null,
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barCenterY\":59,\"inViewport\":true}"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "G4-3 T52 红线：折叠钮在标签行最左（中心 x ∈ [行左, 行左+64]、|Δy| ≤ 2、24px、视口内）",
+      "ok": true,
+      "raw": "centerX=260 barLeft=248 Δy=1.0 w=24 inViewport=true"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "[info] 装订线量测（原始）",
+      "ok": null,
+      "raw": "{\"bodyPaddingLeft\":\"70px\",\"gutter\":12,\"overlap\":false,\"clusterW\":58}"
+    },
+    {
+      "step": "G4|t52-t57-redlines",
+      "name": "G4-4 T33/T52 红线：.pv-body 左侧装订线 70px + 手柄簇↔文本 gutter=12 且无重叠",
+      "ok": true,
+      "raw": "bodyPaddingLeft=70px gutter=12 overlap=false"
+    },
+    {
+      "step": "G5|two-widths",
+      "name": "[info] 两宽度零滚动（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1184,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0},{\"w\":894,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":894,\"winClientW\":894,\"sideTop\":0}]"
+    },
+    {
+      "step": "G5|two-widths",
+      "name": "G5-1 §3：1184/894 两宽度零滚动（纵向 + 横向）且侧栏 top 恒 0",
+      "ok": true,
+      "raw": "1184:{h 800/800,w 1184/1184,top=0} 894:{h 800/800,w 894/894,top=0}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] 浅色接缝放大截图",
+      "ok": null,
+      "raw": "bytes=10438 clip={\"x\":323,\"y\":32,\"width\":420,\"height\":56}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] 布局快选弹框（原始）",
+      "ok": null,
+      "raw": "{\"role\":\"dialog\",\"borderTop\":\"2px solid rgb(26, 26, 26)\",\"borderLeft\":\"2px solid rgb(26, 26, 26)\",\"rect\":{\"x\":312,\"y\":195.9,\"w\":560,\"h\":343.3}}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "G6-1 §1.4 浮层 2px：布局快选（模态）外轮廓 = 2px solid ink-edge",
+      "ok": true,
+      "raw": "borderTop=2px solid rgb(26, 26, 26) borderLeft=2px solid rgb(26, 26, 26)"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] 模态左缘像素线宽（原始）",
+      "ok": null,
+      "raw": "{\"mbClip\":{\"x\":306,\"y\":363,\"width\":14,\"height\":10},\"mw\":{\"size\":{\"w\":14,\"h\":10},\"exact\":2,\"near\":2,\"exactIdx\":[6,7]}}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "G6-2 §1.4 浮层 2px：模态左缘像素实测整列纯 ink = 2",
+      "ok": true,
+      "raw": "exact=2 near=2 clip={\"x\":306,\"y\":363,\"width\":14,\"height\":10}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] AI 面板展开",
+      "ok": null,
+      "raw": "clicked=true aiChat=true"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "G6-3 §1.8 AI 面板可展开（截图四态之一）",
+      "ok": true,
+      "raw": "aiChat=true"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] AI 面板左缘（原始）",
+      "ok": null,
+      "raw": "{\"left\":\"2px solid rgb(26, 26, 26)\",\"width\":320}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "G6-4 §1.2 AI 面板左缘 = 2px solid ink-edge（真机 computed）",
+      "ok": true,
+      "raw": "aiChat.left=2px solid rgb(26, 26, 26) width=320"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "[info] AI 面板左缘像素线宽（原始）",
+      "ok": null,
+      "raw": "{\"aiClip\":{\"x\":856,\"y\":382,\"width\":16,\"height\":12},\"aiW\":{\"size\":{\"w\":16,\"h\":12},\"exact\":2,\"near\":2,\"exactIdx\":[8,9]}}"
+    },
+    {
+      "step": "G6|light-shots",
+      "name": "G6-5 §1.2 AI 面板左缘像素实测整列纯 ink = 2（与侧栏/正文接缝同谱，禁 4px 双拼）",
+      "ok": true,
+      "raw": "exact=2 near=2 clip={\"x\":856,\"y\":382,\"width\":16,\"height\":12}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-1 深色主题就位（data-theme=dark）",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark ink-edge（原始）",
+      "ok": null,
+      "raw": "{\"hex\":\"#EDEDED\",\"rgb\":[237,237,237]}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark 五处边界 computed（原始）",
+      "ok": null,
+      "raw": "{\"topbar\":{\"bottom\":\"2px solid rgb(237, 237, 237)\",\"top\":\"0px none rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"sidebar\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"0px none rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"sidebarSeam\":{\"width\":\"2px\",\"height\":\"735px\",\"bg\":\"rgb(237, 237, 237)\",\"right\":\"0px\",\"pointerEvents\":\"none\"},\"pvRoot\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"2px solid rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"aiChat\":null,\"mainRow\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"0px none rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"tabrow\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"0px none rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"tabsbar\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"0px none rgb(237, 237, 237)\",\"left\":\"0px none rgb(237, 237, 237)\",\"right\":\"0px none rgb(237, 237, 237)\"},\"activeTab\":{\"bottom\":\"0px none rgb(237, 237, 237)\",\"top\":\"2px solid rgb(237, 237, 237)\",\"left\":\"2px solid rgb(237, 237, 237)\",\"right\":\"2px solid rgb(237, 237, 237)\"},\"theme\":\"dark\",\"inkEdge\":\"#EDEDED\"}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-1[dark] §1.2 顶栏下沿 = 2px 实线 + ink-edge 色（#EDEDED）",
+      "ok": true,
+      "raw": "topbar.bottom=2px solid rgb(237, 237, 237)"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-2[dark] §1.2 侧栏右缘 = 2px ink-edge 接缝条（定位条口径：不占盒模型 —— .app-side 仍 240）",
+      "ok": true,
+      "raw": "seam={\"width\":\"2px\",\"height\":\"735px\",\"bg\":\"rgb(237, 237, 237)\",\"right\":\"0px\",\"pointerEvents\":\"none\"} sidebar.borderRight=0px none rgb(237, 237, 237)"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-3[dark] §1.2 编辑区顶边（.pv-root）= 2px ink-edge，且编辑列不自画左右描边（只画一次）",
+      "ok": true,
+      "raw": "pv.root top=2px solid rgb(237, 237, 237) left=0px none rgb(237, 237, 237) right=0px none rgb(237, 237, 237)"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-4[dark] §1.2 相邻边只画一次：标签条行宿主/标签条零下描边（接缝归 .pv-root 独占）",
+      "ok": true,
+      "raw": "tabrow.bottom=0px none rgb(237, 237, 237) tabsbar.bottom=0px none rgb(237, 237, 237)"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-2 §1.1 深色口径：ink-edge = #EDEDED（亮边；近黑底上黑描边不可见，故取亮边）",
+      "ok": true,
+      "raw": "--sc-color-ink-edge=#EDEDED rgb=[237,237,237]"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark 像素线宽（原始）",
+      "ok": null,
+      "raw": "{\"sidebar\":{\"size\":{\"w\":16,\"h\":40},\"exact\":2,\"near\":2,\"exactIdx\":[6,7]},\"topbar\":{\"size\":{\"w\":40,\"h\":16},\"exact\":2,\"near\":2,\"exactIdx\":[6,7]},\"seam\":{\"size\":{\"w\":40,\"h\":16},\"exact\":2,\"near\":2,\"exactIdx\":[8,9]}}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G2-1[dark] 像素实测：侧栏右缘纵向整列纯 ink 像素 = 2（非 4）",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[6,7] clip={\"x\":232,\"y\":300,\"width\":16,\"height\":40}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G2-2[dark] 像素实测：顶栏下沿横向整行纯 ink 像素 = 2",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[6,7] clip={\"x\":420,\"y\":32,\"width\":40,\"height\":16}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G2-3[dark] 像素实测：编辑区顶边横向整行纯 ink 像素 = 2（活动标签之外的空白处）",
+      "ok": true,
+      "raw": "exact=2 near=2 idx=[8,9] clip={\"x\":1104,\"y\":68,\"width\":40,\"height\":16}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] 深色骑缝几何（原始）",
+      "ok": null,
+      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(10, 10, 10)\",\"pvBg\":\"rgb(10, 10, 10)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":220.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark 接缝像素采样（原始）",
+      "ok": null,
+      "raw": "{\"activePx\":[10,10,10],\"blankPx\":[237,237,237],\"points\":{\"a\":{\"x\":384,\"y\":77},\"b\":{\"x\":444,\"y\":77}},\"inkRgbStr\":\"rgb(237, 237, 237)\"}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G3-1[dark] §1.3 接缝采样：活动标签中心处像素 = 编辑区底色（非 ink-edge）→ 接缝在此断开",
+      "ok": true,
+      "raw": "采样=[10,10,10] pv-bg=rgb(10, 10, 10) ink=[237,237,237]"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G3-2[dark] §1.3 接缝采样：活动标签右侧空白处像素 = ink-edge → 接缝在其余处可见",
+      "ok": true,
+      "raw": "采样=[237,237,237] ink=[237,237,237]"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G3-3[dark] §1.3 骑缝几何：活动标签盒与 .pv-root 顶边重叠/贴边（rect 实测 ≥2px）",
+      "ok": true,
+      "raw": "activeBottom-pvTop=2px activeRect={\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78} pvRect={\"x\":240,\"y\":76,\"w\":944,\"bottom\":735}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G3-4[dark] §1.3 活动标签 ∏ 轮廓：顶/左/右 2px、下缘 0px、底色 = 编辑区底色",
+      "ok": true,
+      "raw": "border(上/右/下/左)=2px/2px/0px/2px activeBg=rgb(10, 10, 10) pvBg=rgb(10, 10, 10)"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark T57 G8-4 原式（原始）",
+      "ok": null,
+      "raw": "{\"barBorderBottom\":\"0px\",\"activeBorderBottom\":\"0px\",\"activeBg\":\"rgb(10, 10, 10)\",\"pvBg\":\"rgb(10, 10, 10)\",\"belowActive\":\"pv-root\"}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G3-5[dark] T57 G8-4 复跑：标签连通（无整行分隔线 + 活动标签无下描边 + 底同色 + 下缘命中 pv-root）",
+      "ok": true,
+      "raw": "barBorder=0px activeBorder=0px activeBg=rgb(10, 10, 10) pvBg=rgb(10, 10, 10) below=\"pv-root\""
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-3 T52 红线（深色）：折叠钮位置/尺寸/视口内不变",
+      "ok": true,
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barCenterY\":59,\"inViewport\":true}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-4 §3 深色 1184 零滚动（纵向 + 横向）",
+      "ok": true,
+      "raw": "{\"winScrollH\":735,\"winClientH\":735,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] 深色接缝放大截图",
+      "ok": null,
+      "raw": "bytes=10631 clip={\"x\":323,\"y\":32,\"width\":420,\"height\":56}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-5 §1.4 深色：模态外轮廓 = 2px solid ink-edge（#EDEDED）",
+      "ok": true,
+      "raw": "{\"borderTop\":\"2px solid rgb(237, 237, 237)\",\"rect\":{\"x\":312,\"y\":195.9,\"w\":560,\"h\":343.3}}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-6 §1.4 深色：模态左缘像素实测整列纯 ink = 2",
+      "ok": true,
+      "raw": "exact=2 near=2 clip={\"x\":306,\"y\":363,\"width\":14,\"height\":10}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）",
+      "ok": true,
+      "raw": "bytes=61205 err=null"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] electron 进程计数（退出前后）",
+      "ok": null,
+      "raw": "{\"before\":5,\"after\":0}"
+    },
+    {
+      "step": "teardown",
+      "name": "G9-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    },
+    {
+      "step": "teardown",
+      "name": "G9-2 交付纪律：退出后 electron 进程计数 = 0",
+      "ok": true,
+      "raw": "before=5 after=0"
+    }
+  ]
+}

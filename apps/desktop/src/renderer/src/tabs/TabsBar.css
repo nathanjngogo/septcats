@@ -12,7 +12,9 @@
 .app-tabrow {
   flex: none;
   display: flex;
-  align-items: center;
+  /* T59-01 像素边框：改 flex-start —— 标签条盒下沿要探出本行 2px 去压住 .pv-root 的 border-top
+     （骑缝融合的几何前提）。行内直挂的折叠钮由 .app-tabrow-toggle 自居中兜住（几何不变）。 */
+  align-items: flex-start;
   /* 行高与改前 `.tabsbar` 一致（control-sm + space-sm；四态齐备见下） */
   height: calc(var(--sc-size-control-sm) + var(--sc-space-sm));
   min-width: 0;
@@ -23,14 +25,20 @@
 .tabsbar {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  /* T59-01：盒高 = 行内容高 + 2px（探出带）。探出的 2px 恰是 .pv-root 的 border-top 所在，
+     以 padding-bottom 把它划进「裁剪安全带」——活动标签的 2px 下沉因此不被 overflow 剪掉。
+     内容盒仍是原 36px（= 行内容高），故标签基线 / 插槽中心 / 横滚几何一字不动。 */
+  height: calc(100% + var(--sc-space-xxs));
+  padding-bottom: var(--sc-space-xxs);
   display: flex;
   align-items: flex-end;
   /* 溢出横向滚动、不换行（§0.2） */
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  background: var(--sc-color-canvas);
+  /* T59-01：本层不得涂掉下方 —— 行底 canvas 由 .app-tabrow 提供，标签条透明后
+     .pv-root 的顶边描边才能在非活动标签之间 / 右侧空白处显形（接缝只在活动标签处断）。 */
+  background: transparent;
 }
 
 /* T52-01 §1.2：行最左插槽（一个 --sc-space-lg 图标位）——sticky 使标签横滚时它不动 */
@@ -53,6 +61,9 @@
   height: var(--sc-size-control-sm);
   max-width: calc(var(--sc-space-editor-measure) / 2);
   padding: 0 var(--sc-space-xs) 0 var(--sc-space-sm);
+  /* T59-01 像素边框：标签之间以 2px ink-edge **左**描边分隔（只画一次：下一个标签的左描边
+     就是上一标签的右分界；若每个标签左右都画，相邻两枚会叠成 4px 粗缝）。 */
+  border-left: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm) var(--sc-radius-sm) 0 0;
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
@@ -80,13 +91,28 @@
 /* 当前标签（T52-01 §1.3）：content 白底 = `.pv-root` 同 token → 与编辑区连通无缝，
  * 底边不设分隔线（活动列「冒泡」进正文）。
  * T53-01：活动标签**不挂 bevel**——inset 亮暗面会在下缘画出一条内部暗边，
- * 正是 T52「标签与正文连通、无隔离带」要消除的东西（融合语义优先于立体语法）。 */
+ * 正是 T52「标签与正文连通、无隔离带」要消除的东西（融合语义优先于立体语法）。
+ * T59-01 §1.3 骑缝融合（本单最大风险处，T52 红线）：
+ *  - **∏ 形轮廓**：顶 + 左 + 右三边 2px ink-edge（左边沿用基类），下缘无边 →
+ *    轮廓在接缝处开口，与正文顶边（`.pv-root` 的 border-top）首尾相接成一条连续折线；
+ *  - **下沉 2px 压缝**：负下外边距把标签盒推进行内容盒之下 2px，恰好盖住 `.pv-root`
+ *    的顶边描边 → 接缝只在此处断开，下缘无缝（且 2px 落在 `.tabsbar` 的裁剪安全带内）；
+ *  - **盒高 +2px**：抵消「下沉 2px」造成的顶边上移，使活动标签与相邻非活动标签**同顶**、
+ *    只比它们多探出 2px —— 读作「当前页被拉进正文」，不是「整排错位」；
+ *  - **z-index: 1**：`.pv-root` 是 `position: relative; z-index: auto`（页面里更靠后），
+ *    不提层的话那条顶边会盖住标签底色 —— 提层后由标签底色盖住顶边，融合才成立。 */
 .tabsbar-tab--active,
 .tabsbar-tab--active:hover,
 .tabsbar-tab--active:active {
   background: var(--sc-color-content);
   font-weight: 500;
   box-shadow: none;
+  position: relative;
+  z-index: 1;
+  height: calc(var(--sc-size-control-sm) + var(--sc-space-xxs));
+  margin-bottom: calc(var(--sc-space-xxs) * -1);
+  border-top: 2px solid var(--sc-color-ink-edge);
+  border-right: 2px solid var(--sc-color-ink-edge);
 }
 
 .tabsbar-title {

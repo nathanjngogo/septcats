@@ -16,7 +16,8 @@
   gap: var(--sc-space-sm);
   max-width: 420px;
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T59-01 浮层族统一：toast 属浮层（shadow-popover），轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

@@ -47,7 +47,9 @@ html, body {
   width: auto;
   height: calc(var(--sc-layout-row-h) * 8);
   border-left: 0;
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T59-01 像素边框：AI 面板置底时，编辑列↔AI 面板的接缝转为横向 = 本元素 border-top，2px ink-edge
+     （右侧布局时同一条接缝由 .ai-chat 的 border-left 承担，二者互斥、同一处边界只画一次）。 */
+  border-top: 2px solid var(--sc-color-ink-edge);
 }
 
 /*
@@ -79,6 +81,12 @@ html, body {
   flex: 1;
   height: auto;
   min-height: 0;
+  /* T59-01 像素边框：标签条↔正文接缝（横向，本单第 5 处边界）= 本元素绘制，2px ink-edge。
+     归属理由（见 DESIGN.md「Pixel Borders」）：本条边只在编辑列内出现，由正文根独占，
+     标签条/行宿主不得再画（双拼即 4px）。**活动标签下沉 2px 压住它** → 接缝在活动标签处
+     断开，兑现 T52「标签与正文连通、无隔离带」红线（TabsBar.css 同主题改动）。
+     左/右不补：左接缝归 .sc-shell__sidebar 的 border-right，右接缝归 .ai-chat 的 border-left。 */
+  border-top: 2px solid var(--sc-color-ink-edge);
 }
 
 /*
@@ -89,6 +97,9 @@ html, body {
 .app-tabrow-toggle {
   width: var(--sc-space-xl);
   height: var(--sc-space-xl);
+  /* T59-01：标签行宿主改 flex-start（给标签条预留 2px 骑缝探出带），行内直挂的折叠钮
+     （布局隐藏标签条时的形态）在此自居中对齐，几何与改前一致。 */
+  align-self: center;
 }
 
 /*

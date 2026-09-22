@@ -10,7 +10,8 @@
   transform: translateX(-50%);
   max-width: 280px;
   padding: var(--sc-space-xs) var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T59-01 浮层族统一：tooltip 亦属浮层，轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

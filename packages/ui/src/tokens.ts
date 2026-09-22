@@ -25,7 +25,8 @@ export const colors = {
   selection: "#D4D4D4",
   "bevel-hi": "#FFFFFF",
   "bevel-lo": "#A9A9A9",
-  "shadow-pixel": "#C6C6C6"
+  "shadow-pixel": "#C6C6C6",
+  "ink-edge": "#1A1A1A"
 } as const;
 
 export const colorsDark = {
@@ -50,7 +51,8 @@ export const colorsDark = {
   selection: "#3A3A3A",
   "bevel-hi": "#565656",
   "bevel-lo": "#0A0A0A",
-  "shadow-pixel": "#050505"
+  "shadow-pixel": "#050505",
+  "ink-edge": "#EDEDED"
 } as const;
 
 export const typography = {
@@ -173,7 +175,7 @@ export const zIndex = {
 
 export const easeOut = 'cubic-bezier(0.16,1,0.3,1)';
 
-export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection', 'bevel-hi', 'bevel-lo', 'shadow-pixel'] as const;
+export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection', 'bevel-hi', 'bevel-lo', 'shadow-pixel', 'ink-edge'] as const;
 
 export const TOKEN_PREFIX = '--sc-';
 

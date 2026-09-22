@@ -13,7 +13,8 @@
   width: 460px;
   max-width: calc(100vw - var(--sc-space-gutter));
   padding: var(--sc-space-xl);
-  border: 1px solid var(--sc-color-hairline);
+  /* T59-01 浮层族统一：模态轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-lg);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

@@ -13,7 +13,10 @@
   width: 320px;
   height: 100%;
   min-height: 0;
-  border-left: 1px solid var(--sc-color-hairline);
+  /* T59-01 像素边框：编辑列↔AI 面板接缝（纵向，侧栏式布局）= 本元素 border-left，2px ink-edge。
+     编辑列侧（.pv-root）不补右描边 —— 同一处接缝只画一次（否则叠出 4px 粗缝）。
+     面板置底时这条纵向接缝转为 .app-main-row--ai-bottom 的 border-top（App.css），二者互斥。 */
+  border-left: 2px solid var(--sc-color-ink-edge);
   background: var(--sc-color-content);
 }
 
