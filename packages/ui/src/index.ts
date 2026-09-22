@@ -3,7 +3,8 @@
  *
  * 纪律：
  * - 组件样式只用 var(--sc-*)，token 由 `@septcats/ui/tokens.css` 提供（DESIGN.md 的生成产物）。
- * - 图标只走 ./Icon 的单族出口，业务代码不得直接 import @phosphor-icons/react。
+ * - 图标只走 ./Icon 的单族出口（T58-01 起族 = 仓内像素 glyph 自绘，见 ./pixelIcons），
+ *   业务代码不得直接 import 任何图标库（phosphor 依赖保留仅作 fallback/文档引用）。
  * - 主题用 ThemeProvider + useTheme（写 documentElement[data-theme]）。
  */
 

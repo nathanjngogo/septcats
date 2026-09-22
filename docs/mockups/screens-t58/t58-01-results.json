@@ -1,0 +1,852 @@
+{
+  "task": "TASK-T58-01 真机取证（AI 钮像素化 + 全仓图标像素族接线）",
+  "ranAt": "2026-09-22T07:34:37.133Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 放大 + 自写 PNG 解码逐像素采样",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t58-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t58-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t58-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t58-01-ai-panel-open.png",
+    "t58-01-editor-light.png",
+    "t58-01-actions-zoom4x.png",
+    "t58-01-editor-dark.png",
+    "t58-01-actions-dark-zoom4x.png",
+    "t58-01-settings-light.png"
+  ],
+  "pass": 14,
+  "fail": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "toolbar": {
+      "count": 5,
+      "rows": [
+        {
+          "label": "搜索（Ctrl+K）",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 16,
+          "stroke": null
+        },
+        {
+          "label": "AI 对话（Ctrl+J）",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 25,
+          "stroke": null
+        },
+        {
+          "label": "导入",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 10,
+          "stroke": null
+        },
+        {
+          "label": "布局",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 30,
+          "stroke": null
+        },
+        {
+          "label": "设置",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 24,
+          "stroke": null
+        }
+      ]
+    },
+    "aiClosed": {
+      "pressed": "false",
+      "viewBox": "0 0 16 16",
+      "shapeRendering": "crispEdges",
+      "strokeWidth": null,
+      "rectCount": 25,
+      "eyeOpacity": "0.35",
+      "antennaOpacity": "0.55",
+      "eyeRects": [
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "antennaRects": [
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        }
+      ],
+      "allRects": [
+        {
+          "x": "2",
+          "y": "3",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "6",
+          "y": "8",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "10",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "iconBox": {
+        "x": 970,
+        "y": 11.5,
+        "width": 16,
+        "height": 16
+      },
+      "buttonBox": {
+        "x": 964,
+        "y": 5.5,
+        "width": 28,
+        "height": 28
+      },
+      "color": "rgb(89, 89, 89)"
+    },
+    "pixelProof": {
+      "illegal": [],
+      "illegalCount": 0,
+      "mismatch": 0,
+      "size": {
+        "w": 224,
+        "h": 224
+      }
+    },
+    "aiOpen": {
+      "pressed": "true",
+      "viewBox": "0 0 16 16",
+      "shapeRendering": "crispEdges",
+      "strokeWidth": null,
+      "rectCount": 25,
+      "eyeOpacity": "1",
+      "antennaOpacity": "1",
+      "eyeRects": [
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "antennaRects": [
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        }
+      ],
+      "allRects": [
+        {
+          "x": "2",
+          "y": "3",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "6",
+          "y": "8",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "10",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "iconBox": {
+        "x": 970,
+        "y": 11.5,
+        "width": 16,
+        "height": 16
+      },
+      "buttonBox": {
+        "x": 964,
+        "y": 5.5,
+        "width": 28,
+        "height": 28
+      },
+      "color": "rgb(89, 89, 89)"
+    },
+    "aiDark": {
+      "pressed": "false",
+      "viewBox": "0 0 16 16",
+      "shapeRendering": "crispEdges",
+      "strokeWidth": null,
+      "rectCount": 25,
+      "eyeOpacity": "0.35",
+      "antennaOpacity": "0.55",
+      "eyeRects": [
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "antennaRects": [
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        }
+      ],
+      "allRects": [
+        {
+          "x": "2",
+          "y": "3",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "4",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "5",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "6",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "7",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "6",
+          "y": "8",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "14",
+          "y": "8",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "13",
+          "y": "9",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "2",
+          "y": "10",
+          "w": "12",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "11",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "3",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "12",
+          "y": "12",
+          "w": "1",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "1",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "7",
+          "y": "2",
+          "w": "2",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "5",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "4",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        },
+        {
+          "x": "9",
+          "y": "6",
+          "w": "4",
+          "op": "1"
+        }
+      ],
+      "iconBox": {
+        "x": 970,
+        "y": 11.5,
+        "width": 16,
+        "height": 16
+      },
+      "buttonBox": {
+        "x": 964,
+        "y": 5.5,
+        "width": 28,
+        "height": 28
+      },
+      "color": "rgb(168, 168, 168)"
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t58-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t58-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "boot",
+      "name": "[info] 运行时 glyph 表",
+      "ok": null,
+      "raw": "28 枚；tone 档 1/0.8/0.72"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真建页 + 真键入正文（存活页 ≥2、编辑器块 ≥2）",
+      "ok": true,
+      "raw": "{\"tabs\":2,\"alive\":2,\"blocks\":2}"
+    },
+    {
+      "step": "G1|toolbar-family",
+      "name": "[info] 顶栏图标钮（原始）",
+      "ok": null,
+      "raw": "[{\"label\":\"搜索（Ctrl+K）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":16,\"stroke\":null},{\"label\":\"AI 对话（Ctrl+J）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":25,\"stroke\":null},{\"label\":\"导入\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":10,\"stroke\":null},{\"label\":\"布局\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":30,\"stroke\":null},{\"label\":\"设置\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":24,\"stroke\":null}]"
+    },
+    {
+      "step": "G1|toolbar-family",
+      "name": "G1-1 顶栏图标钮一个不漏都是像素族（viewBox 0 0 16 16 + crispEdges + rect 网格）",
+      "ok": true,
+      "raw": "钮数=5 非像素族=[]"
+    },
+    {
+      "step": "G1|toolbar-family",
+      "name": "G1-2 无描边残留（phosphor 时代 stroke-width 属性在顶栏图标上一律不存在）",
+      "ok": true,
+      "raw": "搜索（Ctrl+K）:null AI 对话（Ctrl+J）:null 导入:null 布局:null 设置:null"
+    },
+    {
+      "step": "G2|pixel-proof",
+      "name": "G2-0 AI 钮定位 + 像素族几何（viewBox/crispEdges/无 stroke-width）",
+      "ok": true,
+      "raw": "{\"pressed\":\"false\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":25}"
+    },
+    {
+      "step": "G2|pixel-proof",
+      "name": "[info] AI 钮 8× 放大截图",
+      "ok": null,
+      "raw": "bytes=824 clip={\"x\":964,\"y\":5,\"width\":28,\"height\":28}"
+    },
+    {
+      "step": "G2|pixel-proof",
+      "name": "[info] 像素采样（原始）",
+      "ok": null,
+      "raw": "{\"illegal\":[],\"illegalCount\":0,\"mismatch\":0,\"size\":{\"w\":224,\"h\":224}}"
+    },
+    {
+      "step": "G2|pixel-proof",
+      "name": "G2-1 硬边证明：8× 放大图全部像素落在「底色 ∪ 前景×{1,0.8,0.72} ∪ 关态眼档{0.35,0.55}」离散集内（零抗锯齿中间色）",
+      "ok": true,
+      "raw": "非法像素=0 样本=[]"
+    },
+    {
+      "step": "G2|pixel-proof",
+      "name": "G2-2 像素级证据：8× 放大图逐格采样掩码 == AiRobot 资产矩阵（16×16 全等）",
+      "ok": true,
+      "raw": "不等格数=0"
+    },
+    {
+      "step": "G3|ai-two-state",
+      "name": "G3-1 关态明暗实测（getComputedStyle）：眼 = 0.35、天线 = 0.55",
+      "ok": true,
+      "raw": "eye=0.35 antenna=0.55 aria-pressed=false"
+    },
+    {
+      "step": "G3|ai-two-state",
+      "name": "G3-2 开态明暗实测：眼 = 1、天线 = 1（与关态唯一差别是明暗，几何完全一致）",
+      "ok": true,
+      "raw": "eye=1 antenna=1 几何同=true pressed=true"
+    },
+    {
+      "step": "G3|ai-two-state",
+      "name": "G3-3 面板打开且标题栏图标同族（像素机器人头：眼分组 4 条横条 + crispEdges）",
+      "ok": true,
+      "raw": "{\"open\":true,\"headEyes\":4,\"headCrisp\":\"crispEdges\"}"
+    },
+    {
+      "step": "G3|ai-two-state",
+      "name": "G3-4 再点回关态：眼/天线明暗回 0.35/0.55 且面板已收起（两态可反复往返）",
+      "ok": true,
+      "raw": "eye=0.35 antenna=0.55 pressed=false"
+    },
+    {
+      "step": "G4|screens",
+      "name": "[info] 浅色主界面视图态",
+      "ok": null,
+      "raw": "{\"pvRoot\":true,\"tabRow\":true,\"settings\":false}"
+    },
+    {
+      "step": "G4|screens",
+      "name": "G4-1 深色主题下同为像素族且两态明暗按同一 CSS 档生效（关态 0.35/0.55）",
+      "ok": true,
+      "raw": "data-theme=dark eye=0.35 antenna=0.55"
+    },
+    {
+      "step": "G4|screens",
+      "name": "[info] 设置页/整屏图标族抽样",
+      "ok": null,
+      "raw": "{\"count\":17,\"allPixel\":true}"
+    },
+    {
+      "step": "G4|screens",
+      "name": "G4-2 整屏图标（侧栏 + 顶栏 + 设置页）零漏网：全部是像素族几何（无 phosphor 混族残留）",
+      "ok": true,
+      "raw": "{\"count\":17,\"allPixel\":true}"
+    },
+    {
+      "step": "G4|screens",
+      "name": "G4-3 截图 ≥4 张且逐张拍在对的视图（浅色主界面 / 顶栏放大 / AI 面板开 / 深色主界面 / 设置页）",
+      "ok": true,
+      "raw": "t58-01-ai-panel-open.png t58-01-editor-light.png t58-01-actions-zoom4x.png t58-01-editor-dark.png t58-01-actions-dark-zoom4x.png t58-01-settings-light.png"
+    },
+    {
+      "step": "teardown",
+      "name": "G5-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    }
+  ]
+}

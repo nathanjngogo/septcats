@@ -1,18 +1,21 @@
 import { expectTokenOnlyCssFile } from '../test/css-discipline';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Check, Icon, ICON_SIZES, ICON_STROKE_WIDTH, resolveIconSize } from './Icon';
-
+import { Check, Icon, ICON_SIZES, ICON_STROKE_WIDTH, resolveIconSize, type IconProps } from './Icon';
 
 describe('Icon', () => {
-  it('单一出口：默认装饰性（aria-hidden）且 strokeWidth 固定 1.5', () => {
+  it('单一出口：默认装饰性（aria-hidden）；族=像素 glyph（16×16 viewBox + crispEdges + rect 网格）', () => {
     const { container } = render(<Icon icon={Check} />);
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute('class')).toContain('sc-icon');
     expect(svg?.getAttribute('aria-hidden')).toBe('true');
-    expect(svg?.getAttribute('stroke-width')).toBe(String(ICON_STROKE_WIDTH));
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 16 16');
+    expect(svg?.getAttribute('shape-rendering')).toBe('crispEdges');
+    expect(svg?.querySelectorAll('rect').length).toBeGreaterThan(0);
     expect(ICON_SIZES).toEqual({ sm: 16, md: 20, lg: 24 });
+    // T58-01：线宽契约保留为 legacy 出口（像素族无描边，改它不影响外观）
+    expect(ICON_STROKE_WIDTH).toBe(1.5);
     expectTokenOnlyCssFile('src/Icon.css');
   });
 
@@ -25,5 +28,30 @@ describe('Icon', () => {
     expect(resolveIconSize('sm')).toBe(16);
     expect(resolveIconSize(32)).toBe(32);
     expect(resolveIconSize()).toBe(20);
+  });
+
+  it('尺寸档穿透到像素几何：width/height 随档位解析（sm/md/lg/显式数字/缺省）', () => {
+    const cases: ReadonlyArray<readonly [IconProps['size'], string]> = [
+      [undefined, '20'],
+      ['sm', '16'],
+      ['md', '20'],
+      ['lg', '24'],
+      [32, '32'],
+    ];
+    for (const [size, expected] of cases) {
+      const { container } = render(<Icon icon={Check} {...(size === undefined ? {} : { size })} />);
+      const svg = container.querySelector('svg');
+      expect(svg?.getAttribute('width'), `size=${String(size)}`).toBe(expected);
+      expect(svg?.getAttribute('height'), `size=${String(size)}`).toBe(expected);
+    }
+  });
+
+  it('color 透传到 svg（currentColor 的解析源）：rect 全是 currentColor，颜色不写死', () => {
+    const { container } = render(<Icon icon={Check} color="#123456" />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('color')).toBe('#123456');
+    for (const rect of container.querySelectorAll('rect')) {
+      expect(rect.getAttribute('fill')).toBe('currentColor');
+    }
   });
 });

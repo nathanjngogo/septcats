@@ -118,7 +118,7 @@ Notion 的价值 60% 在块模型 + 数据库模型（可复制），40% 在协�
 | 壳    | Electron 37+（utilityProcess 而非 child\_process）                                 | 唯一同时满足 Win+mac、成熟打包/自动更新、且我对该架构有一手逆向验证的方案。Tauri 体积优势明显，但 macOS/Windows 差异、Rust 侧维护成本、以及你项目历史（无 Rust 积累）不划算 → 排除 |
 | 语言   | TypeScript 严格模式，`exactOptionalPropertyTypes`                                   | 全栈统一；IPC 边界必须有类型                                                                                                |
 | 构建   | electron-vite（Vite 5）                                                          | 三进程热更新；产出体积可控                                                                                                   |
-| UI | React 18 + 自建组件层（不引 Ant/MUI）；**DESIGN.md token 单一来源（§16）**；图标 @phosphor-icons/react 单族 strokeWidth 1.5；动效 Motion(spring) | 编辑器/侧栏/表格视图均为自绘控件最省；组件库会强加视觉语言（PM Workbench 教训：先定设计）；魔法值由 CI lint 拦截 |
+| UI | React 18 + 自建组件层（不引 Ant/MUI）；**DESIGN.md token 单一来源（§16）**；图标 = 仓内像素 glyph 自绘（T58-01 起，唯一出口 Icon.tsx）；动效 Motion(spring) | 编辑器/侧栏/表格视图均为自绘控件最省；组件库会强加视觉语言（PM Workbench 教训：先定设计）；魔法值由 CI lint 拦截 |
 | 编辑器  | Tiptap v3（ProseMirror）+ 自建块规范层；**M4 开工前做一次 BlockNote vs Tiptap 的 spike 对比**    | Tiptap 可控性高、Yjs 预留；BlockNote 更快但块 schema 被绑架（Plan B，见 §12 决策门 G2）                                               |
 | 状态   | Zustand（+ 显式 selector）                                                         | 轻，避免 Redux 样板                                                                                                   |
 | 本地库  | SQLite 3.4x + better-sqlite3；`journal_mode=WAL`、`STRICT` 表、FTS5                | 单文件、零运维、事务强；STRICT/FTS5/trigram 对 CJK 检索关键                                                                      |
@@ -517,7 +517,7 @@ type Op = {
 3. **双主题一等公民**：浅色/深色**同时设计、同时验收**；禁纯 `#000`/`#fff`；每个颜色 token 必须给双值；PR 未附双主题截图 = 未送审。
 4. **四态必交付**：空态（有构图、指明出口）/ 加载（骨架屏，形似最终布局，禁通用转圈）/ 错误（内联、可重试、说人话）/ 成功。缺任一态即「功能未完成」，不得计入进度。
 5. **排版（2026-09-21 老板全局规则更新）**：UI 与正文 = **思源黑体（Source Han Sans / Noto Sans CJK）**，**自托管捆绑**（可变字体 `apps/desktop/src/renderer/assets/fonts/NotoSansSC-wght.ttf`，一份覆盖全字重轴），不依赖系统字体；栈序 `"Source Han Sans SC", "Noto Sans SC", …, "Microsoft YaHei", sans-serif`。正文 16px / line-height 1.75 / 最大 72ch；**等宽（数字/日期/代码）暂保留现状**（老板未指定，如需改另立单）；中英混排规则写进 DESIGN.md prose。**禁止 Google Fonts CDN / 任何在线字体**（离线红线）。落地单：T50-01。
-6. **图标**：`@phosphor-icons/react` 单族，全局 `strokeWidth 1.5`，禁混族、禁手绘杂集（品牌猫标例外，走 §17 独立评审）。
+6. **图标（T58-01 修订，2026-09-22）**：唯一出口 `packages/ui/src/Icon.tsx`；**族 = 仓内像素 glyph 自绘**（`pixelIcons.tsx`，16×16 硬边网格 ×28 枚，色值只走 `currentColor` + opacity 档），禁混族、禁 emoji 当图标、禁手绘杂集（品牌猫标例外，走 §17 独立评审）。`@phosphor-icons/react` 依赖保留仅作 fallback/文档引用，仓内零 import。视觉质检门禁：`node scripts/check-pixel-icons.mjs`（同源/半透明/色相/墨迹占比四项）+ `node scripts/gen-pixel-glyphs.mjs`（资产表自检）。
 7. **动效**：仅 spring（`stiffness≈100 / damping≈20` 家族），仅 animate `transform/opacity`；每个动效须能一句话回答「它表达了什么」（层级/反馈/状态迁移），答不出即删除；全部包 `prefers-reduced-motion` 降级。
 8. **细节强制项**：`:focus-visible` 环必须存在且键盘全程可达；`:active` 有 1px 按压位移；圆角体系全应用一致（禁混用）；滚动容器不裁切焦点环；zh-CN 文案无翻译腔、不堆破折号（PM 过一遍 humanizer）；空/错误文案禁止卖萌。
 9. **验收机制**

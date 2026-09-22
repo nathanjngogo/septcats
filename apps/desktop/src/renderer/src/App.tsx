@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { setGlobalThemeMode, ToastViewport } from '@septcats/ui';
 import {
+  AiRobot,
   AppShell,
   Breadcrumb,
   GearSix,
@@ -8,7 +9,6 @@ import {
   MagnifyingGlass,
   Plus,
   SidebarSimple,
-  Sparkle,
 } from '@septcats/ui';
 import { AiChatPanel } from './ai/AiChatPanel';
 import { aiChatActions, useAiChat } from './ai/chatState';
@@ -388,10 +388,11 @@ export function App() {
               }}
             />
             {/* T38-01 §0.6：顶栏 AI 对话入口（可收起右侧面板的开关，Ctrl+J 同效）；
-                T39-01：AI 面板位置=隐藏时不渲染入口 */}
+                T39-01：AI 面板位置=隐藏时不渲染入口；
+                T58-01 §1.2：ICON 换像素机器人头（开=眼亮 / 关=眼暗，见 pixelIcons.css） */}
             {aiHidden ? null : (
               <IconButton
-                icon={Sparkle}
+                icon={AiRobot}
                 label={t('app.aiChatLabel')}
                 aria-pressed={chatOpen}
                 onClick={toggleAiPanel}

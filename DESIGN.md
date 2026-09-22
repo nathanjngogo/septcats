@@ -134,7 +134,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - **三变体 A/B/C 供老板三选一，默认 C（侧位版）已接线**为应用图标；**托盘用 16px 原生简化子型 T**（1 格 = 1 物理像素，只保「双尖耳 + 面罩大眼 + 圆头」三指纹，Tail/脚/胸在 16px 取舍掉）。
 - 尺寸档：A/B/C = 16/32/48/256；T = 16/24/32。装包 `.ico` 五层 = **T16/T24/T32 + C48/C256**（全 PNG 表项）。
 - 生成、质检断言、A/B/C/T 对应关系与换型命令：见 `assets/brand/README.md`（本目录为设计资产真源，勿手改）。
-- 品牌资产属 §16.6 的**唯一例外**（非 UI 图标族，不并入 Phosphor 单族），改动须重新批准。
+- 品牌资产属 §16.6 的**唯一例外**（非 UI 图标族，不并入仓内像素图标族；见「Icons」节），改动须重新批准。
 - UI 内的猫形语言仍只有一处：`sync-status` 状态点（`full` 圆点 + 呼吸动画），与图形标无耦合。
 
 ### 深色主题映射（构建脚本据此生成 `[data-theme=dark]`；T53-01 灰阶双主题，附录 A 深色列）
@@ -224,6 +224,25 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - `toast`: 底部居中堆叠，3 条可见，surface-raised + shadow-popover，图标按语义色（成功绿 / 失败红 / 其余 ink-secondary）。
 - 四态强制：每个数据视图必须实现 `EmptyState`（插画占位 + 一句动作导向文案 + 主按钮）、`Skeleton`（形似最终布局，禁通用转圈）、`ErrorPanel`（说明 + 重试）、成功静默（toast 仅不可自动恢复时）。
 
+## Icons
+
+**§16.6 修订（T58-01，2026-09-22）**：图标唯一出口仍是 `Icon.tsx`；**族 = 仓内像素 glyph 自绘**——`packages/ui/src/pixelIcons.tsx` 内置 16×16 硬边像素网格（28 枚手写 glyph，PM 定稿资产表 `scripts/gen-pixel-glyphs.mjs`），渲染为 `viewBox="0 0 16 16"` + `shapeRendering="crispEdges"` 的内联 `<svg>` 矩形条。`@phosphor-icons/react` 依赖保留在 `packages/ui/package.json`，**仅作 fallback / 文档引用**，仓内零 import（`Icon.tsx` 与全部业务代码都不再引用）。
+
+- 色值纪律：glyph 只有 `fill="currentColor"` + 每档 `opacity` 两个来源（亮 1 / 中 .8 / 淡 .72）。档位是**对比度安全档**：三档压在 T53 灰阶平面上对图标前景 token 实测均 ≥3:1（非文字门禁），主题自适应由此免费获得。
+- 尺寸档不变：`{ sm: 16, md: 20, lg: 24 }`（`ICON_SIZES`），档外显式数字允许；`ICON_STROKE_WIDTH` 保留为 legacy 出口，像素族不消费（硬边实心无描边）。
+- 两态图标：`AiRobot`（AI 钮定稿）的眼部/天线是独立分组，由祖先 `aria-pressed` 切明暗（开=眼亮 1 / 关=眼暗 0.35，天线 1/0.55）——状态差即明暗差，不引入任何颜色。
+- 无障碍不变：有 `label` → `role="img"` + `aria-label`；无 `label` → 装饰性 `aria-hidden`。
+- 品牌图形标（§17 布偶猫）仍属本节的**唯一例外**，不并入图标族。
+- 迁移对照表（旧 phosphor 权利名 → 像素 glyph；调用点 `icon={X}` 零改动）：
+
+| 旧权利名（phosphor） | 像素 glyph | 说明 |
+|---|---|---|
+| `MagnifyingGlass` | `Search` | 别名同源（同一组件对象） |
+| `X` | `Close` | 别名同源 |
+| `Sparkle` | `AiRobot` | **语义迁移**：AI 语义统一到像素机器人头（顶栏 AI 钮 / AI 面板标题 / 多维数据「AI 生成」钮三处），`Sparkle` 出口退役 |
+| 其余 23 名（Plus/Check/Caret×3/Trash/…） | 同名 | 一对一换实现 |
+| — | `Layout` / `BookOpen` | 新增：T57 布局钮 / T56 说明书入口的像素 glyph |
+
 ## Do's and Don'ts
 
 - Do：先改 DESIGN.md 再改任何样式代码；tokens 构建脚本是唯一翻译层。
@@ -233,4 +252,4 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - Don't：写死 hex；Don't：用 Inter 或任何在线字体（字体固定为自托管思源黑体 Noto Sans SC，禁 CDN/远程 font-face，T50-01 §16.5）；Don't：AI 紫、渐变按钮、毛玻璃大面积铺、装饰性彩色圆点、em-dash 堆叠的文案。
 - Don't：**任何色相**（除 danger/success 两粒）——状态一律走明度差 + 描边；Don't：控件上用带 blur 的阴影或大圆角胶囊按钮（像素风红线）。
 - Don't：animate `width/height/top/left`；Don't：linear 缓动（全部 spring 或 `cubic-bezier(0.16,1,0.3,1)` 近似）。
-- Don't：emoji 当图标；图标只用 Icon.tsx（Phosphor, strokeWidth 1.5，尺寸档 16/20/24）。
+- Don't：emoji 当图标；图标只用 `Icon.tsx`（T58-01 起族 = 仓内像素 glyph 自绘，尺寸档 16/20/24，色值只走 `currentColor` + opacity 档——见「Icons」节）。

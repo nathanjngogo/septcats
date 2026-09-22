@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Icon, Sparkle, Spinner } from '@septcats/ui';
+import { AiRobot, Icon, Spinner } from '@septcats/ui';
 import { type FieldType, type Property, type PropertyOption } from '../types';
 import { EMPTY_DISPLAY, formatDate, formatValue, parseDateText } from '../values';
 
@@ -739,7 +739,8 @@ export function CellEditor({
             onAiGenerate();
           }}
         >
-          {aiBusy ? <Spinner size="sm" label="AI 生成中" /> : <Icon icon={Sparkle} size="sm" />}
+          {/* T58-01：图标族整体像素化，Sparkle 退役 → AI 生成钮用同语义的 AiRobot 像素 glyph */}
+          {aiBusy ? <Spinner size="sm" label="AI 生成中" /> : <Icon icon={AiRobot} size="sm" />}
         </button>
       ) : null}
     </div>

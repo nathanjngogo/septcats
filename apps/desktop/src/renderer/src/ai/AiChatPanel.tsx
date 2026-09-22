@@ -1,7 +1,7 @@
 /**
  * AiChatPanel.tsx —— 右侧可收起 AI 对话面板（TASK-T38-01 §0.1/§0.2/§0.3）。
  *
- * 组成：标题栏（Sparkle + 清空历史 + 关闭）+ 消息列表（用户/AI 气泡，assistant
+ * 组成：标题栏（AiRobot + 清空历史 + 关闭）+ 消息列表（用户/AI 气泡，assistant
  * 回复里的 ⟦#N⟧ 标记渲染为可点击「页名 › 块锚点」chip）+ 输入区（Enter 发送 /
  * Shift+Enter 换行 / 生成中可停止 / 「附带选中内容」开关）。
  *
@@ -20,7 +20,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Button, Checkbox, Icon, IconButton, Sparkle, Spinner, Trash, X } from '@septcats/ui';
+import { AiRobot, Button, Checkbox, Icon, IconButton, Spinner, Trash, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { usePages } from '../state/pages';
 import {
@@ -191,7 +191,7 @@ export function AiChatPanel() {
     <aside className="ai-chat" aria-label={t('aiChat.title')} onKeyDown={onKeyDown}>
       <div className="ai-chat__head">
         <span className="ai-chat__head-icon" aria-hidden="true">
-          <Icon icon={Sparkle} size="sm" />
+          <Icon icon={AiRobot} size="sm" />
         </span>
         <span className="ai-chat__head-title">{t('aiChat.title')}</span>
         <span className="ai-chat__head-spacer" />

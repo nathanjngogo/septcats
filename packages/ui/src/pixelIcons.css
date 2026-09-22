@@ -1,0 +1,22 @@
+/*
+ * pixelIcons.css —— 像素图标族的两态接线（TASK-T58-01 §1.2）。
+ *
+ * AI 钮 = 像素机器人头：眼/天线是 glyph 内的独立组，明暗由**祖先的开合态**决定。
+ * 载体是 IconButton 的 `aria-pressed`（App.tsx 的顶栏 AI 入口已带该属性）：
+ *   开（aria-pressed="true"）= 眼亮 / 关（"false"）= 眼暗；无该属性时按「亮」渲染，
+ *   所以标题栏等非开关位的 AiRobot 也是一个正常的亮眼机器人头。
+ * 色值仍然只有一个来源：`currentColor`（这里只调 opacity 档，不引入任何颜色值）。
+ */
+.sc-icon__eye,
+.sc-icon__antenna {
+  opacity: 1;
+}
+
+/* 关态：眼灭（0.35）、天线暗一档（0.55）—— 明暗差即状态差 */
+[aria-pressed='false'] .sc-icon__eye {
+  opacity: 0.35;
+}
+
+[aria-pressed='false'] .sc-icon__antenna {
+  opacity: 0.55;
+}
