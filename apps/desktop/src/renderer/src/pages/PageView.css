@@ -43,12 +43,34 @@
   );
 }
 
-/* T41-01：页面级「全宽」开关（Notion 式 Full width）——实现口径走 CSS 属性选择器，
-   零 JS 量测/内联宽高；只放开正文列（.pv-body），标题行（.pv-title-row）保持
-   measure（页面级开关优先于 T39-01 的全局 --sc-layout-measure 默认）；
-   装订线 padding-left 不动，手柄簇右缘恒在文本左缘外 gutter = var(--sc-space-md) ≥ 8。 */
+/* T41-01 + T63-01：页面级「全宽」开关（Notion 式 Full width）——实现口径走 CSS 属性选择器，
+   零 JS 量测/内联宽高（纪律不破）。
+   T41-01 原口径「只放开正文列 .pv-body，标题行 .pv-title-row 保持 measure」在 T63-01 作废：
+   老板新口径=全宽应整列铺满（含标题行+正文编辑器外壳），否则正文永远 720 居中=假全宽。
+   根因：packages/editor 的 .sc-editor 仍钉 var(--sc-space-editor-measure)（720px）居中，
+   外层 .pv-body 解除后内层没解除 → 全宽=假全宽。T63-01 修复=在 .pv-root[data-measure='full']
+   作用域内穿透解除内层 .sc-editor 与标题行 .pv-title-row 的 max-width（editor 包 CSS 零改动）；
+   装订线 padding-left 不动，手柄簇右缘恒在文本左缘外 gutter = var(--sc-space-md) ≥ 8。
+   窄窗/全宽 → 编辑区下方横向滚轴（.pv-root 自身滚动容器，window 零滚动红线不破）；
+   固定态（非全宽）一切不变、零横滚。 */
 .pv-root[data-measure='full'] .pv-body {
   max-width: none;
+}
+
+/* T63-01：穿透解除内层编辑器外壳的 720 钉（editor 包 CSS 不动，靠本作用域选择器生效） */
+.pv-root[data-measure='full'] .sc-editor {
+  max-width: none;
+}
+
+/* T63-01：新口径——标题行同步铺满（T41「标题保持 measure」决议作废） */
+.pv-root[data-measure='full'] .pv-title-row {
+  max-width: none;
+}
+
+/* T63-01：全宽态窄窗 → 编辑区底部横向滚轴（仅全宽作用域，固定态/窄窗固定态零横滚）。
+   .pv-root 自身为滚动容器，非 window——window 级零滚动红线不破。 */
+.pv-root[data-measure='full'] {
+  overflow-x: auto;
 }
 
 /* 空库空态（T26-01 §0.A）：与 .trash-empty/.search-empty 同 token 组合（字号/色/留白），

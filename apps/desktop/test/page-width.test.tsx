@@ -264,25 +264,32 @@ describe('PageView 接线（data-measure 属性 + 静态 CSS 契约）', () => {
     expect(document.querySelector('.pv-root')!.getAttribute('data-measure')).toBe('full');
   });
 
-  it('静态 CSS 契约：[data-measure="full"] 只作用于 .pv-body（标题行不受影响、零内联宽高）', async () => {
+  it('静态 CSS 契约：[data-measure="full"] 穿透解除 .sc-editor/.pv-title-row + 本作用域 overflow-x:auto；固定态零横滚、零内联宽高', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const css = readFileSync(
       join(process.cwd(), 'src', 'renderer', 'src', 'pages', 'PageView.css'),
       'utf8',
     ).replace(/\/\*[\s\S]*?\*\//g, '');
-    // 作用域选择器恰有一条，且目标只有正文列
-    const selectors = css.match(/\.pv-root\[data-measure='full'\][^{]*\{/g) ?? [];
-    expect(selectors).toEqual([".pv-root[data-measure='full'] .pv-body {"]);
+    // T63-01 新口径：全宽作用域内同时解除正文列、内层编辑器外壳、标题行的 max-width
     expect(css).toMatch(/\.pv-root\[data-measure='full'\]\s+\.pv-body\s*\{[^}]*max-width:\s*none/);
-    // 标题行规则不被全宽作用域覆盖（仍走 measure 变量）
+    expect(css).toMatch(/\.pv-root\[data-measure='full'\]\s+\.sc-editor\s*\{[^}]*max-width:\s*none/);
+    expect(css).toMatch(/\.pv-root\[data-measure='full'\]\s+\.pv-title-row\s*\{[^}]*max-width:\s*none/);
+    // 全宽作用域根节点开启横向滚轴（窄窗兜底）
+    expect(css).toMatch(/\.pv-root\[data-measure='full'\]\s*\{[^}]*overflow-x:\s*auto/);
+    // 固定态（.pv-root 基础规则，无 data-measure）不得含任何横向滚动声明（红线：固定态零横滚）
+    const baseRoot = /\.pv-root\s*\{([^}]*)\}/.exec(css);
+    expect(baseRoot).not.toBeNull();
+    expect(baseRoot![1]).not.toMatch(/overflow-x/);
+    // 标题行基础规则仍走 measure（全宽作用域覆盖其上，二者不冲突）
     expect(css).toMatch(/\.pv-title-row\s*\{[^}]*max-width:\s*var\(--sc-layout-measure/);
     // token 纪律（限本次新增规则块）：无字面 hex、无裸 px
-    const fullWidthRule = /\.pv-root\[data-measure='full'\]\s+\.pv-body\s*\{([^}]*)\}/.exec(css);
-    expect(fullWidthRule).not.toBeNull();
-    const ruleBody = fullWidthRule![1];
-    expect(ruleBody).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(ruleBody).not.toMatch(/\d+(?:\.\d+)?px/);
+    const newRules = css.match(/\.pv-root\[data-measure='full'\][^{]*\{[^}]*\}/g) ?? [];
+    expect(newRules.length).toBeGreaterThanOrEqual(4);
+    for (const rule of newRules) {
+      expect(rule).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+      expect(rule).not.toMatch(/\d+(?:\.\d+)?px/);
+    }
   });
 });
 

@@ -207,15 +207,29 @@ const openPage = async (page, title) => {
   return true;
 };
 
-// ⋯ 菜单第一项 = 「全宽 / 固定宽度」切换（T41-01）
+// 「全宽 / 固定宽度」切换。T41 首版按「菜单第一项」点击；T60 菜单重排后第一项=「重命名」，
+// 该假设失效（PM 09-22 修）→ 改为按文字匹配项下标点击。
 const toggleFullWidth = async (page, title) => {
   const id = await rowIdOf(page, title);
   if (id === null) return { ok: false, why: '找不到页面行' };
   await page.locator(`[data-testid="side-more-${id}"]`).first().click().catch(() => {});
   await wait(700);
-  const items = await page.locator('.app-nav-menu [role="menuitem"]').allInnerTexts().catch(() => []);
+  const loc = page.locator('.app-nav-menu [role="menuitem"]');
+  const items = await loc.allInnerTexts().catch(() => []);
   const menuText = items.join(' | ');
-  await page.locator('.app-nav-menu [role="menuitem"]').first().click().catch(() => {});
+  const idx = items.findIndex((t) => /全宽|固定宽度|full width|fixed width/i.test(t));
+  if (idx >= 0) {
+    await loc.nth(idx).click().catch(() => {});
+  } else {
+    // 菜单项改名兜底：走命令面板（诊断实证可用：搜「全宽」→ 首行「全宽 / 固定宽度」）
+    await page.keyboard.press('Escape').catch(() => {});
+    await wait(300);
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('.palette', { timeout: 8000 }).catch(() => {});
+    await page.locator('.palette-input input').first().type('全宽', { delay: 30 }).catch(() => {});
+    await wait(700);
+    await page.locator('.palette-row').first().click({ force: true }).catch(() => {});
+  }
   await wait(1200);
   return { ok: true, menuText };
 };

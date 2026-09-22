@@ -1,0 +1,225 @@
+{
+  "task": "TASK-T63-01 真机验收（全宽定义修正）",
+  "ranAt": "2026-09-22T13:23:44.499Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP 量测/点击/截图 + main 进程 BrowserWindow.setBounds 分辨率/窗口真实 resize",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t63-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t63-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t63-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "wide-full.png",
+    "wide-fixed.png",
+    "narrow-full-scroll.png",
+    "after-restart.png"
+  ],
+  "pass": 16,
+  "fail": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "A": {
+      "pvRootInnerW": 1600,
+      "bodyW": 1585,
+      "scW": 1515,
+      "titleW": 1585,
+      "gutter": 70,
+      "colContentW": 1515,
+      "dataMeasure": "full",
+      "pageAttrFull": true,
+      "pvRootScrollW": 1665,
+      "pvRootClientW": 1665,
+      "pvRootScrollLeft": 0,
+      "pvRootMaxScroll": 0,
+      "winScrollW": 1920,
+      "winClientW": 1920,
+      "winInnerW": 1920,
+      "measureVar": "650px",
+      "bodyMaxW": "none",
+      "pvRootOverflowX": "auto"
+    },
+    "B": [
+      {
+        "w": 1920,
+        "bodyW": 1585,
+        "scW": 1515,
+        "titleW": 1585,
+        "colContentW": 1515,
+        "winInnerW": 1920
+      },
+      {
+        "w": 1440,
+        "bodyW": 1105,
+        "scW": 1035,
+        "titleW": 1105,
+        "colContentW": 1035,
+        "winInnerW": 1440
+      },
+      {
+        "w": 1280,
+        "bodyW": 945,
+        "scW": 875,
+        "titleW": 945,
+        "colContentW": 875,
+        "winInnerW": 1280
+      },
+      {
+        "w": 1184,
+        "bodyW": 849,
+        "scW": 779,
+        "titleW": 849,
+        "colContentW": 779,
+        "winInnerW": 1184
+      }
+    ]
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t63-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t63-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "setup",
+      "name": "[info] 页面 id",
+      "ok": null,
+      "raw": "full=01M34MGPVQ8RAKW2QYCENV2JQ7 fixed=01M34MGR3VH6SW5WVTHV9F98V3 overflow=01M34MGSBD318YBAMARG06DF0Q fixedNarrow=01M34MGTK7K7F4A6NZ5GQ3K7TC"
+    },
+    {
+      "step": "A|fill",
+      "name": "[info] A 全宽量测（1920）",
+      "ok": null,
+      "raw": "{\"pvRootInnerW\":1600,\"bodyW\":1585,\"scW\":1515,\"titleW\":1585,\"gutter\":70,\"colContentW\":1515,\"dataMeasure\":\"full\",\"pageAttrFull\":true,\"pvRootScrollW\":1665,\"pvRootClientW\":1665,\"pvRootScrollLeft\":0,\"pvRootMaxScroll\":0,\"winScrollW\":1920,\"winClientW\":1920,\"winInnerW\":1920,\"measureVar\":\"650px\",\"bodyMaxW\":\"none\",\"pvRootOverflowX\":\"auto\"}"
+    },
+    {
+      "step": "A|fill",
+      "name": "A1 全宽铺满：.sc-editor width ≥ 0.95×列内容宽（非 720 钉）",
+      "ok": true,
+      "raw": "scW=1515 列内容宽=1515 比=1.000"
+    },
+    {
+      "step": "A|fill",
+      "name": "A2 全宽铺满：.pv-title-row width ≥ 0.95×列内容宽（标题行同步铺满，T41 旧口径作废）",
+      "ok": true,
+      "raw": "titleW=1585 列内容宽=1515"
+    },
+    {
+      "step": "A|fill",
+      "name": "A3 全宽态：data-measure=full 且 .pv-body max-width=none",
+      "ok": true,
+      "raw": "data-measure=full bodyMaxW=none"
+    },
+    {
+      "step": "B|sweep",
+      "name": "[info] B 分辨率扫档（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1920,\"bodyW\":1585,\"scW\":1515,\"titleW\":1585,\"colContentW\":1515,\"winInnerW\":1920},{\"w\":1440,\"bodyW\":1105,\"scW\":1035,\"titleW\":1105,\"colContentW\":1035,\"winInnerW\":1440},{\"w\":1280,\"bodyW\":945,\"scW\":875,\"titleW\":945,\"colContentW\":875,\"winInnerW\":1280},{\"w\":1184,\"bodyW\":849,\"scW\":779,\"titleW\":849,\"colContentW\":779,\"winInnerW\":1184}]"
+    },
+    {
+      "step": "B|sweep",
+      "name": "B1 分辨率逐档变化：四档 .pv-body width 互异且随窗口递减（证随分辨率自适应）",
+      "ok": true,
+      "raw": "1920:1585 1440:1105 1280:945 1184:849"
+    },
+    {
+      "step": "B|sweep",
+      "name": "B2 每档仍满铺：四档 sc-editor / title-row 均 ≥ 0.95×列内容宽",
+      "ok": true,
+      "raw": "1920:sc 1515/cc 1515 1440:sc 1035/cc 1035 1280:sc 875/cc 875 1184:sc 779/cc 779"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "[info] C1 全宽 660 量测",
+      "ok": null,
+      "raw": "{\"pvRootInnerW\":380,\"bodyW\":365,\"scW\":295,\"titleW\":365,\"gutter\":70,\"colContentW\":295,\"dataMeasure\":\"full\",\"pageAttrFull\":true,\"pvRootScrollW\":445,\"pvRootClientW\":445,\"pvRootScrollLeft\":0,\"pvRootMaxScroll\":0,\"winScrollW\":660,\"winClientW\":660,\"winInnerW\":660,\"measureVar\":\"650px\",\"bodyMaxW\":\"none\",\"pvRootOverflowX\":\"auto\"}"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C1a 全宽态：.pv-root computed overflow-x = auto（横滚容器机制就位）",
+      "ok": true,
+      "raw": "overflow-x=auto"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "[info] C1 滚动到底（原始）",
+      "ok": null,
+      "raw": "{\"max\":1635,\"after\":1635,\"sawRight\":true}"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C1b 全宽 660：.pv-root 横向可滚（scrollWidth>clientWidth 且 scrollLeft 可动到底）",
+      "ok": true,
+      "raw": "{\"max\":1635,\"after\":1635,\"sawRight\":true}"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C1c 窗口级零横向滚动（横滚封在 .pv-root，window 不滚）",
+      "ok": true,
+      "raw": "winScrollW=660 winClientW=660"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "[info] C2 固定 660 量测",
+      "ok": null,
+      "raw": "{\"pvRootInnerW\":380,\"bodyW\":365,\"scW\":295,\"titleW\":365,\"gutter\":70,\"colContentW\":295,\"dataMeasure\":null,\"pageAttrFull\":false,\"pvRootScrollW\":445,\"pvRootClientW\":445,\"pvRootScrollLeft\":0,\"pvRootMaxScroll\":0,\"winScrollW\":660,\"winClientW\":660,\"winInnerW\":660,\"measureVar\":\"650px\",\"bodyMaxW\":\"650px\",\"pvRootOverflowX\":\"auto\"}"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C2a 固定态：.pv-root 无 data-measure 属性（全宽作用域 overflow-x:auto 规则未命中，红线：固定态无横向滚动容器）",
+      "ok": true,
+      "raw": "data-measure=null"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C2b 固定态 660：普通内容无横向滚动条（scrollWidth ≤ clientWidth）",
+      "ok": true,
+      "raw": "scrollW=445 clientW=445"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C2c 固定态 660：data-measure=null 且正文列 max-width=measure 变量（固定态零改动）",
+      "ok": true,
+      "raw": "data-measure=null max-width=650px var=650px"
+    },
+    {
+      "step": "C|hscroll",
+      "name": "C2d 固定态窗口级零横向滚动",
+      "ok": true,
+      "raw": "winScrollW=660 winClientW=660"
+    },
+    {
+      "step": "D|persist",
+      "name": "D1 每页独立：A(全宽页)=full，B(固定页)=null",
+      "ok": true,
+      "raw": "full=full fixed=null"
+    },
+    {
+      "step": "teardown",
+      "name": "D2 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    },
+    {
+      "step": "D|restart",
+      "name": "D3 重启还原：全宽页仍 full",
+      "ok": true,
+      "raw": "data-measure=full"
+    },
+    {
+      "step": "D|restart",
+      "name": "D4 重启还原：固定页仍固定（null）",
+      "ok": true,
+      "raw": "data-measure=null"
+    }
+  ]
+}
