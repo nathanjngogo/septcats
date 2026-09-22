@@ -28,6 +28,7 @@ import {
   openHome,
   toggleWorkbenchView,
 } from '../src/renderer/src/workbench/state';
+import type { WorkbenchCardId } from '../src/renderer/src/workbench/state';
 
 beforeEach(() => {
   window.localStorage.clear();

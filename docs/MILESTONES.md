@@ -275,6 +275,7 @@
 | R17（老板 09-22 晚：主题+工作台选型） | 09-22 | 🔄 T65/T66 派子Agent | 主题=方案①画廊（palette 派系 data-palette 覆写块+LayoutPicker 同款弹框；语义色不动）；工作台=方案A+库（home 视图+数据库卡常驻+待办/最近/收藏卡，现有模式↔工作台一键切换）；两单在独立 worktree feat/t65-theme-gallery / feat/t66-workbench 并行（CB 忙时改派子 Agent=老板新规则），探针由 PM 合并后统一跑 |
 | R18（老板 09-22 深夜：页面密码锁） | 09-22 | 📋 T67 立项排队 | 锁=真加密：v10 新表 page_lock（scrypt N=2^17 派生页面 DEK+AES-256-GCM 信封复用 sync/crypto）、正文块落库加密、锁卡 UI+恢复码兜底+限速；限制声明=标题明文/锁页不进搜索；等 T64 合入后派 CB（主树文件面重叠） |
 | R16-① T64 侧栏两修 | 09-23 | ✅ **PM 真机 15 PASS/0 FAIL** | CB 代码收口 a97f616（PM 补 commit.ts 闸门漏改等 4 处 DEVIATION）；PM 亲写探针：最小侧栏 ⋯/右键盒四边≥8px（修前 left=−26 越屏）、folder 创建/容器语义/转换/面包屑/重启还原、搜索不白屏；夹具隔离 untouched=true |
+| R17-② T66 个人工作台 | 09-23 | ✅ **PM 真机 21 PASS/0 FAIL** | 子 Agent 主体 1664 行 + PM salvage（假桥/正则/钉子新语义/墨线纪律）合入 main 08ed84d；库卡常驻=老板点名"加一个库"；三入口+home 非死角+重启防呆全绿；探针 3 处假红逐条定性为探针侧（Playwright force click 不触发 React onClick 等），产品零缺陷 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
