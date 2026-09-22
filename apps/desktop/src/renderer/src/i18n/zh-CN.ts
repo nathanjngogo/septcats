@@ -22,6 +22,8 @@ export const zhCN = {
     // T52-01 §1.2：侧栏开合钮（搬到标签条行最左）的可访问名，随开合态翻转
     collapseSidebar: '收起侧栏',
     expandSidebar: '展开侧栏',
+    // T57-01 §1.1：顶栏「布局」钮（设置钮左侧）——点击弹布局快选框
+    layoutLabel: '布局',
   },
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
@@ -271,6 +273,7 @@ export const zhCN = {
       sidebarWidthDesc: '200–320，越界自动夹紧',
       measure: '内容最大宽度',
       measureDesc: '560–1000，越界自动夹紧',
+      unitPx: 'px',
       ai: 'AI 面板位置',
       aiRight: '右侧',
       aiBottom: '底部',
@@ -300,6 +303,18 @@ export const zhCN = {
       importBadJson: '不是有效的 JSON：请粘贴完整的布局 JSON 文本，当前布局未改动',
       importBadShape: '布局 JSON 结构不符：字段缺失或类型错误，当前布局未改动',
       presetSwitched: '已切换布局预设：{name}',
+      // T57-01：顶栏「布局」钮弹出的快选框（§1.2）+ 独立布局编辑器页（§1.3）
+      pickerTitle: '选择布局',
+      pickerHint: '点卡片即时应用并记住；Esc 或点遮罩关闭且不改动',
+      pickerEdit: '自定义编辑…',
+      editorTitle: '布局编辑器',
+      editorReset: '恢复默认',
+      editorDone: '完成',
+      editorPreview: '预览',
+      editorDetails: '细项参数',
+      editorEntry: '在布局编辑器中打开',
+      editorEntryDesc: '预设卡片与全部细项参数（侧栏 / 正文 / AI 面板 / 密度 / 主题）',
+      resetDone: '已恢复默认布局',
     },
     privacy: {
       title: '数据与隐私',
@@ -585,6 +600,7 @@ export const zhCN = {
       importLater: '导入将在后续里程碑提供',
       aiChat: '打开 / 关闭 AI 对话',
       layoutPreset: '切换布局预设',
+      layoutEditor: '布局编辑器',
       manual: '使用说明书',
     },
     theme: {
@@ -617,6 +633,7 @@ export const zhCN = {
       import: '从 Notion 导出包 / Markdown / CSV 导入',
       aiChat: '右侧 AI 对话面板（多轮对话，上下文取当前页）',
       layoutPreset: '在 Notion / 专注 / 工作台 之间循环切换',
+      layoutEditor: '打开独立布局编辑器（预设与细项参数整页编辑）',
       manual: '在应用内阅读使用说明书',
     },
     theme: {

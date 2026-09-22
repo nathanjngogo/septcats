@@ -1,0 +1,589 @@
+{
+  "task": "TASK-T57-01 真机取证（布局选择弹框 + 独立布局编辑器）",
+  "ranAt": "2026-09-22T06:34:34.754Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/拖动/截图 + Emulation.setDeviceMetricsOverride 两宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t57-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t57-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t57-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t57-01-picker-cards.png",
+    "t57-01-picker-card-notion-zoom.png",
+    "t57-01-picker-card-focus-zoom.png",
+    "t57-01-picker-card-workbench-zoom.png",
+    "t57-01-picker-focus-applied.png",
+    "t57-01-editor-zh.png",
+    "t57-01-editor-width300.png",
+    "t57-01-editor-1184.png",
+    "t57-01-editor-894.png",
+    "t57-01-picker-en.png",
+    "t57-01-window-en-picker.png",
+    "t57-01-editor-en.png"
+  ],
+  "pass": 28,
+  "fail": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "topbarOrder": [
+      "搜索（Ctrl+K）",
+      "AI 对话（Ctrl+J）",
+      "导入",
+      "布局",
+      "设置"
+    ],
+    "picker": {
+      "role": "dialog",
+      "ariaModal": "true",
+      "borderWidth": "2px",
+      "boxShadow": "rgba(28, 30, 33, 0.28) 0px 24px 64px -16px, rgba(28, 30, 33, 0.08) 0px 4px 12px 0px, rgb(198, 198, 198) 2px 2px 0px 0px,",
+      "cardCount": 3,
+      "cardIds": [
+        "layout-picker-card-notion",
+        "layout-picker-card-focus",
+        "layout-picker-card-workbench"
+      ],
+      "activeCards": [
+        "true",
+        "false",
+        "false"
+      ],
+      "previewCount": 3,
+      "imgCount": 0,
+      "editButton": true,
+      "overlayBg": "color(srgb 0.101961 0.101961 0.101961 / 0.32)",
+      "width": 560,
+      "shellAlive": true
+    },
+    "sidebarBefore": {
+      "sidebarWidth": 240,
+      "sidebarDisplay": "block",
+      "sidebarLeft": 0,
+      "sidebarTop": 0,
+      "appSideWidth": 239,
+      "topbarLeft": 240,
+      "topbarRight": 1184,
+      "mainWidth": 944,
+      "mainLeft": 240,
+      "layoutSidebarVar": "240px",
+      "layoutMeasureVar": "650px",
+      "innerWidth": 1184,
+      "innerHeight": 735,
+      "outerHeight": 800,
+      "nativeChromeH": 65
+    },
+    "sidebarAfterFocus": {
+      "sidebarWidth": 0,
+      "sidebarDisplay": "none",
+      "sidebarLeft": 0,
+      "sidebarTop": 0,
+      "appSideWidth": 0,
+      "topbarLeft": 0,
+      "topbarRight": 1184,
+      "mainWidth": 1184,
+      "mainLeft": 0,
+      "layoutSidebarVar": "240px",
+      "layoutMeasureVar": "900px",
+      "innerWidth": 1184,
+      "innerHeight": 735,
+      "outerHeight": 800,
+      "nativeChromeH": 65
+    },
+    "editorPage": {
+      "editor": true,
+      "picker": false,
+      "crumb": "布局编辑器",
+      "pvRoot": false,
+      "widthValue": "240px",
+      "rangeMin": "200",
+      "rangeMax": "320",
+      "previewCount": 4,
+      "fused": false
+    },
+    "drag": {
+      "beforeDrag": {
+        "sidebarWidth": 240,
+        "sidebarDisplay": "block",
+        "sidebarLeft": 0,
+        "sidebarTop": 0,
+        "appSideWidth": 239,
+        "topbarLeft": 240,
+        "topbarRight": 1184,
+        "mainWidth": 944,
+        "mainLeft": 240,
+        "layoutSidebarVar": "240px",
+        "layoutMeasureVar": "900px",
+        "innerWidth": 1184,
+        "innerHeight": 735,
+        "outerHeight": 800,
+        "nativeChromeH": 65
+      },
+      "dragValue": "320",
+      "afterDrag": {
+        "sidebarWidth": 320,
+        "sidebarDisplay": "block",
+        "sidebarLeft": 0,
+        "sidebarTop": 0,
+        "appSideWidth": 319,
+        "topbarLeft": 320,
+        "topbarRight": 1184,
+        "mainWidth": 864,
+        "mainLeft": 320,
+        "layoutSidebarVar": "320px",
+        "layoutMeasureVar": "900px",
+        "innerWidth": 1184,
+        "innerHeight": 735,
+        "outerHeight": 800,
+        "nativeChromeH": 65
+      }
+    },
+    "afterSet": {
+      "sidebarWidth": 300,
+      "sidebarDisplay": "block",
+      "sidebarLeft": 0,
+      "sidebarTop": 0,
+      "appSideWidth": 299,
+      "topbarLeft": 300,
+      "topbarRight": 1184,
+      "mainWidth": 884,
+      "mainLeft": 300,
+      "layoutSidebarVar": "300px",
+      "layoutMeasureVar": "900px",
+      "innerWidth": 1184,
+      "innerHeight": 735,
+      "outerHeight": 800,
+      "nativeChromeH": 65
+    },
+    "reset": {
+      "afterReset": {
+        "sidebarWidth": 240,
+        "sidebarDisplay": "block",
+        "sidebarLeft": 0,
+        "sidebarTop": 0,
+        "appSideWidth": 239,
+        "topbarLeft": 240,
+        "topbarRight": 1184,
+        "mainWidth": 944,
+        "mainLeft": 240,
+        "layoutSidebarVar": "240px",
+        "layoutMeasureVar": "650px",
+        "innerWidth": 1184,
+        "innerHeight": 735,
+        "outerHeight": 800,
+        "nativeChromeH": 65
+      },
+      "resetState": {
+        "widthValue": "240px",
+        "notionPressed": "true",
+        "density": "comfortable"
+      }
+    },
+    "backToEditor": {
+      "editor": false,
+      "pvRoot": true,
+      "fused": true,
+      "toggle": true,
+      "inBar": true
+    },
+    "fusionSide": {
+      "sidebarWidth": 240,
+      "sidebarDisplay": "block",
+      "sidebarLeft": 0,
+      "sidebarTop": 0,
+      "appSideWidth": 239,
+      "topbarLeft": 240,
+      "topbarRight": 1184,
+      "mainWidth": 944,
+      "mainLeft": 240,
+      "layoutSidebarVar": "240px",
+      "layoutMeasureVar": "650px",
+      "innerWidth": 1184,
+      "innerHeight": 735,
+      "outerHeight": 800,
+      "nativeChromeH": 65
+    },
+    "toggle": {
+      "btnCenterX": 260,
+      "btnCenterY": 58,
+      "btnW": 24,
+      "barLeft": 248,
+      "barCenterY": 58,
+      "inViewport": true
+    },
+    "colors": {
+      "barBorderBottom": "0px",
+      "activeBorderBottom": "0px",
+      "activeBg": "rgb(255, 255, 255)",
+      "pvBg": "rgb(255, 255, 255)",
+      "belowActive": "pv-root"
+    },
+    "gutter": {
+      "bodyPaddingLeft": "70px",
+      "gutter": 12,
+      "overlap": false,
+      "clusterW": 58,
+      "clusterH": 28
+    },
+    "widths": [
+      {
+        "w": 1184,
+        "view": "editor",
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1184,
+        "winClientW": 1184,
+        "sideTop": 0,
+        "sidebarWidth": 240
+      },
+      {
+        "w": 894,
+        "view": "editor",
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 894,
+        "winClientW": 894,
+        "sideTop": 0,
+        "sidebarWidth": 240
+      },
+      {
+        "w": 1184,
+        "view": "layout-editor",
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1184,
+        "winClientW": 1184,
+        "sideTop": 0,
+        "sidebarWidth": 240
+      },
+      {
+        "w": 894,
+        "view": "layout-editor",
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 894,
+        "winClientW": 894,
+        "sideTop": 0,
+        "sidebarWidth": 240
+      }
+    ],
+    "enPicker": {
+      "title": "Choose a layout",
+      "hint": "Click a card to apply and remember instantly; Esc or overlay click closes without changes",
+      "edit": "Customize…",
+      "cardName": "Notion"
+    },
+    "enEditor": {
+      "title": "Layout editor",
+      "done": "Done",
+      "reset": "Restore defaults",
+      "crumb": "Layout editor",
+      "slider": "Sidebar width"
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t57-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t57-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真点「新建页面」×2 + 键入正文两段 → 2 标签 / 2 存活页",
+      "ok": true,
+      "raw": "tabs=2 pages=2"
+    },
+    {
+      "step": "G1|topbar-layout",
+      "name": "[info] 顶栏 actions 序（原始）",
+      "ok": null,
+      "raw": "[\"搜索（Ctrl+K）\",\"AI 对话（Ctrl+J）\",\"导入\",\"布局\",\"设置\"]"
+    },
+    {
+      "step": "G1|topbar-layout",
+      "name": "G1-1 §1.1：布局钮存在且紧邻设置钮左侧（顺序 …Plus→Layout→Gear）",
+      "ok": true,
+      "raw": "layoutIndex=3 settingsIndex=4"
+    },
+    {
+      "step": "G1|topbar-layout",
+      "name": "[info] 弹框量测（原始）",
+      "ok": null,
+      "raw": "{\"role\":\"dialog\",\"ariaModal\":\"true\",\"borderWidth\":\"2px\",\"boxShadow\":\"rgba(28, 30, 33, 0.28) 0px 24px 64px -16px, rgba(28, 30, 33, 0.08) 0px 4px 12px 0px, rgb(198, 198, 198) 2px 2px 0px 0px,\",\"cardCount\":3,\"cardIds\":[\"layout-picker-card-notion\",\"layout-picker-card-focus\",\"layout-picker-card-workbench\"],\"activeCards\":[\"true\",\"false\",\"false\"],\"previewCount\":3,\"imgCount\":0,\"editButton\":true,\"overlayBg\":\"color(srgb 0.101961 0.101961 0.101961 / 0.32)\",\"width\":560,\"shellAlive\":true}"
+    },
+    {
+      "step": "G1|topbar-layout",
+      "name": "G1-2 点布局钮 → 弹框打开且 aria-pressed 翻 true",
+      "ok": true,
+      "raw": "before=false after=true"
+    },
+    {
+      "step": "G1|topbar-layout",
+      "name": "G1-3 §1.2：弹框是 overlay，主窗口主区结构仍在（选卡重排可见）",
+      "ok": true,
+      "raw": "shellAlive=true overlayBg=color(srgb 0.101961 0.101961 0.101961 / 0.32)"
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "G2-1 §1.2：像素模态语法（role=dialog + aria-modal + 2px 描边 + 像素投影 token 生效）",
+      "ok": true,
+      "raw": "role=dialog ariaModal=true border=2px shadow=\"rgba(28, 30, 33, 0.28) 0px 24px 64px -16px, rgba(28, 30, 33, 0.08) 0px 4px 12px 0px, rgb(198, 198, 198) 2px 2px 0px 0px,\""
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "G2-2 §1.2：三张 preset 卡（notion/focus/workbench）+ 每卡一张 CSS 抽象预览图，零位图 <img>",
+      "ok": true,
+      "raw": "cards=3 previews=3 imgs=0 ids=layout-picker-card-notion,layout-picker-card-focus,layout-picker-card-workbench"
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "G2-3 当前项高亮（notion aria-pressed=true，其余 false）+ 底部「自定义编辑…」按钮在位",
+      "ok": true,
+      "raw": "pressed=true,false,false edit=true panelW=560"
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "[info] 预设卡 notion 3x 放大截图",
+      "ok": null,
+      "raw": "{\"bytes\":5025,\"clip\":{\"x\":338,\"y\":285,\"width\":161,\"height\":171}}"
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "[info] 预设卡 focus 3x 放大截图",
+      "ok": null,
+      "raw": "{\"bytes\":4915,\"clip\":{\"x\":511,\"y\":285,\"width\":161,\"height\":171}}"
+    },
+    {
+      "step": "G2|picker-anatomy",
+      "name": "[info] 预设卡 workbench 3x 放大截图",
+      "ok": null,
+      "raw": "{\"bytes\":3973,\"clip\":{\"x\":685,\"y\":285,\"width\":161,\"height\":171}}"
+    },
+    {
+      "step": "G3|apply-focus",
+      "name": "[info] 选卡前侧栏（原始）",
+      "ok": null,
+      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":239,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+    },
+    {
+      "step": "G3|apply-focus",
+      "name": "[info] 选 focus 后侧栏（原始）",
+      "ok": null,
+      "raw": "{\"sidebarWidth\":0,\"sidebarDisplay\":\"none\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":0,\"topbarLeft\":0,\"topbarRight\":1184,\"mainWidth\":1184,\"mainLeft\":0,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"900px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+    },
+    {
+      "step": "G3|apply-focus",
+      "name": "G3-1 §1.7：点 focus → 主窗口侧栏 getBoundingClientRect 实测变窄（240 → 0，display:none）",
+      "ok": true,
+      "raw": "before=240px after=0px display=none appSide=239→0"
+    },
+    {
+      "step": "G3|apply-focus",
+      "name": "G3-2 §1.7：正文宽度变量同步 650 → 900（预设整份套用）+ 主区吃满窗口宽",
+      "ok": true,
+      "raw": "measure 650px→900px mainW=1184 winW=1184"
+    },
+    {
+      "step": "G3|apply-focus",
+      "name": "G3-3 点卡后弹框不关（可连续试卡）+ 高亮转移到 focus",
+      "ok": true,
+      "raw": "focusPressed=true pickerStillOpen=true"
+    },
+    {
+      "step": "G4|editor-page",
+      "name": "[info] 编辑器页状态（原始）",
+      "ok": null,
+      "raw": "{\"editor\":true,\"picker\":false,\"crumb\":\"布局编辑器\",\"pvRoot\":false,\"widthValue\":\"240px\",\"rangeMin\":\"200\",\"rangeMax\":\"320\",\"previewCount\":4,\"fused\":false}"
+    },
+    {
+      "step": "G4|editor-page",
+      "name": "G4-1 §1.3：弹框关、编辑器页占主区、面包屑「布局编辑器」、主区 pv-root 让位",
+      "ok": true,
+      "raw": "{\"editor\":true,\"picker\":false,\"crumb\":\"布局编辑器\",\"pvRoot\":false,\"widthValue\":\"240px\",\"rangeMin\":\"200\",\"rangeMax\":\"320\",\"previewCount\":4,\"fused\":false}"
+    },
+    {
+      "step": "G4|editor-page",
+      "name": "G4-2 §1.3：编辑器页 = 大预览 + 三张预设卡缩略（4 张抽象图）+ 宽度滑杆（区间 200–320）",
+      "ok": true,
+      "raw": "previews=4 min=200 max=320"
+    },
+    {
+      "step": "G4|editor-page",
+      "name": "G4-3 非编辑器视图 → .app-shell--fused 摘除（T52 契约：顶栏钮回来）",
+      "ok": true,
+      "raw": "fused=false"
+    },
+    {
+      "step": "G5|slider",
+      "name": "[info] 真实鼠标拖动滑杆（原始）",
+      "ok": null,
+      "raw": "{\"dragValue\":\"320\",\"before\":240,\"after\":320,\"var\":\"320px\"}"
+    },
+    {
+      "step": "G5|slider",
+      "name": "G5-1 §1.7：真实鼠标拖动宽度滑杆 → 主窗口 .sc-shell__sidebar / .app-side 实测宽度跟随（DOM 实测）",
+      "ok": true,
+      "raw": "dragValue=320 sidebar 240→320 var=320px appSide=319"
+    },
+    {
+      "step": "G5|slider",
+      "name": "[info] 滑杆精确回写 300（原始）",
+      "ok": null,
+      "raw": "{\"setValue\":\"300\",\"sidebarWidth\":300,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":299,\"topbarLeft\":300,\"topbarRight\":1184,\"mainWidth\":884,\"mainLeft\":300,\"layoutSidebarVar\":\"300px\",\"layoutMeasureVar\":\"900px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+    },
+    {
+      "step": "G5|slider",
+      "name": "G5-2 §1.7：滑杆回写 300 → 侧栏实测 = 300px（= --sc-layout-sidebar）+ 大预览图内联变量随动 27.3%",
+      "ok": true,
+      "raw": "sidebar=300 var=300px previewStyle=\"--sc-layout-preview-sidebar: 27.3%; --sc-layout-preview-content: 76.9%;\" rangeValue=300"
+    },
+    {
+      "step": "G5|slider",
+      "name": "G5-3 回写落入 localStorage（septcats.layout：preset=custom / sidebar.width=300）",
+      "ok": true,
+      "raw": "{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":300},\"content\":{\"measure\":900},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"density\":\"comfortable\",\"theme\":\"system\"}"
+    },
+    {
+      "step": "G6|reset-default",
+      "name": "[info] 恢复默认（原始）",
+      "ok": null,
+      "raw": "{\"widthValue\":\"240px\",\"notionPressed\":\"true\",\"density\":\"comfortable\",\"sidebarWidth\":240,\"vars\":[\"240px\",\"650px\"]}"
+    },
+    {
+      "step": "G6|reset-default",
+      "name": "G6-1 §1.7：恢复默认 → 侧栏/正文/密度/预设四项回位（DOM 实测 240 + 变量 240/650 + notion 高亮）",
+      "ok": true,
+      "raw": "sidebar=240 vars=240px/650px notion=true density=comfortable"
+    },
+    {
+      "step": "G7|done",
+      "name": "G7-1 §1.7：点「完成」→ 回编辑器视图（编辑器页消失、pv-root 回来、fused 类在、折叠钮在标签行内）",
+      "ok": true,
+      "raw": "{\"editor\":false,\"pvRoot\":true,\"fused\":true,\"toggle\":true,\"inBar\":true}"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "[info] T52 通高量测（原始）",
+      "ok": null,
+      "raw": "{\"sidebarWidth\":240,\"sidebarDisplay\":\"block\",\"sidebarLeft\":0,\"sidebarTop\":0,\"appSideWidth\":239,\"topbarLeft\":240,\"topbarRight\":1184,\"mainWidth\":944,\"mainLeft\":240,\"layoutSidebarVar\":\"240px\",\"layoutMeasureVar\":\"650px\",\"innerWidth\":1184,\"innerHeight\":735,\"outerHeight\":800,\"nativeChromeH\":65}"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "G8-1 T52 红线：侧栏通高（侧栏 top=0 且高 ≈ 内容区高；原生菜单 chrome 高 > 0）",
+      "ok": true,
+      "raw": "sidebarTop=0 sidebarW=240 chromeH=65"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "G8-2 T52 红线：顶栏左缘 = 侧栏右缘（顶栏不再通栏横切侧栏上方）",
+      "ok": true,
+      "raw": "topbarLeft=240 sidebarW=240 topbarRight=1184 winW=1184"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "[info] 折叠钮量测（原始）",
+      "ok": null,
+      "raw": "{\"btnCenterX\":260,\"btnCenterY\":58,\"btnW\":24,\"barLeft\":248,\"barCenterY\":58,\"inViewport\":true}"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "G8-3 T52 红线：折叠钮在标签行最左（中心 x ∈ [行左, 行左+64]、|Δy(行中心)| ≤ 2、24px 图标位、在视口内）",
+      "ok": true,
+      "raw": "centerX=260 barLeft=248 Δy=0.0 w=24 inViewport=true"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "[info] 标签连通色值（原始）",
+      "ok": null,
+      "raw": "{\"barBorderBottom\":\"0px\",\"activeBorderBottom\":\"0px\",\"activeBg\":\"rgb(255, 255, 255)\",\"pvBg\":\"rgb(255, 255, 255)\",\"belowActive\":\"pv-root\"}"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "G8-4 T52 红线：标签连通（无整行分隔线 + 活动标签底 = pv-root 底 + 下缘命中 pv-root）",
+      "ok": true,
+      "raw": "barBorder=0px activeBorder=0px activeBg=rgb(255, 255, 255) pvBg=rgb(255, 255, 255) below=\"pv-root\""
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "[info] 装订线量测（原始）",
+      "ok": null,
+      "raw": "{\"bodyPaddingLeft\":\"70px\",\"gutter\":12,\"overlap\":false,\"clusterW\":58,\"clusterH\":28}"
+    },
+    {
+      "step": "G8|t52-redlines",
+      "name": "G8-5 T33/T52 红线：.pv-body 左侧装订线 70px + 手柄簇↔文本 gutter=12 且无重叠",
+      "ok": true,
+      "raw": "bodyPaddingLeft=70px gutter=12 overlap=false"
+    },
+    {
+      "step": "G9|two-widths",
+      "name": "[info] 两宽度零滚动（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1184,\"view\":\"editor\",\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0,\"sidebarWidth\":240},{\"w\":894,\"view\":\"editor\",\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":894,\"winClientW\":894,\"sideTop\":0,\"sidebarWidth\":240},{\"w\":1184,\"view\":\"layout-editor\",\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0,\"sidebarWidth\":240},{\"w\":894,\"view\":\"layout-editor\",\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":894,\"winClientW\":894,\"sideTop\":0,\"sidebarWidth\":240}]"
+    },
+    {
+      "step": "G9|two-widths",
+      "name": "G9-1 §2：1184/894 两宽度、两种视图均零滚动（纵向 + 横向）且侧栏 top 恒 0",
+      "ok": true,
+      "raw": "1184/editor:{h 800/800,w 1184/1184,top=0} 894/editor:{h 800/800,w 894/894,top=0} 1184/layout-editor:{h 800/800,w 1184/1184,top=0} 894/layout-editor:{h 800/800,w 894/894,top=0}"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "[info] English 弹框文案（原始）",
+      "ok": null,
+      "raw": "{\"title\":\"Choose a layout\",\"hint\":\"Click a card to apply and remember instantly; Esc or overlay click closes without changes\",\"edit\":\"Customize…\",\"cardName\":\"Notion\"}"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "G10-1 §1.5：English 下弹框全英文（标题/提示/卡片名/编辑入口）",
+      "ok": true,
+      "raw": "{\"title\":\"Choose a layout\",\"hint\":\"Click a card to apply and remember instantly; Esc or overlay click closes without changes\",\"edit\":\"Customize…\",\"cardName\":\"Notion\"}"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "G10-2 窗口级补充截图（含标题栏 + 原生菜单栏）",
+      "ok": true,
+      "raw": "bytes=52674 err=null"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "[info] English 编辑器文案（原始）",
+      "ok": null,
+      "raw": "{\"title\":\"Layout editor\",\"done\":\"Done\",\"reset\":\"Restore defaults\",\"crumb\":\"Layout editor\",\"slider\":\"Sidebar width\"}"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "G10-3 §1.5：English 下编辑器页全英文（标题/完成/恢复默认/滑杆名/面包屑）",
+      "ok": true,
+      "raw": "{\"title\":\"Layout editor\",\"done\":\"Done\",\"reset\":\"Restore defaults\",\"crumb\":\"Layout editor\",\"slider\":\"Sidebar width\"}"
+    },
+    {
+      "step": "G10|i18n-en",
+      "name": "[info] 退出前布局存储（原始）",
+      "ok": null,
+      "raw": "{\"v\":1,\"preset\":\"notion\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}"
+    },
+    {
+      "step": "teardown",
+      "name": "G11-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    }
+  ]
+}

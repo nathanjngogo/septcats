@@ -87,6 +87,11 @@ export interface CommandDeps {
    * 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
   openManual?(): void;
+  /**
+   * T57-01：打开独立布局编辑器页（整页编辑预设与细项参数）。App 恒注入 →
+   * 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
+   */
+  openLayoutEditor?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -159,6 +164,18 @@ export const MANUAL_DEF: PaletteCommandDef = {
   label: t('commands.app.manual'),
   hint: t('commandHints.app.manual'),
   aliases: ['shiyongshuomingshu', 'shuomingshu', 'sy sms', 'sms', 'help', 'manual', 'user manual'],
+};
+
+/**
+ * T57-01：「布局编辑器」命令定义。**不在静态 COMMAND_DEFS 里**——同 openManual
+ * 走 deps 门（App 恒注入 openLayoutEditor → 恒出现；palette 基线测试的 spy deps
+ * 不注入 → 静态清单/别名基线不受影响）。
+ */
+export const LAYOUT_EDITOR_DEF: PaletteCommandDef = {
+  id: 'app.layoutEditor',
+  label: t('commands.app.layoutEditor'),
+  hint: t('commandHints.app.layoutEditor'),
+  aliases: ['bujubianjiqi', 'bujubjq', 'bianjibuju', 'layout editor', 'layout editor page', 'editor layout'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -267,6 +284,14 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.app.manual'),
       hint: t('commandHints.app.manual'),
       run: deps.openManual,
+    });
+  }
+  if (deps.openLayoutEditor !== undefined) {
+    commands.push({
+      ...LAYOUT_EDITOR_DEF,
+      label: t('commands.app.layoutEditor'),
+      hint: t('commandHints.app.layoutEditor'),
+      run: deps.openLayoutEditor,
     });
   }
   return commands;

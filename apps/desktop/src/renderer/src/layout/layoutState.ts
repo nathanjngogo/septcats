@@ -53,6 +53,12 @@ export const SIDEBAR_WIDTH_MAX = 320;
 export const MEASURE_MIN = 560;
 export const MEASURE_MAX = 1000;
 
+/** T57-01：预览缩略图的绘制区间（%），只影响图形观感，不参与布局参数。 */
+const PREVIEW_SIDEBAR_MIN_PERCENT = 14;
+const PREVIEW_SIDEBAR_SPAN_PERCENT = 16;
+const PREVIEW_CONTENT_MIN_PERCENT = 46;
+const PREVIEW_CONTENT_SPAN_PERCENT = 40;
+
 const SIDEBAR_POSITIONS: readonly SidebarPosition[] = ['left', 'collapsed'];
 const AI_POSITIONS: readonly AiPanelPosition[] = ['right', 'bottom', 'hidden'];
 const DENSITIES: readonly LayoutDensity[] = ['compact', 'comfortable'];
@@ -113,6 +119,68 @@ export function nextLayoutPreset(current: LayoutState['preset']): LayoutPresetId
 
 export function makeDefaultLayout(): LayoutState {
   return { ...LAYOUT_PRESETS.notion, theme: 'system' };
+}
+
+/** 恢复默认（notion 参数 + **保留当前主题**）——「恢复默认」与预设切换同属整份套用路径。 */
+export function defaultLayoutWithTheme(theme: LayoutTheme): LayoutState {
+  return { ...LAYOUT_PRESETS.notion, theme };
+}
+
+// ---------------------------------------------------------------------------
+// 预览几何（T57-01 §1.2/§1.3）
+//
+// 弹框预设卡与编辑器大图共用同一份「CSS 抽象微缩窗口」参数：由 LayoutState 派生的
+// 纯数（侧栏是否在 / 侧栏占比 / 正文占比 / AI 落位 / 标签条 / 密度），视图只消费。
+// 百分比口径：把两个已有夹紧区间线性归一到肉眼可辨的绘图区间（不改布局参数本身）。
+// ---------------------------------------------------------------------------
+
+/** 预览里 AI 面板的落位（'none' = 位置为 hidden，图上不画）。 */
+export type AiPreviewPlacement = 'right' | 'bottom' | 'none';
+
+export interface LayoutPreview {
+  /** 侧栏可见（position='left'）；收起态 false → 图上不画侧栏列。 */
+  sidebarVisible: boolean;
+  /** 侧栏列占预览窗宽比例（%）：宽度区间 200–320 → 14%–30%。 */
+  sidebarPercent: number;
+  /** 正文列占内容区比例（%）：measure 区间 560–1000 → 46%–86%。 */
+  contentPercent: number;
+  aiPlacement: AiPreviewPlacement;
+  /** AI 面板默认展开（false → 图上画窄轨，与「收起」一致；hidden 时 aiPlacement='none' 不画）。 */
+  aiExpanded: boolean;
+  tabsVisible: boolean;
+  density: LayoutDensity;
+}
+
+/** 侧栏宽度 → 预览列宽百分比（14%–30%；越界先按参数口径夹紧）。 */
+export function previewSidebarPercent(width: number): number {
+  const ratio = (clampSidebarWidth(width) - SIDEBAR_WIDTH_MIN) / (SIDEBAR_WIDTH_MAX - SIDEBAR_WIDTH_MIN);
+  return Math.round((PREVIEW_SIDEBAR_MIN_PERCENT + ratio * PREVIEW_SIDEBAR_SPAN_PERCENT) * 10) / 10;
+}
+
+/** 内容 measure → 预览正文列百分比（46%–86%；越界先按参数口径夹紧）。 */
+export function previewContentPercent(measure: number): number {
+  const ratio = (clampMeasure(measure) - MEASURE_MIN) / (MEASURE_MAX - MEASURE_MIN);
+  return Math.round((PREVIEW_CONTENT_MIN_PERCENT + ratio * PREVIEW_CONTENT_SPAN_PERCENT) * 10) / 10;
+}
+
+/** 布局（或其参数子集）→ 预览几何。 */
+export function layoutPreviewOf(
+  layout: Pick<LayoutState, 'sidebar' | 'content' | 'ai' | 'tabsVisible' | 'density'>,
+): LayoutPreview {
+  return {
+    sidebarVisible: layout.sidebar.position === 'left',
+    sidebarPercent: previewSidebarPercent(layout.sidebar.width),
+    contentPercent: previewContentPercent(layout.content.measure),
+    aiPlacement: layout.ai.position === 'hidden' ? 'none' : layout.ai.position,
+    aiExpanded: layout.ai.expanded,
+    tabsVisible: layout.tabsVisible,
+    density: layout.density,
+  };
+}
+
+/** 预设 id → 预览几何（卡上画的就是该预设套用后的样子）。 */
+export function layoutPreviewForPreset(id: LayoutPresetId): LayoutPreview {
+  return layoutPreviewOf(LAYOUT_PRESETS[id]);
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +371,12 @@ export const layoutActions = {
   applyPreset(id: LayoutPresetId): void {
     const theme = layoutStore.getState().layout.theme;
     const layout = { ...LAYOUT_PRESETS[id], theme };
+    commit(layout);
+    syncAiPanelVisibility(layout);
+  },
+  /** T57-01：恢复默认（notion 参数 + 保留当前主题）——编辑器页顶部「恢复默认」。 */
+  resetLayout(): void {
+    const layout = defaultLayoutWithTheme(layoutStore.getState().layout.theme);
     commit(layout);
     syncAiPanelVisibility(layout);
   },

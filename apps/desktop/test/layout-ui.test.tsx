@@ -2,14 +2,12 @@
 /**
  * layout-ui.test.tsx —— T39-01 布局设计器 UI（TASK-T39-01 §1 自动化面）。
  *
- * 覆盖：
- * - 设置页「布局」区块渲染（预设卡片 / 参数控件 / 导出导入）；
- * - 预设卡片切换即时生效（根节点 CSS 变量 + 密度属性 + localStorage 持久化）；
- * - 参数夹紧（宽度 100→200 / 999→320，measure 9999→1000，输入框回显实际值）；
- * - 导出（剪贴板）→ 修改 → 导入原 JSON → 布局逐字段深比较等价；
- * - 非法导入 `{bad json` → role=alert 可读错误 + 布局不变；
- * - App 集成（红线回归 ②⑤）：预设切换 → 侧栏完全收起（.sc-shell--collapsed）；
- *   AI 面板位置 右/底/隐藏（T38 行为）；标签条显隐（T37 行为）。
+ * T57-01 §1.3 起设置页「布局」区块只保留一枚入口按钮（预设卡/滑杆/导出导入整套字段
+ * 迁到独立布局编辑器页）：
+ * - 原先在本文件 A 段断言「设置页内的预设卡/夹紧/导出导入」的 5 条用例，已等价迁移到
+ *   `test/layout-editor-t57.test.tsx`（新载体的同义断言），本文件 A 段改为断言
+ *   **迁移契约**本身（旧 UI 不重复出现、入口事件通道、App 集成路由、参数集合不缩水）；
+ * - B 段（App 集成红线回归 ②⑤）与 C 段（T39-01-1 预设切换 → AI 面板可见性）不受影响。
  * 纪律：window.septcats 用 vi.stubGlobal 假桥；localStorage 用 jsdom 原生实现。
  */
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -17,6 +15,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import { App } from '../src/renderer/src/App';
 import { SettingsPage } from '../src/renderer/src/pages/SettingsPage';
+import { OPEN_LAYOUT_EDITOR_EVENT } from '../src/renderer/src/layout/LayoutSection';
+import { LayoutEditorPage } from '../src/renderer/src/layout/LayoutEditorPage';
 import { aiChatActions, PANEL_OPEN_KEY } from '../src/renderer/src/ai/chatState';
 import {
   LAYOUT_STORAGE_KEY,
@@ -110,112 +110,76 @@ async function renderLayoutSection(): Promise<void> {
   await screen.findByTestId('layout-section');
 }
 
-describe('T39-01 设置页「布局」区块', () => {
-  it('渲染三张预设卡片（notion 默认高亮）+ 参数控件 + 导出/导入', async () => {
+describe('T39-01/T57-01 设置页「布局」区块 = 布局编辑器入口（迁移契约）', () => {
+  it('§1.3 旧区块只留入口按钮：预设卡/滑杆/JSON 文本域一律不再渲染（单一编辑 UI，不行为分叉）', async () => {
     await renderLayoutSection();
-    expect(screen.getByTestId('layout-preset-notion').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('layout-preset-focus').getAttribute('aria-pressed')).toBe('false');
-    expect(screen.getByTestId('layout-preset-workbench').getAttribute('aria-pressed')).toBe('false');
-    expect(screen.getByTestId('layout-sidebar-width')).toBeDefined();
-    expect(screen.getByTestId('layout-measure')).toBeDefined();
-    expect(screen.getByRole('button', { name: '导出布局' })).toBeDefined();
-    expect(screen.getByRole('button', { name: '导入布局' })).toBeDefined();
+    expect(screen.getByTestId('layout-editor-entry')).toBeDefined();
+    expect(screen.queryByTestId('layout-preset-notion')).toBeNull();
+    expect(screen.queryByTestId('layout-preset-focus')).toBeNull();
+    expect(screen.queryByTestId('layout-preset-workbench')).toBeNull();
+    expect(screen.queryByTestId('layout-sidebar-width')).toBeNull();
+    expect(screen.queryByTestId('layout-measure')).toBeNull();
+    expect(screen.queryByTestId('layout-import-input')).toBeNull();
+    expect(screen.queryByRole('button', { name: '导出布局' })).toBeNull();
   });
 
-  it('§1.1 预设卡片切换即时生效：根变量/密度属性随动 + 持久化 + 卡片高亮', async () => {
+  it('入口按钮点击 → 派发 OPEN_LAYOUT_EDITOR_EVENT（路由仍在 App，区块自身不动布局）', async () => {
     await renderLayoutSection();
-
-    // notion 默认：注入 240/650/comfortable
-    expect(rootVar('--sc-layout-sidebar')).toBe('240px');
-    expect(rootVar('--sc-layout-measure')).toBe('650px');
-    expect(document.documentElement.dataset.scDensity).toBe('comfortable');
-
-    fireEvent.click(screen.getByTestId('layout-preset-focus'));
-    expect(layoutStore.getState().layout.preset).toBe('focus');
-    expect(document.querySelector('.sc-shell')).toBeNull(); // 设置页内无壳；断言走变量与存储
-    expect(rootVar('--sc-layout-measure')).toBe('900px');
-    expect(persistedLayout()).toMatchObject({ preset: 'focus', content: { measure: 900 }, sidebar: { position: 'collapsed' } });
-    expect(screen.getByTestId('layout-preset-focus').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('layout-preset-notion').getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(screen.getByTestId('layout-preset-workbench'));
-    expect(persistedLayout()).toMatchObject({ preset: 'workbench', ai: { position: 'right', expanded: true } });
-
-    // 密度 → 紧凑：根属性切换（token 档位派生值由 CSS 计算，jsdom 断言属性面）
-    fireEvent.click(screen.getByRole('radio', { name: '紧凑' }));
-    expect(document.documentElement.dataset.scDensity).toBe('compact');
-    expect(persistedLayout()).toMatchObject({ density: 'compact', preset: 'custom' });
-  });
-
-  it('§1.2 参数夹紧：宽度 100→200 / 999→320、measure 9999→1000，输入框回显实际值', async () => {
-    await renderLayoutSection();
-    const width = screen.getByTestId('layout-sidebar-width') as HTMLInputElement;
-    fireEvent.change(width, { target: { value: '100' } });
-    fireEvent.blur(width);
-    await waitFor(() => expect(width.value).toBe('200'));
-    expect(layoutStore.getState().layout.sidebar.width).toBe(200);
-    expect(rootVar('--sc-layout-sidebar')).toBe('200px');
-    expect(persistedLayout()).toMatchObject({ sidebar: { width: 200 } });
-
-    fireEvent.change(width, { target: { value: '999' } });
-    fireEvent.blur(width);
-    await waitFor(() => expect(width.value).toBe('320'));
-    expect(rootVar('--sc-layout-sidebar')).toBe('320px');
-
-    const measure = screen.getByTestId('layout-measure') as HTMLInputElement;
-    fireEvent.change(measure, { target: { value: '9999' } });
-    fireEvent.blur(measure);
-    await waitFor(() => expect(measure.value).toBe('1000'));
-    expect(rootVar('--sc-layout-measure')).toBe('1000px');
-  });
-
-  it('§1.3 导出→修改→导入往返：布局 JSON 逐字段深比较等价', async () => {
-    const writeText = vi.fn(async (_text: string) => undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    await renderLayoutSection();
-
-    // 改出一份非默认布局
-    fireEvent.change(screen.getByTestId('layout-sidebar-width'), { target: { value: '280' } });
-    fireEvent.blur(screen.getByTestId('layout-sidebar-width'));
-    fireEvent.click(screen.getByRole('radio', { name: '底部' }));
-    fireEvent.click(screen.getByRole('switch', { name: '标签条' }));
-
-    fireEvent.click(screen.getByRole('button', { name: '导出布局' }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
-    const exported = writeText.mock.calls[0]?.[0];
-    if (typeof exported !== 'string') {
-      throw new Error('export did not write clipboard text');
-    }
-
-    // 改成另一份布局（模拟用户后续改动）
-    fireEvent.click(screen.getByTestId('layout-preset-focus'));
-    expect(layoutStore.getState().layout.preset).toBe('focus');
-
-    // 导入原 JSON → 逐字段等价
-    fireEvent.click(screen.getByRole('button', { name: '导入布局' }));
-    fireEvent.change(screen.getByTestId('layout-import-input'), { target: { value: exported } });
-    fireEvent.click(screen.getByRole('button', { name: '导入并应用' }));
-    expect(screen.getByTestId('layout-import-ok')).toBeDefined();
-    expect(layoutStore.getState().layout).toEqual(JSON.parse(exported) as unknown);
-    expect(screen.getByRole('switch', { name: '标签条' }).getAttribute('aria-checked')).toBe('false');
-  });
-
-  it('§1.4 非法导入 `{bad json` → role=alert 可读错误 + 布局不变', async () => {
-    await renderLayoutSection();
-    fireEvent.click(screen.getByTestId('layout-preset-workbench'));
     const snapshot = layoutStore.getState().layout;
     const persistedBefore = window.localStorage.getItem(LAYOUT_STORAGE_KEY);
 
-    fireEvent.click(screen.getByRole('button', { name: '导入布局' }));
-    fireEvent.change(screen.getByTestId('layout-import-input'), { target: { value: '{bad json' } });
-    fireEvent.click(screen.getByRole('button', { name: '导入并应用' }));
+    const seen: Event[] = [];
+    const listener = (event: Event): void => {
+      seen.push(event);
+    };
+    window.addEventListener(OPEN_LAYOUT_EDITOR_EVENT, listener);
+    fireEvent.click(screen.getByTestId('layout-editor-entry'));
+    window.removeEventListener(OPEN_LAYOUT_EDITOR_EVENT, listener);
 
-    const alert = screen.getByTestId('layout-import-error');
-    expect(alert.getAttribute('role')).toBe('alert');
-    expect(alert.textContent).toContain('不是有效的 JSON');
-    // 布局不变（store 与 localStorage 双断言）
+    expect(seen.map((event) => event.type)).toEqual([OPEN_LAYOUT_EDITOR_EVENT]);
+    expect(OPEN_LAYOUT_EDITOR_EVENT).toBe('septcats:open-layout-editor');
     expect(layoutStore.getState().layout).toEqual(snapshot);
     expect(window.localStorage.getItem(LAYOUT_STORAGE_KEY)).toBe(persistedBefore);
+  });
+
+  it('App 集成：设置页点入口 → 布局编辑器页（面包屑/顶栏态随视图切换）；「完成」回编辑器', async () => {
+    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ ...makeDefaultLayout() }));
+    installAppBridge();
+    resetPagesStore({ tabs: ['pg-1'] });
+    const { container } = render(<App />);
+    await waitFor(() => expect(container.querySelector('.sc-shell')).not.toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    await screen.findByTestId('settings-page');
+    fireEvent.click(screen.getByTestId('layout-editor-entry'));
+
+    await waitFor(() => expect(container.querySelector('[data-testid="layout-editor"]')).not.toBeNull());
+    expect(screen.queryByTestId('settings-page')).toBeNull();
+    expect(container.querySelector('.sc-shell__crumb')?.textContent).toContain('布局编辑器');
+    expect(screen.getByRole('button', { name: '设置' }).getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(screen.getByTestId('layout-editor-done'));
+    await waitFor(() => expect(container.querySelector('[data-testid="layout-editor"]')).toBeNull());
+    expect(container.querySelector('.pv-root')).not.toBeNull();
+  });
+
+  it('迁移不丢参数：编辑器页承载旧区块的全部字段（侧栏位置/宽度、measure、AI 位置/展开、标签条、密度、主题、导出/导入）', async () => {
+    installSettingsBridge();
+    render(<LayoutEditorPage onDone={() => {}} />);
+
+    const width = screen.getByTestId('layout-sidebar-width') as HTMLInputElement;
+    expect(width.type).toBe('range');
+    expect(width.min).toBe('200');
+    expect(width.max).toBe('320');
+    expect(screen.getByTestId('layout-measure')).toBeDefined();
+    expect(screen.getByRole('radiogroup', { name: '侧栏' })).toBeDefined();
+    expect(screen.getByRole('radiogroup', { name: 'AI 面板位置' })).toBeDefined();
+    expect(screen.getByRole('radiogroup', { name: '密度' })).toBeDefined();
+    expect(screen.getByRole('radiogroup', { name: '主题' })).toBeDefined();
+    expect(screen.getByRole('switch', { name: 'AI 面板默认展开' })).toBeDefined();
+    expect(screen.getByRole('switch', { name: '标签条' })).toBeDefined();
+    expect(screen.getByRole('button', { name: '导出布局' })).toBeDefined();
+    expect(screen.getByRole('button', { name: '导入布局' })).toBeDefined();
   });
 });
 

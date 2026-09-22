@@ -21,6 +21,8 @@ export const enUS = {
     // T52-01 §1.2: accessible name of the sidebar toggle (now at the tab row's far left)
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
+    // T57-01 §1.1: top-bar "Layout" button (left of Settings) — opens the layout picker
+    layoutLabel: 'Layout',
   },
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it
@@ -275,6 +277,7 @@ export const enUS = {
       sidebarWidthDesc: '200–320, clamped automatically',
       measure: 'Content max width',
       measureDesc: '560–1000, clamped automatically',
+      unitPx: 'px',
       ai: 'AI panel position',
       aiRight: 'Right',
       aiBottom: 'Bottom',
@@ -304,6 +307,18 @@ export const enUS = {
       importBadJson: 'Not valid JSON: paste the full layout JSON text. The current layout was not changed.',
       importBadShape: 'Layout JSON structure mismatch: fields missing or wrong types. The current layout was not changed.',
       presetSwitched: 'Layout preset switched: {name}',
+      // T57-01: the picker opened by the top-bar Layout button (§1.2) and the standalone editor (§1.3)
+      pickerTitle: 'Choose a layout',
+      pickerHint: 'Click a card to apply and remember instantly; Esc or overlay click closes without changes',
+      pickerEdit: 'Customize…',
+      editorTitle: 'Layout editor',
+      editorReset: 'Restore defaults',
+      editorDone: 'Done',
+      editorPreview: 'Preview',
+      editorDetails: 'Fine-tuning',
+      editorEntry: 'Open in the layout editor',
+      editorEntryDesc: 'Preset cards and every layout parameter (sidebar / body / AI panel / density / theme)',
+      resetDone: 'Layout restored to defaults',
     },
     privacy: {
       title: 'Data & Privacy',
@@ -604,6 +619,7 @@ export const enUS = {
       importLater: 'Import will arrive in a later milestone',
       aiChat: 'Open / close AI chat',
       layoutPreset: 'Switch layout preset',
+      layoutEditor: 'Layout editor',
       manual: 'User Manual',
     },
     theme: {
@@ -636,6 +652,7 @@ export const enUS = {
       import: 'Import from a Notion export / Markdown / CSV',
       aiChat: 'Right-side AI chat panel (multi-turn, context from the current page)',
       layoutPreset: 'Cycle between Notion / Focus / Workbench',
+      layoutEditor: 'Open the standalone layout editor (presets and every parameter on one page)',
       manual: 'Read the user manual inside the app',
     },
     theme: {

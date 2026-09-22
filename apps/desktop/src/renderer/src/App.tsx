@@ -24,6 +24,9 @@ import { TabsBar } from './tabs/TabsBar';
 import { closeActiveTab, handleTabsKeydown } from './tabs/shortcuts';
 import { CloseAskDialog } from './close/CloseAskDialog';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
+import { LayoutPicker } from './layout/LayoutPicker';
+import { LayoutEditorPage } from './layout/LayoutEditorPage';
+import { OPEN_LAYOUT_EDITOR_EVENT } from './layout/LayoutSection';
 import { t, useLocale } from './i18n';
 import { SyncStatusButton } from './sync/SyncStatus';
 import { CommandPalette } from './palette/CommandPalette';
@@ -39,7 +42,12 @@ import './App.css';
  * 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。
  * T23-02 §B：「另存为模板」是条件命令——选中页变化时重装配，无选中页则命令不出现（不置灰、不抛错）。
  */
-function useCommandWiring(openSettings: () => void, openImport: () => void, openManual: () => void): void {
+function useCommandWiring(
+  openSettings: () => void,
+  openImport: () => void,
+  openManual: () => void,
+  openLayoutEditor: () => void,
+): void {
   // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
   const locale = useLocale();
   useEffect(() => {
@@ -75,6 +83,8 @@ function useCommandWiring(openSettings: () => void, openImport: () => void, open
             openImport,
             // T56-01：命令面板「使用说明书」入口（与帮助菜单同一条视图通道）
             openManual,
+            // T57-01：命令面板「布局编辑器」入口（与顶栏布局弹框的「自定义编辑…」同一通道）
+            openLayoutEditor,
             runAiAction: (action): void => {
               // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
               window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
@@ -127,7 +137,7 @@ function useCommandWiring(openSettings: () => void, openImport: () => void, open
     configure();
     const unsubscribe = pagesStore.subscribe(configure);
     return unsubscribe;
-  }, [openSettings, openImport, openManual, locale]);
+  }, [openSettings, openImport, openManual, openLayoutEditor, locale]);
 }
 
 /**
@@ -141,7 +151,9 @@ export function App() {
   // T39-01 §0.2：侧栏收起态由布局状态持有（持久化）；顶栏开合钮写入布局状态
   const sidebarPosition = useLayout((state) => state.layout.sidebar.position);
   const [collapsed, setCollapsed] = useState(sidebarPosition === 'collapsed');
-  const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual'>('editor');
+  const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout'>('editor');
+  // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
+  const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);
@@ -150,7 +162,14 @@ export function App() {
   // T56-01：说明书视图入口（帮助菜单 + 命令面板共用；Esc/关闭钮回 editor）
   const openManual = useCallback(() => setView('manual'), []);
   const closeManual = useCallback(() => setView('editor'), []);
-  useCommandWiring(openSettings, openImport, openManual);
+  // T57-01 §1.3：独立布局编辑器页入口（设置页入口按钮 / 弹框「自定义编辑…」/
+  // 命令面板 三者同一出口）；「完成」回编辑器视图
+  const openLayoutEditor = useCallback(() => {
+    setLayoutPickerOpen(false);
+    setView('layout');
+  }, []);
+  const closeLayoutEditor = useCallback(() => setView('editor'), []);
+  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor);
 
   // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -232,12 +251,21 @@ export function App() {
     };
   }, []);
 
+  // T57-01 §1.3：设置页「布局」区块的入口按钮（同一事件通道解耦，路由仍在 App）
+  useEffect(() => {
+    window.addEventListener(OPEN_LAYOUT_EDITOR_EVENT, openLayoutEditor);
+    return () => {
+      window.removeEventListener(OPEN_LAYOUT_EDITOR_EVENT, openLayoutEditor);
+    };
+  }, [openLayoutEditor]);
+
   // T37-01 §0.3：页签键盘快捷键（编辑器视图内生效；键位与既有 Ctrl/Cmd+K 不相交）。
   // Ctrl/Cmd+W 关当前（相邻回落）· Ctrl/Cmd+Tab 下一个（循环）· Ctrl/Cmd+1..9 跳第 N
   // （超出页签数夹到最后一个）。settings/import/回收站/搜索页/命令面板打开时不劫持。
   const inSettingsFlag = view === 'settings';
   const inImportFlag = view === 'import';
   const inManualFlag = view === 'manual';
+  const inLayoutFlag = view === 'layout';
   const searchOpenFlag = usePalette((state) => state.searchOpen);
   const paletteOpenFlag = usePalette((state) => state.open);
   const pagesViewFlag = usePages((state) => state.view);
@@ -246,6 +274,7 @@ export function App() {
       !inSettingsFlag &&
       !inImportFlag &&
       !inManualFlag &&
+      !inLayoutFlag &&
       !searchOpenFlag &&
       !paletteOpenFlag &&
       pagesViewFlag === 'pages';
@@ -296,11 +325,12 @@ export function App() {
       window.removeEventListener('keydown', onKeyDown);
       unsubscribeMenu();
     };
-  }, [inSettingsFlag, inImportFlag, inManualFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag, toggleSidebar]);
+  }, [inSettingsFlag, inImportFlag, inManualFlag, inLayoutFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag, toggleSidebar]);
 
   const inSettings = view === 'settings';
   const inImport = view === 'import';
   const inManual = view === 'manual';
+  const inLayout = view === 'layout';
 
   // T51-01：侧栏开合的唯一出口（顶栏/标签条按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -324,7 +354,7 @@ export function App() {
   // 自己的顶栏语义，顶栏折叠钮仍由 AppShell 渲染）。编辑器视图下：
   //   ① 顶栏左侧不再显示「工作区名」兜底（名字常驻侧栏头部）；
   //   ② 折叠钮搬到标签条行最左（`sidebarToggle`），顶栏的同名钮由 `.app-shell--fused` 隐藏。
-  const editorView = !inSettings && !inImport && !inManual && pagesState.view === 'pages' && !searchOpen;
+  const editorView = !inSettings && !inImport && !inManual && !inLayout && pagesState.view === 'pages' && !searchOpen;
 
   // T52-01 §1.1：工作区名改由侧栏头部常驻承载 → 顶栏左端不再渲染「只剩工作区名」的兜底。
   const breadcrumb =
@@ -334,6 +364,9 @@ export function App() {
       <Breadcrumb items={[{ label: t('importWizard.title') }]} />
     ) : inManual ? (
       <Breadcrumb items={[{ label: t('manual.title') }]} />
+    ) : inLayout ? (
+      // T57-01 §1.3：独立布局编辑器页（顶栏面包屑随视图）
+      <Breadcrumb items={[{ label: t('settings.layout.editorTitle') }]} />
     ) : pagesState.view === 'pages' && pagesState.selectedId === null ? null : (
       <Breadcrumb items={pagesBreadcrumbItems(pagesState)} />
     );
@@ -377,6 +410,17 @@ export function App() {
                 setView((current) => (current === 'import' ? 'editor' : 'import'));
               }}
             />
+            {/* T57-01 §1.1：顶栏「布局」钮（设置钮左边，顺序 Sync→Plus→Layout→Gear）——
+                弹像素快选框；aria-pressed = 弹框打开态 */}
+            <IconButton
+              icon={SidebarSimple}
+              label={t('app.layoutLabel')}
+              aria-pressed={layoutPickerOpen}
+              data-testid="layout-open"
+              onClick={() => {
+                setLayoutPickerOpen((open) => !open);
+              }}
+            />
             <IconButton
               icon={GearSix}
               label={t('app.settingsLabel')}
@@ -396,6 +440,9 @@ export function App() {
         ) : inManual ? (
           // T56-01：全屏说明书阅读视图（Esc / 关闭钮回 editor）
           <ManualView onClose={closeManual} />
+        ) : inLayout ? (
+          // T57-01 §1.3：独立布局编辑器页（「完成」回 editor）
+          <LayoutEditorPage onDone={closeLayoutEditor} />
         ) : pagesState.view === 'trash' ? (
           <TrashList />
         ) : searchOpen ? (
@@ -418,6 +465,14 @@ export function App() {
       </AppShell>
       <CommandPalette />
       <TemplateSaveDialog />
+      {/* T57-01 §1.2：布局快选弹框（overlay，不挡主区的结构变化——选卡即时重排可见） */}
+      <LayoutPicker
+        open={layoutPickerOpen}
+        onClose={() => {
+          setLayoutPickerOpen(false);
+        }}
+        onEdit={openLayoutEditor}
+      />
       {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
       <PageDeleteDialog />
       {/* T54-01 §1②：关窗询问框（自绘像素模态；main 拦 close 并冲刷完后推 close:ask） */}

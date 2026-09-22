@@ -1,0 +1,131 @@
+/*
+ * LayoutPreview.css —— 布局预览缩略图（TASK-T57-01 §1.2/§1.3）。
+ *
+ * 零新色值、零字面 hex（no-magic 门禁：apps/desktop/src/renderer 亦在扫描面内）；
+ * 几何一律走百分比 + var(--sc-*) token，容器尺寸由 aspect-ratio 决定（无裸 px 尺寸）。
+ * 无 transition → 无需 reduced-motion 兜底块（T27-01 §0.B.2 只约束引入过渡的文件）。
+ */
+
+.layout-preview {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--sc-color-hairline);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-canvas);
+}
+
+/* 弹框预设卡缩略图 */
+.layout-preview--sm {
+  aspect-ratio: 16 / 10;
+}
+
+/* 编辑器页大图 */
+.layout-preview--lg {
+  aspect-ratio: 16 / 9;
+}
+
+.layout-preview__chrome {
+  flex: none;
+  height: 12%;
+  border-bottom: 1px solid var(--sc-color-hairline);
+  background: var(--sc-color-surface);
+}
+
+.layout-preview__row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 侧栏列：宽度 = 归一化后的布局侧栏宽度（收起态不渲染本列，主区自动吃满） */
+.layout-preview__side {
+  flex: none;
+  width: var(--sc-layout-preview-sidebar);
+  border-right: 1px solid var(--sc-color-hairline);
+  background: var(--sc-color-surface);
+}
+
+.layout-preview__col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.layout-preview__tabs {
+  flex: none;
+  height: 10%;
+  border-bottom: 1px solid var(--sc-color-hairline);
+  background: var(--sc-color-surface);
+}
+
+.layout-preview__body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  padding: var(--sc-space-sm);
+}
+
+/* 正文列：宽度 = 归一化后的 measure */
+.layout-preview__doc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  width: var(--sc-layout-preview-content);
+  padding: var(--sc-space-sm);
+  border: 1px solid var(--sc-color-hairline);
+  background: var(--sc-color-content);
+}
+
+.layout-preview__line {
+  height: var(--sc-space-xs);
+  background: var(--sc-color-hairline-strong);
+}
+
+.layout-preview__line--full {
+  width: 100%;
+}
+
+.layout-preview__line--wide {
+  width: 72%;
+}
+
+.layout-preview__line--short {
+  width: 44%;
+}
+
+/* 密度档在缩略图上的可见差：紧凑 = 正文示意行更细 */
+.layout-preview[data-density='compact'] .layout-preview__line {
+  height: var(--sc-space-xxs);
+}
+
+.layout-preview__ai {
+  flex: none;
+  background: var(--sc-color-surface);
+}
+
+.layout-preview__ai--right {
+  width: 24%;
+  border-left: 1px solid var(--sc-color-hairline);
+}
+
+.layout-preview__ai--bottom {
+  height: 26%;
+  border-top: 1px solid var(--sc-color-hairline);
+}
+
+/* 收起态：画成窄轨（与「AI 面板默认展开」档位一致，notion/focus 与 workbench 在图上可辨） */
+.layout-preview__ai--collapsed {
+  background: var(--sc-color-canvas);
+}
+
+.layout-preview__ai--right.layout-preview__ai--collapsed {
+  width: 8%;
+}
+
+.layout-preview__ai--bottom.layout-preview__ai--collapsed {
+  height: 8%;
+}
