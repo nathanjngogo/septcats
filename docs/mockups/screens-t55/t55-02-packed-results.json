@@ -1,0 +1,52 @@
+[
+  {
+    "name": "inspector",
+    "ok": null,
+    "raw": "electron/js2c/browser_init"
+  },
+  {
+    "name": "P0 probe 可达（装包 main 模块缓存）",
+    "ok": true,
+    "raw": "{\"probe\":true,\"asar\":true,\"resources\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\",\"trayIcon\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\build\\\\icon-tray.png\",\"trayExists\":true,\"windowIcon\":\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\build\\\\icon.png\",\"windowExists\":true,\"candidates\":{\"tray\":[\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\build\\\\icon-"
+  },
+  {
+    "name": "P1 解析路径在装包 resources 下（非 dev 目录）",
+    "ok": true,
+    "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\build\\icon-tray.png"
+  },
+  {
+    "name": "P2 文件真实存在",
+    "ok": true,
+    "raw": "true"
+  },
+  {
+    "name": "P3 窗口图标=装包 resources/build/icon.png",
+    "ok": true,
+    "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\resources\\build\\icon.png"
+  },
+  {
+    "name": "candidates 原文",
+    "ok": null,
+    "raw": "{\"tray\":[\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\build\\\\icon-tray.png\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\build\\\\icon.ico\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked\\\\resources\\\\app.asar\\\\build\\\\icon.ico\",\"E:\\\\Hermes Agent工作空间\\\\Septcats\\\\apps\\\\desktop\\\\dist\\\\win-unpacked"
+  },
+  {
+    "name": "P4 候选序列托盘先于 ico（名字优先）",
+    "ok": true,
+    "raw": "tray@0 ico@3"
+  },
+  {
+    "name": "P99 退出后装包进程清零",
+    "ok": true,
+    "raw": "Septcats 进程数=0"
+  },
+  {
+    "name": "P98 真实档案未被写",
+    "ok": true,
+    "raw": "realRoot=C:\\Users\\Administrator\\.septcats dbMtimeFresh=false"
+  },
+  {
+    "task": "T55-02 装包态托盘图标取证",
+    "ranAt": "2026-09-22T11:44:40.591Z",
+    "exe": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe"
+  }
+]
