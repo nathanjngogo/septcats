@@ -62,19 +62,22 @@ h3.sc-block--heading {
 .sc-block--callout {
   margin: 0;
   padding-left: var(--sc-space-md);
-  border-left: 2px solid var(--sc-color-hairline-strong);
+  /* T62-01 §1.1：块左缘竖线 = 2px ink-edge（原 hairline-strong 灰线退役） */
+  border-left: 2px solid var(--sc-color-ink-edge);
   color: var(--sc-color-ink-secondary);
 }
 
+/* T62-01：callout 原以 accent 竖线区别于 quote —— 按 §1.2「同一种黑」统一后，
+ * 区分改由正文色承担（callout 正文 ink，quote 正文 ink-secondary），见 DEVIATION-6。 */
 .sc-block--callout {
-  border-left-color: var(--sc-color-accent);
   color: var(--sc-color-ink);
 }
 
 .sc-block--code {
   font: var(--sc-text-code);
   background: var(--sc-color-surface);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：代码块外框 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   padding: var(--sc-space-md);
   white-space: pre;
@@ -87,7 +90,8 @@ h3.sc-block--heading {
 
 .sc-block--divider {
   border: 0;
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：块内分隔线 = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
   margin: var(--sc-space-sm) 0;
 }
 
@@ -193,7 +197,8 @@ h3.sc-block--heading {
   overflow-y: auto;
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：块菜单浮层外轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -247,7 +252,8 @@ h3.sc-block--heading {
   overflow-y: auto;
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：斜杠菜单浮层外轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -297,7 +303,8 @@ h3.sc-block--heading {
   height: var(--sc-layout-row-h);
   padding: 0 var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：选区浮动工具条外轮廓 = 2px ink-edge（原 1px hairline） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }

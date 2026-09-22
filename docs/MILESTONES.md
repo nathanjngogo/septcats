@@ -266,7 +266,8 @@
 | R11-③ T57 布局弹框+编辑器 | 09-22 | ✅ PM 复跑 **28 PASS/0 FAIL** | 代码 CB（150 轮耗尽未交报告=第 2 次，PM 接手代写）：LayoutPicker 像素模态 3 卡 CSS 抽象预览零位图 + LayoutEditorPage 整页编辑器（滑杆 DOM 实测 240→320 跟随）+ T52 五红线全复跑 + 1184/894 零滚动；新纯函数 6/单测 +28；教训→后续单 max-turns 200+报告骨架前置 |
 | R13-⑨ 0.4.1-rc.2 打包冒烟（PM 亲跑） | 09-22 | ✅ **54 PASS / 0 FAIL** | 复用 probe-rc26-smoke 打 win-unpacked（19:22 构建=Setup 0.4.1-rc.2.exe 同源）：包自报 `version:0.4.1-rc.2, schemaVersion:3`；T55 四资产 `<resources>/build/` 在位且与仓内 **sha256 逐字节一致**（icon.png/icon.ico/icon-tray×2）；?raw 说明书双语正文、pixelIcons 族、open-layout-editor 通道全命中包内；updater 404=rc 通道无 yml，预期行为（0.4.0 已发 latest 不受影响） |
 | R13-⑩ 装包态托盘图标取证（D-1 承诺项闭环） | 09-22 | ✅ **7 PASS / 0 FAIL** | 新探针 `cdp-e2e-t55-02-packed.mjs` 直打 win-unpacked/Septcats.exe（isPackaged=true）：托盘解析命中 `<resources>/build/icon-tray.png` 且存在✓、窗口 `<resources>/build/icon.png`✓、候选序列 icon-tray@0 先于 icon.ico@3（名字优先于目录在装包态复现）✓、退出进程清零、真档案未写 |
-| R14（老板 09-22 晚：全程序像素黑框线） | 09-22 | 🔄 T62 已立项 | 口径=外框 2px/内网格 1px 全走 ink-edge、focus 黑线加粗禁彩晕；PM 盘点 352 处 border 仅 17 已吃（ui 控件族+dbview 40+editor 21+面板页 ~110 欠账）；coverage/mockups 不动 |
+| R14（老板 09-22 晚：全程序像素黑框线） | 09-22 | ✅ **T62 收口** | 口径=外框 2px/内网格 1px 全走 ink-edge、focus 黑线加粗禁彩晕；PM 盘点 352 处 border 仅 17 已吃（ui 控件族+dbview 40+editor 21+面板页 ~110 欠账）；coverage/mockups 不动 |
+| R14-① T62 全局像素黑框线 | 09-22 | ✅ **PM 真机 83 PASS/0 FAIL** | CB 26 CSS+纪律测试(292行带理由白名单)落盘后死于上游 429（非任务失败）；PM 收尾：探针 4 缺陷定探针侧修复（query 前置/JSON Dialog/激活页还原/node 基线差分）→83/0；DbView 网格像素实测 1px/外框 2px 分层成立；抽噪 inkShare=2.63%；T59/T52 零回归；全仓 desktop 844/ui 156/editor 200/dbview 122 无红三门禁 selftest ✓；D-1~D-4 全追认（danger 红框保留语义=T53 立法） |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。

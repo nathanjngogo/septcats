@@ -6,7 +6,8 @@ export interface DividerProps {
   className?: string;
 }
 
-/** Divider —— hairline 是 1px 分隔线唯一来源；表格只用横向。 */
+/** Divider —— 1px 分隔线的组件出口（T62-01：分隔线走 `background` 填充而非 `border`，
+ *  属「非框线」面/轨落点，故仍取 hairline；见 DESIGN.md「Pixel Borders」不动清单）。 */
 export function Divider({ orientation = 'horizontal', className }: DividerProps) {
   return (
     <div

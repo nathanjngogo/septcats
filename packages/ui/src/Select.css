@@ -18,7 +18,8 @@
   height: var(--sc-size-control-sm);
   min-width: 120px;
   padding: 0 var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline-strong);
+  /* T62-01 §1.1：触发器外框 = 2px ink-edge（原 1px hairline-strong） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

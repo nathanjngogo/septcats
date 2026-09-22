@@ -31,7 +31,8 @@
   align-items: center;
   gap: var(--sc-space-sm);
   padding: var(--sc-space-md) var(--sc-space-lg);
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：输入区下区隔线 = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
 }
 
 .palette-input-ic {
@@ -147,7 +148,8 @@
   width: 100%;
   margin-top: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border: 1px dashed var(--sc-color-hairline-strong);
+  /* T62-01 §1.4：虚线占位钮 —— 线型保留、色升 ink-edge、宽度归 2px 谱 */
+  border: 2px dashed var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: transparent;
   font: var(--sc-text-ui-xs);
@@ -165,7 +167,8 @@
   display: flex;
   gap: var(--sc-space-lg);
   padding: var(--sc-space-sm) var(--sc-space-lg);
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：面板底栏区隔线 = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-faint);
 }

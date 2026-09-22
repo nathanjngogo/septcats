@@ -3,6 +3,10 @@
   width: 36px;
   height: 20px;
   flex: none;
+  /* T62-01 §1.1：开关轨外框 = 2px ink-edge。
+   * 几何联动：border-box 下 2px 框把内区压到 32×16，滑块 inset 必须归零
+   * 才能恰好嵌在内区（原 2px inset 会让 16px 滑块压到框线上）。 */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-hairline-strong);
   /* T53-01 像素风：轨是凹槽 */
@@ -15,8 +19,9 @@
 
 .sc-switch__knob {
   position: absolute;
-  top: var(--sc-space-xxs);
-  left: var(--sc-space-xxs);
+  /* T62-01：贴内区左上角（框线本身即视觉间隙，见 .sc-switch 注） */
+  top: 0;
+  left: 0;
   width: var(--sc-space-lg);
   height: var(--sc-space-lg);
   border-radius: var(--sc-radius-full);

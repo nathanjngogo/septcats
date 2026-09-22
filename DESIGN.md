@@ -29,8 +29,8 @@ colors:
   bevel-hi: "#FFFFFF"      # 上/左 2px 硬边高亮
   bevel-lo: "#A9A9A9"      # 下/右 2px 硬边暗部
   shadow-pixel: "#C6C6C6"  # offset 投影唯一来源（无 blur）
-  # ---- T59-01 像素边框色（区域边界唯一色源；与 ink 同值但语义独立，详见「Pixel Borders」）----
-  ink-edge: "#1A1A1A"      # 区域边界描边（浅色 = 黑边）
+  # ---- 像素边框色（T59-01 立 · T62-01 扩到全程序框线；唯一色源，与 ink 同值但语义独立，详见「Pixel Borders」）----
+  ink-edge: "#1A1A1A"      # 框线描边（浅色 = 黑边）：外框 2px / 内部网格与分隔线 1px
   # ---- 深色主题覆盖值不写在这里：由 tokens 构建脚本从 colors-dark 组生成 [data-theme=dark] ----
 typography:
   font-ui:
@@ -165,7 +165,7 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 | bevel-hi | #FFFFFF | #565656 | 像素高亮面 |
 | bevel-lo | #A9A9A9 | #0A0A0A | 像素暗部 |
 | shadow-pixel | #C6C6C6 | #050505 | 实心 offset 投影 |
-| ink-edge | #1A1A1A | #EDEDED | 区域边界描边（T59-01）。**深色取亮边**：近黑底（#141414/#0A0A0A）上黑描边等于不可见，改以亮边描述轮廓——见「Pixel Borders」 |
+| ink-edge | #1A1A1A | #EDEDED | 框线描边唯一色源（T59-01 立「区域边界」，T62-01 扩到**全程序所有框**）。**深色取亮边**：近黑底（#141414/#0A0A0A）上黑描边等于不可见，改以亮边描述轮廓——见「Pixel Borders」 |
 | shadow 族 | 墨色 12–28% | 提深至 40–60%，加 1px hairline-strong 上缘高光 | 仅 popover/modal/tinted-light 三处浮层阴影；按钮立体走 bevel/pixel 组 |
 
 对比度红线（门禁：packages/ui/test/contrast.test.ts，WCAG AA 全部 ≥4.5）：T53-01 灰阶化后重测——门禁配对表**逐对全过**，最差对为浅色 ink-faint/surface 4.55（提档前 #757575 仅 3.94）；其余文字对（ink、ink-secondary 两主题 × canvas/surface/surface-raised/content）与 `on-accent/accent`、`accent|danger|success` 对 canvas 两主题均 ≥4.5。**icon-faint（#9A9A9A/#6E6E6E）不是文字 token，禁用于任何正文级文字**（浅色对 canvas 仅 2.58），只准用于图标、三角、装饰性非文字元素。
@@ -177,8 +177,8 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - **accent（灰阶 #333333/#D4D4D4）**：T53-01 琥珀退役后，`accent` 只表达「实心强调底」（主按钮、勾选框选中底、开关 on 态、进度填充、spinner 头）。**强调态一律靠明度差 + 描边**（活动标签 = content 底 + 无分隔线；选中行 = surface-active + 字重；焦点 = focus-ring 外环）；**禁止**大面积铺色、禁止渐变、禁止发光晕（glow）。
 - **两粒语义色**：`danger`（错误红）落点 = 删除确认/冲突/同步失败/表单错误/危险菜单项；`success`（同步绿）落点 = 同步进行中呼吸点/同步完成点/toast 成功图标。两处之外禁用色相。
 - **bevel-hi / bevel-lo / shadow-pixel**：像素立体的三个色源——高亮面、暗部、实心投影。只准被 `elevation.bevel-*` / `elevation.pixel-*` 组合引用。
-- **ink-edge**：**区域边界**（面板接缝、浮层外轮廓）的唯一色源，与文字色 `ink` 语义分离（同值仅为巧合，可独立微调）。只准用于 2px 结构描边——控件不上 ink-edge（见「Pixel Borders」）。
-- **hairline**：1px 分隔线唯一来源。表格用横向 hairline，纵向不用。
+- **ink-edge**：**框线**（面板/卡片/输入控件/按钮/浮层/弹窗的**外轮廓** + 表格网格/列表分隔等**内线**）的唯一色源，与文字色 `ink` 语义分离（同值仅为巧合，可独立微调）。宽度谱 = **外框 2px / 内线 1px**（同一种黑，靠宽度分层）——控件亦吃 ink-edge（T62-01 起；T59-01 的「控件不上 ink-edge」已退役，见「Pixel Borders」）。
+- **hairline / hairline-strong**：**框线语义已不再首选此二者**（T62-01）。仍保留给非框线的面/轨/装饰：`Divider` 的 1px 底线、`ProgressBar` 轨底、`Skeleton` 扫光、`Switch` 轨、`LayoutPreview` 示意行这类 `background` 填充，以及渲染环 `Spinner` 的动段弱档。
 
 ## Typography
 
@@ -214,10 +214,10 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - **像素风约束**：交互件圆角一律 ≤2px（直角或 2px 微圆角），禁止大圆角胶囊化按钮；`full` 只留给 pill（标签/状态点/开关轨/进度条）。
 - 猫形语言仅一处例外：顶栏同步状态点（旧称「铃铛」，T53-01 已灰阶化为纯圆点）用 `full` + 呼吸动画（motion.fast 淡入淡出，reduced-motion 下静态）。
 
-## Pixel Borders（T59-01 · R12：老板 09-22「像素风黑色边框」）
+## Pixel Borders（T59-01 立 · R12：老板 09-22「像素风黑色边框」；T62-01 扩 · R14：老板 09-22 晚「整个程序的所有框的线条都做成像素风的黑线条」）
 
-- **`ink-edge` = 区域边界的唯一色源**。与 `ink` 同值不同义：`ink` 是文字色，`ink-edge` 是结构线色，两者可独立微调（故独立成 token，不共用 `ink`）。
-- **2px 宽度谱**：**区域边界**（面板接缝、浮层外轮廓）一律 `2px solid {colors.ink-edge}`——与 `bevel-*` 硬边、模态描边的 2px 同谱（像素风 = 2px 网格，禁 1px 半吊子、禁 1.5px 混谱）。
+- **`ink-edge` = 框线的唯一色源**。与 `ink` 同值不同义：`ink` 是文字色，`ink-edge` 是结构线色，两者可独立微调（故独立成 token，不共用 `ink`）。
+- **宽度谱（T62-01 定稿）**：**外框轮廓**（面板/卡片/输入控件/按钮/浮层/弹窗/标签/键帽/开关轨/滑杆件）一律 `2px solid {colors.ink-edge}`；**内部线**（表格单元格四边、列头分隔、列表 hairline、编辑器块内分隔、区隔线）一律 `1px solid {colors.ink-edge}`。**同一种黑，靠宽度分层**——与 `bevel-*` 硬边、模态描边的 2px 同谱（像素风 = 2px/1px 网格，禁 1.5px 混谱、禁其它宽度）。
 - **深色主题 = 亮边（口径与原因）**：浅色 `#1A1A1A`（老板点名的"黑色边框"）。深色底 `canvas #141414` / `content #0A0A0A` 上用黑描边对比度 ≈1.05，等于**看不见**，故深色取 `#EDEDED`（亮边）——像素游戏 dark 关卡以亮边描述轮廓的惯例：**边界的语义是"结构分界"，靠与相邻面的明度差成立，不靠"黑"这个色相本身**。两主题因此是「结构反转」，不是同一支色的两档透明度。*（老板终审项：深色=亮边）*
 - **相邻边只画一次**：接缝由**跨该缝更长的一侧独占绘制**，禁止两枚相邻元素各画一半（会叠出 4px 粗缝）。接缝归属表（网格容器上显式定死）：
 
@@ -232,16 +232,24 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
   编辑列自身**不补**左/右/下描边：左/右接缝已由侧栏 / AI 面板绘制，窗口边缘不需要线（"边框只在两个 chrome 面相接处画"）。
   **接缝条不得占用盒模型**：侧栏这类"通高、内含满宽子元素"的容器若用 `border-right` 画线，内层会被压窄 2px，破坏既有宽度契约 —— 此时改用同位置的定位描边条（零盒影响，且绘制层级在行 hover 底 / 滚动条之上，线恒可见）。
 - **T52 标签融合规则（红线）**：正文顶边（`.pv-root` 的 `border-top`）在**活动标签处必须断开**——活动标签下缘下沉 2px 压住该描边，底色 = `content`，左右 + 顶部 2px `ink-edge` 成 **∏ 形轮廓且下缘无缝**（NES 窗口标题签观感，标签"骑缝融合"进正文）；**非活动标签**以 2px `ink-edge` 左描边彼此分隔，底边停在正文顶边**之上**（不压线、不破缝）。
-- **浮层族统一** `2px ink-edge`：Dialog / Menu / Popover / Tooltip / Select 下拉 / Toast + CloseAskDialog / LayoutPicker（模态）——原 1px `hairline` 与 2px `hairline-strong` 一律换掉（模态与 popover 共用同一条边界语言）。命令面板 / 同步状态面板两处浮层待后续单并入（不在 T59-01 枚举内）。
-- **不动清单**：控件描边（按钮 / 输入框 / 开关轨道 / 下拉触发器）、callout 与引用块左竖条、虚线空态、`hr`、编辑器内部块级样式——都不是"区域边界"，加黑边会与 bevel 立体打架。
+- **浮层族统一** `2px ink-edge`：Dialog / Menu / Popover / Tooltip / Select 下拉 / Toast + CloseAskDialog / LayoutPicker（模态）——原 1px `hairline` 与 2px `hairline-strong` 一律换掉（模态与 popover 共用同一条边界语言）。命令面板 / 同步状态面板两处浮层已于 T59-01 当轮并入。
+- **装饰性虚线/点线（T62-01 §1.4）**：拖放落位提示、虚线占位框等 —— **线型保留**（dashed/dotted 不改），颜色升 `{colors.ink-edge}`、宽度归 2px 谱。
+- **focus / active（T62-01 §1.3）**：一律**黑线**（框线恒 `ink-edge`）+ 全局 `:focus-visible` 的 2px `focus-ring` 外环；**禁彩色光晕**（`box-shadow: … accent` 类改灰/黑）。原「hover 把描边提亮一档」的语法在黑基线下无档可提，状态反馈改由底色 / `bevel` 凹陷承担。
+
+### T62-01 全局框线（R14）落点边界
+
+- **覆盖**：`packages/ui/src` 全部组件 CSS、`apps/desktop/src/renderer/src` 全部页面/面板 CSS、`packages/dbview` 与 `packages/editor` 的**样式表**（这两包本单只许改 CSS，TS/逻辑零碰）。
+- **不动**：`packages/core/coverage/**`（生成物）、`docs/mockups/**`（演示页）、`tokens.css`（生成物，色值钉死，双主题都由它出）、以及**非框线的面/轨/装饰填充**（见 `hairline` 条）——`Divider` 底线、`ProgressBar` 轨底、`Skeleton` 扫光、`Switch` 轨底、`LayoutPreview` 示意行、`ResizeHandle` 接缝条这类 `background` 而非 `border` 的落点不在本口径内。
+- **例外（显式白名单，见 `packages/ui/test/pixel-borders.test.ts`）**：复位值（`0` / `none`）、透明占位边（ghost 控件的 `transparent` 描边）、**语义状态色**（错误/校验失败态 `danger` 系、标签同色底衬 `*-soft`）、`Spinner` 旋转动段弱档。白名单外**任何** `border*` 值声明都必须含 `ink-edge`。
+- **回归护栏**：`packages/ui/test/pixel-borders.test.ts` 全量扫描上述四个包的 CSS（去注释、排除 coverage/mockups），断言「白名单外无灰线残留 + 宽度谱只允许 1px/2px + 全仓零 1.5px + T59 既有 17 处落点未被改回」，并逐次运行打印扫描数/命中数。
 
 ## Components
 
 - **像素立体基线（T53-01，全交互件）**：`box-shadow: {elevation.pixel-out}`（或 `{elevation.bevel-out}`）、`border-radius: {rounded.sm}`（2px）；`:active:not(:disabled)` → `box-shadow: {elevation.bevel-in}` + `transform: translate(2px, 2px)`（下沉 + 亮暗对调）；`:focus-visible` → 2px `{colors.focus-ring}` 外环 offset 2px。过渡含 `box-shadow`，时长 `{motion.fast}`，缓动 `{ease-out}`。
-- `button-primary`: backgroundColor `{colors.accent}`（深灰实心）, textColor `{colors.on-accent}`, rounded `{rounded.sm}`, height 32px(md)/28px(sm), padding-x `{spacing.md}`；hover: 明度提亮 6%（brightness）+ `{elevation.pixel-out}`；active 见基线。
-- `button-secondary`: backgroundColor `{colors.surface-raised}`, textColor `{colors.ink}`, border 1px `{colors.hairline-strong}`；立体走 `{elevation.pixel-out}`。
-- `button-ghost`: 透明底，hover `{colors.surface}` + `{elevation.bevel-out}`（无 offset 投影，避免工具条抖动）；active 同基线但只走 `{elevation.bevel-in}`。
-- `input`: backgroundColor `{colors.surface-raised}`, border 1px `{colors.hairline}`, rounded `{rounded.sm}`；hover border→`{colors.hairline-strong}`；**focus 时 border→`{colors.ink}` + `{elevation.bevel-in}`**（凹陷即焦点语义，替掉原 accent 边框）；错误态 border `{colors.danger}`，错误文案在输入框下方 `ui-xs` danger（**label 在上、helper 中、error 下**的固定结构）。
+- `button-primary`: backgroundColor `{colors.accent}`（深灰实心）, textColor `{colors.on-accent}`, border 2px `{colors.ink-edge}`（T62-01：原透明占位描边升为可见黑框）, rounded `{rounded.sm}`, height 32px(md)/28px(sm), padding-x `{spacing.md}`；hover: 明度提亮 6%（brightness）+ `{elevation.pixel-out}`；active 见基线。
+- `button-secondary`: backgroundColor `{colors.surface-raised}`, textColor `{colors.ink}`, border 2px `{colors.ink-edge}`（T62-01：原 1px hairline-strong 退役）；立体走 `{elevation.pixel-out}`。
+- `button-ghost`: 透明底（**有意无框**：`border: 2px solid transparent` 只作宽度谱占位），hover `{colors.surface}` + `{elevation.bevel-out}`（无 offset 投影，避免工具条抖动）；active 同基线但只走 `{elevation.bevel-in}`。
+- `input`: backgroundColor `{colors.surface-raised}`, border 2px `{colors.ink-edge}`（T62-01：原 1px hairline 退役）, rounded `{rounded.sm}`；**状态反馈走 `{elevation.bevel-in}` 凹陷 + 全局 `:focus-visible` 的 2px `{colors.focus-ring}` 外环**（框线恒 ink-edge，禁彩色描边）；错误态 border `{colors.danger}`（语义状态色，白名单例外），错误文案在输入框下方 `ui-xs` danger（**label 在上、helper 中、error 下**的固定结构）。
 - `block-handle`（编辑器）：宽 24px，hover 显现（motion.fast），图标 `ink-faint`；拖拽时显示 2px accent 插入线（圆角 full）。
 - `command-palette`: 宽 560px 居中偏上 20vh，`elevation.shadow-modal`，圆角 lg；输入行 40px，结果行 36px，选中行左侧 3px accent 条。
 - `breadcrumb`（顶栏）：字号走 ui-md（14px）；当前页 ink 加粗 500，祖先 ink-secondary，分隔符 ink-faint。

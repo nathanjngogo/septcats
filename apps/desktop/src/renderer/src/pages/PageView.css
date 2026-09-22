@@ -110,7 +110,8 @@
 .pv-backlinks {
   max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
   margin: var(--sc-space-xl) auto 0;
-  border-top: 1px solid var(--sc-color-surface-active);
+  /* T62-01 §1.2：反向链接区上分隔线 = 1px ink-edge（原 surface-active 弱线） */
+  border-top: 1px solid var(--sc-color-ink-edge);
   padding-top: var(--sc-space-md);
 }
 

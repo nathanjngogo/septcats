@@ -227,13 +227,14 @@ html, body {
 }
 
 /* 行内重命名输入框（T21-02：最小实现，只走既有 token；T53-01 改凹陷面 bevel-in） */
+/* T62-01 §1.1：输入控件外框 = 2px ink-edge（原 1px hairline） */
 .app-nav-input {
   flex: 1;
   min-width: 0;
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   outline: none;
   padding: 0 var(--sc-space-xxs);
@@ -303,7 +304,8 @@ html, body {
   align-items: center;
   gap: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：侧栏底行区隔线 = 1px ink-edge（原 1px hairline） */
+  border-top: 1px solid var(--sc-color-ink-edge);
   font: var(--sc-text-ui-xs);
   /* T34-01：底部工具行（回收站）弱化（ink-faint 仍过 AA） */
   color: var(--sc-color-ink-faint);

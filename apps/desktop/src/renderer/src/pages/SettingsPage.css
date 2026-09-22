@@ -29,7 +29,8 @@
   margin: 0 0 var(--sc-space-sm);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-faint);
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：分组标题分隔线 = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
   padding-bottom: var(--sc-space-sm);
 }
 
@@ -39,7 +40,8 @@
   justify-content: space-between;
   gap: var(--sc-space-lg);
   padding: var(--sc-space-md) 0;
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：设置行列表 hairline = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
 }
 
 .settings-row:last-child {
@@ -98,7 +100,8 @@
 .settings-preview {
   margin: 0;
   padding: var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：预览代码盒外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   max-height: 320px;
@@ -141,7 +144,8 @@
 .settings-recovery-code {
   display: block;
   padding: var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：恢复码盒外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   font: var(--sc-text-code);
@@ -167,7 +171,8 @@
   width: 100%;
   margin-top: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：恢复码导入输入框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   font: var(--sc-text-code);
   color: var(--sc-color-ink);

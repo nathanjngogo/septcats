@@ -47,7 +47,8 @@
 .sc-db__notice {
   margin: 0;
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：提示卡外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-accent-soft);
   font: var(--sc-text-ui-xs);
@@ -99,7 +100,8 @@
   gap: var(--sc-space-xxs);
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：工具条 chip 外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-surface);
   font: var(--sc-text-ui-xs);
@@ -113,7 +115,8 @@
 
 .sc-chip--prop:hover {
   background: var(--sc-color-surface-raised);
-  border-color: var(--sc-color-hairline-strong);
+  /* T62-01：框线恒黑，hover 只走底色（原 hairline-strong 提亮档在黑基线下无档可提） */
+  border-color: var(--sc-color-ink-edge);
 }
 
 .sc-chip__type {
@@ -156,7 +159,8 @@
 
 .sc-dbgrid__header {
   overflow: hidden;
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1/§1.2：表格外框 = 2px ink-edge（内网格线 1px，见 .sc-dbhead__cell） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm) var(--sc-radius-sm) 0 0;
   background: var(--sc-color-surface);
 }
@@ -173,7 +177,8 @@
   align-items: center;
   gap: var(--sc-space-xs);
   padding: 0 var(--sc-space-sm);
-  border-right: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：列头分隔线 = 1px ink-edge */
+  border-right: 1px solid var(--sc-color-ink-edge);
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-secondary);
   min-width: 0;
@@ -213,7 +218,8 @@
 .sc-dbgrid__body {
   position: relative;
   overflow: auto;
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：表格外框 = 2px ink-edge；顶边归 .sc-dbgrid__header 独占（只画一次） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-top: 0;
   border-radius: 0 0 var(--sc-radius-sm) var(--sc-radius-sm);
   background: var(--sc-color-canvas);
@@ -252,7 +258,8 @@
   gap: var(--sc-space-xs);
   min-width: 0;
   padding: 0 var(--sc-space-sm);
-  border-right: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：单元格网格线（列分隔）= 1px ink-edge */
+  border-right: 1px solid var(--sc-color-ink-edge);
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
 }
@@ -356,7 +363,8 @@
   min-width: 0;
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-xs);
-  border: 1px solid var(--sc-color-accent);
+  /* T62-01 §1.1：单元格编辑器 = 输入控件外框，2px ink-edge（原 1px accent） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   font: var(--sc-text-ui-sm);
@@ -472,7 +480,8 @@
 .sc-dbtag--neutral {
   background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：中性标签外框 = 2px ink-edge（amber/red 的「同色底衬」边保留，见 DEVIATION） */
+  border: 2px solid var(--sc-color-ink-edge);
 }
 
 .sc-dbtag--amber {
@@ -501,7 +510,8 @@
   overflow-y: auto;
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：候选浮层外轮廓 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -511,7 +521,8 @@
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-sm);
   margin-bottom: var(--sc-space-xs);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：浮层内搜索框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-canvas);
 }
@@ -603,7 +614,8 @@
   flex: none;
   padding: 0 var(--sc-space-xs);
   height: var(--sc-size-control-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：清空钮外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   font: var(--sc-text-ui-xs);
@@ -613,11 +625,13 @@
 
 .sc-dbc-dateedit__clear:hover {
   color: var(--sc-color-ink);
-  border-color: var(--sc-color-ink-faint);
+  /* T62-01：框线恒黑（原 ink-faint 灰档退役），hover 反馈走文字色 */
+  border-color: var(--sc-color-ink-edge);
 }
 
 .sc-dbc-input[data-invalid='true'],
 .sc-dbc-input[aria-invalid='true'] {
+  /* 校验失败态保留语义色（DEVIATION：状态色非框色；宽度谱仍 2px，见 .sc-dbc-input） */
   border-color: var(--sc-color-danger);
   color: var(--sc-color-danger);
 }
@@ -635,7 +649,8 @@ a.sc-dbc-text--link {
   gap: var(--sc-space-xxs);
   margin-top: var(--sc-space-xs);
   padding-top: var(--sc-space-xs);
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：浮层内区隔线 = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
 }
 
 .sc-dbc-picker__create-input {
@@ -643,7 +658,8 @@ a.sc-dbc-text--link {
   min-width: 0;
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-xs);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：新建输入框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-canvas);
   font: var(--sc-text-ui-sm);
@@ -674,7 +690,8 @@ a.sc-dbc-text--link {
   max-width: var(--sc-dbview-lg);
   padding: var(--sc-space-sm);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：选项管理浮层外轮廓 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -710,7 +727,8 @@ a.sc-dbc-text--link {
   flex: none;
   padding: 0 var(--sc-space-xs);
   height: var(--sc-size-control-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：选项增删钮外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   font: var(--sc-text-ui-sm);
@@ -720,7 +738,8 @@ a.sc-dbc-text--link {
 
 .sc-propbar__options-remove:hover {
   color: var(--sc-color-danger);
-  border-color: var(--sc-color-danger);
+  /* T62-01：危险语义由文字色承担，框线恒黑 */
+  border-color: var(--sc-color-ink-edge);
 }
 
 .sc-propbar__options-actions {

@@ -1,8 +1,11 @@
 .sc-spinner {
   display: inline-block;
   flex: none;
-  border: 2px solid var(--sc-color-hairline-strong);
-  border-top-color: var(--sc-color-accent);
+  /* T62-01 §1.4：指示环的线条统一为像素黑（ink-edge）；
+   * 旋转的「动段」改用 hairline-strong —— 环已占最强明度档，动段退为弱档才看得见
+   * （浅色主题=浅灰缺在黑环上 / 深色主题=深灰缺在亮环上）。 */
+  border: 2px solid var(--sc-color-ink-edge);
+  border-top-color: var(--sc-color-hairline-strong);
   border-radius: var(--sc-radius-full);
   animation: sc-spin 1.2s linear infinite;
 }
@@ -26,6 +29,7 @@
 @media (prefers-reduced-motion: reduce) {
   .sc-spinner {
     animation: none;
-    border-top-color: var(--sc-color-hairline-strong);
+    /* 停转态：动段归零、整环统一 ink-edge（否则留一个不会动的缺口在暗示旋转） */
+    border-top-color: var(--sc-color-ink-edge);
   }
 }

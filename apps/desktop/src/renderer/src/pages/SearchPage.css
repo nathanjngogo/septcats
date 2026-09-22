@@ -63,7 +63,8 @@
   align-items: center;
   gap: var(--sc-space-xs);
   padding: 0 var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：筛选胶囊外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-full);
   background: transparent;
   color: var(--sc-color-ink-secondary);

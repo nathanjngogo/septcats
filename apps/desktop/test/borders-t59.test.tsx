@@ -11,6 +11,7 @@
  *    与 ∏ 形轮廓 + 提层；非活动标签只吃左描边（相邻两枚不得叠成 4px）；
  *  - §1.4 浮层（apps 侧）：CloseAskDialog / LayoutPicker = 2px ink-edge；
  *  - §1.5 不动清单：控件面（多选数据卡、侧栏重命名输入框）保持 1px hairline + bevel。
+ *    —— **T62-01 已反超该条**：两处框线自 T62-01 起统一为 2px ink-edge（详见 pixel-borders 纪律测试）。
  *
  * 口径：jsdom 下 CSS 不参与计算（vitest css:false，CSS 导入被 stub），故边框断言一律
  * 磁盘读规则文本（与 css-discipline 同口径）；DOM 用例只钉「骑缝两元素同列相邻」的结构契约。
@@ -119,12 +120,19 @@ describe('T59-01 §1.2 主区域边界（apps 侧三处）', () => {
     expect(ruleBody(tabsCss, '.tabsbar'), '标签条出现下描边 → 破 T52「无整行分隔线」').not.toContain('border-bottom');
   });
 
-  it('边界只在「两个 chrome 面相接处」画：编辑列 CSS 里 ink-edge 恰为两处（顶边 + AI 置顶边）', () => {
-    const uses = appCss.match(/--sc-color-ink-edge/g) ?? [];
-    expect(uses.length, 'App.css 里 ink-edge 只应出现在编辑区顶边与 AI 置底顶边两处').toBe(2);
-    expect(appCss, '不得用 border 简写（会四边齐画、与邻面叠成 4px）').not.toMatch(
-      /border:\s*2px solid var\(--sc-color-ink-edge\)/,
-    );
+  it('接缝只画一次：编辑列两处接缝均为「单边 border-top」显式声明（不用 border 简写 → 不四边齐画）', () => {
+    // T62-01 起 App.css 另有非接缝的框线（.app-nav-input / .app-side-foot），
+    // 故不再按「全文件 ink-edge 计数」断言，改为逐接缝元素断言（语义等价且更精确）。
+    const seams = [
+      ['.app-editor-col .pv-root', ruleBody(appCss, '.app-editor-col .pv-root')],
+      ['.app-main-row--ai-bottom .ai-chat', ruleBody(appCss, '.app-main-row--ai-bottom .ai-chat')],
+    ] as const;
+    for (const [name, body] of seams) {
+      expect(body, `${name} 缺 2px ink-edge 接缝`).toContain('border-top: 2px solid var(--sc-color-ink-edge)');
+      expect(body, `${name} 不得用 border 简写（会四边齐画、与邻面叠成 4px）`).not.toMatch(
+        /border:\s*2px solid var\(--sc-color-ink-edge\)/,
+      );
+    }
   });
 });
 
@@ -184,10 +192,9 @@ describe('T59-01 §1.4/§1.5 浮层（apps 侧）与不动清单', () => {
     }
   });
 
-  it('§1.5 不动清单：控件面（多选数据卡 / 侧栏重命名输入框）保持 1px hairline + bevel', () => {
-    expect(ruleBody(pickerCss, '.layout-picker__card')).toContain('border: 1px solid var(--sc-color-hairline)');
-    expect(ruleBody(pickerCss, '.layout-picker__card')).not.toContain('--sc-color-ink-edge');
-    expect(ruleBody(appCss, '.app-nav-input')).toContain('border: 1px solid var(--sc-color-hairline)');
-    expect(ruleBody(appCss, '.app-nav-input')).not.toContain('--sc-color-ink-edge');
+  it('T62-01 反超 §1.5：控件面（多选数据卡 / 侧栏重命名输入框）的框轮廓已统一吃 ink-edge', () => {
+    // 老板 09-22「整个程序的所有框的线条都做成像素风黑线」→ 卡片与输入框的框线升为 2px ink-edge。
+    expect(ruleBody(pickerCss, '.layout-picker__card')).toContain('border: 2px solid var(--sc-color-ink-edge)');
+    expect(ruleBody(appCss, '.app-nav-input')).toContain('border: 2px solid var(--sc-color-ink-edge)');
   });
 });

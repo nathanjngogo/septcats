@@ -28,7 +28,8 @@
   width: 20px;
   aspect-ratio: 1;
   border-radius: var(--sc-radius-full);
-  border: 1.5px solid var(--sc-color-hairline-strong);
+  /* T62-01 §1.1：步骤节点环 = 2px ink-edge（原 1.5px 混谱值退役） */
+  border: 2px solid var(--sc-color-ink-edge);
   display: grid;
   place-items: center;
   font: var(--sc-text-ui-xs);
@@ -42,7 +43,8 @@
 
 .wiz-sp--on .wiz-sp-no {
   background: var(--sc-color-accent);
-  border-color: var(--sc-color-accent);
+  /* T62-01：框线恒黑（原与底色同色 → 框消失） */
+  border-color: var(--sc-color-ink-edge);
   color: var(--sc-color-on-accent);
 }
 
@@ -51,7 +53,8 @@
 }
 
 .wiz-sp--done .wiz-sp-no {
-  border-color: var(--sc-color-accent);
+  /* T62-01：完成态框线同黑，状态由文字色承担 */
+  border-color: var(--sc-color-ink-edge);
   color: var(--sc-color-accent);
 }
 
@@ -94,7 +97,8 @@
   align-items: center;
   gap: var(--sc-space-md);
   padding: var(--sc-space-xxl);
-  border: 1.5px dashed var(--sc-color-hairline-strong);
+  /* T62-01 §1.4：拖放占位框 —— 线型（dashed）保留、色升 ink-edge，宽度归 2px 谱 */
+  border: 2px dashed var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-lg);
   background: transparent;
   color: var(--sc-color-ink-secondary);
@@ -130,7 +134,8 @@
   gap: var(--sc-space-md);
   padding: var(--sc-space-md) var(--sc-space-lg);
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：报告条外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   margin-bottom: var(--sc-space-md);
 }
@@ -162,7 +167,8 @@
 }
 
 .wiz-tree {
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：导入树面板外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface-raised);
   padding: var(--sc-space-sm);
@@ -250,7 +256,8 @@
 .wiz-report {
   margin: 0 0 var(--sc-space-lg);
   padding: var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：导入报告代码盒 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   max-height: 320px;

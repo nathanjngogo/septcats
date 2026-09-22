@@ -524,7 +524,8 @@ type Op = {
    - **G2**：PM 产出 3 版 DESIGN.md 方向 + 全关键屏 HTML mockup（**编辑器 / 侧栏页面树 / 数据库表格视图 / 命令面板 / 搜索结果 / 设置 / 同步状态 / 冲突清单 / 导入向导 / 回收站**），每屏 2–3 变体，你**逐屏确认**。
    - **G3 起每个里程碑**：附「UI pre-flight」—— 按 §16.1–16.8 逐项自查 + 每屏三张截图（浅 / 深 / 125% 缩放）存 `docs/screens/<milestone>/`。**不通过不呈报、不验收**。
 10. **PM 执行 UI 工作时必须加载的技能**：`design-md`、`design-taste-frontend`、`apple-design`、`emil-design-eng`、`animate`、`claude-design`/`sketch`（mockup）、`popular-web-designs`（参照系）、`humanizer`（文案）。
-11. **R12 像素边框（2026-09-22 老板晚点名「加上像素风的黑色边框」）**：主区域边界（顶栏/侧栏/编辑区/AI 面板接缝）与浮层外轮廓统一 **`2px solid ink-edge`**；接缝**只画一次**（归属表见 DESIGN.md「Pixel Borders」）；编辑区顶边在**活动标签处断开**（T52 标签骑缝融合红线不破）；控件不加黑边。落地单 **T59-01**。
+11. **R12 像素边框（2026-09-22 老板晚点名「加上像素风的黑色边框」）**：主区域边界（顶栏/侧栏/编辑区/AI 面板接缝）与浮层外轮廓统一 **`2px solid ink-edge`**；接缝**只画一次**（归属表见 DESIGN.md「Pixel Borders」）；编辑区顶边在**活动标签处断开**（T52 标签骑缝融合红线不破）。~~控件不加黑边~~ → **已被 §16.12（T62-01）反超**：控件外框自 R14 起亦吃 ink-edge。落地单 **T59-01**。
+12. **R14 全局像素黑框线（2026-09-22 老板晚点名「整个程序的所有框的线条都做成像素风的黑线条」）**：口径从「主区域 + 浮层」扩到**全程序所有框**——**外框轮廓**（面板/卡片/输入控件/按钮/浮层/弹窗/标签/开关轨/滑杆件）`2px solid ink-edge`；**内部线**（表格单元格四边、列头分隔、列表 hairline、编辑器块内分隔、区隔线）`1px solid ink-edge`（同一种黑，靠宽度分层）。**focus/active = 黑线**（框线恒 ink-edge + 全局 2px focus-ring 外环），**禁彩色光晕**；装饰性虚线保留线型、色升 ink-edge、宽归 2px 谱。**禁改 token 值**、禁字面 hex；`packages/sync`/`packages/core` 零改动，`packages/dbview`/`packages/editor` **仅 CSS**；`coverage`/`mockups` 与 T59 既有 17 处落点不动。白名单外任何 `border*` 值声明都必须含 `ink-edge`（护栏：`packages/ui/test/pixel-borders.test.ts`）。落地单 **T62-01**。
 
 ## 17. 品牌规范：Septcats
 

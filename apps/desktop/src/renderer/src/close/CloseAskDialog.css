@@ -40,7 +40,8 @@
 .close-ask__remember {
   margin-top: var(--sc-space-lg);
   padding-top: var(--sc-space-md);
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：模态区隔线 = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
 }
 
 .close-ask__footer {

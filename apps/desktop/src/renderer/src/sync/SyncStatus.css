@@ -138,7 +138,8 @@
   justify-content: space-between;
   gap: var(--sc-space-sm);
   min-height: 28px;
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：面板行 hairline = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
   padding: var(--sc-space-xxs) 0;
 }
 
@@ -201,7 +202,8 @@
 .sc-sync-status__button {
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline-strong);
+  /* T62-01 §1.1：面板内按钮外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -220,7 +222,8 @@
 
 /* T53-01：hover 由「accent 色相」改为「描边加深 + 文字提墨」的明度差方案 */
 .sc-sync-status__button:hover:not(:disabled) {
-  border-color: var(--sc-color-ink-faint);
+  /* T62-01：框线恒黑，hover 反馈走底色 + 文字提墨 */
+  border-color: var(--sc-color-ink-edge);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface);
 }

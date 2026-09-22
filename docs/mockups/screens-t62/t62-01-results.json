@@ -1,0 +1,767 @@
+{
+  "task": "TASK-T62-01 真机取证（全局像素黑框线）",
+  "partial": false,
+  "ranAt": "2026-09-22T12:42:05.493Z",
+  "fixture": {
+    "wsId": "01M34J3YTV4KVTKHXWK3BCGV2Y",
+    "plainPageId": "01M34J415V3BZKYTH31PMVQNXA",
+    "dbPageId": "pg-01M34J4161FWRFXZZB0XV8ZJ79",
+    "cols": 5
+  },
+  "rounds": {
+    "light": {
+      "ink": {
+        "hex": "#1A1A1A",
+        "rgb": [
+          26,
+          26,
+          26
+        ]
+      },
+      "frames": 34,
+      "rounds": [
+        {
+          "state": "editor",
+          "pass": 7,
+          "total": 7,
+          "fails": []
+        },
+        {
+          "state": "palette",
+          "pass": 4,
+          "total": 4,
+          "fails": []
+        },
+        {
+          "state": "settings",
+          "pass": 4,
+          "total": 6,
+          "fails": []
+        },
+        {
+          "state": "layout",
+          "pass": 4,
+          "total": 4,
+          "fails": []
+        },
+        {
+          "state": "import",
+          "pass": 3,
+          "total": 3,
+          "fails": []
+        },
+        {
+          "state": "manual",
+          "pass": 5,
+          "total": 5,
+          "fails": []
+        },
+        {
+          "state": "db",
+          "pass": 5,
+          "total": 6,
+          "fails": []
+        },
+        {
+          "state": "ask",
+          "pass": 2,
+          "total": 2,
+          "fails": []
+        }
+      ]
+    },
+    "dark": {
+      "ink": {
+        "hex": "#EDEDED",
+        "rgb": [
+          237,
+          237,
+          237
+        ]
+      },
+      "frames": 34,
+      "rounds": [
+        {
+          "state": "editor",
+          "pass": 7,
+          "total": 7,
+          "fails": []
+        },
+        {
+          "state": "palette",
+          "pass": 4,
+          "total": 4,
+          "fails": []
+        },
+        {
+          "state": "settings",
+          "pass": 4,
+          "total": 6,
+          "fails": []
+        },
+        {
+          "state": "layout",
+          "pass": 4,
+          "total": 4,
+          "fails": []
+        },
+        {
+          "state": "import",
+          "pass": 3,
+          "total": 3,
+          "fails": []
+        },
+        {
+          "state": "manual",
+          "pass": 5,
+          "total": 5,
+          "fails": []
+        },
+        {
+          "state": "db",
+          "pass": 5,
+          "total": 6,
+          "fails": []
+        },
+        {
+          "state": "ask",
+          "pass": 2,
+          "total": 2,
+          "fails": []
+        }
+      ]
+    }
+  },
+  "pixelWidth": {
+    "light": {
+      "ok": true,
+      "gridCols": 1,
+      "headRows": 2
+    },
+    "dark": {
+      "ok": true,
+      "gridCols": 1,
+      "headRows": 2
+    }
+  },
+  "t59Regression": {
+    "topbar": "2px solid rgb(26, 26, 26)",
+    "pvRoot": "2px solid rgb(26, 26, 26)",
+    "tabLeft": "2px solid rgb(26, 26, 26)",
+    "activeBox": "33 vs 40",
+    "activeBottomBorder": "0px",
+    "sidebarBar": "rgb(26, 26, 26)"
+  },
+  "teardown": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t62-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t62-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "boot",
+      "name": "[info] electron 进程（开跑前）",
+      "ok": null,
+      "raw": "0"
+    },
+    {
+      "step": "boot",
+      "name": "[info] node 孤儿进程（开跑前基线）",
+      "ok": null,
+      "raw": "3"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "[info] 夹具对象（原始）",
+      "ok": null,
+      "raw": "{\"wsId\":\"01M34J3YTV4KVTKHXWK3BCGV2Y\",\"plainPageId\":\"01M34J415V3BZKYTH31PMVQNXA\",\"dbPageId\":\"pg-01M34J4161FWRFXZZB0XV8ZJ79\",\"cols\":5}"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：多维数据页含 ≥3 列（title + 3 属性）",
+      "ok": true,
+      "raw": "cols=5"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-2 浅色主题就位（夹具 settings.theme=light）",
+      "ok": true,
+      "raw": "data-theme=light"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "[info] light ink-edge（原始）",
+      "ok": null,
+      "raw": "{\"hex\":\"#1A1A1A\",\"rgb\":[26,26,26]}"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "[info] light AI 面板展开",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "顶栏下沿 框线达标",
+      "ok": true,
+      "raw": "顶栏下沿 bottom: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "正文顶边 框线达标",
+      "ok": true,
+      "raw": "正文顶边 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "活动标签顶边 框线达标",
+      "ok": true,
+      "raw": "活动标签顶边 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/0px/2px solid）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "AI 面板左缘 框线达标",
+      "ok": true,
+      "raw": "AI 面板左缘 left: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=0px/0px/0px/2px none）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "AI 输入框顶边 框线达标",
+      "ok": true,
+      "raw": "AI 输入框顶边 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "AI 题栏区隔线 框线达标",
+      "ok": true,
+      "raw": "AI 题栏区隔线 bottom: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|editor|light",
+      "name": "侧栏底行区隔线 框线达标",
+      "ok": true,
+      "raw": "侧栏底行区隔线 top: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|palette|light",
+      "name": "命令面板外框 框线达标",
+      "ok": true,
+      "raw": "命令面板外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|palette|light",
+      "name": "输入区下区隔线 框线达标",
+      "ok": true,
+      "raw": "输入区下区隔线 bottom: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|palette|light",
+      "name": "虚线占位钮 框线达标",
+      "ok": true,
+      "raw": "虚线占位钮 top: 2px dashed rgb(26, 26, 26)（期望 2px solid #1A1A1A / dashed；四边=2px/2px/2px/2px dashed）"
+    },
+    {
+      "step": "G1|palette|light",
+      "name": "面板底栏区隔线 框线达标",
+      "ok": true,
+      "raw": "面板底栏区隔线 top: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "分段控件外框 框线达标",
+      "ok": true,
+      "raw": "分段控件外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "分组标题分隔线 框线达标",
+      "ok": true,
+      "raw": "分组标题分隔线 bottom: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "设置行 hairline 框线达标",
+      "ok": true,
+      "raw": "设置行 hairline bottom: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "[info] AI provider 卡外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "AI provider 卡外框 <元素缺失>"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "次按钮外框 框线达标",
+      "ok": true,
+      "raw": "次按钮外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|settings|light",
+      "name": "[info] 主按钮外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "主按钮外框 <元素缺失>"
+    },
+    {
+      "step": "G1|layout|light",
+      "name": "预设卡外框 框线达标",
+      "ok": true,
+      "raw": "预设卡外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|light",
+      "name": "大预览面板外框 框线达标",
+      "ok": true,
+      "raw": "大预览面板外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|light",
+      "name": "JSON 编辑域外框 框线达标",
+      "ok": true,
+      "raw": "JSON 编辑域外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|light",
+      "name": "页头区隔线 框线达标",
+      "ok": true,
+      "raw": "页头区隔线 bottom: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|import|light",
+      "name": "虚线拖放区 框线达标",
+      "ok": true,
+      "raw": "虚线拖放区 top: 2px dashed rgb(26, 26, 26)（期望 2px solid #1A1A1A / dashed；四边=2px/2px/2px/2px dashed）"
+    },
+    {
+      "step": "G1|import|light",
+      "name": "步骤节点环 框线达标",
+      "ok": true,
+      "raw": "步骤节点环 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|import|light",
+      "name": "步骤节点环（当前） 框线达标",
+      "ok": true,
+      "raw": "步骤节点环（当前） top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|manual|light",
+      "name": "顶栏下沿 框线达标",
+      "ok": true,
+      "raw": "顶栏下沿 bottom: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|manual|light",
+      "name": "顶栏钮外框 框线达标",
+      "ok": true,
+      "raw": "顶栏钮外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|manual|light",
+      "name": "章表右缘接缝 框线达标",
+      "ok": true,
+      "raw": "章表右缘接缝 right: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=0px/2px/0px/0px none）"
+    },
+    {
+      "step": "G1|manual|light",
+      "name": "h2 横线 框线达标",
+      "ok": true,
+      "raw": "h2 横线 bottom: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|manual|light",
+      "name": "表格单元格网格 框线达标",
+      "ok": true,
+      "raw": "表格单元格网格 top: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=1px/1px/1px/1px solid）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "表头外框 框线达标",
+      "ok": true,
+      "raw": "表头外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "表体顶边（只画一次） 框线达标",
+      "ok": true,
+      "raw": "表体顶边（只画一次） top: 0px none rgb(26, 26, 26)（期望 0px solid #1A1A1A；四边=0px/2px/2px/2px none）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "单元格网格线 框线达标",
+      "ok": true,
+      "raw": "单元格网格线 right: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/1px/0px/0px none）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "列头分隔线 框线达标",
+      "ok": true,
+      "raw": "列头分隔线 right: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=0px/1px/0px/0px none）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "工具条 chip 外框 框线达标",
+      "ok": true,
+      "raw": "工具条 chip 外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|db|light",
+      "name": "[info] 标签外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "标签外框 <元素缺失>"
+    },
+    {
+      "step": "G1|ask|light",
+      "name": "询问框外框 框线达标",
+      "ok": true,
+      "raw": "询问框外框 top: 2px solid rgb(26, 26, 26)（期望 2px solid #1A1A1A；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|ask|light",
+      "name": "备忘行区隔线 框线达标",
+      "ok": true,
+      "raw": "备忘行区隔线 top: 1px solid rgb(26, 26, 26)（期望 1px solid #1A1A1A；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|ask|light",
+      "name": "G1-light 代表框 computed 达标数 ≥12（外框 2px + 内线 1px，色 == ink-edge）",
+      "ok": true,
+      "raw": "pass=34（逐屏：editor 7/7 / palette 4/4 / settings 4/6 / layout 4/4 / import 3/3 / manual 5/5 / db 5/6 / ask 2/2）"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "G2-1-light §1.2 宽度分层真机成立：DbView 竖向网格线 = 1 像素、表头外框 = 2 像素",
+      "ok": true,
+      "raw": "{\"ok\":true,\"gridCols\":1,\"headRows\":2}"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "[info] G3-light DbView ASCII 墨迹图（原始）",
+      "ok": null,
+      "raw": "\n=       :                                            :                                    \n=       :                                            :                                    \n= :===: :                                            :                                    \n= =:::= : .:-..-.:.                                  :                                    \n= =:  = : .--.=*-::                                  :                                    \n= =:  = : .-=.=+---                                  : ....                               \n= :===: : .. . .                                     :                                    \n=       :                                            :                                    \n=       :                                            :                                    \n=.......:............................................:....................................\n=.......:............................................:....................................\n=.:===:.:............................................:....................................\n=.=:::=.:..:=:.-.::..................................:....................................\n=.=:  =.:..==.=*-.-..................................:...::...............................\n=.=:  =.:..==.=+-=-..................................:..:-................................\n=.:===:.:............................................:....................................\n=.......:............................................:....................................\n=.......:............................................:....................................\n=       :                                            :                                    \n=       :                                            :                                    \n= :===: :                                            :                                    \n= =:::= : .:-..-.::                                  :                                    \n= =:  = : .--.=*-.-                                  :                                    \n= =:  = : .-=.=+-:=                                  : ....                               \n= :===: : .. . .                                     :                                    \n=       :                                            :                                    \n=       :                                            :                                    \n=     ...............................................................                     \n=.=: ================================================================-                    \n= -: -===============================================================:                    \n+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "G3-1-light §4 抽噪判：表格区域黑线像素占比低（黑线成网格但不淹没内容）",
+      "ok": true,
+      "raw": "inkShare=2.63% 区域=360x125 阈值<25%"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "G1-dark 深色主题就位",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "[info] dark ink-edge（原始）",
+      "ok": null,
+      "raw": "{\"hex\":\"#EDEDED\",\"rgb\":[237,237,237]}"
+    },
+    {
+      "step": "G2|width-light",
+      "name": "[info] dark AI 面板展开",
+      "ok": null,
+      "raw": "true"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "顶栏下沿 框线达标",
+      "ok": true,
+      "raw": "顶栏下沿 bottom: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "正文顶边 框线达标",
+      "ok": true,
+      "raw": "正文顶边 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "活动标签顶边 框线达标",
+      "ok": true,
+      "raw": "活动标签顶边 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/0px/2px solid）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "AI 面板左缘 框线达标",
+      "ok": true,
+      "raw": "AI 面板左缘 left: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=0px/0px/0px/2px none）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "AI 输入框顶边 框线达标",
+      "ok": true,
+      "raw": "AI 输入框顶边 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "AI 题栏区隔线 框线达标",
+      "ok": true,
+      "raw": "AI 题栏区隔线 bottom: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|editor|dark",
+      "name": "侧栏底行区隔线 框线达标",
+      "ok": true,
+      "raw": "侧栏底行区隔线 top: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|palette|dark",
+      "name": "命令面板外框 框线达标",
+      "ok": true,
+      "raw": "命令面板外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|palette|dark",
+      "name": "输入区下区隔线 框线达标",
+      "ok": true,
+      "raw": "输入区下区隔线 bottom: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|palette|dark",
+      "name": "虚线占位钮 框线达标",
+      "ok": true,
+      "raw": "虚线占位钮 top: 2px dashed rgb(237, 237, 237)（期望 2px solid #EDEDED / dashed；四边=2px/2px/2px/2px dashed）"
+    },
+    {
+      "step": "G1|palette|dark",
+      "name": "面板底栏区隔线 框线达标",
+      "ok": true,
+      "raw": "面板底栏区隔线 top: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "分段控件外框 框线达标",
+      "ok": true,
+      "raw": "分段控件外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "分组标题分隔线 框线达标",
+      "ok": true,
+      "raw": "分组标题分隔线 bottom: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "设置行 hairline 框线达标",
+      "ok": true,
+      "raw": "设置行 hairline bottom: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "[info] AI provider 卡外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "AI provider 卡外框 <元素缺失>"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "次按钮外框 框线达标",
+      "ok": true,
+      "raw": "次按钮外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|settings|dark",
+      "name": "[info] 主按钮外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "主按钮外框 <元素缺失>"
+    },
+    {
+      "step": "G1|layout|dark",
+      "name": "预设卡外框 框线达标",
+      "ok": true,
+      "raw": "预设卡外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|dark",
+      "name": "大预览面板外框 框线达标",
+      "ok": true,
+      "raw": "大预览面板外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|dark",
+      "name": "JSON 编辑域外框 框线达标",
+      "ok": true,
+      "raw": "JSON 编辑域外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|layout|dark",
+      "name": "页头区隔线 框线达标",
+      "ok": true,
+      "raw": "页头区隔线 bottom: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/0px/1px/0px none）"
+    },
+    {
+      "step": "G1|import|dark",
+      "name": "虚线拖放区 框线达标",
+      "ok": true,
+      "raw": "虚线拖放区 top: 2px dashed rgb(237, 237, 237)（期望 2px solid #EDEDED / dashed；四边=2px/2px/2px/2px dashed）"
+    },
+    {
+      "step": "G1|import|dark",
+      "name": "步骤节点环 框线达标",
+      "ok": true,
+      "raw": "步骤节点环 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|import|dark",
+      "name": "步骤节点环（当前） 框线达标",
+      "ok": true,
+      "raw": "步骤节点环（当前） top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|manual|dark",
+      "name": "顶栏下沿 框线达标",
+      "ok": true,
+      "raw": "顶栏下沿 bottom: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|manual|dark",
+      "name": "顶栏钮外框 框线达标",
+      "ok": true,
+      "raw": "顶栏钮外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|manual|dark",
+      "name": "章表右缘接缝 框线达标",
+      "ok": true,
+      "raw": "章表右缘接缝 right: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=0px/2px/0px/0px none）"
+    },
+    {
+      "step": "G1|manual|dark",
+      "name": "h2 横线 框线达标",
+      "ok": true,
+      "raw": "h2 横线 bottom: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=0px/0px/2px/0px none）"
+    },
+    {
+      "step": "G1|manual|dark",
+      "name": "表格单元格网格 框线达标",
+      "ok": true,
+      "raw": "表格单元格网格 top: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=1px/1px/1px/1px solid）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "表头外框 框线达标",
+      "ok": true,
+      "raw": "表头外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "表体顶边（只画一次） 框线达标",
+      "ok": true,
+      "raw": "表体顶边（只画一次） top: 0px none rgb(237, 237, 237)（期望 0px solid #EDEDED；四边=0px/2px/2px/2px none）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "单元格网格线 框线达标",
+      "ok": true,
+      "raw": "单元格网格线 right: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/1px/0px/0px none）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "列头分隔线 框线达标",
+      "ok": true,
+      "raw": "列头分隔线 right: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=0px/1px/0px/0px none）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "工具条 chip 外框 框线达标",
+      "ok": true,
+      "raw": "工具条 chip 外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|db|dark",
+      "name": "[info] 标签外框 本屏未渲染（可选目标）",
+      "ok": null,
+      "raw": "标签外框 <元素缺失>"
+    },
+    {
+      "step": "G1|ask|dark",
+      "name": "询问框外框 框线达标",
+      "ok": true,
+      "raw": "询问框外框 top: 2px solid rgb(237, 237, 237)（期望 2px solid #EDEDED；四边=2px/2px/2px/2px solid）"
+    },
+    {
+      "step": "G1|ask|dark",
+      "name": "备忘行区隔线 框线达标",
+      "ok": true,
+      "raw": "备忘行区隔线 top: 1px solid rgb(237, 237, 237)（期望 1px solid #EDEDED；四边=1px/0px/0px/0px solid）"
+    },
+    {
+      "step": "G1|ask|dark",
+      "name": "G1-dark 代表框 computed 达标数 ≥12（深色口径：外框 2px + ink-edge 亮边 #EDEDED）",
+      "ok": true,
+      "raw": "pass=34（逐屏：editor 7/7 / palette 4/4 / settings 4/6 / layout 4/4 / import 3/3 / manual 5/5 / db 5/6 / ask 2/2）"
+    },
+    {
+      "step": "G2|width-dark",
+      "name": "G2-1-dark §1.2 深色同口径：网格线 1 像素 / 外框 2 像素",
+      "ok": true,
+      "raw": "{\"ok\":true,\"gridCols\":1,\"headRows\":2}"
+    },
+    {
+      "step": "G2|width-dark",
+      "name": "[info] G3-dark DbView ASCII 墨迹图（原始）",
+      "ok": null,
+      "raw": "\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%#===#%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%%=%*%%*+##+##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%#=%*%%==#=:**#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%#*=%*%%+=#=-+++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%#===#%*%%%%#%#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%*===*%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%%=%*%#*+##+#**%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%#=%*%%==#=:+%=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%#*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%#*=%*%%=-#=-==+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%*+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%*===*%*%##%#%#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%#===#%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%%=%*%%*+##+#*#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%%#=%*%%==#=:*#+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%=%#*=%*%%+=#=-+*=%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%#===#%*%%%%#%#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n=%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n      ...............................................................                     \n .=: ================================================================-                    \n  -: -===============================================================:                    \n                                                                                          "
+    },
+    {
+      "step": "G2|width-dark",
+      "name": "G3-1-dark §4 抽噪判：深色表格区域黑线像素占比低",
+      "ok": true,
+      "raw": "inkShare=2.63% 区域=360x125 阈值<25%"
+    },
+    {
+      "step": "G4|regression",
+      "name": "[info] T59 零回归（原始）",
+      "ok": null,
+      "raw": "{\"topbar\":\"2px solid rgb(26, 26, 26)\",\"pvRoot\":\"2px solid rgb(26, 26, 26)\",\"tabLeft\":\"2px solid rgb(26, 26, 26)\",\"activeBox\":\"33 vs 40\",\"activeBottomBorder\":\"0px\",\"sidebarBar\":\"rgb(26, 26, 26)\"}"
+    },
+    {
+      "step": "G4|regression",
+      "name": "G4-1 T59 五处接缝零回归：顶栏下沿 / 正文顶边 / 非活动标签左描边仍为 2px ink-edge",
+      "ok": true,
+      "raw": "{\"topbar\":\"2px solid rgb(26, 26, 26)\",\"pvRoot\":\"2px solid rgb(26, 26, 26)\",\"tabLeft\":\"2px solid rgb(26, 26, 26)\"}"
+    },
+    {
+      "step": "G4|regression",
+      "name": "G4-2 T52 骑缝融合零回归：活动标签下缘无边（∏ 形轮廓），侧栏右缘接缝条仍为 ink-edge",
+      "ok": true,
+      "raw": "activeBottomBorder=0px sidebarBar=rgb(26, 26, 26)"
+    },
+    {
+      "step": "G6|isolation",
+      "name": "G6-1 真档案只读：C:\\Users\\Administrator\\.septcats mtime 前后一致",
+      "ok": true,
+      "raw": "before=1789991614995.1055 after=1789991614995.1055"
+    },
+    {
+      "step": "G7|teardown",
+      "name": "G7-1 退出干净：优雅退出（window.close）且 electron 进程计数 = 0",
+      "ok": true,
+      "raw": "graceful=true forced=false electron=0"
+    },
+    {
+      "step": "G7|teardown",
+      "name": "G7-2 探针自身零 node 泄漏（净增=0；基线=workbuddy MCP 宿主 3 个）",
+      "ok": true,
+      "raw": "now=3 baseline=3"
+    },
+    {
+      "step": "G7|teardown",
+      "name": "G5-1 截图落地：8 组 × 2 主题 = 16 张",
+      "ok": true,
+      "raw": "pngCount=16"
+    }
+  ]
+}

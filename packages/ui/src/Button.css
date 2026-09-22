@@ -5,7 +5,9 @@
   gap: var(--sc-space-sm);
   height: var(--sc-size-control-md);
   padding: 0 var(--sc-space-md);
-  border: 1px solid transparent;
+  /* T62-01 全局框线：宽度谱统一 2px；基类留占位（ghost = 有意无框，保持 transparent）。
+   * 有框变体（primary/secondary/destructive）各自上 ink-edge 色 —— 见下。 */
+  border: 2px solid transparent;
   border-radius: var(--sc-radius-sm);
   font: var(--sc-text-ui-sm);
   user-select: none;
@@ -37,6 +39,7 @@
 .sc-btn--primary {
   background: var(--sc-color-accent);
   color: var(--sc-color-on-accent);
+  border-color: var(--sc-color-ink-edge);
   box-shadow: var(--sc-pixel-out);
 }
 
@@ -47,7 +50,8 @@
 .sc-btn--secondary {
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
-  border-color: var(--sc-color-hairline-strong);
+  /* T62-01：框轮廓色源升为 ink-edge（原 hairline-strong 灰线退役） */
+  border-color: var(--sc-color-ink-edge);
   box-shadow: var(--sc-pixel-out);
 }
 
@@ -69,6 +73,7 @@
 .sc-btn--destructive {
   background: var(--sc-color-danger);
   color: var(--sc-color-on-accent);
+  border-color: var(--sc-color-ink-edge);
   box-shadow: var(--sc-pixel-out);
 }
 

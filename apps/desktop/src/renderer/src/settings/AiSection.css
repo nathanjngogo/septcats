@@ -6,7 +6,8 @@
 .settings-ai-card {
   margin-top: var(--sc-space-md);
   padding: var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：provider 卡外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
 }
@@ -51,7 +52,8 @@
 .settings-ai-select {
   max-width: 220px;
   padding: var(--sc-space-xs) var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：provider 下拉 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   font: var(--sc-text-ui-xs);
@@ -86,7 +88,8 @@
 
 .settings-ai-badge--ollama {
   background: var(--sc-color-surface-raised);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：ollama 徽章外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   color: var(--sc-color-ink-secondary);
 }
 
@@ -138,7 +141,8 @@
 .settings-ai-input {
   width: 100%;
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：路径/密钥输入框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   font: var(--sc-text-code);

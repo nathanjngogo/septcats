@@ -10,7 +10,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：缩略图外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-canvas);
 }
@@ -28,7 +29,8 @@
 .layout-preview__chrome {
   flex: none;
   height: 12%;
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：缩略图内部示意线 = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
   background: var(--sc-color-surface);
 }
 
@@ -42,7 +44,7 @@
 .layout-preview__side {
   flex: none;
   width: var(--sc-layout-preview-sidebar);
-  border-right: 1px solid var(--sc-color-hairline);
+  border-right: 1px solid var(--sc-color-ink-edge);
   background: var(--sc-color-surface);
 }
 
@@ -56,7 +58,7 @@
 .layout-preview__tabs {
   flex: none;
   height: 10%;
-  border-bottom: 1px solid var(--sc-color-hairline);
+  border-bottom: 1px solid var(--sc-color-ink-edge);
   background: var(--sc-color-surface);
 }
 
@@ -76,7 +78,8 @@
   gap: var(--sc-space-xs);
   width: var(--sc-layout-preview-content);
   padding: var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：正文示意框（缩略图内） = 1px ink-edge，2px 在缩略尺度会糊死 */
+  border: 1px solid var(--sc-color-ink-edge);
   background: var(--sc-color-content);
 }
 
@@ -109,12 +112,12 @@
 
 .layout-preview__ai--right {
   width: 24%;
-  border-left: 1px solid var(--sc-color-hairline);
+  border-left: 1px solid var(--sc-color-ink-edge);
 }
 
 .layout-preview__ai--bottom {
   height: 26%;
-  border-top: 1px solid var(--sc-color-hairline);
+  border-top: 1px solid var(--sc-color-ink-edge);
 }
 
 /* 收起态：画成窄轨（与「AI 面板默认展开」档位一致，notion/focus 与 workbench 在图上可辨） */

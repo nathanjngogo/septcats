@@ -12,7 +12,8 @@
 .sc-field__control {
   height: var(--sc-size-control-md);
   padding: 0 var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：输入控件外框 = 2px ink-edge（原 1px hairline 灰线退役） */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -28,13 +29,16 @@
   color: var(--sc-color-ink-faint);
 }
 
+/* T62-01：框线恒黑后，hover 不再靠「描边提亮一档」表达（黑无更亮档）；
+   保留显式声明以免级联回落，状态反馈由 bevel 凹陷承担。 */
 .sc-field__control:hover:not(:disabled) {
-  border-color: var(--sc-color-hairline-strong);
+  border-color: var(--sc-color-ink-edge);
 }
 
-/* T53-01：focus 不再走 accent（已灰阶），改走「描边提到 ink + 凹陷加强」的明度差方案 */
+/* T62-01 §1.3：focus = 黑线（框线恒 ink-edge）+ 全局 :focus-visible 的 2px 黑轮廓环
+   （tokens.css 基线），禁彩色光晕。 */
 .sc-field__control:focus-visible {
-  border-color: var(--sc-color-ink);
+  border-color: var(--sc-color-ink-edge);
   box-shadow: var(--sc-bevel-in);
 }
 
@@ -55,6 +59,8 @@
   color: var(--sc-color-danger);
 }
 
+/* 错误态保留语义色（DEVIATION：§1.3 只封 focus/active 的彩晕；错误=状态色非框色，
+   宽度谱仍 2px）。 */
 .sc-field--error .sc-field__control {
   border-color: var(--sc-color-danger);
 }

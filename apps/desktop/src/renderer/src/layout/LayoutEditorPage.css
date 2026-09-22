@@ -22,7 +22,8 @@
   justify-content: space-between;
   gap: var(--sc-space-md);
   padding-bottom: var(--sc-space-md);
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：页头区隔线 = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
 }
 
 .layout-editor__title {
@@ -52,7 +53,8 @@
 
 .layout-editor__preview {
   padding: var(--sc-space-md);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：大预览面板外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
 }
@@ -68,7 +70,8 @@
   align-items: center;
   gap: var(--sc-space-md);
   padding: var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：预设卡外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-content);
   color: var(--sc-color-ink);
@@ -94,7 +97,8 @@
 /* 当前项高亮：描边提墨 + 凹陷面（T53 明度差方案，不走色相） */
 .layout-editor__card--active,
 .layout-editor__card--active:hover {
-  border-color: var(--sc-color-ink);
+  /* T62-01：选中态描边与框线同源（ink-edge），区分靠凹陷面 */
+  border-color: var(--sc-color-ink-edge);
   background: var(--sc-color-surface-active);
   box-shadow: var(--sc-bevel-in);
 }
@@ -128,7 +132,8 @@
   width: 360px;
   max-width: 100%;
   padding-left: var(--sc-space-xl);
-  border-left: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：右列表单列分隔线 = 1px ink-edge */
+  border-left: 1px solid var(--sc-color-ink-edge);
 }
 
 /* 表单行（本页自持，不依赖设置页样式表：编辑器是独立页） */
@@ -138,7 +143,8 @@
   justify-content: space-between;
   gap: var(--sc-space-lg);
   padding: var(--sc-space-sm) 0;
-  border-bottom: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：表单行 hairline = 1px ink-edge */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
 }
 
 .layout-editor__row-label {
@@ -187,7 +193,8 @@
 /* 像素化轨：凹面 + 发丝描边（T53 token） */
 .layout-editor__range::-webkit-slider-runnable-track {
   height: var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：滑杆轨道外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface);
   box-shadow: var(--sc-bevel-in);
@@ -200,7 +207,8 @@
   width: var(--sc-space-md);
   height: var(--sc-space-lg);
   margin-top: calc(-1 * var(--sc-space-xs));
-  border: 1px solid var(--sc-color-hairline-strong);
+  /* T62-01 §1.1：滑杆方钮外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-content);
   box-shadow: var(--sc-pixel-flat);
@@ -228,7 +236,8 @@
   width: 100%;
   box-sizing: border-box;
   padding: var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：JSON 编辑域 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface);
   font: var(--sc-text-ui-xs);

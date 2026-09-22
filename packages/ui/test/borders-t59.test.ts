@@ -8,7 +8,10 @@
  *  - §1.4 浮层族统一：Dialog / Menu / Popover / Tooltip / Select 下拉 / Toast 六个
  *    `packages/ui` 浮层外轮廓一律 2px ink-edge（原 1px hairline / hairline-strong 退役）；
  *  - §1.5 不动清单：控件文件（Button / Input / Checkbox / Switch）不得出现 ink-edge
- *    （控件已有 bevel 立体语法，再叠黑边会糊）；
+ *    （控件已有 bevel 立体语法，再叠黑边会糊）。
+ *    —— **T62-01 已反超该条**：老板 09-22 点名「整个程序的所有框」都要黑线，
+ *    控件外框自 T62-01 起一律 2px ink-edge，故本节断言改写为「控件框线已统一」
+ *    （细则见 test/pixel-borders.test.ts）。
  *  - token 纪律：本单改动的每个 ui CSS 仍过 css-discipline（零字面 hex + 零重复裸 px）。
  *
  * 口径同既有组件层测：CSS 不参与计算（vitest css:false），一律磁盘读规则文本断言；
@@ -39,7 +42,7 @@ const FLOATING: ReadonlyArray<readonly [string, string]> = [
   ['.sc-select__listbox', 'src/Select.css'],
   ['.sc-toast__item', 'src/Toast.css'],
 ];
-/** §1.5 不动清单：控件文件（描边走 bevel，不走 ink-edge）。 */
+/** §1.5 不动清单（**T62-01 已反超**）：控件文件的框轮廓自 T62 起亦吃 ink-edge。 */
 const CONTROL_FILES = ['src/Button.css', 'src/Input.css', 'src/Checkbox.css', 'src/Switch.css'] as const;
 
 describe('T59-01 §1.1 token：ink-edge 双主题锚定', () => {
@@ -107,9 +110,9 @@ describe('T59-01 §1.4 浮层族统一（ui 侧六个浮层）', () => {
     expect(stale, '仍有浮层停留在旧描边').toEqual([]);
   });
 
-  it('§1.5 不动清单：控件文件（Button/Input/Checkbox/Switch）零 ink-edge', () => {
+  it('T62-01 反超 §1.5：控件文件（Button/Input/Checkbox/Switch）的框轮廓已统一吃 ink-edge', () => {
     for (const rel of CONTROL_FILES) {
-      expect(read(rel), `${rel} 是控件面，不得吃区域边界色`).not.toContain('--sc-color-ink-edge');
+      expect(read(rel), `${rel} 自 T62-01 起框线应统一为 ink-edge`).toContain('--sc-color-ink-edge');
     }
   });
 });

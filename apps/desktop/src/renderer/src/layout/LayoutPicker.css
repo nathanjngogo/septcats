@@ -48,7 +48,8 @@
   flex-direction: column;
   gap: var(--sc-space-xs);
   padding: var(--sc-space-sm);
-  border: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.1：预设卡外框 = 2px ink-edge */
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-content);
   color: var(--sc-color-ink);
@@ -74,7 +75,8 @@
 /* 当前项高亮：描边提墨 + 凹陷面（T53 明度差方案，不走色相） */
 .layout-picker__card--active,
 .layout-picker__card--active:hover {
-  border-color: var(--sc-color-ink);
+  /* T62-01：选中态描边与框线同源（ink-edge），区分靠凹陷面 */
+  border-color: var(--sc-color-ink-edge);
   background: var(--sc-color-surface-active);
   box-shadow: var(--sc-bevel-in);
 }
@@ -93,7 +95,8 @@
   justify-content: flex-end;
   margin-top: var(--sc-space-lg);
   padding-top: var(--sc-space-md);
-  border-top: 1px solid var(--sc-color-hairline);
+  /* T62-01 §1.2：模态底栏区隔线 = 1px ink-edge */
+  border-top: 1px solid var(--sc-color-ink-edge);
 }
 
 .layout-picker__card:focus-visible {

@@ -12,7 +12,8 @@
   place-items: center;
   width: 120px;
   height: 88px;
-  border: 1px dashed var(--sc-color-hairline-strong);
+  /* T62-01 §1.4：装饰性占位框 —— 线型（dashed）保留，颜色升为 ink-edge、宽度归 2px 谱 */
+  border: 2px dashed var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-lg);
   color: var(--sc-color-hairline-strong);
 }

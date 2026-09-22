@@ -24,7 +24,7 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  border: 1px solid var(--sc-color-hairline-strong);
+  border: 2px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-on-accent);
@@ -39,8 +39,16 @@
 .sc-cbx__input:checked + .sc-cbx__box,
 .sc-cbx__input:indeterminate + .sc-cbx__box {
   background: var(--sc-color-accent);
-  border-color: var(--sc-color-accent);
+  /* T62-01：框轮廓恒为 ink-edge（原选中态把描边收成 accent 与底同色 → 框消失，现统一） */
+  border-color: var(--sc-color-ink-edge);
   box-shadow: var(--sc-bevel-out);
+}
+
+/* T62-01：2px 黑框把盒内空压到 12px —— 勾标（sm 图标）等比收一档，
+ * 否则会压住/越出框线（原 1px 框时恰好贴边）。 */
+.sc-cbx__tick {
+  width: var(--sc-space-md);
+  height: var(--sc-space-md);
 }
 
 /* 焦点环走 outline（不用 box-shadow）→ 不覆盖上面两态的 bevel 立体 */
