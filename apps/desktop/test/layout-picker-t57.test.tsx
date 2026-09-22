@@ -21,6 +21,7 @@ import {
   layoutActions,
   layoutStore,
   makeDefaultLayout,
+  previewSidebarPercent,
 } from '../src/renderer/src/layout/layoutState';
 import { pagesStore } from '../src/renderer/src/state/pages';
 
@@ -83,8 +84,11 @@ describe('T57-01 §1.2 布局快选弹框', () => {
         .querySelector('[data-testid="layout-preview"]')
         ?.getAttribute('data-ai-expanded'),
     ).toBe('on');
-    // 侧栏占比内联变量按预设宽度派生（notion/workbench 240 → 19.3%）
-    expect(notion?.getAttribute('style')).toContain('--sc-layout-preview-sidebar: 19.3%');
+    // 侧栏占比内联变量按预设宽度派生（notion/workbench 240；T61-01 §2 起区间上限
+    // 由 320 改「视口 30%」→ 同宽占比随之变：jsdom 1024 下 240 → 20%）
+    expect(notion?.getAttribute('style')).toContain(
+      `--sc-layout-preview-sidebar: ${String(previewSidebarPercent(240))}%`,
+    );
   });
 
   it('当前预设卡高亮（aria-pressed），其余为 false', () => {

@@ -24,14 +24,16 @@ import { t } from '../i18n';
 import { pushToast } from '../state/pages';
 import { LayoutPreviewDiagram } from './LayoutPreview';
 import {
+  AI_WIDTH_MIN,
   MEASURE_MAX,
   MEASURE_MIN,
-  SIDEBAR_WIDTH_MAX,
   SIDEBAR_WIDTH_MIN,
   layoutActions,
   layoutPreviewForPreset,
   layoutPreviewOf,
+  maxPanelWidth,
   useLayout,
+  useViewportWidth,
   type AiPanelPosition,
   type LayoutDensity,
   type LayoutPresetId,
@@ -117,7 +119,13 @@ export interface LayoutEditorPageProps {
 
 export function LayoutEditorPage({ onDone }: LayoutEditorPageProps) {
   const layout = useLayout((state) => state.layout);
-  const preview = layoutPreviewOf(layout);
+  // T61-01 §2：宽度滑杆上限 = min(480, 视口 30%)——随窗口实时变化（useViewportWidth 订阅 resize）。
+  // 下限优先：极窄视口时保证滑杆区间非空（与 clampSidebarWidth/clampAiWidth 同口径）。
+  const viewportWidth = useViewportWidth();
+  const panelMax = maxPanelWidth(viewportWidth);
+  const sidebarMaxWidth = Math.max(SIDEBAR_WIDTH_MIN, panelMax);
+  const aiMaxWidth = Math.max(AI_WIDTH_MIN, panelMax);
+  const preview = layoutPreviewOf(layout, viewportWidth);
 
   // 导出/导入反馈（剪贴板双向；导出复制失败 → 弹窗内给 JSON 供手动复制）
   const [exportNote, setExportNote] = useState<string | null>(null);
@@ -265,7 +273,7 @@ export function LayoutEditorPage({ onDone }: LayoutEditorPageProps) {
                 label={t('settings.layout.sidebarWidth')}
                 value={layout.sidebar.width}
                 min={SIDEBAR_WIDTH_MIN}
-                max={SIDEBAR_WIDTH_MAX}
+                max={sidebarMaxWidth}
                 step={SIDEBAR_WIDTH_STEP}
                 testId="layout-sidebar-width"
                 onChange={(width) => {
@@ -307,6 +315,26 @@ export function LayoutEditorPage({ onDone }: LayoutEditorPageProps) {
                 value={layout.ai.position}
                 onChange={(position) => {
                   layoutActions.setAiPosition(position);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="layout-editor__row">
+            <div className="layout-editor__row-label">
+              <span className="layout-editor__row-title">{t('settings.layout.aiWidth')}</span>
+              <span className="layout-editor__row-desc">{t('settings.layout.aiWidthDesc')}</span>
+            </div>
+            <div className="layout-editor__row-ctl">
+              <LayoutSlider
+                label={t('settings.layout.aiWidth')}
+                value={layout.ai.width}
+                min={AI_WIDTH_MIN}
+                max={aiMaxWidth}
+                step={SIDEBAR_WIDTH_STEP}
+                testId="layout-ai-width"
+                onChange={(width) => {
+                  layoutActions.setAiWidth(width);
                 }}
               />
             </div>

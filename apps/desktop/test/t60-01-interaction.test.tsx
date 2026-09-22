@@ -153,16 +153,17 @@ function rowIconSig(testId: string): string {
 }
 
 describe('T60-01 ② 行图标 = 文件图标', () => {
-  it('普通页（树根 + 子页）行图标 = FileText（≠ FolderSimple）', () => {
+  it('无子页的普通页行图标 = FileText（≠ FolderSimple）', () => {
     seedStore(makeNodes(), 'pg-a');
     render(<SidebarTree />);
     const file = glyphSig(FileText);
     const folder = glyphSig(FolderSimple);
     expect(file).not.toBe(folder);
 
-    expect(rowIconSig('side-node-pg-a')).toBe(file);
+    // T61-01 §1.2 承接：有活子页的行改「文件夹长相」（派生），叶子行仍文件图标
     expect(rowIconSig('side-node-pg-child')).toBe(file);
-    expect(rowIconSig('side-node-pg-a')).not.toBe(folder);
+    expect(rowIconSig('side-node-pg-child')).not.toBe(folder);
+    expect(rowIconSig('side-node-pg-a')).toBe(folder); // pg-a 有活子页 pg-child
   });
 
   it('现状不回归：database 行仍 FolderSimple、wiki 行仍 Note、Wiki 分区头仍 Note', () => {

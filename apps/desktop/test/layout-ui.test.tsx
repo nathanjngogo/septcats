@@ -23,6 +23,7 @@ import {
   layoutActions,
   layoutStore,
   makeDefaultLayout,
+  maxPanelWidth,
 } from '../src/renderer/src/layout/layoutState';
 import { pagesStore, type PagesState } from '../src/renderer/src/state/pages';
 import type { AppSettings } from '../src/shared/settings';
@@ -170,7 +171,9 @@ describe('T39-01/T57-01 设置页「布局」区块 = 布局编辑器入口（�
     const width = screen.getByTestId('layout-sidebar-width') as HTMLInputElement;
     expect(width.type).toBe('range');
     expect(width.min).toBe('200');
-    expect(width.max).toBe('320');
+    // T61-01 §2：上限 = min(480, 视口 30%)（jsdom 1024 → 307），不再是静态 320
+    expect(width.max).toBe(String(maxPanelWidth()));
+    expect(screen.getByTestId('layout-ai-width')).toBeDefined(); // T61-01：新增 AI 宽度滑杆
     expect(screen.getByTestId('layout-measure')).toBeDefined();
     expect(screen.getByRole('radiogroup', { name: '侧栏' })).toBeDefined();
     expect(screen.getByRole('radiogroup', { name: 'AI 面板位置' })).toBeDefined();

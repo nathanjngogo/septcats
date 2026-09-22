@@ -23,6 +23,9 @@ export const enUS = {
     expandSidebar: 'Expand sidebar',
     // T57-01 §1.1: top-bar "Layout" button (left of Settings) — opens the layout picker
     layoutLabel: 'Layout',
+    // T61-01 §2: accessible names for the two drag-to-resize splitters (role=separator)
+    resizeSidebar: 'Resize sidebar',
+    resizeAi: 'Resize AI panel',
   },
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it
@@ -97,6 +100,11 @@ export const enUS = {
     renameAria: 'Rename page',
     rename: 'Rename',
     pageActions: 'Page actions',
+    // T61-01 §1 (PRD-R13 ④): derived-folder entries + the "Move to…" second-level picker
+    newSubpage: 'New subpage',
+    moveTo: 'Move to…',
+    moveToTitle: 'Move page into',
+    moveToRoot: 'Workspace root',
     trash: 'Trash',
   },
   editor: {
@@ -275,7 +283,7 @@ export const enUS = {
       sidebarLeft: 'Left',
       sidebarCollapsed: 'Collapsed',
       sidebarWidth: 'Sidebar width',
-      sidebarWidthDesc: '200–320, clamped automatically',
+      sidebarWidthDesc: '200–30% of window (cap 480), clamped automatically',
       measure: 'Content max width',
       measureDesc: '560–1000, clamped automatically',
       unitPx: 'px',
@@ -283,6 +291,8 @@ export const enUS = {
       aiRight: 'Right',
       aiBottom: 'Bottom',
       aiHidden: 'Hidden',
+      aiWidth: 'AI panel width',
+      aiWidthDesc: '240–30% of window (cap 480); right layout only — you can also drag the panel edge',
       aiExpanded: 'AI panel expanded by default',
       aiExpandedDesc: 'Applied immediately when switching presets (manual toggles win afterwards)',
       tabs: 'Tab bar',

@@ -24,6 +24,9 @@ export const zhCN = {
     expandSidebar: '展开侧栏',
     // T57-01 §1.1：顶栏「布局」钮（设置钮左侧）——点击弹布局快选框
     layoutLabel: '布局',
+    // T61-01 §2：两侧拖拽宽度把手的可访问名（aria-label，role=separator）
+    resizeSidebar: '调整侧栏宽度',
+    resizeAi: '调整 AI 面板宽度',
   },
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
@@ -99,6 +102,12 @@ export const zhCN = {
     // T60-01 ④：行 ⋯ 菜单 / 右键菜单的「重命名」条目
     rename: '重命名',
     pageActions: '页面操作',
+    // T61-01 §1（PRD-R13 ④）：文件夹派生语义的两条菜单项 +
+    // 「移入…」二级选择器的标题与根目标（无新实体，走既有 createPage/movePage）
+    newSubpage: '新建子页面',
+    moveTo: '移入…',
+    moveToTitle: '移入页面',
+    moveToRoot: '工作区根',
     trash: '回收站',
   },
   editor: {
@@ -272,7 +281,7 @@ export const zhCN = {
       sidebarLeft: '左侧',
       sidebarCollapsed: '收起',
       sidebarWidth: '侧栏宽度',
-      sidebarWidthDesc: '200–320，越界自动夹紧',
+      sidebarWidthDesc: '200–30% 视口（上限 480），越界自动夹紧',
       measure: '内容最大宽度',
       measureDesc: '560–1000，越界自动夹紧',
       unitPx: 'px',
@@ -280,6 +289,8 @@ export const zhCN = {
       aiRight: '右侧',
       aiBottom: '底部',
       aiHidden: '隐藏',
+      aiWidth: 'AI 面板宽度',
+      aiWidthDesc: '240–30% 视口（上限 480），仅右侧布局生效；也可直接拖面板左缘',
       aiExpanded: 'AI 面板默认展开',
       aiExpandedDesc: '切换布局预设时即时生效（手动开合后以手动为准）',
       tabs: '标签条',

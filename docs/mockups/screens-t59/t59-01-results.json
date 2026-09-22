@@ -1,6 +1,6 @@
 {
   "task": "TASK-T59-01 真机取证（主区域像素风黑色边框 + T52 骑缝融合）",
-  "ranAt": "2026-09-22T10:11:13.118Z",
+  "ranAt": "2026-09-22T11:17:53.106Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/截图 + Emulation.setDeviceMetricsOverride 两宽度与 dsf=1 像素量测 + Page.captureScreenshot clip.scale 放大取证 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -324,11 +324,11 @@
     },
     "aiBorder": {
       "left": "2px solid rgb(26, 26, 26)",
-      "width": 320
+      "width": 268
     },
     "aiPixel": {
       "aiClip": {
-        "x": 856,
+        "x": 908,
         "y": 382,
         "width": 16,
         "height": 12
@@ -834,25 +834,25 @@
       "step": "G6|light-shots",
       "name": "[info] AI 面板左缘（原始）",
       "ok": null,
-      "raw": "{\"left\":\"2px solid rgb(26, 26, 26)\",\"width\":320}"
+      "raw": "{\"left\":\"2px solid rgb(26, 26, 26)\",\"width\":268}"
     },
     {
       "step": "G6|light-shots",
       "name": "G6-4 §1.2 AI 面板左缘 = 2px solid ink-edge（真机 computed）",
       "ok": true,
-      "raw": "aiChat.left=2px solid rgb(26, 26, 26) width=320"
+      "raw": "aiChat.left=2px solid rgb(26, 26, 26) width=268"
     },
     {
       "step": "G6|light-shots",
       "name": "[info] AI 面板左缘像素线宽（原始）",
       "ok": null,
-      "raw": "{\"aiClip\":{\"x\":856,\"y\":382,\"width\":16,\"height\":12},\"aiW\":{\"size\":{\"w\":16,\"h\":12},\"exact\":2,\"near\":2,\"exactIdx\":[8,9]}}"
+      "raw": "{\"aiClip\":{\"x\":908,\"y\":382,\"width\":16,\"height\":12},\"aiW\":{\"size\":{\"w\":16,\"h\":12},\"exact\":2,\"near\":2,\"exactIdx\":[8,9]}}"
     },
     {
       "step": "G6|light-shots",
       "name": "G6-5 §1.2 AI 面板左缘像素实测整列纯 ink = 2（与侧栏/正文接缝同谱，禁 4px 双拼）",
       "ok": true,
-      "raw": "exact=2 near=2 clip={\"x\":856,\"y\":382,\"width\":16,\"height\":12}"
+      "raw": "exact=2 near=2 clip={\"x\":908,\"y\":382,\"width\":16,\"height\":12}"
     },
     {
       "step": "G7|dark",
@@ -1008,7 +1008,7 @@
       "step": "G7|dark",
       "name": "G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）",
       "ok": true,
-      "raw": "bytes=61202 err=null"
+      "raw": "bytes=61485 err=null"
     },
     {
       "step": "teardown",

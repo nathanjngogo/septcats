@@ -29,6 +29,7 @@ import {
   layoutActions,
   layoutStore,
   makeDefaultLayout,
+  maxPanelWidth,
 } from '../src/renderer/src/layout/layoutState';
 import { pagesStore, type PagesState } from '../src/renderer/src/state/pages';
 import type { AppSettings } from '../src/shared/settings';
@@ -132,11 +133,11 @@ describe('T57-01 §1.3 布局编辑器页：结构与预设', () => {
     expect(screen.getByTestId('layout-preset-focus').getAttribute('aria-pressed')).toBe('false');
     expect(screen.getByTestId('layout-preset-workbench').getAttribute('aria-pressed')).toBe('false');
 
-    // 两根滑杆：min/max = 夹紧区间（同源常量）
+    // 两根滑杆：min/max = 夹紧区间（同源常量；T61-01 §2 起上限随视口 = min(480, 30%)）
     const width = screen.getByTestId('layout-sidebar-width') as HTMLInputElement;
     expect(width.type).toBe('range');
     expect(width.min).toBe('200');
-    expect(width.max).toBe('320');
+    expect(width.max).toBe(String(maxPanelWidth()));
     expect(width.value).toBe('240');
     const measure = screen.getByTestId('layout-measure') as HTMLInputElement;
     expect(measure.min).toBe('560');
@@ -183,7 +184,8 @@ describe('T57-01 §1.3 布局编辑器页：结构与预设', () => {
     expect(persistedLayout()).toMatchObject({ preset: 'custom', sidebar: { width: 300 } });
     expect(screen.getByTestId('layout-sidebar-width-value').textContent).toContain('300');
     const big = container.querySelector('.layout-editor__preview .layout-preview');
-    expect(big?.getAttribute('style')).toContain('--sc-layout-preview-sidebar: 27.3%');
+    // T61-01 §2.3：预览百分比走新值域（200–视口 307），300 → 14 + 100/107×16 = 29%
+    expect(big?.getAttribute('style')).toContain('--sc-layout-preview-sidebar: 29%');
   });
 
   it('正文宽度滑杆回写：端点值（560/1000）与根变量、预览占比一起跟随', () => {

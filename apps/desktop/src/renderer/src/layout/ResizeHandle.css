@@ -1,0 +1,45 @@
+/*
+ * ResizeHandle.css —— 左右栏拖拽宽度把手（TASK-T61-01 §2）。
+ * 只用 var(--sc-*)（no-magic 门禁）：命中区/描边宽走既有间距 token，
+ * 颜色走 ink-edge（T59 像素接缝语法），本文件不引入 transition（无需 reduced-motion 兜底块）。
+ */
+
+/* 命中区 4px、骑缝居中（左/右各溢出 2px）；把手本身不可见——视觉反馈只在 hover/拖拽中显形。 */
+.sc-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--sc-space-xs);
+  /* 面在宿主内容之上（覆盖两侧接缝与滚动条）：定位元素层，不与排版争位 */
+  z-index: var(--sc-z-dropdown);
+  cursor: col-resize;
+  background: transparent;
+}
+
+/* 侧栏右缘：宿主 '.sc-shell__sidebar'（position:relative）内右移 2px → [w−2, w+2] 骑缝。 */
+.sc-resize--sidebar {
+  right: calc(var(--sc-space-xxs) * -1);
+}
+
+/* AI 面板左缘：随面板宽定位（宿主 '.app-main-row' position:relative）→ [aiW−2, aiW+2] 骑缝。 */
+.sc-resize--ai {
+  right: calc(var(--sc-layout-ai-width, 320px) - var(--sc-space-xxs));
+}
+
+/* 悬停/聚焦/拖拽中 = 2px ink-edge 竖条（与 T59 恒存接缝同宽同色、同一条线上重合）。 */
+.sc-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--sc-space-xxs);
+  transform: translateX(-50%);
+  background: transparent;
+}
+
+.sc-resize:hover::after,
+.sc-resize:focus-visible::after,
+.sc-resize--active::after {
+  background: var(--sc-color-ink-edge);
+}

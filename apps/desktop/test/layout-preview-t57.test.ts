@@ -17,6 +17,7 @@ import {
   LAYOUT_PRESETS,
   LAYOUT_STORAGE_KEY,
   applyLayoutToRoot,
+  clampAiWidth,
   defaultLayoutWithTheme,
   layoutActions,
   layoutPreviewForPreset,
@@ -40,13 +41,19 @@ beforeEach(() => {
 });
 
 describe('T57-01 预览几何纯函数', () => {
-  it('侧栏宽度 → 预览列宽（%）：200→14 / 240→19.3 / 320→30，越界按参数口径夹紧', () => {
-    expect(previewSidebarPercent(200)).toBe(14);
-    expect(previewSidebarPercent(320)).toBe(30);
-    expect(previewSidebarPercent(240)).toBe(19.3);
+  /**
+   * T61-01 §2.3：预览列宽的归一区间由「200–320」改「200–视口 30% 上限」，
+   * 故此处显式传视口（1024 → 上限 307）钉死可复现值；区间端点（14%–30%）不变。
+   */
+  const VW = 1024;
+
+  it('侧栏宽度 → 预览列宽（%）：200→14 / 240→20 / 307→30，越界按参数口径夹紧', () => {
+    expect(previewSidebarPercent(200, VW)).toBe(14);
+    expect(previewSidebarPercent(307, VW)).toBe(30);
+    expect(previewSidebarPercent(240, VW)).toBe(20);
     // 越界先夹紧（与 clampSidebarWidth 同口径）→ 不越出 14–30
-    expect(previewSidebarPercent(100)).toBe(14);
-    expect(previewSidebarPercent(999)).toBe(30);
+    expect(previewSidebarPercent(100, VW)).toBe(14);
+    expect(previewSidebarPercent(999, VW)).toBe(30);
   });
 
   it('measure → 预览正文列宽（%）：560→46 / 650→54.2 / 900→76.9 / 1000→86，越界夹紧', () => {
@@ -60,9 +67,9 @@ describe('T57-01 预览几何纯函数', () => {
 
   it('layoutPreviewOf：侧栏可见性 / AI 落位（hidden→none）/ 标签条与密度透传', () => {
     const base = makeDefaultLayout();
-    expect(layoutPreviewOf(base)).toEqual({
+    expect(layoutPreviewOf(base, VW)).toEqual({
       sidebarVisible: true,
-      sidebarPercent: 19.3,
+      sidebarPercent: 20,
       contentPercent: 54.2,
       aiPlacement: 'right',
       aiExpanded: false,
@@ -73,12 +80,12 @@ describe('T57-01 预览几何纯函数', () => {
     // 收起侧栏 + AI 置底 + 隐藏标签条 + 紧凑
     const custom = {
       ...base,
-      sidebar: { position: 'collapsed' as const, width: 320 },
-      ai: { position: 'bottom' as const, expanded: true },
+      sidebar: { position: 'collapsed' as const, width: 307 },
+      ai: { position: 'bottom' as const, expanded: true, width: 320 },
       tabsVisible: false,
       density: 'compact' as const,
     };
-    expect(layoutPreviewOf(custom)).toEqual({
+    expect(layoutPreviewOf(custom, VW)).toEqual({
       sidebarVisible: false,
       sidebarPercent: 30,
       contentPercent: 54.2,
@@ -89,7 +96,9 @@ describe('T57-01 预览几何纯函数', () => {
     });
 
     // AI 位置 = 隐藏 → 图上不画（'none'）
-    expect(layoutPreviewOf({ ...base, ai: { position: 'hidden', expanded: true } }).aiPlacement).toBe('none');
+    expect(
+      layoutPreviewOf({ ...base, ai: { position: 'hidden', expanded: true, width: 320 } }, VW).aiPlacement,
+    ).toBe('none');
   });
 
   it('layoutPreviewForPreset：三预设快照（notion 有侧栏 / focus 无侧栏且正文更宽 / workbench AI 右侧）', () => {
@@ -140,13 +149,19 @@ describe('T57-01 恢复默认（resetLayout）', () => {
     layoutActions.resetLayout();
 
     const after = layoutStore.getState().layout;
-    expect(after).toEqual({ ...LAYOUT_PRESETS.notion, theme: 'dark' });
+    // T61-01 §2：恢复默认同样过「视口 30%」闸（preset 常量 ai.width=320 → jsdom 1024 的 307）
+    const expected = {
+      ...LAYOUT_PRESETS.notion,
+      theme: 'dark' as const,
+      ai: { ...LAYOUT_PRESETS.notion.ai, width: clampAiWidth(LAYOUT_PRESETS.notion.ai.width) },
+    };
+    expect(after).toEqual(expected);
     expect(after.preset).toBe('notion');
     expect(after.sidebar).toEqual({ position: 'left', width: 240 });
     expect(after.content).toEqual({ measure: 650 });
     expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe('240px');
     expect(document.documentElement.style.getPropertyValue('--sc-layout-measure')).toBe('650px');
     expect(document.documentElement.dataset.scDensity).toBe('comfortable');
-    expect(persistedLayout()).toEqual({ ...LAYOUT_PRESETS.notion, theme: 'dark' });
+    expect(persistedLayout()).toEqual(expected);
   });
 });

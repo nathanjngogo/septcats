@@ -1,25 +1,32 @@
 /**
  * layout-state.test.ts —— T39-01 布局设计器纯逻辑（TASK-T39-01 §1 自动化面）。
  *
- * 覆盖：三预设定义值（任务书 §0.1 数值）、夹紧（宽度 100→200 / 999→320，measure
- * 100→560 / 9999→1000）、导入解析（合法往返 / 非法 JSON / 结构不符）、localStorage
- * 读写与损坏回退、根节点 CSS 变量注入（jsdom documentElement）、预设循环顺序。
+ * 覆盖：三预设定义值（任务书 §0.1 数值）、夹紧（宽度下限 200、上限 = 视口 30%，
+ * measure 100→560 / 9999→1000）、导入解析（合法往返 / 非法 JSON / 结构不符）、
+ * localStorage 读写与损坏回退、根节点 CSS 变量注入（jsdom documentElement）、
+ * 预设循环顺序。
+ *
+ * T61-01 改动（§2）：宽度上限由静态 320 改 `min(480, floor(视口 × 0.30))`，
+ * `ai` 新增 `width` 字段。本文件的越界断言随新口径改写（见 TASK-T61-01-report §6）。
  */
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  AI_WIDTH_DEFAULT,
   LAYOUT_PRESETS,
   LAYOUT_STORAGE_KEY,
   MEASURE_MAX,
   MEASURE_MIN,
-  SIDEBAR_WIDTH_MAX,
+  PANEL_WIDTH_CAP,
   SIDEBAR_WIDTH_MIN,
   applyLayoutToRoot,
+  clampAiWidth,
   clampMeasure,
   clampSidebarWidth,
   layoutActions,
   layoutStore,
   makeDefaultLayout,
+  maxPanelWidth,
   nextLayoutPreset,
   parseLayoutImport,
   readLayout,
@@ -37,11 +44,11 @@ beforeEach(() => {
 });
 
 describe('T39-01 §0.1 三预设定义值', () => {
-  it('notion（默认）：侧栏左 240 / measure 650 / AI 右收起 / 标签条显 / 舒适', () => {
+  it('notion（默认）：侧栏左 240 / measure 650 / AI 右收起 320 / 标签条显 / 舒适', () => {
     const preset = LAYOUT_PRESETS.notion;
     expect(preset.sidebar).toEqual({ position: 'left', width: 240 });
     expect(preset.content).toEqual({ measure: 650 });
-    expect(preset.ai).toEqual({ position: 'right', expanded: false });
+    expect(preset.ai).toEqual({ position: 'right', expanded: false, width: AI_WIDTH_DEFAULT });
     expect(preset.tabsVisible).toBe(true);
     expect(preset.density).toBe('comfortable');
   });
@@ -50,7 +57,7 @@ describe('T39-01 §0.1 三预设定义值', () => {
     const preset = LAYOUT_PRESETS.focus;
     expect(preset.sidebar).toEqual({ position: 'collapsed', width: 240 });
     expect(preset.content).toEqual({ measure: 900 });
-    expect(preset.ai).toEqual({ position: 'right', expanded: false });
+    expect(preset.ai).toEqual({ position: 'right', expanded: false, width: AI_WIDTH_DEFAULT });
     expect(preset.tabsVisible).toBe(true);
   });
 
@@ -58,19 +65,20 @@ describe('T39-01 §0.1 三预设定义值', () => {
     const preset = LAYOUT_PRESETS.workbench;
     expect(preset.sidebar).toEqual({ position: 'left', width: 240 });
     expect(preset.content).toEqual({ measure: 650 });
-    expect(preset.ai).toEqual({ position: 'right', expanded: true });
+    expect(preset.ai).toEqual({ position: 'right', expanded: true, width: AI_WIDTH_DEFAULT });
     expect(preset.tabsVisible).toBe(true);
   });
 });
 
-describe('T39-01 §1.2 参数夹紧', () => {
-  it('侧栏宽度：100→200、999→320、区间内不变、取整', () => {
+describe('T39-01 §1.2 参数夹紧（T61-01 起宽度上限随视口）', () => {
+  it('侧栏宽度：100→200、越界→视口 30% 上限（视口 1600→480 封顶）、区间内不变、取整', () => {
     expect(SIDEBAR_WIDTH_MIN).toBe(200);
-    expect(SIDEBAR_WIDTH_MAX).toBe(320);
-    expect(clampSidebarWidth(100)).toBe(200);
-    expect(clampSidebarWidth(999)).toBe(320);
-    expect(clampSidebarWidth(264)).toBe(264);
-    expect(clampSidebarWidth(240.6)).toBe(241);
+    expect(maxPanelWidth(1024)).toBe(307);
+    expect(maxPanelWidth(1600)).toBe(PANEL_WIDTH_CAP);
+    expect(clampSidebarWidth(100, 1600)).toBe(200);
+    expect(clampSidebarWidth(999, 1600)).toBe(480);
+    expect(clampSidebarWidth(264, 1600)).toBe(264);
+    expect(clampSidebarWidth(240.6, 1600)).toBe(241);
   });
 
   it('measure：100→560、9999→1000、区间内不变', () => {
@@ -81,14 +89,15 @@ describe('T39-01 §1.2 参数夹紧', () => {
     expect(clampMeasure(720)).toBe(720);
   });
 
-  it('actions 写入越界值 → 存储与根节点变量均为夹紧值', () => {
+  it('actions 写入越界值 → 存储与根节点变量均为夹紧值（上限 = 当前视口 30%）', () => {
     layoutActions.init();
     layoutActions.setSidebarWidth(100);
     expect(layoutStore.getState().layout.sidebar.width).toBe(200);
     expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe('200px');
     layoutActions.setSidebarWidth(999);
-    expect(layoutStore.getState().layout.sidebar.width).toBe(320);
-    expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe('320px');
+    const max = maxPanelWidth();
+    expect(layoutStore.getState().layout.sidebar.width).toBe(max);
+    expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe(`${String(max)}px`);
     layoutActions.setMeasure(100);
     expect(layoutStore.getState().layout.content.measure).toBe(560);
     expect(document.documentElement.style.getPropertyValue('--sc-layout-measure')).toBe('560px');
@@ -115,7 +124,12 @@ describe('T39-01 §1.1 预设切换（状态 + 持久化 + 变量注入）', () 
     const workbench = layoutStore.getState().layout;
     expect(workbench.preset).toBe('workbench');
     expect(workbench.sidebar.position).toBe('left');
-    expect(workbench.ai).toEqual({ position: 'right', expanded: true });
+    expect(workbench.ai).toEqual({
+      position: 'right',
+      expanded: true,
+      // T61-01：预设常量 320，落 store 前过「视口 30%」闸（jsdom 1024 → 307）
+      width: clampAiWidth(AI_WIDTH_DEFAULT),
+    });
     expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe('240px');
 
     // 持久化：三份快照均落盘，最后一份 = workbench
@@ -190,7 +204,8 @@ describe('T39-01 §1.3/§1.4 导出导入（往返等价 / 非法不改布局）
     const parsed = parseLayoutImport(raw);
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
-      expect(parsed.layout.sidebar.width).toBe(320);
+      // T61-01：侧栏上限 = 视口 30%（jsdom 1024 → 307），不再是静态 320
+      expect(parsed.layout.sidebar.width).toBe(maxPanelWidth());
       expect(parsed.layout.content.measure).toBe(560);
     }
   });
@@ -211,10 +226,15 @@ describe('T39-01 §0.4 存储与损坏回退', () => {
     expect(readLayout()).toEqual(makeDefaultLayout());
   });
 
-  it('写读往返一致；applyLayoutToRoot 注入变量与密度属性', () => {
+  it('写读往返一致（宽度过 30% 闸）；applyLayoutToRoot 注入变量与密度属性', () => {
     const layout: LayoutState = { ...LAYOUT_PRESETS.focus, theme: 'system' };
     writeLayout(layout);
-    expect(readLayout()).toEqual(layout);
+    const read = readLayout();
+    // T61-01：读回时宽度过 30% 闸（预设常量 320 → jsdom 视口 1024 的 307）
+    expect(read).toEqual({ ...layout, ai: { ...layout.ai, width: clampAiWidth(layout.ai.width) } });
+    expect(read.sidebar).toEqual(layout.sidebar);
+    expect(read.content).toEqual(layout.content);
+    expect(read.preset).toBe(layout.preset);
     applyLayoutToRoot(layout);
     expect(document.documentElement.style.getPropertyValue('--sc-layout-sidebar')).toBe('240px');
     expect(document.documentElement.style.getPropertyValue('--sc-layout-measure')).toBe('900px');

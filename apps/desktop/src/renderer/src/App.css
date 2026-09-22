@@ -70,8 +70,11 @@ html, body {
 /*
  * T38-01：编辑列 + AI 对话侧栏的主行（仅编辑器视图）。高度链闭合于
  * .sc-shell__main（grid 1fr 定高），侧栏收起 = 不渲染 → 编辑列占满整行。
+ * T61-01 §2：本行同时是 AI 面板左缘拖拽把手的定位宿主（把手 absolute 定在本行
+ * 右端 ai 宽处），故需 position:relative（对既有子项无布局影响——把手不在流内）。
  */
 .app-main-row {
+  position: relative;
   display: flex;
   height: 100%;
   min-height: 0;

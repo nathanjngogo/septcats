@@ -12,6 +12,7 @@
  *   且**不改动当前布局**。
  * - 纯函数 + 极简 store（state/store.ts 同款 Zustand 同形实现），可独立单测。
  */
+import { useEffect, useState } from 'react';
 import { THEME_STORAGE_KEY, setGlobalThemeMode } from '@septcats/ui';
 import { aiChatActions } from '../ai/chatState';
 import { createStore, useStore } from '../state/store';
@@ -32,7 +33,8 @@ export interface LayoutState {
   preset: LayoutPresetId | 'custom';
   sidebar: { position: SidebarPosition; width: number };
   content: { measure: number };
-  ai: { position: AiPanelPosition; expanded: boolean };
+  /** T61-01 §2：`width` = AI 面板宽度（右侧栏布局；position='bottom' 时不参与渲染）。 */
+  ai: { position: AiPanelPosition; expanded: boolean; width: number };
   tabsVisible: boolean;
   /** 布局快照里的主题（导出时同步当前实际主题；导入时应用）。 */
   theme: LayoutTheme;
@@ -46,9 +48,27 @@ export interface LayoutState {
 export const LAYOUT_STORAGE_KEY = 'septcats.layout';
 export const LAYOUT_VERSION = 1;
 
-/** §0.2 侧栏宽度夹紧区间。 */
+/**
+ * §0.2 侧栏宽度夹紧下限（T61-01 起上限改为视口动态，见 `maxPanelWidth`）。
+ * T61-01 §2：两侧栏共用「视口 30%」口径，上限 = min(480, floor(视口宽 × 0.30))。
+ */
 export const SIDEBAR_WIDTH_MIN = 200;
-export const SIDEBAR_WIDTH_MAX = 320;
+
+/** T61-01 §2：面板宽度绝对上限（480 = 侧栏原 320 与真机实证的可读上限折中；两侧共用）。 */
+export const PANEL_WIDTH_CAP = 480;
+/** T61-01 §2：面板宽度占**总窗口宽**的比例上限（老板口径 30%）。 */
+export const PANEL_WIDTH_RATIO = 0.3;
+/** T61-01 §2：AI 面板宽度下限与默认值（T38-01 起 CSS 定宽 320 → 迁为布局字段）。 */
+export const AI_WIDTH_MIN = 240;
+export const AI_WIDTH_DEFAULT = 320;
+/** T61-01 §2：把手键盘步进（←/→ 一次 16px）。 */
+export const PANEL_RESIZE_STEP = 16;
+/**
+ * 视口不可用（无 window / 非浏览器环境）时的兜底宽：取 jsdom 与常见窗口的保守值，
+ * 保证 `maxPanelWidth` 恒有确定值（纯函数在 Node 侧也可断言）。
+ */
+export const FALLBACK_VIEWPORT_WIDTH = 1024;
+
 /** §0.2 内容 measure 夹紧区间。 */
 export const MEASURE_MIN = 560;
 export const MEASURE_MAX = 1000;
@@ -65,8 +85,36 @@ const DENSITIES: readonly LayoutDensity[] = ['compact', 'comfortable'];
 const THEMES: readonly LayoutTheme[] = ['light', 'dark', 'system'];
 const PRESET_IDS: readonly LayoutPresetId[] = ['notion', 'focus', 'workbench'];
 
-export function clampSidebarWidth(width: number): number {
-  return Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, Math.round(width)));
+/** 当前视口宽（无 window / 非法值 → FALLBACK_VIEWPORT_WIDTH；纯函数侧的确定性来源）。 */
+export function currentViewportWidth(): number {
+  const width = (globalThis as { innerWidth?: unknown }).innerWidth;
+  return typeof width === 'number' && Number.isFinite(width) && width > 0
+    ? width
+    : FALLBACK_VIEWPORT_WIDTH;
+}
+
+/**
+ * T61-01 §2：面板宽度上限（纯函数，可单测）——`min(480, floor(视口宽 × 0.30))`。
+ * 口径 = **总窗口宽**的 30%（老板 09-22 晚 ⑧）；两侧栏（侧栏 / AI 面板）共用同一上限。
+ */
+export function maxPanelWidth(viewportW: number = currentViewportWidth()): number {
+  const vw = Number.isFinite(viewportW) && viewportW > 0 ? viewportW : FALLBACK_VIEWPORT_WIDTH;
+  return Math.min(PANEL_WIDTH_CAP, Math.floor(vw * PANEL_WIDTH_RATIO));
+}
+
+/**
+ * 侧栏宽度夹紧：下限 200 恒定；上限 = 视口 30% 动态值。
+ * 极窄视口（30% < 下限）时**下限优先**（区间不为空，避免出现无解夹紧）。
+ */
+export function clampSidebarWidth(width: number, viewportW?: number): number {
+  const upper = Math.max(SIDEBAR_WIDTH_MIN, maxPanelWidth(viewportW));
+  return Math.min(upper, Math.max(SIDEBAR_WIDTH_MIN, Math.round(width)));
+}
+
+/** AI 面板宽度夹紧：下限 240；上限同侧栏（视口 30%，极窄时下限优先）。 */
+export function clampAiWidth(width: number, viewportW?: number): number {
+  const upper = Math.max(AI_WIDTH_MIN, maxPanelWidth(viewportW));
+  return Math.min(upper, Math.max(AI_WIDTH_MIN, Math.round(width)));
 }
 
 export function clampMeasure(measure: number): number {
@@ -87,7 +135,7 @@ export const LAYOUT_PRESETS: Record<LayoutPresetId, Omit<LayoutState, 'theme'>> 
     preset: 'notion',
     sidebar: { position: 'left', width: 240 },
     content: { measure: 650 },
-    ai: { position: 'right', expanded: false },
+    ai: { position: 'right', expanded: false, width: AI_WIDTH_DEFAULT },
     tabsVisible: true,
     density: 'comfortable',
   },
@@ -96,7 +144,7 @@ export const LAYOUT_PRESETS: Record<LayoutPresetId, Omit<LayoutState, 'theme'>> 
     preset: 'focus',
     sidebar: { position: 'collapsed', width: 240 },
     content: { measure: 900 },
-    ai: { position: 'right', expanded: false },
+    ai: { position: 'right', expanded: false, width: AI_WIDTH_DEFAULT },
     tabsVisible: true,
     density: 'comfortable',
   },
@@ -105,7 +153,7 @@ export const LAYOUT_PRESETS: Record<LayoutPresetId, Omit<LayoutState, 'theme'>> 
     preset: 'workbench',
     sidebar: { position: 'left', width: 240 },
     content: { measure: 650 },
-    ai: { position: 'right', expanded: true },
+    ai: { position: 'right', expanded: true, width: AI_WIDTH_DEFAULT },
     tabsVisible: true,
     density: 'comfortable',
   },
@@ -140,7 +188,7 @@ export type AiPreviewPlacement = 'right' | 'bottom' | 'none';
 export interface LayoutPreview {
   /** 侧栏可见（position='left'）；收起态 false → 图上不画侧栏列。 */
   sidebarVisible: boolean;
-  /** 侧栏列占预览窗宽比例（%）：宽度区间 200–320 → 14%–30%。 */
+  /** 侧栏列占预览窗宽比例（%）：宽度区间 200–视口 30% 上限 → 14%–30%。 */
   sidebarPercent: number;
   /** 正文列占内容区比例（%）：measure 区间 560–1000 → 46%–86%。 */
   contentPercent: number;
@@ -151,9 +199,15 @@ export interface LayoutPreview {
   density: LayoutDensity;
 }
 
-/** 侧栏宽度 → 预览列宽百分比（14%–30%；越界先按参数口径夹紧）。 */
-export function previewSidebarPercent(width: number): number {
-  const ratio = (clampSidebarWidth(width) - SIDEBAR_WIDTH_MIN) / (SIDEBAR_WIDTH_MAX - SIDEBAR_WIDTH_MIN);
+/**
+ * 侧栏宽度 → 预览列宽百分比（14%–30%；越界先按参数口径夹紧）。
+ * T61-01 §2：值域上限由 320 改「视口 30%」→ 本函数同步用新值域（同一次归一，预览不破）。
+ * 极窄视口导致区间退化（上限 ≤ 下限）时取上限端点 30%（不做除零）。
+ */
+export function previewSidebarPercent(width: number, viewportW?: number): number {
+  const upper = Math.max(SIDEBAR_WIDTH_MIN, maxPanelWidth(viewportW));
+  const span = upper - SIDEBAR_WIDTH_MIN;
+  const ratio = span <= 0 ? 1 : (clampSidebarWidth(width, viewportW) - SIDEBAR_WIDTH_MIN) / span;
   return Math.round((PREVIEW_SIDEBAR_MIN_PERCENT + ratio * PREVIEW_SIDEBAR_SPAN_PERCENT) * 10) / 10;
 }
 
@@ -166,10 +220,11 @@ export function previewContentPercent(measure: number): number {
 /** 布局（或其参数子集）→ 预览几何。 */
 export function layoutPreviewOf(
   layout: Pick<LayoutState, 'sidebar' | 'content' | 'ai' | 'tabsVisible' | 'density'>,
+  viewportW?: number,
 ): LayoutPreview {
   return {
     sidebarVisible: layout.sidebar.position === 'left',
-    sidebarPercent: previewSidebarPercent(layout.sidebar.width),
+    sidebarPercent: previewSidebarPercent(layout.sidebar.width, viewportW),
     contentPercent: previewContentPercent(layout.content.measure),
     aiPlacement: layout.ai.position === 'hidden' ? 'none' : layout.ai.position,
     aiExpanded: layout.ai.expanded,
@@ -241,7 +296,19 @@ export function validateLayout(input: unknown): LayoutState | null {
       width: clampSidebarWidth(sidebarRaw.width),
     },
     content: { measure: clampMeasure(contentRaw.measure) },
-    ai: { position: aiRaw.position, expanded: aiRaw.expanded },
+    ai: {
+      position: aiRaw.position,
+      expanded: aiRaw.expanded,
+      /**
+       * T61-01 §2：`ai.width` 是**纯增字段**（不升版本号）。
+       * 旧 v1 持久化（T38/T39/T57 时代）没有这个键 → 取值兜底 AI_WIDTH_DEFAULT，
+       * **不判脏、不返回 null**（否则老用户的布局会被判为损坏、整份回退默认）。
+       */
+      width:
+        typeof aiRaw.width === 'number' && Number.isFinite(aiRaw.width)
+          ? clampAiWidth(aiRaw.width)
+          : AI_WIDTH_DEFAULT,
+    },
     tabsVisible: raw.tabsVisible,
     theme: raw.theme,
     density: raw.density,
@@ -311,6 +378,8 @@ export function writeLayout(layout: LayoutState): void {
 // ---------------------------------------------------------------------------
 
 /** 消费方（变量表）：--sc-layout-sidebar = AppShell.css .sc-shell__body 列宽；
+ *  --sc-layout-ai-width = AiChatPanel.css .ai-chat 宽（T61-01 §2 右侧拖拽宽度；
+ *    position='bottom' 时该变量不被消费，面板走 flex 全宽 + 定高）；
  *  --sc-layout-measure = PageView.css 编辑区 max-width（回退 --sc-space-editor-measure）；
  *  data-sc-density = App.css :root 密度档位（行高/间距走 token 派生变量）。 */
 export function applyLayoutToRoot(layout: LayoutState): void {
@@ -319,6 +388,7 @@ export function applyLayoutToRoot(layout: LayoutState): void {
   }
   const root = document.documentElement;
   root.style.setProperty('--sc-layout-sidebar', `${layout.sidebar.width}px`);
+  root.style.setProperty('--sc-layout-ai-width', `${layout.ai.width}px`);
   root.style.setProperty('--sc-layout-measure', `${layout.content.measure}px`);
   root.dataset.scDensity = layout.density;
 }
@@ -343,10 +413,48 @@ export function useLayout<T>(selector: (state: LayoutStoreState) => T): T {
   return useStore(layoutStore, selector);
 }
 
+/**
+ * T61-01 §2：视口宽订阅（拖拽上限 / 编辑器页滑杆值域随窗口变化）。
+ * 初始值 = `currentViewportWidth()`（首帧即有确定值，无 0 宽窗口）；resize 时重取。
+ * 消费方只把它当「上限计算的一个输入」，不做布局量测。
+ */
+export function useViewportWidth(): number {
+  const [width, setWidth] = useState<number>(() => currentViewportWidth());
+  useEffect(() => {
+    const onResize = (): void => {
+      setWidth(currentViewportWidth());
+    };
+    globalThis.addEventListener?.('resize', onResize);
+    return () => {
+      globalThis.removeEventListener?.('resize', onResize);
+    };
+  }, []);
+  return width;
+}
+
+/**
+ * T61-01 §2：两侧宽度的**唯一夹紧闸**——任何落盘/注入路径（含预设整份套用、恢复默认）
+ * 都过这里，保证「≤ 视口 30%」口径恒成立（预设常量与导入的越界值在此收口）。
+ * 无变化时返回原对象（引用相等 → 不触发订阅者）。
+ */
+function normalizeLayout(layout: LayoutState): LayoutState {
+  const sidebarWidth = clampSidebarWidth(layout.sidebar.width);
+  const aiWidth = clampAiWidth(layout.ai.width);
+  if (sidebarWidth === layout.sidebar.width && aiWidth === layout.ai.width) {
+    return layout;
+  }
+  return {
+    ...layout,
+    sidebar: { ...layout.sidebar, width: sidebarWidth },
+    ai: { ...layout.ai, width: aiWidth },
+  };
+}
+
 function commit(layout: LayoutState): void {
-  writeLayout(layout);
-  applyLayoutToRoot(layout);
-  layoutStore.setState((state) => (state.layout === layout ? state : { ...state, layout }));
+  const next = normalizeLayout(layout);
+  writeLayout(next);
+  applyLayoutToRoot(next);
+  layoutStore.setState((state) => (state.layout === next ? state : { ...state, layout: next }));
 }
 
 function patchLayout(patch: (layout: LayoutState) => LayoutState): void {
@@ -403,11 +511,33 @@ export const layoutActions = {
   setAiExpanded(expanded: boolean): void {
     patchLayout((layout) => ({ ...layout, preset: 'custom', ai: { ...layout.ai, expanded } }));
   },
+  /**
+   * T61-01 §2：AI 面板宽度（右侧栏布局）。与 `setSidebarWidth` 同一真源
+   * （patchLayout → 注入根变量 + 持久化），拖拽把手与编辑器页滑杆共用这一处入口。
+   */
+  setAiWidth(width: number): void {
+    patchLayout((layout) => ({
+      ...layout,
+      preset: 'custom',
+      ai: { ...layout.ai, width: clampAiWidth(width) },
+    }));
+  },
   setTabsVisible(visible: boolean): void {
     patchLayout((layout) => ({ ...layout, preset: 'custom', tabsVisible: visible }));
   },
   setDensity(density: LayoutDensity): void {
     patchLayout((layout) => ({ ...layout, preset: 'custom', density }));
+  },
+  /**
+   * T61-01 §2：按**当前视口**重新夹紧两侧宽度（窗口变窄时兑现「≤ 30%」）。
+   * 无变化时零副作用（不写盘、不通知订阅者）；App 挂 resize 监听调用。
+   */
+  reclampToViewport(): void {
+    const layout = layoutStore.getState().layout;
+    const next = normalizeLayout(layout);
+    if (next !== layout) {
+      commit(next);
+    }
   },
   /** 布局快照内的主题字段（主题应用本身走 setGlobalThemeMode，调用方负责）。 */
   setTheme(theme: LayoutTheme): void {

@@ -23,7 +23,7 @@ import type { PageNode } from '@septcats/editor';
 import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
 import type { MenuEntry } from '@septcats/ui';
 import type { PageNodeView } from '../../../types/window';
-import { aliveNodes, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
+import { aliveNodes, ancestorsOf, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
 import { registerFlushTask } from '../state/flushRegistry';
 import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
@@ -212,6 +212,11 @@ export function SidebarTree() {
    * items/onSelect**（不双份实现）。
    */
   const [rowMenuAt, setRowMenuAt] = useState<{ x: number; y: number } | null>(null);
+  /**
+   * T61-01 §1.3：「移入…」的二级选择态——值 = 正在挑目标父页的页 id（null = 一级菜单）。
+   * 与 rowMenuId 共用同一宿主/锚点（见 renderPageRow 的 key 切换与 moveTargetMenu）。
+   */
+  const [movePickId, setMovePickId] = useState<string | null>(null);
   const ctxHostRef = useRef<HTMLSpanElement | null>(null);
   // T41-01：页面级「全宽 / 固定宽度」集合（行菜单项显示当前页状态并切换）
   const fullWidthPages = usePageWidth((state) => state.full);
@@ -220,10 +225,26 @@ export function SidebarTree() {
 
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
 
+  /**
+   * T61-01 §1.2：派生「文件夹」集合 = **有 ≥1 个活子页的页 id**（O(n) 一次索引，
+   * 行渲染里 O(1) 反查；不在每次行渲染时全树扫）。判定只做「父指针指向它」，
+   * 与协议无关——零新实体、零 schema/op-log 改动。
+   */
+  const folderIds = useMemo(() => {
+    const parents = new Set<string>();
+    for (const node of nodes) {
+      if (node.alive === 1 && node.parentId !== null) {
+        parents.add(node.parentId);
+      }
+    }
+    return parents;
+  }, [nodes]);
+
   /** 关闭行菜单（⋯/右键共用出口；Escape、点空白、选中条目都走这里）。 */
   const closeRowMenu = (): void => {
     setRowMenuId(null);
     setRowMenuAt(null);
+    setMovePickId(null);
   };
 
   /** 右键菜单宿主节点（存活页才有菜单可弹）。 */
@@ -403,14 +424,27 @@ export function SidebarTree() {
         // T60-01 ④（PRD-R13 ⑤）：「重命名」复用既有行内编辑态（双击行用的 beginRename），
         // 不新造 state；位置在删除之前、非 danger。
         { id: 'rename', label: t('sidebar.rename') },
+        // T61-01 §1.1（PRD-R13 ④）：「新建子页面」= 既有 createPage(该行 id)——
+        // 新页挂在行下即成为「文件夹」长相（派生，无新实体）；store 内部已选中并进入重命名。
+        { id: 'newSubpage', label: t('sidebar.newSubpage') },
+        // T61-01 §1.3：「移入…」→ 二级选择（同宿主换列表，见 moveTargetMenu）
+        { id: 'moveTo', label: t('sidebar.moveTo') },
         ...(fullWidthItem !== null ? [fullWidthItem] : []),
         ...(convertItem !== null ? [convertItem] : []),
         { id: 'delete', label: t('common.delete'), danger: true },
       ],
       onSelect: (action: string): void => {
+        // 「移入…」不关菜单：一级列表整体换成二级目标列表（同一宿主/锚点/出口）
+        if (action === 'moveTo') {
+          setMovePickId(node.id);
+          return;
+        }
         closeRowMenu();
         if (action === 'rename') {
           pagesActions.beginRename(node.id);
+        }
+        if (action === 'newSubpage') {
+          void pagesActions.createPage(node.id);
         }
         if (action === 'fullWidth') {
           pageWidthActions.toggle(node.id);
@@ -429,6 +463,46 @@ export function SidebarTree() {
   };
 
   /**
+   * T61-01 §1.3：「移入…」二级选择（复用同一个 Menu 组件与同一个宿主）。
+   *
+   * 目标集 = 全部活页（排除多维数据行——它是集合视图不是容器）+「工作区根」；
+   * **排除自身与自身后代**（防环）。后代判定借 `ancestorsOf` 反向用：
+   * 候选的祖先链里出现本行 id ⇒ 该候选是它的后代。
+   * 移动走既有 `movePage`（:537）；成功后目标父页自动展开（子树折叠态不变，落点可见）。
+   */
+  const moveTargetMenu = (
+    node: PageNodeView,
+  ): { items: MenuEntry[]; onSelect: (action: string) => void } => {
+    const candidates = aliveNodes(nodes)
+      .filter((candidate) => pageTypeOf(candidate) !== 'database')
+      .filter((candidate) => candidate.id !== node.id)
+      .filter(
+        (candidate) => !ancestorsOf(candidate.id, byId).some((ancestor) => ancestor.id === node.id),
+      )
+      .sort(bySortKey);
+    return {
+      items: [
+        { id: 'root', label: t('sidebar.moveToRoot'), disabled: node.parentId === null },
+        ...candidates.map((candidate) => ({
+          id: candidate.id,
+          label: candidate.title.length > 0 ? candidate.title : t('common.untitled'),
+          // 已在目标下 = 无操作，禁掉（避免误点触发一次无意义 move）
+          disabled: node.parentId === candidate.id,
+        })),
+      ],
+      onSelect: (action: string): void => {
+        closeRowMenu();
+        const newParentId = action === 'root' ? null : action;
+        void pagesActions.movePage({ id: node.id, newParentId }).then((ok) => {
+          if (ok && newParentId !== null && !expanded.has(newParentId)) {
+            pagesActions.toggleExpand(newParentId);
+          }
+        });
+      },
+    };
+  };
+
+  /**
    * 页面行（普通分区与 Wiki 分区共用，T42-01 抽取）：
    * ⋯ 菜单 = 重命名 + 全宽开关 + 承载类型转换（wiki 页显示「转为普通页」，普通页显示
    * 「转为 Wiki」，多维数据页无此项）+ 删除。
@@ -442,7 +516,11 @@ export function SidebarTree() {
     const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
     const isEditing = editingId === node.id;
     const type = pageTypeOf(node);
-    const menu = pageRowMenu(node);
+    // T61-01 §1.3：「移入…」二级态与一级共用同一宿主 → 用 key 换实例（老实例在本次
+    // click 事件派发中被卸载，其 document 外点监听按 DOM 规范跳过，不会「刚换列表就关」）；
+    // 换实例同时让 Menu 的「聚焦首项」effect 对新列表重跑（键盘可达性不丢）。
+    const inMovePick = movePickId === node.id;
+    const menu = inMovePick ? moveTargetMenu(node) : pageRowMenu(node);
     return (
       <NavRow
         key={node.id}
@@ -451,14 +529,31 @@ export function SidebarTree() {
         /* T60-01 ②（PRD-R13 ②）：普通页行一律 FileText（含树根：树根原走 rootIcon=
            FolderSimple → 「新建页面」出来的行是文件夹图标，老板点名要文件图标）；
            wiki/database 行保持现状（depth>0 仍 FileText、wiki 根仍 Note），
-           Wiki 分区头图标不在本函数（:500 处 Note）不动。 */
-        icon={type === 'page' ? FileText : depth === 0 ? rootIcon : FileText}
+           Wiki 分区头图标不在本函数（:500 处 Note）不动。
+           T61-01 §1.2（PRD-R13 ④）：**有活子页的普通页 = 文件夹长相（FolderSimple）** ——
+           派生语义（folderIds 由 parentId 反查索引得出），零新实体/零协议改动。 */
+        icon={
+          type === 'page'
+            ? folderIds.has(node.id)
+              ? FolderSimple
+              : FileText
+            : depth === 0
+              ? rootIcon
+              : FileText
+        }
         depth={depth}
         active={selectedId === node.id}
         branch={childCount > 0}
         open={expanded.has(node.id)}
         labelNode={isEditing ? <RenameInput id={node.id} title={node.title} /> : undefined}
-        onClick={() => pagesActions.selectPage(node.id)}
+        onClick={() => {
+          pagesActions.selectPage(node.id);
+          // T61-01 §1.5：折叠态点行 = 选中 + 展开其子树（一次性视图态；点 Caret 的
+          // 折叠/展开语义不变——见 onCaretClick，它不冒泡到本 handler）。
+          if (childCount > 0 && !expanded.has(node.id)) {
+            pagesActions.toggleExpand(node.id);
+          }
+        }}
         onCaretClick={(event) => {
           event.stopPropagation();
           pagesActions.toggleExpand(node.id);
@@ -471,6 +566,7 @@ export function SidebarTree() {
             return;
           }
           event.preventDefault();
+          setMovePickId(null);
           setRowMenuId(node.id);
           setRowMenuAt({ x: event.clientX, y: event.clientY });
         }}
@@ -496,13 +592,15 @@ export function SidebarTree() {
                 event.stopPropagation();
                 // ⋯ 钮 = 贴钮定位（rowMenuAt=null），与右键的「光标处」互斥
                 setRowMenuAt(null);
+                setMovePickId(null);
                 setRowMenuId((current) => (current === node.id ? null : node.id));
               }}
             />
             {rowMenuId === node.id && rowMenuAt === null ? (
               <Menu
+                key={inMovePick ? 'move' : 'main'}
                 className="app-nav-menu"
-                label={t('sidebar.pageActions')}
+                label={inMovePick ? t('sidebar.moveToTitle') : t('sidebar.pageActions')}
                 items={menu.items}
                 onSelect={menu.onSelect}
                 onDismiss={closeRowMenu}
@@ -514,8 +612,14 @@ export function SidebarTree() {
     );
   };
 
-  /** 右键菜单配置（仅在右键态存在存活目标页时构造一次）。 */
-  const ctxMenu = ctxNode !== null && ctxNode.alive === 1 ? pageRowMenu(ctxNode) : null;
+  /** 右键菜单配置（仅在右键态存在存活目标页时构造一次；二级态同理）。 */
+  const ctxInMovePick = ctxNode !== null && movePickId === ctxNode.id;
+  const ctxMenu =
+    ctxNode !== null && ctxNode.alive === 1
+      ? ctxInMovePick
+        ? moveTargetMenu(ctxNode)
+        : pageRowMenu(ctxNode)
+      : null;
 
   return (
     <div className="app-side">
@@ -627,7 +731,8 @@ export function SidebarTree() {
           }}
         >
           <Menu
-            label={t('sidebar.pageActions')}
+            key={ctxInMovePick ? 'move' : 'main'}
+            label={ctxInMovePick ? t('sidebar.moveToTitle') : t('sidebar.pageActions')}
             items={ctxMenu.items}
             onSelect={ctxMenu.onSelect}
             onDismiss={closeRowMenu}

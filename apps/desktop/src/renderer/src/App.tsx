@@ -26,6 +26,7 @@ import { CloseAskDialog } from './close/CloseAskDialog';
 import { TemplateSaveDialog } from './templates/TemplateSaveDialog';
 import { LayoutPicker } from './layout/LayoutPicker';
 import { LayoutEditorPage } from './layout/LayoutEditorPage';
+import { ResizeHandle } from './layout/ResizeHandle';
 import { OPEN_LAYOUT_EDITOR_EVENT } from './layout/LayoutSection';
 import { t, useLocale } from './i18n';
 import { SyncStatusButton } from './sync/SyncStatus';
@@ -196,6 +197,18 @@ export function App() {
   useEffect(() => {
     setCollapsed(sidebarPosition === 'collapsed');
   }, [sidebarPosition]);
+
+  // T61-01 §2：窗口变窄时把两侧宽度重新夹进「视口 30%」（老板口径恒成立）。
+  // 无变化时 reclampToViewport 零副作用（不写盘/不通知），故可安全挂 resize。
+  useEffect(() => {
+    const onResize = (): void => {
+      layoutActions.reclampToViewport();
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
 
   // T38-01 §0.1/§1.5：面板开合状态恢复（收起 → 重启 → 仍收起）。
   // T39-01：无手动开合记录时以布局「默认展开」为准（AI 面板隐藏时恒收起）。
@@ -432,7 +445,14 @@ export function App() {
             />
           </>
         }
-        sidebar={<SidebarTree />}
+        sidebar={
+          // T61-01 §2：侧栏右缘拖拽把手与侧栏同宿主（折叠态侧栏整列 display:none →
+          // 把手随之不可见，无需额外条件；把手自身也按 position='collapsed' 早退）。
+          <>
+            <SidebarTree />
+            <ResizeHandle side="sidebar" />
+          </>
+        }
       >
         {inSettings ? (
           <SettingsPage />
@@ -460,6 +480,9 @@ export function App() {
               <TabsBar showTabs={tabsVisible} leading={sidebarToggle} />
               <PageView />
             </div>
+            {/* T61-01 §2：AI 面板左缘拖拽把手（position='right' 才由组件自身渲染；
+                bottom/hidden 不挂——宽度对纵向布局无意义）。 */}
+            {chatOpen && !aiHidden ? <ResizeHandle side="ai" /> : null}
             {chatOpen && !aiHidden ? <AiChatPanel /> : null}
           </div>
         )}

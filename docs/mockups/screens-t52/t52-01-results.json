@@ -1,6 +1,6 @@
 {
   "task": "TASK-T52-01 真机取证（布局融合三件）",
-  "ranAt": "2026-09-22T10:11:50.041Z",
+  "ranAt": "2026-09-22T11:18:29.982Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 四宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -97,7 +97,7 @@
         "winScrollW": 760,
         "winClientW": 760,
         "sideTop": 0,
-        "sidebarW": 240
+        "sidebarW": 228
       },
       {
         "w": 640,
@@ -106,7 +106,7 @@
         "winScrollW": 640,
         "winClientW": 640,
         "sideTop": 0,
-        "sidebarW": 240
+        "sidebarW": 200
       }
     ],
     "collapsed": {
@@ -258,7 +258,7 @@
       "step": "G4|four-widths",
       "name": "[info] 四宽度零滚动（原始）",
       "ok": null,
-      "raw": "[{\"w\":1280,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1280,\"winClientW\":1280,\"sideTop\":0,\"sidebarW\":240},{\"w\":900,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":900,\"winClientW\":900,\"sideTop\":0,\"sidebarW\":240},{\"w\":760,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":760,\"winClientW\":760,\"sideTop\":0,\"sidebarW\":240},{\"w\":640,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":640,\"winClientW\":640,\"sideTop\":0,\"sidebarW\":240}]"
+      "raw": "[{\"w\":1280,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1280,\"winClientW\":1280,\"sideTop\":0,\"sidebarW\":240},{\"w\":900,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":900,\"winClientW\":900,\"sideTop\":0,\"sidebarW\":240},{\"w\":760,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":760,\"winClientW\":760,\"sideTop\":0,\"sidebarW\":228},{\"w\":640,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":640,\"winClientW\":640,\"sideTop\":0,\"sidebarW\":200}]"
     },
     {
       "step": "G4|four-widths",
@@ -300,7 +300,7 @@
       "step": "G5|collapsed",
       "name": "G5-3 再点同一钮可展开（侧栏宽度恢复 ≈ 240）",
       "ok": true,
-      "raw": "width=240 display=block"
+      "raw": "width=200 display=block"
     },
     {
       "step": "G6|gutter",
@@ -330,13 +330,13 @@
       "step": "G7|screens",
       "name": "G7-2 窗口级补充截图（含标题栏 + 原生菜单栏，侧栏顶到菜单下沿）",
       "ok": true,
-      "raw": "bytes=41352 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
+      "raw": "bytes=41320 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
     },
     {
       "step": "G7|screens",
       "name": "[info] 浅色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2735,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2636,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",
@@ -360,13 +360,13 @@
       "step": "G7|screens",
       "name": "[info] 深色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2830,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2695,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",
       "name": "[info] 退出前布局存储（原始）",
       "ok": null,
-      "raw": "{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":240},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}"
+      "raw": "{\"v\":1,\"preset\":\"custom\",\"sidebar\":{\"position\":\"left\",\"width\":200},\"content\":{\"measure\":650},\"ai\":{\"position\":\"right\",\"expanded\":false,\"width\":240},\"tabsVisible\":true,\"theme\":\"system\",\"density\":\"comfortable\"}"
     },
     {
       "step": "teardown",

@@ -1,7 +1,9 @@
 /*
  * AiChatPanel.css —— 右侧 AI 对话面板（TASK-T38-01）。
  * 只用 var(--sc-*)（no-magic 门禁）：颜色/字阶/圆角/间距/运动全走 token；
- * 面板宽度为本文件唯一布局决策值（单处裸 px，§2 红线口径内）。
+ * 面板宽度由布局字段 ai.width 注入（T61-01 §2 起可拖拽：--sc-layout-ai-width，
+ * 回退值 = layoutState.ts 的 AI_WIDTH_DEFAULT = T38-01 定宽原值，
+ * → 变量缺失/未注入时行为与改前逐像素一致）。
  * 本文件不引入 transition —— 无需 prefers-reduced-motion 兜底块
  * （ui-interaction-audit 门禁只对含 transition 的文件要求）。
  */
@@ -10,7 +12,7 @@
   flex: none;
   display: flex;
   flex-direction: column;
-  width: 320px;
+  width: var(--sc-layout-ai-width, 320px);
   height: 100%;
   min-height: 0;
   /* T59-01 像素边框：编辑列↔AI 面板接缝（纵向，侧栏式布局）= 本元素 border-left，2px ink-edge。
