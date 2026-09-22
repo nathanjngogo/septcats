@@ -70,23 +70,11 @@ def('Plus', (() => { const g = canvas(); vline2(g, 7, 3, 12); hline2(g, 3, 12, 7
 def('Check', (() => { const g = canvas(); dline2(g, 3, 7, 6, 11); dline2(g, 6, 11, 12, 3); return g; })());
 def('Close', (() => { const g = canvas(); dline2(g, 3, 3, 12, 12); dline2(g, 11, 3, 2, 12); return g; })());
 def('Search', (() => { const g = canvas(); ring(g, 3, 2, 10, 9); ring(g, 4, 3, 9, 8); dline2(g, 10, 9, 13, 13); return g; })());
-def('GearSix', bmp(
-  '..##..##..##....', // 顶部三齿（齿轮像素化：齿+圈+轴）
-  '.####.##.####...',
-  '.############...',
-  '###oo####oo###..',
-  '##o######o##....',
-  '##o##oo##o##....',
-  '###o#oo#o###....',
-  '.##o####o##.....',
-  '.############...',
-  '..####..####....',
-  '....##..##......',
-  '................',
-  '................',
-  '................',
-  '................',
-  '................'));
+def('GearSix', (() => { const g = canvas();
+  // 干净齿轮：8 格圈环 + 中心 2×2 孔 + 四向齿（1 格外凸）
+  ring(g, 4, 4, 11, 11); rect(g, 6, 6, 9, 9, 0); vline(g, 7, 6, 7); vline(g, 8, 8, 9); hline(g, 6, 6, 7); hline(g, 9, 9, 8);
+  rect(g, 6, 1, 9, 3); rect(g, 6, 12, 9, 14); rect(g, 1, 6, 3, 9); rect(g, 12, 6, 14, 9);
+  return g; })());
 def('SidebarSimple', (() => { const g = canvas(); ring(g, 2, 2, 13, 13); vline(g, 6, 3, 12); hline(g, 3, 5, 5); hline(g, 3, 5, 8); return g; })());
 def('Layout', (() => { const g = canvas(); ring(g, 2, 2, 13, 13); hline(g, 3, 12, 6); vline(g, 8, 7, 12); return g; })()); // T57 布局钮候选
 def('BookOpen', bmp( // 说明书（T56 菜单 icon）
