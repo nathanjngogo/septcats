@@ -82,6 +82,11 @@ export interface CommandDeps {
    * deletePage：无选中页经 configurePaletteCommands 摘除（不出现、不抛错）。
    */
   toggleFullWidth?(): void;
+  /**
+   * T56-01：打开使用说明书阅读视图。App 恒注入 → 命令恒出现；测试 spy deps
+   * 不注入 → 不出现（静态清单/别名基线不受影响）。
+   */
+  openManual?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -142,6 +147,18 @@ export const TOGGLE_FULL_WIDTH_DEF: PaletteCommandDef = {
   label: t('commands.page.toggleFullWidth'),
   hint: t('commandHints.page.toggleFullWidth'),
   aliases: ['quankuan', 'quan', 'qw', 'gudingkuandu', 'gdkd', 'full width', 'fullwidth', 'full'],
+};
+
+/**
+ * T56-01：「使用说明书」命令定义。**不在静态 COMMAND_DEFS 里**——同 openAiChat
+ * 走 deps 门（App 恒注入 openManual → 恒出现；palette 基线测试的 spy deps 不注入
+ * → 静态清单/别名基线不受影响）。
+ */
+export const MANUAL_DEF: PaletteCommandDef = {
+  id: 'app.manual',
+  label: t('commands.app.manual'),
+  hint: t('commandHints.app.manual'),
+  aliases: ['shiyongshuomingshu', 'shuomingshu', 'sy sms', 'sms', 'help', 'manual', 'user manual'],
 };
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
@@ -242,6 +259,14 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.page.toggleFullWidth'),
       hint: t('commandHints.page.toggleFullWidth'),
       run: deps.toggleFullWidth,
+    });
+  }
+  if (deps.openManual !== undefined) {
+    commands.push({
+      ...MANUAL_DEF,
+      label: t('commands.app.manual'),
+      hint: t('commandHints.app.manual'),
+      run: deps.openManual,
     });
   }
   return commands;

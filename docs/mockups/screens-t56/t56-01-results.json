@@ -1,0 +1,280 @@
+{
+  "task": "TASK-T56-01 真机取证（使用说明书嵌入帮助菜单）",
+  "ranAt": "2026-09-22T05:29:52.603Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP (playwright-core over --remote-debugging-port) + main-process Node inspector (--inspect) 读 Menu.getApplicationMenu()；截图 = renderer page.screenshot",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t56-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t56-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t56-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t56-zh-content.png",
+    "t56-en-content.png",
+    "t56-anchors-collapsed.png"
+  ],
+  "electronProcessesAfterQuit": 0,
+  "pass": 18,
+  "fail": 0,
+  "quiet": [
+    {
+      "gracefulExited": true,
+      "forced": false,
+      "pid": 30832
+    }
+  ],
+  "phases": {
+    "menuZh": {
+      "ok": true,
+      "top": [
+        "文件",
+        "编辑",
+        "视图",
+        "帮助"
+      ],
+      "helpLabel": "帮助",
+      "helpItems": [
+        {
+          "label": "使用说明书",
+          "type": "normal",
+          "role": null
+        },
+        {
+          "label": "",
+          "type": "separator",
+          "role": null
+        },
+        {
+          "label": "关于 Septcats",
+          "type": "normal",
+          "role": null
+        }
+      ]
+    },
+    "shellZh": {
+      "crumb": "使用说明书",
+      "editorCol": false,
+      "title": "使用说明书",
+      "anchors": 13,
+      "docTitle": "Septcats 使用说明书"
+    },
+    "jump": {
+      "ok": true,
+      "before": 0,
+      "after": 1227,
+      "active": "true",
+      "activeCount": 1,
+      "deltaTop": 0,
+      "heading": "数据库视图"
+    },
+    "collapsed": {
+      "ok": true,
+      "cls": "manual-view manual-view--collapsed",
+      "expanded": "false",
+      "navDisplay": "none"
+    },
+    "menuEn": {
+      "ok": true,
+      "top": [
+        "File",
+        "Edit",
+        "View",
+        "Help"
+      ],
+      "helpLabel": "Help",
+      "helpItems": [
+        {
+          "label": "User Manual",
+          "type": "normal",
+          "role": null
+        },
+        {
+          "label": "",
+          "type": "separator",
+          "role": null
+        },
+        {
+          "label": "About Septcats",
+          "type": "normal",
+          "role": null
+        }
+      ]
+    },
+    "en": {
+      "title": "User Manual",
+      "docTitle": "Septcats User Manual",
+      "hasGettingStarted": true,
+      "anchors": 13
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t56-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t56-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "G0|boot",
+      "name": "[info] main inspector",
+      "ok": null,
+      "raw": "electron/js2c/browser_init"
+    },
+    {
+      "step": "G0|boot",
+      "name": "G0-1 夹具成立：独立 userData/rootPath 起应用，渲染面就绪（.sc-shell + pages API）",
+      "ok": true,
+      "raw": "userData=E:\\Hermes Agent工作空间\\_scratch\\t56-01\\ud"
+    },
+    {
+      "step": "G0|boot",
+      "name": "G0-2 夹具数据根已物化（未触碰真实档案）",
+      "ok": true,
+      "raw": "root exists=true"
+    },
+    {
+      "step": "G1|menu-structure",
+      "name": "[info] 原生菜单（原始）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"top\":[\"文件\",\"编辑\",\"视图\",\"帮助\"],\"helpLabel\":\"帮助\",\"helpItems\":[{\"label\":\"使用说明书\",\"type\":\"normal\",\"role\":null},{\"label\":\"\",\"type\":\"separator\",\"role\":null},{\"label\":\"关于 Septcats\",\"type\":\"normal\",\"role\":null}]}"
+    },
+    {
+      "step": "G1|menu-structure",
+      "name": "G1-1 Help 子菜单 = [使用说明书, separator, 关于 Septcats]（使用说明书在「关于」上方 + 分隔线）",
+      "ok": true,
+      "raw": "[{\"label\":\"使用说明书\",\"type\":\"normal\",\"role\":null},{\"label\":\"\",\"type\":\"separator\",\"role\":null},{\"label\":\"关于 Septcats\",\"type\":\"normal\",\"role\":null}]"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "[info] 菜单项 click()（原始）",
+      "ok": null,
+      "raw": "clicked:使用说明书"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "G2-1 点菜单项 → 说明书视图出现（data-testid=manual-view）",
+      "ok": true,
+      "raw": "click=clicked:使用说明书"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "[info] 视图状态（原始）",
+      "ok": null,
+      "raw": "{\"crumb\":\"使用说明书\",\"editorCol\":false,\"title\":\"使用说明书\",\"anchors\":13,\"docTitle\":\"Septcats 使用说明书\"}"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "G2-2 面包屑为「使用说明书」且编辑列让位（说明书接管内容区）",
+      "ok": true,
+      "raw": "crumb=使用说明书 editorCol=false"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "G2-3 正文命中章节标题「快速上手」+ 章节锚点表非空",
+      "ok": true,
+      "raw": "docTitle=Septcats 使用说明书 anchors=13"
+    },
+    {
+      "step": "G2|open-via-menu",
+      "name": "G2-4 截图①（zh 正文）已产出",
+      "ok": true,
+      "raw": "t56-zh-content.png"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "[info] 锚点跳转（原始）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"before\":0,\"after\":1227,\"active\":\"true\",\"activeCount\":1,\"deltaTop\":0,\"heading\":\"数据库视图\"}"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "G3-1 锚点跳「数据库视图」→ 目标章节命中 DOM 且真滚动（scrollTop 前移 + 章节顶对齐滚动口）",
+      "ok": true,
+      "raw": "{\"ok\":true,\"before\":0,\"after\":1227,\"active\":\"true\",\"activeCount\":1,\"deltaTop\":0,\"heading\":\"数据库视图\"}"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "G3-2 aria-current 唯一落在被点锚点（章节表高亮随动）",
+      "ok": true,
+      "raw": "active=true count=1"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "[info] 折叠章表（原始）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"cls\":\"manual-view manual-view--collapsed\",\"expanded\":\"false\",\"navDisplay\":\"none\"}"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "G3-3 折叠钮收起章表（根类切换 + 锚点区 display:none）",
+      "ok": true,
+      "raw": "{\"ok\":true,\"cls\":\"manual-view manual-view--collapsed\",\"expanded\":\"false\",\"navDisplay\":\"none\"}"
+    },
+    {
+      "step": "G3|anchor",
+      "name": "G3-4 截图③（锚点折叠态）已产出",
+      "ok": true,
+      "raw": "t56-anchors-collapsed.png"
+    },
+    {
+      "step": "G4|esc",
+      "name": "G4-1 Esc → 说明书卸载、编辑列回归（view 回 editor）",
+      "ok": true,
+      "raw": "{\"manual\":false,\"editorCol\":true}"
+    },
+    {
+      "step": "G5|palette",
+      "name": "G5-1 命令面板可开且命中「使用说明书」命令（label 走 i18n）",
+      "ok": true,
+      "raw": "{\"count\":1,\"found\":true,\"text\":\"使用说明书在应用内阅读使用说明书\"}"
+    },
+    {
+      "step": "G5|palette",
+      "name": "G5-2 执行该命令 → 说明书视图再现（命令面板与帮助菜单同通道）",
+      "ok": true,
+      "raw": "manualVisible=true"
+    },
+    {
+      "step": "G6|english",
+      "name": "[info] 切 English 后原生菜单（原始）",
+      "ok": null,
+      "raw": "{\"ok\":true,\"top\":[\"File\",\"Edit\",\"View\",\"Help\"],\"helpLabel\":\"Help\",\"helpItems\":[{\"label\":\"User Manual\",\"type\":\"normal\",\"role\":null},{\"label\":\"\",\"type\":\"separator\",\"role\":null},{\"label\":\"About Septcats\",\"type\":\"normal\",\"role\":null}]}"
+    },
+    {
+      "step": "G6|english",
+      "name": "G6-1 切 English → 原生菜单 label 变 User Manual（main 权威；位置/分隔线不变）",
+      "ok": true,
+      "raw": "[{\"label\":\"User Manual\",\"type\":\"normal\",\"role\":null},{\"label\":\"\",\"type\":\"separator\",\"role\":null},{\"label\":\"About Septcats\",\"type\":\"normal\",\"role\":null}]"
+    },
+    {
+      "step": "G6|english",
+      "name": "[info] English 说明书（原始）",
+      "ok": null,
+      "raw": "{\"title\":\"User Manual\",\"docTitle\":\"Septcats User Manual\",\"hasGettingStarted\":true,\"anchors\":13}"
+    },
+    {
+      "step": "G6|english",
+      "name": "G6-2 reload 后 renderer 为 English，再开说明书：标题 User Manual + 正文 Getting Started",
+      "ok": true,
+      "raw": "{\"title\":\"User Manual\",\"docTitle\":\"Septcats User Manual\",\"hasGettingStarted\":true,\"anchors\":13}"
+    },
+    {
+      "step": "G6|english",
+      "name": "G6-3 截图②（en 正文）已产出",
+      "ok": true,
+      "raw": "t56-en-content.png"
+    },
+    {
+      "step": "teardown",
+      "name": "G7-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false,\"pid\":30832}"
+    }
+  ]
+}

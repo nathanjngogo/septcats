@@ -51,6 +51,7 @@ export const zhCN = {
     viewZoomIn: '放大',
     viewZoomOut: '缩小',
     viewZoomReset: '实际大小',
+    helpManual: '使用说明书',
     helpAbout: '关于 Septcats',
     // T54-01：托盘右键菜单（main/trayTemplate.ts 与 renderer 同源读取本字典）
     trayShow: '显示主窗口',
@@ -63,6 +64,14 @@ export const zhCN = {
     minimizeToTray: '最小化到托盘',
     quit: '退出',
     remember: '记住我的选择',
+  },
+  // T56-01：使用说明书阅读视图（renderer 自绘像素风全屏视图；正文为构建期内联的 md）
+  manual: {
+    title: '使用说明书',
+    close: '关闭说明书',
+    chapters: '章节',
+    toggleAnchors: '折叠章节',
+    toggleAnchorsExpand: '展开章节',
   },
   errors: {
     E_CYCLE: '不能把页面移动到它自己的子页面下',
@@ -576,6 +585,7 @@ export const zhCN = {
       importLater: '导入将在后续里程碑提供',
       aiChat: '打开 / 关闭 AI 对话',
       layoutPreset: '切换布局预设',
+      manual: '使用说明书',
     },
     theme: {
       light: '切换主题：浅色',
@@ -607,6 +617,7 @@ export const zhCN = {
       import: '从 Notion 导出包 / Markdown / CSV 导入',
       aiChat: '右侧 AI 对话面板（多轮对话，上下文取当前页）',
       layoutPreset: '在 Notion / 专注 / 工作台 之间循环切换',
+      manual: '在应用内阅读使用说明书',
     },
     theme: {
       light: '界面主题',

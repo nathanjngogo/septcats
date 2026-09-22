@@ -124,7 +124,12 @@ export function buildMenuTemplate(
     },
     {
       label: L('help'),
-      submenu: [action('helpAbout', 'about')],
+      // T56-01 §1③：帮助子菜单「使用说明书」在「关于」上方，中间加分隔线。
+      submenu: [
+        action('helpManual', 'helpManual'),
+        { type: 'separator' },
+        action('helpAbout', 'about'),
+      ],
     },
   ];
 }

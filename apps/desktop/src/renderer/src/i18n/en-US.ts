@@ -51,6 +51,7 @@ export const enUS = {
     viewZoomIn: 'Zoom In',
     viewZoomOut: 'Zoom Out',
     viewZoomReset: 'Actual Size',
+    helpManual: 'User Manual',
     helpAbout: 'About Septcats',
     // T54-01: tray context menu (main/trayTemplate.ts reads the same dictionary)
     trayShow: 'Show Main Window',
@@ -63,6 +64,14 @@ export const enUS = {
     minimizeToTray: 'Minimize to Tray',
     quit: 'Quit',
     remember: 'Remember my choice',
+  },
+  // T56-01: in-app user manual reading view (renderer-drawn pixel full view; content inlined at build time)
+  manual: {
+    title: 'User Manual',
+    close: 'Close manual',
+    chapters: 'Chapters',
+    toggleAnchors: 'Collapse chapters',
+    toggleAnchorsExpand: 'Expand chapters',
   },
   errors: {
     E_CYCLE: 'A page cannot be moved under its own subpage',
@@ -595,6 +604,7 @@ export const enUS = {
       importLater: 'Import will arrive in a later milestone',
       aiChat: 'Open / close AI chat',
       layoutPreset: 'Switch layout preset',
+      manual: 'User Manual',
     },
     theme: {
       light: 'Switch Theme: Light',
@@ -626,6 +636,7 @@ export const enUS = {
       import: 'Import from a Notion export / Markdown / CSV',
       aiChat: 'Right-side AI chat panel (multi-turn, context from the current page)',
       layoutPreset: 'Cycle between Notion / Focus / Workbench',
+      manual: 'Read the user manual inside the app',
     },
     theme: {
       light: 'Interface theme',

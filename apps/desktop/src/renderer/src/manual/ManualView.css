@@ -1,0 +1,235 @@
+/*
+ * ManualView.css —— 使用说明书阅读视图（TASK-T56-01 §1②）。
+ *
+ * 全量吃 T53-01 像素 token：硬边亮暗面（--sc-bevel-out）+ 2px 描边 +
+ * 像素偏移投影（--sc-pixel-out / --sc-pixel-flat）+ 灰阶语义色。零新增色值、
+ * 零字面 hex（no-magic / ui-interaction-audit 门禁：apps/desktop/src/renderer
+ * 在扫描面内）。
+ *
+ * 布局：顶栏（标题 + 折叠钮 + 关闭钮）+ 主行（左锚点章表 | 右正文）。
+ * 高度链闭合于 .sc-shell__main（grid 1fr 定高）——本视图内部各自滚动，
+ * 窗口零滚动红线不变。
+ */
+
+.manual-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  outline: none;
+  background: var(--sc-color-content);
+  color: var(--sc-color-ink);
+}
+
+.manual-view__bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-lg);
+  padding: var(--sc-space-sm) var(--sc-space-lg);
+  background: var(--sc-color-surface);
+  border-bottom: 2px solid var(--sc-color-hairline-strong);
+}
+
+.manual-view__bar-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sc-space-md);
+  min-width: 0;
+}
+
+.manual-view__title {
+  margin: 0;
+  font: var(--sc-text-h3);
+}
+
+.manual-view__doc-title {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.manual-view__bar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.manual-view__toggle,
+.manual-view__close {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.manual-view__close {
+  padding: var(--sc-space-xs);
+}
+
+.manual-view__toggle:hover,
+.manual-view__close:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.manual-view__toggle:active,
+.manual-view__close:active {
+  box-shadow: var(--sc-bevel-in);
+}
+
+.manual-view__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.manual-view__anchors {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--sc-layout-sidebar);
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sc-space-lg) var(--sc-space-sm);
+  background: var(--sc-color-surface);
+  border-right: 2px solid var(--sc-color-hairline-strong);
+}
+
+/* 折叠 = 完全收起（不占位），展开钮仍在顶栏可达。 */
+.manual-view--collapsed .manual-view__anchors {
+  display: none;
+}
+
+.manual-view__anchor {
+  display: block;
+  width: 100%;
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  text-align: left;
+  border: 2px solid transparent;
+  border-radius: var(--sc-radius-sm);
+}
+
+.manual-view__anchor:hover {
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-active);
+}
+
+.manual-view__anchor[aria-current='true'] {
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.manual-view__content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sc-space-xl) var(--sc-space-gutter) var(--sc-space-xxl);
+}
+
+.manual-view__article {
+  max-width: var(--sc-space-editor-measure);
+  margin: 0 auto;
+}
+
+.manual-view__h1 {
+  margin: 0 0 var(--sc-space-lg);
+  font: var(--sc-text-h1);
+  letter-spacing: var(--sc-tracking-h1);
+}
+
+.manual-view__h2 {
+  margin: var(--sc-space-xxl) 0 var(--sc-space-md);
+  padding-bottom: var(--sc-space-sm);
+  font: var(--sc-text-h2);
+  letter-spacing: var(--sc-tracking-h2);
+  border-bottom: 2px solid var(--sc-color-hairline-strong);
+}
+
+.manual-view__h3 {
+  margin: var(--sc-space-lg) 0 var(--sc-space-sm);
+  font: var(--sc-text-h3);
+}
+
+.manual-view__h4 {
+  margin: var(--sc-space-md) 0 var(--sc-space-xs);
+  font: var(--sc-text-ui-md);
+}
+
+.manual-view__p {
+  margin: 0 0 var(--sc-space-md);
+  font: var(--sc-text-editor-body);
+  letter-spacing: var(--sc-tracking-editor-body);
+}
+
+.manual-view__list {
+  margin: 0 0 var(--sc-space-md);
+  padding-left: var(--sc-space-xl);
+}
+
+.manual-view__list li {
+  margin: 0 0 var(--sc-space-xs);
+  font: var(--sc-text-editor-body);
+  letter-spacing: var(--sc-tracking-editor-body);
+}
+
+.manual-view__code-inline {
+  padding: 0 var(--sc-space-xs);
+  font: var(--sc-text-code);
+  background: var(--sc-color-surface-active);
+  border-radius: var(--sc-radius-xs);
+}
+
+.manual-view__link {
+  color: var(--sc-color-ink);
+  text-decoration: underline;
+}
+
+.manual-view__pre {
+  margin: 0 0 var(--sc-space-lg);
+  padding: var(--sc-space-md);
+  overflow: auto;
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-hairline-strong);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.manual-view__pre code {
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink);
+  white-space: pre;
+}
+
+.manual-view__table-wrap {
+  margin: 0 0 var(--sc-space-lg);
+  overflow: auto;
+}
+
+.manual-view__table {
+  width: 100%;
+  font: var(--sc-text-ui-sm);
+  border-collapse: collapse;
+}
+
+.manual-view__table th,
+.manual-view__table td {
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  text-align: left;
+  border: 2px solid var(--sc-color-hairline-strong);
+}
+
+.manual-view__table th {
+  color: var(--sc-color-ink);
+  font-weight: 600;
+  background: var(--sc-color-surface);
+}

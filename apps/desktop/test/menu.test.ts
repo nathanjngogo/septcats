@@ -152,4 +152,30 @@ describe('buildMenuTemplate（TASK-T51-01 §1②）', () => {
     expect(menuText('zh-CN', 'fileCloseTab')).toBe('关闭标签');
     expect(menuText('en-US', 'fileCloseTab')).toBe('Close Tab');
   });
+
+  // TASK-T56-01 §1③：帮助子菜单「使用说明书」（MenuActionId=helpManual），
+  // 位置在「关于」上方 + 分隔线；中英双语 label 走 menuText 字典。
+  it('Help→「使用说明书」派发 helpManual，位于「关于」上方并以分隔线隔开（双语）', () => {
+    for (const locale of ['zh-CN', 'en-US'] as const) {
+      const dict = locale === 'zh-CN' ? zhCN : enUS;
+      const actions: MenuActionId[] = [];
+      const help = submenu(buildMenuTemplate(locale, (a) => actions.push(a)), dict.menu.help);
+      expect(help.map((item) => item.label ?? item.type)).toEqual([
+        dict.menu.helpManual,
+        'separator',
+        dict.menu.helpAbout,
+      ]);
+      const manualItem = help[0];
+      manualItem?.click?.({} as never, undefined, {} as never);
+      expect(actions).toEqual(['helpManual']);
+      const aboutItem = help[2];
+      aboutItem?.click?.({} as never, undefined, {} as never);
+      expect(actions).toEqual(['helpManual', 'about']);
+    }
+  });
+
+  it('「使用说明书」label 双语且 en 含 Manual（切语言菜单文案随动）', () => {
+    expect(menuText('zh-CN', 'helpManual')).toBe('使用说明书');
+    expect(menuText('en-US', 'helpManual')).toContain('Manual');
+  });
 });

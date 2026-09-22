@@ -2,6 +2,12 @@
 
 > 老板 2026-09-21/22 原话：「AI的打开按钮图标重新设计。且同时所有图标确保都是像素风。」前置：T56/T57 后（三者共用 Icon.tsx/i18n，严格串行）。
 
+## -1. PM 设计资产（已定稿，直接用，禁止重新设计）
+
+- `scripts/gen-pixel-glyphs.mjs`：**16×16 glyph 表 28 枚**（Icon.tsx 现 re-export 全清单 + Close/Layout/AiRobot），质检程序断言全绿（8-邻域连通≤6、墨占比带）；ASCII 目视双验。`node scripts/gen-pixel-glyphs.mjs` 重导出 `assets/icons/glyph-sheet.png`。
+- **AI 钮定稿 = AiRobot 像素机器人头**（替代 Sparkle；开/关两态由运行时眼档明暗实现，glyph 同源）。
+- 你（CB）的工程任务=把 GLYPHS 表变成 React 组件库并全仓换装，不是画图标。渲染建议：CSS `box-shadow` 拼像素 或 内联 `<svg>` 16 个 `<rect>`（shapeRendering="crispEdges"）；组件签名与 `Icon` 兼容（icon prop 收组件对象），调用点尽量零改动。
+
 ## 0. 侦察事实（勿重复调查）
 
 - 现状图标体系：`packages/ui/src/Icon.tsx` 全仓唯一出口（§16.6 纪律=phosphor 单族，24 个组件 re-export）；业务代码零直接 import phosphor（合规）。AI 钮现用 `Sparkle`（App.tsx:11）。

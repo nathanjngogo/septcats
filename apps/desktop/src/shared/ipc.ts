@@ -373,6 +373,8 @@ export const MENU_ACTIONS = [
   'toggleFullWidth',
   'commandPalette',
   'closeTab',
+  /** 帮助 →「使用说明书」（T56-01）：renderer 切到全屏说明书阅读视图。 */
+  'helpManual',
   /** 「关于」由 main 侧就地弹窗处理，不经 renderer。 */
   'about',
 ] as const;

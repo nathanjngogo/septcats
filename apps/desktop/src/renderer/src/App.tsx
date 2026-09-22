@@ -19,6 +19,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
 import { SidebarTree } from './pages/SidebarTree';
 import { TrashList } from './pages/TrashList';
+import { ManualView } from './manual/ManualView';
 import { TabsBar } from './tabs/TabsBar';
 import { closeActiveTab, handleTabsKeydown } from './tabs/shortcuts';
 import { CloseAskDialog } from './close/CloseAskDialog';
@@ -38,7 +39,7 @@ import './App.css';
  * 命令行为装配（openSettings/openImport 引用稳定，一次性装配；空 deps 防御在 commands.ts 的调用方保证）。
  * T23-02 §B：「另存为模板」是条件命令——选中页变化时重装配，无选中页则命令不出现（不置灰、不抛错）。
  */
-function useCommandWiring(openSettings: () => void, openImport: () => void): void {
+function useCommandWiring(openSettings: () => void, openImport: () => void, openManual: () => void): void {
   // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
   const locale = useLocale();
   useEffect(() => {
@@ -72,6 +73,8 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
             },
             openSettings,
             openImport,
+            // T56-01：命令面板「使用说明书」入口（与帮助菜单同一条视图通道）
+            openManual,
             runAiAction: (action): void => {
               // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
               window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
@@ -124,7 +127,7 @@ function useCommandWiring(openSettings: () => void, openImport: () => void): voi
     configure();
     const unsubscribe = pagesStore.subscribe(configure);
     return unsubscribe;
-  }, [openSettings, openImport, locale]);
+  }, [openSettings, openImport, openManual, locale]);
 }
 
 /**
@@ -138,13 +141,16 @@ export function App() {
   // T39-01 §0.2：侧栏收起态由布局状态持有（持久化）；顶栏开合钮写入布局状态
   const sidebarPosition = useLayout((state) => state.layout.sidebar.position);
   const [collapsed, setCollapsed] = useState(sidebarPosition === 'collapsed');
-  const [view, setView] = useState<'editor' | 'settings' | 'import'>('editor');
+  const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual'>('editor');
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);
   const openSettings = useCallback(() => setView('settings'), []);
   const openImport = useCallback(() => setView('import'), []);
-  useCommandWiring(openSettings, openImport);
+  // T56-01：说明书视图入口（帮助菜单 + 命令面板共用；Esc/关闭钮回 editor）
+  const openManual = useCallback(() => setView('manual'), []);
+  const closeManual = useCallback(() => setView('editor'), []);
+  useCommandWiring(openSettings, openImport, openManual);
 
   // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -231,6 +237,7 @@ export function App() {
   // （超出页签数夹到最后一个）。settings/import/回收站/搜索页/命令面板打开时不劫持。
   const inSettingsFlag = view === 'settings';
   const inImportFlag = view === 'import';
+  const inManualFlag = view === 'manual';
   const searchOpenFlag = usePalette((state) => state.searchOpen);
   const paletteOpenFlag = usePalette((state) => state.open);
   const pagesViewFlag = usePages((state) => state.view);
@@ -238,6 +245,7 @@ export function App() {
     const editorVisible =
       !inSettingsFlag &&
       !inImportFlag &&
+      !inManualFlag &&
       !searchOpenFlag &&
       !paletteOpenFlag &&
       pagesViewFlag === 'pages';
@@ -271,6 +279,10 @@ export function App() {
         case 'commandPalette':
           paletteActions.open();
           break;
+        // T56-01：帮助 →「使用说明书」→ 全屏说明书阅读视图
+        case 'helpManual':
+          setView('manual');
+          break;
         case 'closeTab':
           if (editorVisible) {
             closeActiveTab();
@@ -284,10 +296,11 @@ export function App() {
       window.removeEventListener('keydown', onKeyDown);
       unsubscribeMenu();
     };
-  }, [inSettingsFlag, inImportFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag, toggleSidebar]);
+  }, [inSettingsFlag, inImportFlag, inManualFlag, searchOpenFlag, paletteOpenFlag, pagesViewFlag, toggleSidebar]);
 
   const inSettings = view === 'settings';
   const inImport = view === 'import';
+  const inManual = view === 'manual';
 
   // T51-01：侧栏开合的唯一出口（顶栏/标签条按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -311,7 +324,7 @@ export function App() {
   // 自己的顶栏语义，顶栏折叠钮仍由 AppShell 渲染）。编辑器视图下：
   //   ① 顶栏左侧不再显示「工作区名」兜底（名字常驻侧栏头部）；
   //   ② 折叠钮搬到标签条行最左（`sidebarToggle`），顶栏的同名钮由 `.app-shell--fused` 隐藏。
-  const editorView = !inSettings && !inImport && pagesState.view === 'pages' && !searchOpen;
+  const editorView = !inSettings && !inImport && !inManual && pagesState.view === 'pages' && !searchOpen;
 
   // T52-01 §1.1：工作区名改由侧栏头部常驻承载 → 顶栏左端不再渲染「只剩工作区名」的兜底。
   const breadcrumb =
@@ -319,6 +332,8 @@ export function App() {
       <Breadcrumb items={[{ label: t('settings.title') }]} />
     ) : inImport ? (
       <Breadcrumb items={[{ label: t('importWizard.title') }]} />
+    ) : inManual ? (
+      <Breadcrumb items={[{ label: t('manual.title') }]} />
     ) : pagesState.view === 'pages' && pagesState.selectedId === null ? null : (
       <Breadcrumb items={pagesBreadcrumbItems(pagesState)} />
     );
@@ -378,6 +393,9 @@ export function App() {
           <SettingsPage />
         ) : inImport ? (
           <ImportWizard onOpenHome={() => setView('editor')} />
+        ) : inManual ? (
+          // T56-01：全屏说明书阅读视图（Esc / 关闭钮回 editor）
+          <ManualView onClose={closeManual} />
         ) : pagesState.view === 'trash' ? (
           <TrashList />
         ) : searchOpen ? (
