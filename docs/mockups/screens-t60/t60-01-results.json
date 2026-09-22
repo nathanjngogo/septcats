@@ -1,0 +1,579 @@
+{
+  "task": "TASK-T60-01 真机取证（交互一致性批 R13 ①②③⑤⑥⑦）",
+  "ranAt": "2026-09-22T10:10:16.043Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/拖拽/截图 + Emulation.setDeviceMetricsOverride 两宽度",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t60-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t60-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t60-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t60-01-light-main.png",
+    "t60-01-light-cluster.png",
+    "t60-01-light-blockmenu.png",
+    "t60-01-light-ctxmenu.png",
+    "t60-01-light-main-1184.png",
+    "t60-01-light-main-894.png",
+    "t60-01-dark-main.png",
+    "t60-01-dark-ctxmenu.png"
+  ],
+  "pass": 32,
+  "fail": 0,
+  "electronFinal": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "cluster_light": {
+      "order": [
+        "handle",
+        "add"
+      ],
+      "handleDraggable": "true",
+      "addDraggable": null,
+      "shellDraggable": null,
+      "handleCursor": "grab",
+      "addCursor": "pointer",
+      "handleRect": {
+        "left": 379.5,
+        "right": 407.5,
+        "top": 81.9,
+        "w": 28,
+        "h": 28
+      },
+      "addRect": {
+        "left": 409.5,
+        "right": 437.5,
+        "top": 81.9,
+        "w": 28,
+        "h": 28
+      },
+      "clusterRect": {
+        "left": 379.5,
+        "right": 437.5,
+        "top": 81.9,
+        "w": 58,
+        "h": 28
+      },
+      "blockId": "01M349F8JE738GHPH8SMKV1G8A",
+      "ariaLabels": [
+        "块操作",
+        "新增块"
+      ],
+      "disabled": [
+        false,
+        false
+      ]
+    },
+    "dragNative": [
+      {
+        "type": "dragstart",
+        "tag": "BUTTON",
+        "cls": "sc-blockcontrol__handle",
+        "hasDt": true
+      }
+    ],
+    "drag": {
+      "mode": "native-cdp",
+      "before": [
+        "01M349F8JE738GHPH8SMKV1G8A",
+        "01M349F8K4VVSXTJHC72ZBMWJP"
+      ],
+      "after": [
+        "01M349F8K4VVSXTJHC72ZBMWJP",
+        "01M349F8JE738GHPH8SMKV1G8A"
+      ],
+      "log": [
+        {
+          "type": "dragstart",
+          "tag": "BUTTON",
+          "cls": "sc-blockcontrol__handle",
+          "hasDt": true
+        }
+      ]
+    },
+    "dbOrder": [
+      "01M349F8K4VVSXTJHC72ZBMWJP",
+      "01M349F8JE738GHPH8SMKV1G8A"
+    ],
+    "textsAfterDrag": [
+      "T60 交互一致性第二段",
+      "T60 交互一致性第一段"
+    ],
+    "blockMenu": {
+      "menuBefore": "false",
+      "menuOpen": {
+        "expanded": "true",
+        "count": 1
+      },
+      "menuClosed": {
+        "expanded": "false",
+        "count": 0
+      },
+      "blank": {
+        "x": 705,
+        "y": 790
+      }
+    },
+    "iconSig": {
+      "normal": {
+        "first": {
+          "x": "3",
+          "y": "1",
+          "w": "10"
+        },
+        "n": 29
+      },
+      "wikiHead": {
+        "first": {
+          "x": "4",
+          "y": "1",
+          "w": "1"
+        },
+        "n": 24
+      }
+    },
+    "moreMenu": {
+      "items": [
+        "重命名",
+        "固定宽度",
+        "转为 Wiki",
+        "删除"
+      ],
+      "rect": {
+        "left": 14,
+        "top": 237.5,
+        "w": 210,
+        "h": 152
+      },
+      "hostPosition": "relative"
+    },
+    "ctxMenu": {
+      "rowBox": {
+        "x": 56,
+        "y": 224
+      },
+      "menu": {
+        "items": [
+          "重命名",
+          "固定宽度",
+          "转为 Wiki",
+          "删除"
+        ],
+        "rect": {
+          "left": 56,
+          "top": 224,
+          "w": 210,
+          "h": 152
+        },
+        "hostPosition": "fixed"
+      }
+    },
+    "rename": {
+      "renameTarget": {
+        "testId": "side-node-01M349F5Z5DV6H6CDWJJQWTT9S",
+        "text": "未命名"
+      },
+      "rowTitle": "T60 改名落库",
+      "dbTitle": [
+        "T60 改名落库",
+        "未命名"
+      ],
+      "NEW_TITLE": "T60 改名落库"
+    },
+    "toast": {
+      "appearedAt": 1790071790103,
+      "goneAt": 1790071793170,
+      "lifeMs": 3067,
+      "text": "已转为 Wiki"
+    },
+    "cluster_dark": {
+      "order": [
+        "handle",
+        "add"
+      ],
+      "handleDraggable": "true",
+      "addDraggable": null,
+      "shellDraggable": null,
+      "handleCursor": "grab",
+      "addCursor": "pointer",
+      "handleRect": {
+        "left": 379.5,
+        "right": 407.5,
+        "top": 252.9,
+        "w": 28,
+        "h": 28
+      },
+      "addRect": {
+        "left": 409.5,
+        "right": 437.5,
+        "top": 252.9,
+        "w": 28,
+        "h": 28
+      },
+      "clusterRect": {
+        "left": 379.5,
+        "right": 437.5,
+        "top": 252.9,
+        "w": 58,
+        "h": 28
+      },
+      "blockId": "01M349F8K4VVSXTJHC72ZBMWJP",
+      "ariaLabels": [
+        "块操作",
+        "新增块"
+      ],
+      "disabled": [
+        false,
+        false
+      ]
+    },
+    "ctxMenuDark": {
+      "rowBoxDark": {
+        "x": 56,
+        "y": 240
+      },
+      "menu": {
+        "items": [
+          "重命名",
+          "固定宽度",
+          "转为 Wiki",
+          "删除"
+        ],
+        "rect": {
+          "left": 56,
+          "top": 240,
+          "w": 210,
+          "h": 152
+        },
+        "hostPosition": "fixed"
+      }
+    },
+    "widths": [
+      {
+        "w": 1184,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1184,
+        "winClientW": 1184,
+        "sideTop": 0
+      },
+      {
+        "w": 894,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 894,
+        "winClientW": 894,
+        "sideTop": 0
+      }
+    ],
+    "electron": {
+      "before": 5,
+      "after": 0
+    }
+  },
+  "assertions": [
+    {
+      "step": "boot",
+      "name": "[info] 夹具",
+      "ok": null,
+      "raw": "UD=E:\\Hermes Agent工作空间\\_scratch\\t60-01\\ud ROOT=E:\\Hermes Agent工作空间\\_scratch\\t60-01\\data APPDIR=E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop"
+    },
+    {
+      "step": "boot",
+      "name": "[info] electron 进程（开跑前）",
+      "ok": null,
+      "raw": "0"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-1 夹具成立：真点「新建页面」×2 + 键入两段正文 → 2 标签 / 2 存活页",
+      "ok": true,
+      "raw": "tabs=2 pages=2"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "G0-2 浅色主题就位（夹具 settings.theme=light）",
+      "ok": true,
+      "raw": "data-theme=light"
+    },
+    {
+      "step": "G0|fixture",
+      "name": "[info] 活动页 id（tab-<id> 派生）",
+      "ok": null,
+      "raw": "01M349F78QK7Q9ERPM9NJN69N7"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "[info] light 簇量测（原始）",
+      "ok": null,
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":81.9,\"w\":58,\"h\":28},\"blockId\":\"01M349F8JE738GHPH8SMKV1G8A\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "G1-1[light] §0-1 簇内 DOM 序 = ⋮⋮ 在前 / ＋ 在后（视觉序对调）",
+      "ok": true,
+      "raw": "order=[\"handle\",\"add\"]"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "G1-2[light] §0-1 几何序：⋮⋮ 左缘 < ＋ 左缘 且同高（手柄命中区 ≥24）",
+      "ok": true,
+      "raw": "handle={\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28} add={\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28}"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "G1-3[light] §0-1 draggable 只落 ⋮⋮ 键（壳与 ＋ 均不可拖）",
+      "ok": true,
+      "raw": "handle=true add=null shell=null"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "G1-4[light] §0-1 ⋮⋮ 光标 = grab（拖拽语义随迁）；＋ 非 grab",
+      "ok": true,
+      "raw": "handle=grab add=pointer"
+    },
+    {
+      "step": "G1|cluster-light",
+      "name": "G1-5[light] 老语义不回归：aria-label（块操作/新增块）齐备、非禁用",
+      "ok": true,
+      "raw": "labels=[\"块操作\",\"新增块\"] disabled=[false,false]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "[info] 拖拽坐标（原始）",
+      "ok": null,
+      "raw": "handle={\"x\":394,\"y\":148} target={\"x\":490,\"y\":80} before=[\"01M349F8JE738GHPH8SMKV1G8A\",\"01M349F8K4VVSXTJHC72ZBMWJP\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "[info] 拖拽路径（原始）",
+      "ok": null,
+      "raw": "mode=native-cdp log=[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}] after=[\"01M349F8K4VVSXTJHC72ZBMWJP\",\"01M349F8JE738GHPH8SMKV1G8A\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "G2-1 §0-1 拖拽真发起：dragstart 事件由 ⋮⋮ 键本体（sc-blockcontrol__handle）触发",
+      "ok": true,
+      "raw": "[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "G2-2 §0-1 落位后块序变化（拖动的块真实换位，非空操作）",
+      "ok": true,
+      "raw": "before=[\"01M349F8JE738GHPH8SMKV1G8A\",\"01M349F8K4VVSXTJHC72ZBMWJP\"] after=[\"01M349F8K4VVSXTJHC72ZBMWJP\",\"01M349F8JE738GHPH8SMKV1G8A\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "[info] 落库块序（原始）",
+      "ok": null,
+      "raw": "[\"01M349F8K4VVSXTJHC72ZBMWJP\",\"01M349F8JE738GHPH8SMKV1G8A\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "G2-3 §0-1 拖拽结果落库：blocks:list 序与 DOM 序一致（reorder 真写回）",
+      "ok": true,
+      "raw": "[\"01M349F8K4VVSXTJHC72ZBMWJP\",\"01M349F8JE738GHPH8SMKV1G8A\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "[info] 拖后正文（原始）",
+      "ok": null,
+      "raw": "[\"T60 交互一致性第二段\",\"T60 交互一致性第一段\"]"
+    },
+    {
+      "step": "G2|real-drag",
+      "name": "G2-4 §0-1 拖拽零污染：私有 MIME 生效——正文未被插入块 id 文本",
+      "ok": true,
+      "raw": "[\"T60 交互一致性第二段\",\"T60 交互一致性第一段\"]"
+    },
+    {
+      "step": "G3|block-menu",
+      "name": "G3-1 §0-3 点 ⋮⋮ → 块菜单开（aria-expanded=true + 菜单在 DOM）",
+      "ok": true,
+      "raw": "{\"before\":\"false\",\"open\":{\"expanded\":\"true\",\"count\":1}}"
+    },
+    {
+      "step": "G3|block-menu",
+      "name": "G3-2 §0-3 点正文空白 → 块菜单关（aria-expanded=false + 菜单卸载）",
+      "ok": true,
+      "raw": "{\"expanded\":\"false\",\"count\":0}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "[info] 行图标签名（原始）",
+      "ok": null,
+      "raw": "{\"normal\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29},\"wikiHead\":{\"first\":{\"x\":\"4\",\"y\":\"1\",\"w\":\"1\"},\"n\":24}}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-1 §0-2 新建页行图标 = FileText（像素签名首格 x3/w10；非 FolderSimple 的 x1/w8）",
+      "ok": true,
+      "raw": "{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-2 §0-2 Wiki 分区头仍 Note（未被文件图标化）",
+      "ok": true,
+      "raw": "{\"first\":{\"x\":\"4\",\"y\":\"1\",\"w\":\"1\"},\"n\":24}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "[info] ⋯ 菜单（原始）",
+      "ok": null,
+      "raw": "{\"items\":[\"重命名\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":14,\"top\":237.5,\"w\":210,\"h\":152},\"hostPosition\":\"relative\"}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-3 §0-4 ⋯ 菜单含「重命名」条目（位于删除之前）",
+      "ok": true,
+      "raw": "[\"重命名\",\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "[info] 右键菜单（原始）",
+      "ok": null,
+      "raw": "{\"rowBox\":{\"x\":56,\"y\":224},\"menu\":{\"items\":[\"重命名\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":56,\"top\":224,\"w\":210,\"h\":152},\"hostPosition\":\"fixed\"}}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-4 §0-4 右键行 → 菜单弹出（条目 = 同一份行菜单，含重命名）",
+      "ok": true,
+      "raw": "[\"重命名\",\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-5 §0-4 菜单位置 = 光标处（|Δ| ≤ 12px，clamp 后仍在视口内）且宿主 fixed",
+      "ok": true,
+      "raw": "menu={\"left\":56,\"top\":224,\"w\":210,\"h\":152} cursor={\"x\":56,\"y\":224} host=fixed"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-6 §0-4 点「重命名」→ 行内输入框出现（复用既有 beginRename 态）",
+      "ok": true,
+      "raw": "input=true target={\"testId\":\"side-node-01M349F5Z5DV6H6CDWJJQWTT9S\",\"text\":\"未命名\"}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "[info] 改名结果（原始）",
+      "ok": null,
+      "raw": "{\"renameTarget\":{\"testId\":\"side-node-01M349F5Z5DV6H6CDWJJQWTT9S\",\"text\":\"未命名\"},\"rowTitle\":\"T60 改名落库\",\"dbTitle\":[\"T60 改名落库\",\"未命名\"],\"NEW_TITLE\":\"T60 改名落库\"}"
+    },
+    {
+      "step": "G4|sidebar",
+      "name": "G4-7 §0-4/⑤ 改名落库：行标题变化 + DB 侧标题同步（pages.tree）",
+      "ok": true,
+      "raw": "row=T60 改名落库 db=[\"T60 改名落库\",\"未命名\"]"
+    },
+    {
+      "step": "G5|toast-3s",
+      "name": "[info] toast 生命周期（原始）",
+      "ok": null,
+      "raw": "{\"appearedAt\":1790071790103,\"goneAt\":1790071793170,\"lifeMs\":3067,\"text\":\"已转为 Wiki\"}"
+    },
+    {
+      "step": "G5|toast-3s",
+      "name": "G5-1 §0-5 触发一条通知（转换）出现于视口",
+      "ok": true,
+      "raw": "text=已转为 Wiki appeared=true"
+    },
+    {
+      "step": "G5|toast-3s",
+      "name": "G5-2 §0-5 通知 3000ms 自动关闭（实测存活 ∈ [2600, 4000]ms，无手动关闭）",
+      "ok": true,
+      "raw": "lifeMs=3067"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-0 深色主题就位",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] 深色激活页（含 ≥2 块）",
+      "ok": null,
+      "raw": "01M349F78QK7Q9ERPM9NJN69N7"
+    },
+    {
+      "step": "G7|dark",
+      "name": "[info] dark 簇量测（原始）",
+      "ok": null,
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":252.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":252.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":252.9,\"w\":58,\"h\":28},\"blockId\":\"01M349F8K4VVSXTJHC72ZBMWJP\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-1[dark] §0-1 簇内 DOM 序 = ⋮⋮ 在前 / ＋ 在后（视觉序对调）",
+      "ok": true,
+      "raw": "order=[\"handle\",\"add\"]"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-2[dark] §0-1 几何序：⋮⋮ 左缘 < ＋ 左缘 且同高（手柄命中区 ≥24）",
+      "ok": true,
+      "raw": "handle={\"left\":379.5,\"right\":407.5,\"top\":252.9,\"w\":28,\"h\":28} add={\"left\":409.5,\"right\":437.5,\"top\":252.9,\"w\":28,\"h\":28}"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-3[dark] §0-1 draggable 只落 ⋮⋮ 键（壳与 ＋ 均不可拖）",
+      "ok": true,
+      "raw": "handle=true add=null shell=null"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-4[dark] §0-1 ⋮⋮ 光标 = grab（拖拽语义随迁）；＋ 非 grab",
+      "ok": true,
+      "raw": "handle=grab add=pointer"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G1-5[dark] 老语义不回归：aria-label（块操作/新增块）齐备、非禁用",
+      "ok": true,
+      "raw": "labels=[\"块操作\",\"新增块\"] disabled=[false,false]"
+    },
+    {
+      "step": "G7|dark",
+      "name": "G7-1 深色：右键菜单同样弹在光标处（clamp）",
+      "ok": true,
+      "raw": "{\"rowBoxDark\":{\"x\":56,\"y\":240},\"menu\":{\"items\":[\"重命名\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":56,\"top\":240,\"w\":210,\"h\":152},\"hostPosition\":\"fixed\"}}"
+    },
+    {
+      "step": "G8|two-widths",
+      "name": "[info] 两宽度零滚动（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1184,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0},{\"w\":894,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":894,\"winClientW\":894,\"sideTop\":0}]"
+    },
+    {
+      "step": "G8|two-widths",
+      "name": "G8-1 §3：1184/894 两宽度零滚动（纵向 + 横向）且侧栏 top 恒 0",
+      "ok": true,
+      "raw": "1184:{h 800/800,w 1184/1184,top=0} 894:{h 800/800,w 894/894,top=0}"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] electron 进程计数（退出前后）",
+      "ok": null,
+      "raw": "{\"before\":5,\"after\":0}"
+    },
+    {
+      "step": "teardown",
+      "name": "G9-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    },
+    {
+      "step": "teardown",
+      "name": "G9-2 交付纪律：退出后 electron 进程计数 = 0",
+      "ok": true,
+      "raw": "before=5 after=0"
+    }
+  ]
+}

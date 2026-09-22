@@ -849,14 +849,30 @@ export function PageView({ page }: PageViewProps) {
   );
 
   const onDragStart = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
+    (event: DragEvent<HTMLButtonElement>) => {
       dragIdRef.current = handleBlockId;
       if (handleBlockId !== null) {
-        event.dataTransfer?.setData('text/plain', handleBlockId);
+        // T60-01 ①：payload 走**私有 MIME**——拖到正文上时，drop 先被 ProseMirror 的
+        // 原生 drop 监听处理（React 合成 drop 在它之后），若带 text/plain，PM 会把
+        // 「块 id 当纯文本」插进落点（T60 真机实测：正文被插进 26 位 id）。
+        // 私有 MIME 对 PM 不可解析（getData('text/plain') = ''）→ 正文零污染；
+        // 落点归属仍由本组件 onDrop + dragIdRef 判定，不依赖 dataTransfer 内容。
+        // 注：jsdom 的合成 dragstart 没有 dataTransfer（undefined）→ 一律走真值判定。
+        const dt = event.dataTransfer;
+        if (dt !== null && dt !== undefined) {
+          dt.setData('application/x-septcats-block-id', handleBlockId);
+          dt.effectAllowed = 'move';
+        }
       }
     },
     [handleBlockId],
   );
+
+  /** T60-01 ①：拖拽落在 ⋮⋮ 键上，拖完（成功/取消）都要清拖拽态与落点提示线。 */
+  const onDragEnd = useCallback((): void => {
+    dragIdRef.current = null;
+    setDropTarget(null);
+  }, []);
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -1147,21 +1163,16 @@ export function PageView({ page }: PageViewProps) {
         onDrop={onDrop}
       >
         {handleBlockId !== null ? (
-          <div
-            className="pv-handle"
-            style={{ top: handleTop }}
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={() => {
-              dragIdRef.current = null;
-              setDropTarget(null);
-            }}
-          >
+          // T60-01 ①：拖拽从 ⋮⋮ 键发起（HTML5 drag 在「壳 draggable + 指针落按钮」下
+          // 不生效），故壳不再挂 draggable、只保留 T53 立体语法；dragstart/dragend 经
+          // BlockControls 的 dragHandleProps 落到抓手键本体（+ 键不可拖）。
+          <div className="pv-handle" style={{ top: handleTop }}>
             <BlockControls
               blockId={handleBlockId}
               onAction={handleBlockAction}
               onInsert={insertBlockAfterHandle}
               onOpenChange={handleControlsOpenChange}
+              dragHandleProps={{ draggable: true, onDragStart, onDragEnd }}
               visible
             />
           </div>

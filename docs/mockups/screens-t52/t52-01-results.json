@@ -1,6 +1,6 @@
 {
   "task": "TASK-T52-01 真机取证（布局融合三件）",
-  "ranAt": "2026-09-22T08:31:18.713Z",
+  "ranAt": "2026-09-22T10:11:50.041Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 四宽度 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -330,13 +330,13 @@
       "step": "G7|screens",
       "name": "G7-2 窗口级补充截图（含标题栏 + 原生菜单栏，侧栏顶到菜单下沿）",
       "ok": true,
-      "raw": "bytes=41301 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
+      "raw": "bytes=41352 rect={\"x\":670,\"y\":221,\"width\":1220,\"height\":885} err=null"
     },
     {
       "step": "G7|screens",
       "name": "[info] 浅色标签行 3x 放大截图",
       "ok": null,
-      "raw": "{\"bytes\":2738,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
+      "raw": "{\"bytes\":2735,\"clip\":{\"x\":240,\"y\":40,\"width\":520,\"height\":36}}"
     },
     {
       "step": "G7|screens",

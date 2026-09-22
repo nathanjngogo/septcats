@@ -164,6 +164,13 @@ h3.sc-block--heading {
   color: var(--sc-color-ink-faint);
 }
 
+/* T60-01 ①：⋮⋮ 键=拖拽抓手（宿主经 dragHandleProps 注入 draggable）。
+   只对真正可拖的实例给 grab 光标（未注入的宿主零变化）；写在 :disabled 之前，
+   同等特异度下「禁用手柄 cursor: default」仍胜出。 */
+.sc-blockcontrol__handle[draggable='true'] {
+  cursor: grab;
+}
+
 .sc-blockcontrol__handle:hover,
 .sc-blockcontrol__add:hover {
   background: var(--sc-color-surface);

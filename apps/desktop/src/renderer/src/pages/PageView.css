@@ -69,12 +69,13 @@
   width: max-content;
   display: grid;
   place-items: center;
-  cursor: grab;
   border-radius: var(--sc-radius-sm);
   /* T53-01 像素立体：整簇（拖拽壳 + 内部两键）hover 时读作一块凸起的像素控件；
      静止态不挂影 → T33/T36 装订线/簇宽几何一字不动（box-shadow 不参与布局）。
      注：簇内真正的两个按键（.sc-blockcontrol__add/__handle）住 packages/editor，
-     属本单红线禁区 → 立体感由本壳承载（见报告 DEVIATION）。 */
+     属本单红线禁区 → 立体感由本壳承载（见报告 DEVIATION）。
+     T60-01 ①：cursor:grab 已随拖拽语义迁到 ⋮⋮ 键本体（见 editor.css
+     .sc-blockcontrol__handle[draggable='true']）——壳不再可拖，故不再宣称抓手光标。 */
   transition: box-shadow var(--sc-motion-fast) var(--sc-ease-out);
 }
 

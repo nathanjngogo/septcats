@@ -26,10 +26,42 @@ export interface MenuProps {
  */
 export function Menu({ items, label, onSelect, onDismiss, className }: MenuProps) {
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
     itemRefs.current[0]?.focus();
+  }, []);
+
+  /**
+   * 点空白关闭（T60-01 ③）：文档级唯一一处治理全仓 Menu 实例（侧栏行菜单 / 面板行菜单 /
+   * 视图菜单 / 筛选·属性菜单…）。判定 = 事件目标不在本菜单根内 → onDismiss（与 Escape 同出口）。
+   *
+   * 为什么用 `click` 而不是 `pointerdown`：Menu 的触发器（⋮ / ▾ 钮）几乎都是**toggle**
+   * （`setOpen(v => !v)`），且触发器与菜单**不住在同一个 DOM 根内**（触发器在宿主行上、
+   * 菜单是本组件）。pointerdown 早于触发器自身的 onClick 派发 → 会「先被 outside 关掉、
+   * 再被 toggle 打开」，用户按键关不掉菜单（老账里有 dbview 等宿主，本单不许逐个改宿主）。
+   * `click` 冒泡发生在 React 根容器（触发器的 onClick）之后：toggle 已经算完，
+   * 此时目标若在菜单外再补一次 onDismiss，两者同向（幂等）→ 无竞态。
+   * 菜单项被点时宿主通常已卸载本组件（rootRef=null）→ 直接空操作，也不会双发。
+   */
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent): void => {
+      const root = rootRef.current;
+      if (root === null) {
+        return;
+      }
+      if (event.target instanceof Node && root.contains(event.target)) {
+        return;
+      }
+      onDismissRef.current?.();
+    };
+    document.addEventListener('click', onDocumentClick);
+    return () => {
+      document.removeEventListener('click', onDocumentClick);
+    };
   }, []);
 
   const move = (from: number, step: number): number => {
@@ -77,7 +109,13 @@ export function Menu({ items, label, onSelect, onDismiss, className }: MenuProps
   };
 
   return (
-    <div role="menu" aria-label={label} className={clsx('sc-menu', className)} onKeyDown={onKeyDown}>
+    <div
+      ref={rootRef}
+      role="menu"
+      aria-label={label}
+      className={clsx('sc-menu', className)}
+      onKeyDown={onKeyDown}
+    >
       {items.map((entry, index) => (
         <button
           key={entry.id}

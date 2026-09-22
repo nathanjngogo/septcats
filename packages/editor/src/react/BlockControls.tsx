@@ -4,7 +4,7 @@
  * 组件只发**意图**（onAction），真正的 Op 生成与提交由宿主（PageView → EditSession）负责。
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { HTMLAttributes, KeyboardEvent } from 'react';
 import type { BlockType } from '../model';
 import { SLASH_ITEMS } from '../rules/slashMenu';
 import { overflowsBottom } from './viewport';
@@ -40,6 +40,13 @@ export interface BlockControlsProps {
   onOpenChange?: (open: boolean) => void;
   /** hover 显形；缺省 false（测试可直接展开）。 */
   visible?: boolean;
+  /**
+   * T60-01 ①：**拖拽透传口**（宿主注入 `draggable` + `onDragStart`/`onDragEnd`）。
+   * 为什么不挂在簇壳上：HTML5 drag 不因「壳 draggable、指针落在壳内 button 上」而发起
+   * （交互元素命中吞掉 dragstart），所以抓手必须落在 ⋮⋮ 键本体上。
+   * 缺省 undefined = 不注入任何属性，组件行为与历史零差异（其它宿主/测试不受影响）。
+   */
+  dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
 }
 
 interface MenuEntry {
@@ -81,7 +88,14 @@ function buildMenuEntries(): MenuEntry[] {
 
 const MENU_ENTRIES: readonly MenuEntry[] = buildMenuEntries();
 
-export function BlockControls({ blockId, onAction, onInsert, onOpenChange, visible = false }: BlockControlsProps) {
+export function BlockControls({
+  blockId,
+  onAction,
+  onInsert,
+  onOpenChange,
+  visible = false,
+  dragHandleProps,
+}: BlockControlsProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   /** 菜单放不下视口底边时向上翻转（T32-01 §1.1）。 */
@@ -102,15 +116,22 @@ export function BlockControls({ blockId, onAction, onInsert, onOpenChange, visib
     if (!open) {
       return;
     }
-    const onPointerDown = (event: MouseEvent) => {
+    /**
+     * T60-01 ③：点空白关菜单。语义与 `packages/ui/Menu` 的 outside-close 对齐
+     * （同一「点外部关闭」口径），但本组件是自实现菜单、**开关钮住在簇内**
+     * （rootRef = .sc-blockcontrol 同时含 ⋮⋮ 与菜单），故用 `root.contains` 判定：
+     * 命中钮本体即非 outside → 不产生「先关后开」的同事件竞态，用 pointerdown
+     * 与 ui/Menu 同事件族（含触摸/触控笔，不只鼠标）。
+     */
+    const onPointerDown = (event: PointerEvent) => {
       const root = rootRef.current;
       if (root !== null && event.target instanceof Node && !root.contains(event.target)) {
         applyOpen(false);
       }
     };
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
     };
   }, [open]);
 
@@ -172,6 +193,24 @@ export function BlockControls({ blockId, onAction, onInsert, onOpenChange, visib
 
   return (
     <div ref={rootRef} className={rootClass} data-block-id={blockId ?? ''}>
+      {/* T60-01 ①：视觉序 = 【⋮⋮】【+】（Notion 惯例：抓手在左、加号贴右）；
+          行为不换——⋮⋮ 仍=块操作菜单、＋ 仍在下方插块。dragHandleProps 透传到
+          ⋮⋮ 键（拖拽发起元素），＋ 键从不接收它 → 永远不可拖。 */}
+      <button
+        type="button"
+        {...dragHandleProps}
+        className="sc-blockcontrol__handle"
+        aria-label="块操作"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={(event) => {
+          event.preventDefault();
+          applyOpen(!open);
+        }}
+      >
+        <DotsHandleIcon />
+      </button>
       {onInsert !== undefined ? (
         <button
           type="button"
@@ -186,20 +225,6 @@ export function BlockControls({ blockId, onAction, onInsert, onOpenChange, visib
           <PlusIcon />
         </button>
       ) : null}
-      <button
-        type="button"
-        className="sc-blockcontrol__handle"
-        aria-label="块操作"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        disabled={disabled}
-        onClick={(event) => {
-          event.preventDefault();
-          applyOpen(!open);
-        }}
-      >
-        <DotsHandleIcon />
-      </button>
       {open && !disabled ? (
         <div
           ref={menuRef}

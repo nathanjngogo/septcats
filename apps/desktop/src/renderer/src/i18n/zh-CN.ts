@@ -96,6 +96,8 @@ export const zhCN = {
     wiki: 'Wiki',
     emptyWiki: '暂无 Wiki 页',
     renameAria: '重命名页面',
+    // T60-01 ④：行 ⋯ 菜单 / 右键菜单的「重命名」条目
+    rename: '重命名',
     pageActions: '页面操作',
     trash: '回收站',
   },

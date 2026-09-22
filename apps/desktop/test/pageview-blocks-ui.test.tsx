@@ -170,13 +170,25 @@ describe('PageView 斜杠菜单（T32-01 §1.2）', () => {
 });
 
 describe('PageView 手柄拖拽（T32-01 §2.④）', () => {
+  it('T60-01 ①：draggable 落在 ⋮⋮ 键本体（壳不再 draggable，＋ 键不可拖）', async () => {
+    const host = await mountPageView();
+    fireEvent.mouseOver(host.querySelector('[data-id="blk-1"]')!);
+    const handle = await screen.findByRole('button', { name: '块操作' });
+    const add = screen.getByRole('button', { name: '新增块' });
+    expect(handle.getAttribute('draggable')).toBe('true');
+    expect(add.getAttribute('draggable')).toBeNull();
+    expect(host.querySelector('.pv-handle')?.getAttribute('draggable') ?? null).toBeNull();
+  });
+
   it('把第 2 块拖到第 1 块之前：DOM 顺序变化 + reorder Op 落库', async () => {
     const host = await mountPageView();
 
     // hover 第二块 → 手柄归属 blk-2 → 从手柄发起拖拽
     fireEvent.mouseOver(host.querySelector('[data-id="blk-2"]')!);
     const handleEl = await screen.findByRole('button', { name: '块操作' });
-    fireEvent.dragStart(handleEl.closest('.pv-handle')!);
+    // T60-01 ①：dragstart 从 ⋮⋮ 键本体发起（壳不再 draggable；HTML5 drag 在
+    // 「壳 draggable + 指针落 button」下不发起）——断言语义不变：拖后 DOM 序变 + reorder 落库
+    fireEvent.dragStart(handleEl);
 
     const blk1 = host.querySelector('[data-id="blk-1"]')!;
     fireEvent.dragOver(blk1);

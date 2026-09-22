@@ -95,6 +95,7 @@ export const enUS = {
     wiki: 'Wiki',
     emptyWiki: 'No wiki pages yet',
     renameAria: 'Rename page',
+    rename: 'Rename',
     pageActions: 'Page actions',
     trash: 'Trash',
   },

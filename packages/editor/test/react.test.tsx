@@ -178,6 +178,66 @@ describe('BlockControls（手柄 + 菜单）', () => {
     render(<BlockControls blockId={null} onAction={() => {}} />);
     expect((screen.getByRole('button', { name: '块操作' }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  // T60-01 ①：视觉序对调（⋮⋮ 在左、＋ 在右）；行为不换
+  it('簇内 DOM 序 = ⋮⋮ 在前 / ＋ 在后；两键行为不换', () => {
+    const onInsert = vi.fn();
+    const { container } = render(
+      <BlockControls blockId="blk-1" onAction={() => {}} onInsert={onInsert} visible />,
+    );
+    const buttons = [...container.querySelectorAll('.sc-blockcontrol button')];
+    expect(buttons.map((b) => b.className)).toEqual([
+      'sc-blockcontrol__handle',
+      'sc-blockcontrol__add',
+    ]);
+    // 行为不换：⋮⋮ = 块操作菜单
+    fireEvent.click(buttons[0] as HTMLButtonElement);
+    expect(screen.getByRole('menu', { name: '块操作菜单' })).not.toBeNull();
+    fireEvent.keyDown(screen.getByRole('menu', { name: '块操作菜单' }), { key: 'Escape' });
+    // 行为不换：＋ = 在下方插块
+    fireEvent.click(screen.getByRole('button', { name: '新增块' }));
+    expect(onInsert).toHaveBeenCalledTimes(1);
+  });
+
+  // T60-01 ①：拖拽透传口（缺省零变化；注入后只落 ⋮⋮，＋ 永不可拖）
+  it('dragHandleProps：缺省不注入；注入后 draggable/onDragStart 只落 ⋮⋮ 键', () => {
+    const onDragStart = vi.fn();
+    const { container, rerender } = render(
+      <BlockControls blockId="blk-1" onAction={() => {}} onInsert={() => {}} />,
+    );
+    expect(container.querySelector('.sc-blockcontrol__handle')?.getAttribute('draggable')).toBeNull();
+    expect(container.querySelector('.sc-blockcontrol__add')?.getAttribute('draggable')).toBeNull();
+
+    rerender(
+      <BlockControls
+        blockId="blk-1"
+        onAction={() => {}}
+        onInsert={() => {}}
+        dragHandleProps={{ draggable: true, onDragStart }}
+      />,
+    );
+    const handle = container.querySelector('.sc-blockcontrol__handle') as HTMLButtonElement;
+    expect(handle.getAttribute('draggable')).toBe('true');
+    expect(container.querySelector('.sc-blockcontrol__add')?.getAttribute('draggable')).toBeNull();
+    fireEvent.dragStart(handle);
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+  });
+
+  // T60-01 ③：自实现菜单的点空白关闭（与 ui/Menu 同一「点外部关」语义）
+  it('点空白（簇外 pointerdown）关菜单；簇内 pointerdown 不算 outside', () => {
+    const onOpenChange = vi.fn();
+    render(<BlockControls blockId="blk-1" onAction={() => {}} onOpenChange={onOpenChange} />);
+    fireEvent.click(screen.getByRole('button', { name: '块操作' }));
+    expect(screen.getByRole('menu', { name: '块操作菜单' })).not.toBeNull();
+
+    // 同一事件族里按 ⋮⋮ 钮本体（簇内）→ 非 outside，菜单不被同事件关掉
+    fireEvent.pointerDown(screen.getByRole('button', { name: '块操作' }));
+    expect(screen.queryByRole('menu', { name: '块操作菜单' })).not.toBeNull();
+
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('menu', { name: '块操作菜单' })).toBeNull();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+  });
 });
 
 describe('SelectionToolbar（定位纯函数 + 空态）', () => {

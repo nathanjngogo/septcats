@@ -11,7 +11,7 @@
  * 视觉零新增：复用 App.css 的 app-side* 与 app-nav-* 类及 var(--sc-*) token，
  * 图标只从 @septcats/ui 出口取。
  */
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import type {
   ComponentProps,
   CSSProperties,
@@ -21,6 +21,7 @@ import type {
 } from 'react';
 import type { PageNode } from '@septcats/editor';
 import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
+import type { MenuEntry } from '@septcats/ui';
 import type { PageNodeView } from '../../../types/window';
 import { aliveNodes, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
 import { registerFlushTask } from '../state/flushRegistry';
@@ -140,6 +141,8 @@ interface NavRowProps {
   onClick?: (event: ReactMouseEvent<HTMLDivElement>) => void;
   onCaretClick?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
   onDoubleClick?: (event: ReactMouseEvent<HTMLDivElement>) => void;
+  /** T60-01 ④：右键行 → 打开行菜单（位置=光标处；子控件命中由回调内自行放行）。 */
+  onContextMenu?: (event: ReactMouseEvent<HTMLDivElement>) => void;
 }
 
 function NavRow({
@@ -158,6 +161,7 @@ function NavRow({
   onClick,
   onCaretClick,
   onDoubleClick,
+  onContextMenu,
 }: NavRowProps) {
   const rowClass = head
     ? 'app-nav-row app-nav-row--head'
@@ -171,6 +175,7 @@ function NavRow({
       style={indentStyle(depth)}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={onContextMenu}
     >
       <span className={open ? 'app-nav-tw app-nav-tw--open' : 'app-nav-tw'} onClick={onCaretClick}>
         {branch ? <Icon icon={CaretRight} size="sm" /> : null}
@@ -201,12 +206,55 @@ export function SidebarTree() {
   const [tplOpen, setTplOpen] = useState(false);
   // T24-01 §0.A：页面行「⋯」菜单展开态（本地视图态；每树同时至多一个）
   const [rowMenuId, setRowMenuId] = useState<string | null>(null);
+  /**
+   * T60-01 ④：右键菜单的落点（光标处，视口坐标）。null = 本行菜单由 ⋯ 钮开（贴钮定位）；
+   * 非 null = 由右键开（fixed 定位到光标，clamp 进视口）。**两者共用 rowMenuId 与同一份
+   * items/onSelect**（不双份实现）。
+   */
+  const [rowMenuAt, setRowMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const ctxHostRef = useRef<HTMLSpanElement | null>(null);
   // T41-01：页面级「全宽 / 固定宽度」集合（行菜单项显示当前页状态并切换）
   const fullWidthPages = usePageWidth((state) => state.full);
   const templates = useTemplates((state) => state.templates);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false, wiki: true });
 
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
+
+  /** 关闭行菜单（⋯/右键共用出口；Escape、点空白、选中条目都走这里）。 */
+  const closeRowMenu = (): void => {
+    setRowMenuId(null);
+    setRowMenuAt(null);
+  };
+
+  /** 右键菜单宿主节点（存活页才有菜单可弹）。 */
+  const ctxNode = useMemo(
+    () => (rowMenuAt !== null && rowMenuId !== null ? byId.get(rowMenuId) ?? null : null),
+    [rowMenuAt, rowMenuId, byId],
+  );
+
+  /**
+   * T60-01 ④：右键菜单 clamp 进视口——渲染后实测宿主盒尺寸，超出右/下缘时把
+   * left/top 压回（留 8px 余量）；收敛后再写一次 state（第二次比较相等 → 不再 set）。
+   * jsdom 无布局（rect 全 0）时退化为纯 clamp，不会死循环。
+   */
+  useLayoutEffect(() => {
+    if (rowMenuAt === null) {
+      return;
+    }
+    const host = ctxHostRef.current;
+    if (host === null) {
+      return;
+    }
+    const rect = host.getBoundingClientRect();
+    const margin = 8;
+    const maxX = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxY = Math.max(margin, window.innerHeight - rect.height - margin);
+    const x = Math.min(Math.max(rowMenuAt.x, margin), maxX);
+    const y = Math.min(Math.max(rowMenuAt.y, margin), maxY);
+    if (x !== rowMenuAt.x || y !== rowMenuAt.y) {
+      setRowMenuAt({ x, y });
+    }
+  }, [rowMenuAt]);
 
   /** 收藏/最近 → 存活页节点解析（找不到/已删除的 id 跳过）。 */
   const resolveGroup = (ids: readonly string[]): PageNodeView[] =>
@@ -326,18 +374,12 @@ export function SidebarTree() {
   };
 
   /**
-   * 页面行（普通分区与 Wiki 分区共用，T42-01 抽取）：
-   * ⋯ 菜单 = 全宽开关 + 承载类型转换（wiki 页显示「转为普通页」，普通页显示
-   * 「转为 Wiki」，多维数据页无此项）+ 删除。
+   * 行菜单的**单一构造**（T60-01 ④）：⋯ 钮与右键两个入口共用同一份 items 与 onSelect，
+   * 不双份实现。返回 Menu 组件所需的 items + onSelect。
    */
-  const renderPageRow = (
+  const pageRowMenu = (
     node: PageNodeView,
-    depth: number,
-    testIdPrefix: string,
-    rootIcon: ComponentProps<typeof Icon>['icon'],
-  ): ReactNode => {
-    const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
-    const isEditing = editingId === node.id;
+  ): { items: MenuEntry[]; onSelect: (action: string) => void } => {
     const type = pageTypeOf(node);
     const convertItem =
       type === 'wiki'
@@ -356,12 +398,61 @@ export function SidebarTree() {
               ? `\u2713 ${t('pageWidth.full')}`
               : t('pageWidth.fixed'),
           };
+    return {
+      items: [
+        // T60-01 ④（PRD-R13 ⑤）：「重命名」复用既有行内编辑态（双击行用的 beginRename），
+        // 不新造 state；位置在删除之前、非 danger。
+        { id: 'rename', label: t('sidebar.rename') },
+        ...(fullWidthItem !== null ? [fullWidthItem] : []),
+        ...(convertItem !== null ? [convertItem] : []),
+        { id: 'delete', label: t('common.delete'), danger: true },
+      ],
+      onSelect: (action: string): void => {
+        closeRowMenu();
+        if (action === 'rename') {
+          pagesActions.beginRename(node.id);
+        }
+        if (action === 'fullWidth') {
+          pageWidthActions.toggle(node.id);
+        }
+        if (action === 'convertToWiki') {
+          void pagesActions.convertPage(node.id, 'wiki');
+        }
+        if (action === 'convertToPage') {
+          void pagesActions.convertPage(node.id, 'page');
+        }
+        if (action === 'delete') {
+          pagesActions.requestDeletePage(node.id);
+        }
+      },
+    };
+  };
+
+  /**
+   * 页面行（普通分区与 Wiki 分区共用，T42-01 抽取）：
+   * ⋯ 菜单 = 重命名 + 全宽开关 + 承载类型转换（wiki 页显示「转为普通页」，普通页显示
+   * 「转为 Wiki」，多维数据页无此项）+ 删除。
+   */
+  const renderPageRow = (
+    node: PageNodeView,
+    depth: number,
+    testIdPrefix: string,
+    rootIcon: ComponentProps<typeof Icon>['icon'],
+  ): ReactNode => {
+    const childCount = node.childIds.filter((childId) => byId.get(childId)?.alive === 1).length;
+    const isEditing = editingId === node.id;
+    const type = pageTypeOf(node);
+    const menu = pageRowMenu(node);
     return (
       <NavRow
         key={node.id}
         testId={`${testIdPrefix}-${node.id}`}
         label={node.title}
-        icon={depth === 0 ? rootIcon : FileText}
+        /* T60-01 ②（PRD-R13 ②）：普通页行一律 FileText（含树根：树根原走 rootIcon=
+           FolderSimple → 「新建页面」出来的行是文件夹图标，老板点名要文件图标）；
+           wiki/database 行保持现状（depth>0 仍 FileText、wiki 根仍 Note），
+           Wiki 分区头图标不在本函数（:500 处 Note）不动。 */
+        icon={type === 'page' ? FileText : depth === 0 ? rootIcon : FileText}
         depth={depth}
         active={selectedId === node.id}
         branch={childCount > 0}
@@ -373,6 +464,16 @@ export function SidebarTree() {
           pagesActions.toggleExpand(node.id);
         }}
         onDoubleClick={() => pagesActions.beginRename(node.id)}
+        onContextMenu={(event) => {
+          const target = event.target;
+          // 子控件（重命名输入框 / ⋯ 钮 / 折叠三角）命中 → 放行，不抢它们各自的语义
+          if (target instanceof Element && target.closest('input, .app-nav-more-wrap, .app-nav-tw') !== null) {
+            return;
+          }
+          event.preventDefault();
+          setRowMenuId(node.id);
+          setRowMenuAt({ x: event.clientX, y: event.clientY });
+        }}
         suffix={
           // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
           // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）
@@ -393,38 +494,18 @@ export function SidebarTree() {
               aria-expanded={rowMenuId === node.id}
               onClick={(event) => {
                 event.stopPropagation();
+                // ⋯ 钮 = 贴钮定位（rowMenuAt=null），与右键的「光标处」互斥
+                setRowMenuAt(null);
                 setRowMenuId((current) => (current === node.id ? null : node.id));
               }}
             />
-            {rowMenuId === node.id ? (
+            {rowMenuId === node.id && rowMenuAt === null ? (
               <Menu
                 className="app-nav-menu"
                 label={t('sidebar.pageActions')}
-                items={[
-                  // T41-01：可切换、显示当前状态、有勾选态（✓ = 当前页为全宽）；
-                  // T41-01-1：DB 页为 null（不 spread），菜单不含全宽项
-                  ...(fullWidthItem !== null ? [fullWidthItem] : []),
-                  ...(convertItem !== null ? [convertItem] : []),
-                  { id: 'delete', label: t('common.delete'), danger: true },
-                ]}
-                onSelect={(action) => {
-                  setRowMenuId(null);
-                  if (action === 'fullWidth') {
-                    pageWidthActions.toggle(node.id);
-                  }
-                  if (action === 'convertToWiki') {
-                    void pagesActions.convertPage(node.id, 'wiki');
-                  }
-                  if (action === 'convertToPage') {
-                    void pagesActions.convertPage(node.id, 'page');
-                  }
-                  if (action === 'delete') {
-                    pagesActions.requestDeletePage(node.id);
-                  }
-                }}
-                onDismiss={() => {
-                  setRowMenuId(null);
-                }}
+                items={menu.items}
+                onSelect={menu.onSelect}
+                onDismiss={closeRowMenu}
               />
             ) : null}
           </span>
@@ -432,6 +513,9 @@ export function SidebarTree() {
       />
     );
   };
+
+  /** 右键菜单配置（仅在右键态存在存活目标页时构造一次）。 */
+  const ctxMenu = ctxNode !== null && ctxNode.alive === 1 ? pageRowMenu(ctxNode) : null;
 
   return (
     <div className="app-side">
@@ -528,6 +612,28 @@ export function SidebarTree() {
         {t('sidebar.trash')}
         {trashCount > 0 ? <span className="app-nav-count">{trashCount}</span> : null}
       </div>
+      {/* T60-01 ④：右键行菜单（与 ⋯ 钮同一份 items/onSelect，见 pageRowMenu）。
+          宿主 fixed 定位到光标（clamp 进视口，见上面的 useLayoutEffect）；
+          样式只借用 .sc-menu 自身（不再叠 .app-nav-menu 的 absolute/right/top，
+          否则会被二次偏移）；z-index 走既有 dropdown token。 */}
+      {ctxMenu !== null && rowMenuAt !== null ? (
+        <span
+          ref={ctxHostRef}
+          style={{
+            position: 'fixed',
+            left: `${String(rowMenuAt.x)}px`,
+            top: `${String(rowMenuAt.y)}px`,
+            zIndex: 'var(--sc-z-dropdown)',
+          }}
+        >
+          <Menu
+            label={t('sidebar.pageActions')}
+            items={ctxMenu.items}
+            onSelect={ctxMenu.onSelect}
+            onDismiss={closeRowMenu}
+          />
+        </span>
+      ) : null}
     </div>
   );
 }

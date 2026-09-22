@@ -196,11 +196,48 @@ function describeError(error: unknown): string {
 
 let toastSeq = 0;
 
-/** 应用级 Toast 入口（pagesActions 与命令面板共用；队列上限 3 条）。 */
+/**
+ * T60-01 ⑤（PRD-R13 ⑦）：所有通知统一 3000ms 自动关闭。
+ * 口径：hover 不暂停（老板「所有通知维持 3 秒」）；每条各自独立计时；
+ * 手动关（关闭钮）/被队列上限 -3 挤掉时清掉对应定时器（无泄漏、无「关了又弹」）。
+ */
+export const TOAST_AUTO_DISMISS_MS = 3000;
+
+/** id → 自动关闭定时器（唯一出口 pushToast 注册；dismiss/淘汰时清除）。 */
+const toastTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function clearToastTimer(id: string): void {
+  const timer = toastTimers.get(id);
+  if (timer !== undefined) {
+    clearTimeout(timer);
+    toastTimers.delete(id);
+  }
+}
+
+/** 出队单一入口（自动/手动/队列淘汰共用）。 */
+function removeToast(id: string): void {
+  clearToastTimer(id);
+  pagesStore.setState((state) => ({ ...state, toasts: state.toasts.filter((toast) => toast.id !== id) }));
+}
+
+/** 应用级 Toast 入口（pagesActions 与命令面板共用；队列上限 3 条；3s 自动关闭）。 */
 export function pushToast(message: string, tone: ToastTone): void {
   toastSeq += 1;
   const item: ToastMessage = { id: `toast-${String(toastSeq)}`, message, tone };
-  pagesStore.setState((state) => ({ ...state, toasts: [...state.toasts, item].slice(-3) }));
+  pagesStore.setState((state) => {
+    const next = [...state.toasts, item];
+    // 超上限被挤掉的老条目：它的定时器一并清掉（不留下一次「静默 dismiss」）
+    for (const dropped of next.slice(0, Math.max(0, next.length - 3))) {
+      clearToastTimer(dropped.id);
+    }
+    return { ...state, toasts: next.slice(-3) };
+  });
+  toastTimers.set(
+    item.id,
+    setTimeout(() => {
+      removeToast(item.id);
+    }, TOAST_AUTO_DISMISS_MS),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -452,7 +489,7 @@ export const pagesActions = {
   },
 
   dismissToast(id: string): void {
-    pagesStore.setState((state) => ({ ...state, toasts: state.toasts.filter((toast) => toast.id !== id) }));
+    removeToast(id);
   },
 
   async createPage(parentId: string | null): Promise<void> {
