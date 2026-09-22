@@ -1,6 +1,6 @@
 {
   "name": "@septcats/desktop",
-  "version": "0.4.1-rc.3",
+  "version": "0.4.1-rc.4",
   "private": true,
   "description": "Septcats 桌面壳（Electron + React，electron-vite 三进程脚手架）",
   "author": "Septcats",
