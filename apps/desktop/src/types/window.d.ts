@@ -157,11 +157,18 @@ export interface SeptcatsAppMeta {
  * 一次编辑轮次 = 一批 Op（op_ledger + 物化 + FTS 同事务，计划书 §8.1）。
  * 错误经 Error.message 透传（E_MALFORMED / E_NO_WORKSPACE / E_INVARIANT）。
  */
+export interface BlocksListResult {
+  /** 编辑器 Block 形状（按 sort_key, id 升序）。锁页未解锁时为空数组。 */
+  readonly blocks: Block[];
+  /** 该页是否处于密码锁锁定态。 */
+  readonly locked: boolean;
+}
+
 export interface SeptcatsBlocksApi {
   /** 提交一批 Op（renderer EditSession 产出，原样透传），返回写入条数（同事务语义由 main 侧保证）。 */
   commit(input: { ops: Op[] }): Promise<number>;
-  /** 读一页的存活块（编辑器 Block 形状，按 sort_key 升序）。 */
-  list(input: { pageId: string }): Promise<Block[]>;
+  /** 读一页的存活块；锁页未解锁返回 `{ locked: true, blocks: [] }`，已解锁返回明文块。 */
+  list(input: { pageId: string }): Promise<BlocksListResult>;
   /** 订阅块变更推送，返回退订函数（main 本期只保留通道名，不推送）。 */
   onChanged(listener: (payload: unknown) => void): () => void;
 }

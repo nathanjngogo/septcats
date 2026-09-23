@@ -29,6 +29,7 @@ import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
 import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
+import { LockGlyph } from '../components/LockGlyph';
 import { clampMenuRect } from './menuClamp';
 
 /** 行缩进：与既有假树 TreeRow 同式（app-nav-row 的 paddingLeft）。 */
@@ -225,6 +226,8 @@ export function SidebarTree() {
   // T41-01：页面级「全宽 / 固定宽度」集合（行菜单项显示当前页状态并切换）
   const fullWidthPages = usePageWidth((state) => state.full);
   const templates = useTemplates((state) => state.templates);
+  // T67-01-B2-01：已上锁页集合（侧栏锁 glyph + 菜单项口径）
+  const lockedIds = usePages((state) => state.lockedIds);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false, wiki: true });
 
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
@@ -401,6 +404,15 @@ export function SidebarTree() {
           testId={`side-${key}-item-${String(index)}`}
           label={node.title}
           icon={FileText}
+          /* T67-01-B2-01 范围1：收藏/最近里的已锁页同样出锁 glyph。 */
+          iconNode={
+            lockedIds.has(node.id) ? (
+              <span className="app-nav-lock">
+                <Icon icon={FileText} size="sm" className="app-nav-ic" />
+                <LockGlyph size={11} className="app-nav-lock-glyph" />
+              </span>
+            ) : undefined
+          }
           depth={1}
           active={selectedId === node.id}
           onClick={() => pagesActions.selectPage(node.id)}
@@ -446,6 +458,14 @@ export function SidebarTree() {
               ? `\u2713 ${t('pageWidth.full')}`
               : t('pageWidth.fixed'),
           };
+    // T67-01-B2-01 范围1：已上锁页 → 修改口令 / 移除密码锁；未锁页 → 添加密码锁
+    const locked = lockedIds.has(node.id);
+    const lockItems: MenuEntry[] = locked
+      ? [
+          { id: 'changeLock', label: t('lock.menuChangePass') },
+          { id: 'removeLock', label: t('lock.menuRemoveLock') },
+        ]
+      : [{ id: 'addLock', label: t('lock.menuAddLock') }];
     return {
       items: [
         // T60-01 ④（PRD-R13 ⑤）：「重命名」复用既有行内编辑态（双击行用的 beginRename），
@@ -460,6 +480,8 @@ export function SidebarTree() {
         { id: 'moveTo', label: t('sidebar.moveTo') },
         ...(fullWidthItem !== null ? [fullWidthItem] : []),
         ...convertItems,
+        // T67-01-B2-01：锁操作项（加锁 / 修改 / 移除）置于转换项之后、删除之前
+        ...lockItems,
         { id: 'delete', label: t('common.delete'), danger: true },
       ],
       onSelect: (action: string): void => {
@@ -491,6 +513,16 @@ export function SidebarTree() {
         // T64-01：普通页（有子页）转为文件夹
         if (action === 'convertToFolder') {
           void pagesActions.convertPage(node.id, 'folder');
+        }
+        // T67-01-B2-01 范围1：锁操作 → 统一经 lockDialog 弹层（set/change/remove）
+        if (action === 'addLock') {
+          pagesActions.openLockDialog(node.id, 'set');
+        }
+        if (action === 'changeLock') {
+          pagesActions.openLockDialog(node.id, 'change');
+        }
+        if (action === 'removeLock') {
+          pagesActions.openLockDialog(node.id, 'remove');
         }
         if (action === 'delete') {
           pagesActions.requestDeletePage(node.id);
@@ -578,6 +610,29 @@ export function SidebarTree() {
               : depth === 0
                 ? rootIcon
                 : FileText
+        }
+        /* T67-01-B2-01 范围1：已锁页行前出像素锁 glyph（与文件/文件夹图标并列）。 */
+        iconNode={
+          lockedIds.has(node.id) ? (
+            <span className="app-nav-lock">
+              <Icon
+                icon={
+                  type === 'folder'
+                    ? FolderSimple
+                    : type === 'page'
+                      ? folderIds.has(node.id)
+                        ? FolderSimple
+                        : FileText
+                      : depth === 0
+                        ? rootIcon
+                        : FileText
+                }
+                size="sm"
+                className="app-nav-ic"
+              />
+              <LockGlyph size={11} className="app-nav-lock-glyph" />
+            </span>
+          ) : undefined
         }
         depth={depth}
         active={selectedId === node.id}

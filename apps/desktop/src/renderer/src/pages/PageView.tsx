@@ -59,6 +59,8 @@ import { BacklinksPanel } from './BacklinksPanel';
 import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
+import { PageLockScreen } from './PageLockScreen';
+import type { LockStatusView } from '../lockStatus';
 import './PageView.css';
 
 /**
@@ -189,6 +191,11 @@ export function PageView({ page }: PageViewProps) {
   const reloadBlocks = useCallback(() => setReloadNonce((nonce) => nonce + 1), []);
 
   const [editor, setEditor] = useState<EditorHandle | null>(null);
+  // T67-01-B2-01 范围2/3：锁态（驱动锁屏卡 + 编辑器彻底卸载）。null = 尚未探明。
+  const [lockStatus, setLockStatus] = useState<LockStatusView | null>(null);
+  // T67-01-B2-01：锁态版本号（setPass/remove 后 bump）→ 立即重探当前打开页锁态；
+  // 声明须早于下方 getStatus effect 的依赖引用。
+  const lockRev = usePages((state) => state.lockRev);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   /**
    * 块手柄归属（T32-01 §1.1）：hover 即出现（不要求先选中）。
@@ -255,21 +262,83 @@ export function PageView({ page }: PageViewProps) {
     });
   }, []);
 
-  // 按选中页加载 blocks（T21-01 §0.4）；换页/卸载前冲掉旧页在途编辑轮次（commit
-  // 闭包捕获的是旧页 pageId，落库目标正确）
+  // T67-01-B2-01 范围2/3：按选中页探明锁态（驱动锁屏卡；解锁后由 handleUnlock 回写）。
+  // 与 blocks 加载解耦：锁态优先判定，避免锁屏态仍请求/挂载编辑器（竞态根修）。
   useEffect(() => {
     if (activePageId === null) {
+      setLockStatus(null);
+      return;
+    }
+    // 锁服务未注入（降级/测试未 stub）→ 视为未锁，照常加载编辑器（与无锁态行为一致，
+    // 不 crash；真实 Electron 构建 preload 必注入 lock，此分支仅在非生产环境生效）。
+    const lockApi = window.septcats?.lock;
+    if (lockApi === undefined) {
+      const safe: LockStatusView = { locked: false, failures: 0, lockedUntil: null };
+      setLockStatus(safe);
+      pagesActions.setPageLocked(activePageId, false);
+      return;
+    }
+    let cancelled = false;
+    lockApi
+      .getStatus({ pageId: activePageId })
+      .then((status) => {
+        if (cancelled) {
+          return;
+        }
+        setLockStatus(status);
+        pagesActions.setPageLocked(activePageId, status.locked);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        const safe: LockStatusView = { locked: false, failures: 0, lockedUntil: null };
+        setLockStatus(safe);
+        pagesActions.setPageLocked(activePageId, false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePageId, lockRev]);
+
+  const isLocked = lockStatus?.locked === true;
+
+  // 解锁回调（锁屏卡 verify/recover 成功后）：解除 locked 并重新加载 blocks。
+  const handleUnlock = useCallback(
+    (status: LockStatusView): void => {
+      setLockStatus(status);
+      pagesActions.setPageLocked(activePageId ?? '', status.locked);
+      setReloadNonce((nonce) => nonce + 1);
+    },
+    [activePageId],
+  );
+
+  // 按选中页加载 blocks（T21-01 §0.4）；换页/卸载前冲掉旧页在途编辑轮次（commit
+  // 闭包捕获的是旧页 pageId，落库目标正确）。锁态未探明（lockStatus === null）或已锁页
+  // 不请求 blocks——锁态优先判定，杜绝「明文块删后 flush 落新明文块」的锁定期竞态（B1 真机）。
+  // 关键：必须等 getStatus 探明（lockStatus 非 null）才决定加载，否则挂载瞬间 lockStatus
+  // 为 null 会先触发一次 blocks:list（已锁页也会被请求，违背「锁屏态不请求」）。
+  // 依赖含 lockStatus：探明后才重跑本 effect，已锁则继续跳过、未锁则加载编辑器。
+  useEffect(() => {
+    if (activePageId === null || lockStatus === null || isLocked) {
       return;
     }
     let cancelled = false;
     setDocState({ status: 'loading' });
     window.septcats.blocks
       .list({ pageId: activePageId })
-      .then((blocks) => {
+      .then((result) => {
         if (cancelled) {
           return;
         }
-        const doc: BlockDoc = { pageId: activePageId, blocks };
+        // 防御：list 返回 locked（getStatus 与 list 竞态）→ 回退锁屏，不挂载编辑器。
+        if (result.locked) {
+          const safe: LockStatusView = { locked: true, failures: 0, lockedUntil: null };
+          setLockStatus(safe);
+          pagesActions.setPageLocked(activePageId, true);
+          return;
+        }
+        const doc: BlockDoc = { pageId: activePageId, blocks: result.blocks };
         docRef.current = doc;
         setDocState({ status: 'ready', doc });
       })
@@ -290,7 +359,7 @@ export function PageView({ page }: PageViewProps) {
         void current.flush().catch(() => undefined);
       }
     };
-  }, [activePageId, reloadNonce]);
+  }, [activePageId, reloadNonce, lockStatus]);
 
   // session 跟随内容态重建（EditSession 的 baseline 只能在构造时给定）
   useEffect(() => {
@@ -1124,6 +1193,12 @@ export function PageView({ page }: PageViewProps) {
         <div className="pv-empty">{t('editor.emptyPage')}</div>
       </div>
     );
+  }
+
+  // T67-01-B2-01 范围2：锁屏态——编辑器彻底卸载，渲染锁屏卡替代 .pv-root 内容
+  // （不 mount ProseMirror、不请求 blocks，杜绝锁定期 flush 竞态根因）。
+  if (isLocked) {
+    return <PageLockScreen pageId={activePage.id} title={activePage.title} onUnlock={handleUnlock} />;
   }
 
   // T42-01：承载判定统一走真树注解——database 页（含重开/重载后的库页，T40-01-2

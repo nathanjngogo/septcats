@@ -77,6 +77,9 @@ function resetStore(): void {
     recentIds: [],
     toasts: [],
     deleteConfirmId: null,
+    lockedIds: new Set<string>(),
+    lockDialog: null,
+    lockRev: 0,
     tabs: [],
   };
   pagesStore.setState(() => base);

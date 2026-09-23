@@ -25,6 +25,7 @@ import {
 import { CHANNEL_SEARCH_QUERY } from '../shared/ipc';
 import type { AllData, BatchData, GetData, RunData } from '../db/rpc';
 import type { StatementExecutor } from './pages';
+import type { LockService } from './lock';
 
 // ---------------------------------------------------------------------------
 // 错误（与 PagesApiError 同形：{ code, message }）
@@ -188,10 +189,16 @@ export interface SearchService {
 
 export interface SearchServiceOptions {
   readonly executor: StatementExecutor;
+  /**
+   * T67-01-B2-01 范围3：注入锁服务以标记锁页命中（标题可命中、正文永不出）。
+   * 未注入（null/缺省）时命中 `locked` 一律 false（legacy/测试兼容）。
+   */
+  readonly lock?: LockService | null;
 }
 
 export function createSearchService(options: SearchServiceOptions): SearchService {
   const { executor } = options;
+  const lockService = options.lock ?? null;
   let pageMapCache: PageMapCache | null = null;
 
   async function pageMap(workspaceId: string): Promise<ReadonlyMap<string, PageEntry>> {
@@ -259,6 +266,7 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         // §1 排序：title 命中加权 ×0.6（bm25 越小越好，加权后更小、排更前）
         score: titleHit ? rawScore * 0.6 : rawScore,
         via: 'fts',
+        locked: false,
         updatedAt: entry?.updatedAt ?? rowNumber(row, 'updated_at'),
       });
     }
@@ -303,6 +311,7 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         snippet: rowString(row, 'snippet'),
         score: titleHit ? rawScore * 0.6 : rawScore,
         via: 'like',
+        locked: false,
         updatedAt: entry?.updatedAt ?? rowNumber(row, 'updated_at'),
       });
     }
@@ -343,6 +352,7 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         snippet: snippetFromCandidates(contentCandidates, query),
         score: SEARCH_LIKE_BASE_SCORE,
         via: 'like',
+        locked: false,
         updatedAt: rowNumber(row, 'updated_at'),
       });
     }
@@ -378,6 +388,7 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         snippet: snippetFromCandidates([name], query),
         score: SEARCH_LIKE_BASE_SCORE,
         via: 'like',
+        locked: false,
         updatedAt: rowNumber(row, 'updated_at'),
       });
     }
@@ -417,6 +428,7 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         snippet: snippetFromCandidates(candidates, query),
         score: SEARCH_LIKE_BASE_SCORE,
         via: 'like',
+        locked: false,
         updatedAt: rowNumber(row, 'updated_at'),
       });
     }
@@ -454,7 +466,33 @@ export function createSearchService(options: SearchServiceOptions): SearchServic
         })
         .slice(0, limit);
 
-      return { hits: merged, tookMs: Date.now() - startedAt };
+      // T67-01-B2-01 范围3：标记锁页命中。仅对出现的 pageId 各查一次 getStatus
+      // （结果数受 limit 钳制，与 1 万页规模无关），避免逐行 N+1；block/collection/
+      // record 命中按其所属页（pageId）同上判定。会话已解锁的页视为未锁（与打开行为一致）。
+      let lockedSet: Set<string> | null = null;
+      if (lockService !== null) {
+        const pageIds = new Set<string>();
+        for (const hit of merged) {
+          if (hit.pageId !== null) {
+            pageIds.add(hit.pageId);
+          }
+        }
+        lockedSet = new Set<string>();
+        await Promise.all(
+          [...pageIds].map(async (pageId) => {
+            const status = await lockService.getStatus(pageId);
+            if (status.locked) {
+              lockedSet?.add(pageId);
+            }
+          }),
+        );
+      }
+      const hits = merged.map((hit) => ({
+        ...hit,
+        locked: lockedSet !== null && hit.pageId !== null && lockedSet.has(hit.pageId),
+      }));
+
+      return { hits, tookMs: Date.now() - startedAt };
     },
   };
 }

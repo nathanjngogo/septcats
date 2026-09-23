@@ -145,6 +145,13 @@
   flex: none;
 }
 
+/* T67-01-B2-01 范围3：结果行锁 glyph（currentColor → 随标题色）。2px 间隙豁免 no-magic。 */
+.search-res-lock {
+  color: var(--sc-color-ink-faint);
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
 .search-res-path {
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-faint);

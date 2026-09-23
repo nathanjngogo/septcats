@@ -27,6 +27,7 @@ const HITS: SearchHit[] = [
     snippet: '复核 LZ [核反冲] 效率曲线的统计误差来源',
     score: -1.2,
     via: 'fts',
+    locked: true,
     updatedAt: 1,
   },
   {
@@ -38,6 +39,7 @@ const HITS: SearchHit[] = [
     snippet: '导出字段：live-time / [核反冲] 候选事例数',
     score: 1,
     via: 'like',
+    locked: false,
     updatedAt: 2,
   },
 ];

@@ -288,7 +288,7 @@ function installConvertBridge(): void {
       return { pageId: DB_PAGE_ID, collectionId: 'col-db-new' };
     }),
     dbLoad: vi.fn(async () => ({ collection: DB_COLLECTION, records: [] })),
-    blocksList: vi.fn(async () => []),
+    blocksList: vi.fn(async () => ({ locked: false, blocks: [] })),
     templatesSave: vi.fn(async () => ({ id: 'tpl-new' })),
     tree: vi.fn(async () => nodesDb.map((node) => ({ ...node, childIds: [...node.childIds] }))),
   };

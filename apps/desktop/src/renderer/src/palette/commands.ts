@@ -108,6 +108,14 @@ export interface CommandDeps {
    * → 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
   setThemePalette?(id: PaletteId): void;
+   * T67-01-B2-01 范围4：加锁命令（仅当前选中且未锁页出现）。与 removeLock 互斥——
+   * App 按 lockedIds 二选一注入（未注入 = 无选中页，configurePaletteCommands 摘除）。
+   */
+  addLock?(): void;
+  /**
+   * T67-01-B2-01 范围4：移除锁命令（仅当前选中且已锁页出现）。与 addLock 互斥。
+   */
+  removeLock?(): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -241,6 +249,29 @@ export function themeSwitchDef(id: PaletteId): PaletteCommandDef {
     aliases: PALETTE_SWITCH_ALIASES[id],
   };
 }
+
+ * T67-01-B2-01 范围4：「添加页面密码锁」命令定义。**不在静态 COMMAND_DEFS 里**——
+ * 与 page.delete / page.toggleFullWidth 同走 deps 门（仅选中页且未锁时出现；
+ * configurePaletteCommands 在无选中页时摘除）。与 REMOVE_LOCK_DEF 互斥——App 按
+ * lockedIds 二选一注入，绝不两条同现。
+ */
+export const ADD_LOCK_DEF: PaletteCommandDef = {
+  id: 'page.addLock',
+  label: t('commands.page.addLock'),
+  hint: t('commandHints.page.addLock'),
+  aliases: ['tianjiashangma', 'shangma', 'tjsm', 'suo', 'add lock', 'lock page', 'set password'],
+};
+
+/**
+ * T67-01-B2-01 范围4：「移除页面密码锁」命令定义。**不在静态 COMMAND_DEFS 里**——
+ * 与 ADD_LOCK_DEF 互斥（仅选中页且已锁时出现）。
+ */
+export const REMOVE_LOCK_DEF: PaletteCommandDef = {
+  id: 'page.removeLock',
+  label: t('commands.page.removeLock'),
+  hint: t('commandHints.page.removeLock'),
+  aliases: ['yichushangma', 'jiesuo', 'ycsm', 'unlock page', 'remove lock', 'remove password'],
+};
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
 export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
@@ -387,6 +418,23 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
         },
       });
     }
+  // T67-01-B2-01 范围4：加锁/移除锁命令（与 addLock/removeLock deps 同门；二选一由
+  // App 按 lockedIds 决定注入哪条，无选中页时 configurePaletteCommands 整键摘除）。
+  if (deps.addLock !== undefined) {
+    commands.push({
+      ...ADD_LOCK_DEF,
+      label: t('commands.page.addLock'),
+      hint: t('commandHints.page.addLock'),
+      run: deps.addLock,
+    });
+  }
+  if (deps.removeLock !== undefined) {
+    commands.push({
+      ...REMOVE_LOCK_DEF,
+      label: t('commands.page.removeLock'),
+      hint: t('commandHints.page.removeLock'),
+      run: deps.removeLock,
+    });
   }
   return commands;
 }
@@ -404,5 +452,7 @@ export function configurePaletteCommands(deps: CommandDeps, hasSelection: boolea
   delete scoped.saveAsTemplate; // exactOptionalPropertyTypes：不能显式传 undefined，改整键删除
   delete scoped.deletePage;
   delete scoped.toggleFullWidth;
+  delete scoped.addLock; // T67-01-B2-01：无选中页 → 加锁/移除锁命令不出现（不抛错）
+  delete scoped.removeLock;
   return bindPaletteCommands(scoped);
 }

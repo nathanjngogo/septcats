@@ -87,7 +87,7 @@ function makeBridge(block: Block) {
   return {
     blocks: {
       commit: vi.fn().mockResolvedValue(0),
-      list: vi.fn().mockResolvedValue([block]),
+      list: vi.fn().mockResolvedValue({ locked: false, blocks: [block] }),
       onChanged: vi.fn().mockReturnValue(() => {}),
     },
     recent: {

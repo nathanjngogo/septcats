@@ -26,6 +26,7 @@ function hit(overrides: Partial<SearchHit> & Pick<SearchHit, 'id' | 'kind'>): Se
     snippet: '',
     score: 0,
     via: 'fts',
+    locked: false,
     updatedAt: 0,
     ...overrides,
   };

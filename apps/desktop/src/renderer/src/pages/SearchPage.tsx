@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { FileText, Icon, MagnifyingGlass, Note, X } from '@septcats/ui';
 import type { SearchHit } from '../../../shared/search';
 import { t } from '../i18n';
+import { LockGlyph } from '../components/LockGlyph';
 import { paletteActions, usePalette } from '../state/palette';
 import { pagesStore, usePages, type PagesState } from '../state/pages';
 import './SearchPage.css';
@@ -61,6 +62,7 @@ function ResultRow({ hit }: { hit: SearchHit }): ReactNode {
     <button type="button" className="search-res" onClick={() => paletteActions.openHit(hit)}>
       <h3>
         <Icon icon={isDb ? Note : FileText} size="sm" className="search-res-ic" />
+        {hit.locked ? <LockGlyph size={13} className="search-res-lock" aria-hidden="true" /> : null}
         {hit.title}
       </h3>
       {hit.path.length > 0 ? (

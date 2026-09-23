@@ -123,7 +123,7 @@ function installBridge(): void {
         return { collection: {}, records: [{ alive: 1 }, { alive: 1 }, { alive: 1 }, { alive: 0 }] };
       }),
     },
-    blocks: { list: vi.fn(async () => []), commit: vi.fn(async () => ({})) },
+    blocks: { list: vi.fn(async () => ({ locked: false, blocks: [] })), commit: vi.fn(async () => ({})) },
     search: { query: vi.fn(async () => ({ results: [] })), onTogglePalette: vi.fn(() => () => {}) },
     settings: {
       get: vi.fn(async (): Promise<AppSettings> => ({
