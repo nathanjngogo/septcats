@@ -160,11 +160,11 @@ const V2_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 const V2_READS = new Set(['page.listAll', 'page.listTrash', 'favorite.list', 'recent.list']);
 
 describe('v2 白名单（页面树/回收站/收藏/最近）', () => {
-  it('全部语句齐全且语法预算 < 60', () => {
+  it('全部语句齐全且语法预算 < 85', () => {
     for (const id of Object.keys(V2_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
-    expect(SQL_IDS.length).toBeLessThan(75);
+    expect(SQL_IDS.length).toBeLessThan(85);
     expect(SQL_IDS.length).toBeGreaterThanOrEqual(39);
   });
 
@@ -240,14 +240,14 @@ const IMPORT_SOURCE_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 };
 
 describe('v5 白名单（import_source）', () => {
-  it('三条语句齐全，预算同步（72 条含 v6 defer 开关、T20-01 <3 字兜底语句、T21-01 block.patch/setSort、T23-01 template.* 五条、T31-01 opLedger 对账两条与 T44-01 双链 link.*/links.* 六条，仍 < 75）', () => {
+  it('三条语句齐全，预算同步（79 条含 v6 defer 开关、T20-01 <3 字兜底语句、T21-01 block.patch/setSort、T23-01 template.* 五条、T31-01 opLedger 对账两条、T44-01 双链 link.*/links.* 六条，以及 T67-01 lock.*/lock_cipher.* 六条 + block.deleteByPage，仍 < 85）', () => {
     for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(72);
-    expect(SQL_IDS.length).toBeLessThan(75);
+    expect(SQL_IDS.length).toBe(79);
+    expect(SQL_IDS.length).toBeLessThan(85);
   });
 
   it('每条 happy 参数通过校验，kind 与读写语义一致（run/get）', () => {

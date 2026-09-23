@@ -51,6 +51,8 @@ const workspaceIdText = z.string().min(1).max(128);
 /** 设备本地用户键（favorite/recent 的 user_key；取 meta.device_id）。 */
 const userKeyText = z.string().min(1).max(128);
 const emptyParams = z.object({});
+/** 二进制列（kdf_salt / verifier / recovery_verifier / wrapped_key / block_cipher.blob）。Buffer 是 Uint8Array 子类，一并放行。 */
+const blobParam = z.instanceof(Uint8Array);
 
 // ---------------------------------------------------------------------------
 // 白名单
@@ -322,6 +324,75 @@ WHERE id = @id`,
       lamport_d: actorId,
       updated_at: nullableTimestamp,
     }),
+  },
+
+  // ---- lock (TASK-T67-01-B1-01 · 页面密码锁本地派生态) -------------------
+  // 全部 STRICT 表、白名单语句；blob 列走 blobParam（Uint8Array/Buffer）。
+  // 写路径由 main/lock.ts 复用既有 block.upsert / block.deleteByPage，不在此新增块变更语句。
+  'lock.get': {
+    kind: 'get',
+    sql: `SELECT * FROM page_lock WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'lock.upsert': {
+    kind: 'run',
+    sql: `INSERT INTO page_lock (page_id, kdf_salt, verifier, recovery_verifier, wrapped_key, failures, locked_until, updated_at)
+VALUES (@page_id, @kdf_salt, @verifier, @recovery_verifier, @wrapped_key, @failures, @locked_until, @updated_at)
+ON CONFLICT(page_id) DO UPDATE SET
+  kdf_salt = excluded.kdf_salt,
+  verifier = excluded.verifier,
+  recovery_verifier = excluded.recovery_verifier,
+  wrapped_key = excluded.wrapped_key,
+  failures = excluded.failures,
+  locked_until = excluded.locked_until,
+  updated_at = excluded.updated_at`,
+    params: z.object({
+      page_id: idText,
+      kdf_salt: blobParam,
+      verifier: blobParam,
+      recovery_verifier: blobParam,
+      wrapped_key: blobParam,
+      failures: z.number().int().min(0).default(0),
+      locked_until: z.number().int().nonnegative().nullable().default(null),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'lock.delete': {
+    kind: 'run',
+    sql: `DELETE FROM page_lock WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'lock_cipher.get': {
+    kind: 'get',
+    sql: `SELECT blob, format, updated_at FROM block_cipher WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'lock_cipher.upsert': {
+    kind: 'run',
+    sql: `INSERT INTO block_cipher (page_id, blob, format, updated_at)
+VALUES (@page_id, @blob, @format, @updated_at)
+ON CONFLICT(page_id) DO UPDATE SET
+  blob = excluded.blob,
+  format = excluded.format,
+  updated_at = excluded.updated_at`,
+    params: z.object({
+      page_id: idText,
+      blob: blobParam,
+      format: z.number().int().min(1).default(1),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'lock_cipher.delete': {
+    kind: 'run',
+    sql: `DELETE FROM block_cipher WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  // setPass 时硬删该页明文块行（FTS 触发器 trg_block_fts_ad 随之清 page_block_fts）。
+  // 注意：硬删绕开 op 账本重放——已知限制（见报告 D3），B2 接线应使写路径经 commitOps。
+  'block.deleteByPage': {
+    kind: 'run',
+    sql: `DELETE FROM block WHERE page_id = @page_id AND alive = 1`,
+    params: z.object({ page_id: idText }),
   },
 
   // ---- collection ---------------------------------------------------------

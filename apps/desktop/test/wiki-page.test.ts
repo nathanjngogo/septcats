@@ -13,7 +13,7 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 import type { ActorId, Op } from '@septcats/core';
 import type { AllData, BatchData, GetData, MigrateData, RunData } from '../src/db/rpc';
 import type { DbServerCore } from '../src/db/server';
-import { MIGRATIONS, runMigrations } from '../src/db/migrations';
+import { LATEST_SCHEMA_VERSION, MIGRATIONS, runMigrations } from '../src/db/migrations';
 import {
   createDbViewService,
   DbViewApiError,
@@ -152,7 +152,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
     h.core.dispose();
     const core = makeCore(ctor, temp.path);
     const migrated = await requestOk<MigrateData>(core, { id: 'migrate-reopen', t: 'migrate' });
-    expect(migrated.to).toBe(9); // T44-01：v9-page-link-index 起逐次顺延
+    expect(migrated.to).toBe(LATEST_SCHEMA_VERSION); // DEVIATION D2：随动参数化（v10 起末版=10）
     h = buildHarness(core);
   }
 
@@ -337,7 +337,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
       try {
         const migrated = await requestOk<MigrateData>(core, { id: 'migrate-legacy', t: 'migrate' });
         expect(migrated.from).toBe(7);
-        expect(migrated.to).toBe(9); // 迁移目标随 LATEST_SCHEMA_VERSION 顺延（v9）
+        expect(migrated.to).toBe(LATEST_SCHEMA_VERSION); // DEVIATION D2：随动参数化（v10 起末版=10）
 
         const executor = coreExecutor(core);
         // ③ 存量行（迁移前插入）默认 page_type='page'

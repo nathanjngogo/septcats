@@ -25,6 +25,7 @@ import {
   type TreeContext,
 } from '@septcats/editor';
 import { commitOps } from './commit';
+import { purgeLockForPage } from './lock';
 import type { AllData, BatchData, DbBatchStatement, GetData, RunData } from '../db/rpc';
 
 /** 服务工作所需的语句执行能力（`DbHandle` 结构上满足；测试注入 DbServerCore 适配器）。 */
@@ -663,6 +664,8 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         return { deleted: 0 };
       }
       await commitOps(executor, ops, { workspaceId });
+      // T67-01-B1-01 §4：锁页进回收站 → 连带清锁行与密文（防孤儿密文）
+      await purgeLockForPage(executor, input.id);
       return { deleted: ops.length };
     },
 
@@ -708,6 +711,10 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         return { purged: 0 };
       }
       await commitOps(executor, ops, { workspaceId, deletionMode: 'purge' });
+      // T67-01-B1-01 §4：彻底删除 → 一并清锁行与密文
+      for (const targetId of targets) {
+        await purgeLockForPage(executor, targetId);
+      }
       return { purged: ops.length };
     },
 
