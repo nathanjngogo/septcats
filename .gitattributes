@@ -1,0 +1,6 @@
+# 行尾策略（PM 治本 09-23）：core.autocrlf=true 会把 checkout 出的脚本转 CRLF，
+# Node 直接执行的 .mjs/.sh 因此报 SyntaxError（updater.test.ts 收集炸=feed-sign.mjs CRLF 复发三次）。
+# 脚本类一律 LF；其余文件维持现状（blob 本就是 LF，不 renormalize 避免全仓 diff 噪音）。
+*.mjs  text eol=lf
+*.sh   text eol=lf
+*.cjs  text eol=lf

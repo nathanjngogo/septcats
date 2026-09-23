@@ -124,8 +124,10 @@
 }
 
 .wb-card:hover {
-  box-shadow: 4px 4px 0 0 var(--sc-color-shadow-pixel), inset 2px 2px 0 0 var(--sc-color-bevel-hi),
-    inset -2px -2px 0 0 var(--sc-color-bevel-lo);
+  /* T66-01 PM 修正：裸 4px 违 no-magic 且破 T53 立体语法——hover 先例口径
+     （Button/IconButton=translate(--sc-space-xxs)+token 阴影）。卡浮起感=投影加深一档+微移。 */
+  box-shadow: var(--sc-pixel-flat);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
 }
 
 .wb-card__head {
