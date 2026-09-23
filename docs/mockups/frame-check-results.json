@@ -1,0 +1,55 @@
+{
+  "ranAt": "2026-09-22T18:03:12.491Z",
+  "assertions": [
+    {
+      "name": "EXE 启动+CDP 连上",
+      "ok": true,
+      "raw": "pid=31264"
+    },
+    {
+      "name": "G1 整窗零滚动（横/纵）",
+      "ok": true,
+      "raw": "{\"sw\":1184,\"cw\":1184,\"sh\":735,\"ch\":735}"
+    },
+    {
+      "name": "G2 壳层三件在场且不出屏",
+      "ok": false,
+      "raw": "{\"side\":\"ok\",\"tabsbar\":\"MISSING\",\"topbar\":\"ok\",\"home\":\"ok\"}"
+    },
+    {
+      "name": "G3 计算族名命中思源/Noto（非系统兜底）",
+      "ok": true,
+      "raw": "{\"fam\":\"\\\"Noto Sans SC\\\", \\\"Source Han Sans SC\\\", \\\"Noto Sans CJK SC\\\", \\\"M\",\"hit\":true}"
+    },
+    {
+      "name": "G7-1 新建页标题在树中（真实数据链）",
+      "ok": true,
+      "raw": "true"
+    },
+    {
+      "name": "G2b 开页后页签条挂载且含活动页签",
+      "ok": true,
+      "raw": "ok:1"
+    },
+    {
+      "name": "G4 描边色=ink-edge 抽检",
+      "ok": true,
+      "raw": "edge=RGB(26,26,26) checked=59 bad=[]"
+    },
+    {
+      "name": "G5 data-theme 切换 ink-edge 换值",
+      "ok": true,
+      "raw": "{\"before\":\"#1A1A1A\",\"after\":\"#EDEDED\"}"
+    },
+    {
+      "name": "G6 无占位/模板残留词",
+      "ok": true,
+      "raw": "[]"
+    },
+    {
+      "name": "G7-2 命令面板搜到新建页（FTS 真链）",
+      "ok": true,
+      "raw": "true"
+    }
+  ]
+}
