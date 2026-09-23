@@ -25,6 +25,9 @@ import {
   type TreeContext,
 } from '@septcats/editor';
 import { commitOps } from './commit';
+// T67-01-B1 PM 修正：不 import './lock'——purge 是两行纯 SQL，但 lock.ts 顶部
+// node:crypto/Buffer 会顺 import 链拖进 tsconfig.web（types:[] renderer 边界）炸 26 错。
+// 调用点内联同名语句（lock.ts 的 purgeLockForPage 保留供 lock service 内部复用）。
 import type { AllData, BatchData, DbBatchStatement, GetData, RunData } from '../db/rpc';
 
 /** 服务工作所需的语句执行能力（`DbHandle` 结构上满足；测试注入 DbServerCore 适配器）。 */
@@ -663,6 +666,9 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         return { deleted: 0 };
       }
       await commitOps(executor, ops, { workspaceId });
+      // T67-01-B1-01 §4：锁页进回收站 → 连带清锁行与密文（防孤儿密文；内联同 lock.purgeLockForPage）
+      await executor.run('lock.delete', { page_id: input.id });
+      await executor.run('lock_cipher.delete', { page_id: input.id });
       return { deleted: ops.length };
     },
 
@@ -708,6 +714,11 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         return { purged: 0 };
       }
       await commitOps(executor, ops, { workspaceId, deletionMode: 'purge' });
+      // T67-01-B1-01 §4：彻底删除 → 一并清锁行与密文（内联同 lock.purgeLockForPage）
+      for (const targetId of targets) {
+        await executor.run('lock.delete', { page_id: targetId });
+        await executor.run('lock_cipher.delete', { page_id: targetId });
+      }
       return { purged: ops.length };
     },
 

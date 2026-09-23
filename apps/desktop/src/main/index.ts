@@ -82,6 +82,8 @@ import {
   type DbViewService,
 } from './dbview';
 import { createSearchService, registerSearchIpc, type SearchService } from './search';
+import { createLockService, type LockService } from './lock';
+import { registerLockIpc } from './lockIpc';
 import {
   createBlocksService,
   registerBlocksIpc,
@@ -355,6 +357,7 @@ interface DatabaseServices {
   blocks: BlocksService;
   templates: TemplatesService;
   links: LinksService;
+  lock: LockService;
 }
 
 /**
@@ -499,6 +502,8 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // T44-01：双链服务——派生索引维护/回链查询；用裸 handle（派生态不进攒段器，
       // 与 search 同款：derived 写不触发同步发布）
       links: createLinksService({ executor: handle }),
+      // T67-01-B1-01：页面密码锁核心服务（DK 仅存会话 Map，落库只存盐/校验/包络密文）
+      lock: createLockService({ executor: handle }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
@@ -820,6 +825,7 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerPagesIpc(services?.pages ?? null);
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
+  registerLockIpc(services?.lock ?? null, dbViewRegistrar());
   registerImporterIpc(services?.importer ?? null);
   // 块读写（T21-01）：blocks:list / blocks:commit；blocks:changed 只保留通道名不推送
   registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());

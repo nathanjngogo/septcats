@@ -23,6 +23,7 @@ import {
   TEMPLATES_CHANNELS,
   LINKS_CHANNELS,
   WORKSPACES_CHANNELS,
+  LOCK_CHANNELS,
 } from '../shared/ipc';
 import { UPDATE_CHANNELS } from '../shared/ipc';
 
@@ -216,6 +217,21 @@ const api: SeptcatsApi = {
       >,
     rebuild: () =>
       ipcRenderer.invoke(LINKS_CHANNELS.rebuild) as ReturnType<SeptcatsApi['links']['rebuild']>,
+  },
+  // T67-01-B1-01：页面密码锁（设锁/解锁/恢复/改密/移除/状态；恢复码仅 setPass/recover 一次性回传）
+  lock: {
+    getStatus: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.getStatus, input) as ReturnType<SeptcatsApi['lock']['getStatus']>,
+    setPass: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.setPass, input) as ReturnType<SeptcatsApi['lock']['setPass']>,
+    verify: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.verify, input) as ReturnType<SeptcatsApi['lock']['verify']>,
+    recover: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.recover, input) as ReturnType<SeptcatsApi['lock']['recover']>,
+    changePass: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.changePass, input) as ReturnType<SeptcatsApi['lock']['changePass']>,
+    remove: (input) =>
+      ipcRenderer.invoke(LOCK_CHANNELS.remove, input) as ReturnType<SeptcatsApi['lock']['remove']>,
   },
   // T51-01：原生菜单动作推送订阅（main → renderer 单向）
   menu: {
