@@ -145,6 +145,8 @@
 | R18（老板 09-22 深夜：页面密码锁） | 09-22 | 📋 T67 立项排队 | 锁=真加密：v10 新表 page_lock（scrypt N=2^17 派生页面 DEK+AES-256-GCM 信封复用 sync/crypto）、正文块落库加密、锁卡 UI+恢复码兜底+限速；限制声明=标题明文/锁页不进搜索；等 T64 合入后派 CB（主树文件面重叠） |
 | R16-① T64 侧栏两修 | 09-23 | ✅ **PM 真机 15 PASS/0 FAIL** | CB 代码收口 a97f616（PM 补 commit.ts 闸门漏改等 4 处 DEVIATION）；PM 亲写探针：最小侧栏 ⋯/右键盒四边≥8px（修前 left=−26 越屏）、folder 创建/容器语义/转换/面包屑/重启还原、搜索不白屏；夹具隔离 untouched=true |
 | R17-② T66 个人工作台 | 09-23 | ✅ **PM 真机 21 PASS/0 FAIL** | 子 Agent 主体 1664 行 + PM salvage（假桥/正则/钉子新语义/墨线纪律）合入 main 08ed84d；库卡常驻=老板点名"加一个库"；三入口+home 非死角+重启防呆全绿；探针 3 处假红逐条定性为探针侧（Playwright force click 不触发 React onClick 等），产品零缺陷 |
+| R17-① T65 主题画廊 | 09-23 | ✅ **PM 真机 12 PASS/0 FAIL** | 子 Agent 半程资产保命提交 + CB 续建合入 main 2a6d4fd（palette 应用器/顶栏+设置页+命令面板三入口/六派系迷你预览卡/命令 7 条/i18n 双份/局部 glyph）；探针实证：点卡换色、oled×light 回退渲染色=mono 口径(245,245,245)、oled×dark 纯黑(0,0,0)≠mono dark(20,20,20)、点卡重启持久；两轮 T4-c 假红定性=探针 taskkill /F 丢 leveldb flush（skill 沉淀） |
+| R18-① T67-B1 密码锁后端 | 09-23 | ✅ **PM 真机 20 PASS/0 FAIL/2 SKIP→B2** | CB 5.5h 施工 d35187c+合入 b918a1d：v10 两表（wire 轴零触碰）、scrypt+AES-256-GCM 双包络、错5次锁60s DB 级限速（跨重启持久实证）、恢复码一次性轮换、setPass 硬删明文→FTS 零命中+标题仍可搜、remove 基线块全回+FTS 重命中、级联清锁无孤儿；L4-b/c SKIP=B2 读路径接线项；PM 修 pages.ts import 链拖 crypto 进 web project（26 错→0）+t67 测试 import 清理 |
 
 ## CodeBuddy 质量观察（09-13 复盘）
 - 系统性缺陷：写完不跑（T7 的 79 测试从未执行→7 个运行时失败里 3 个真 bug）、引用幻觉（从 types 导入 view.ts 的符号）、漏声明依赖、半途停（T7 §2 接线未做）、范围蔓延（顺手动 ui/vitest 配置——好在两处越界均为合理修复）。
