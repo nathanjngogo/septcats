@@ -85,7 +85,8 @@ async function main() {
   // G2 壳层元素在场/不出屏
   const g2 = await page.evaluate(() => {
     const out = {};
-    for (const [k, sel] of Object.entries({ side: '.app-side', tabsbar: '[data-testid="tabsbar"]', topbar: '.sc-shell__actions', home: '[data-testid="workbench-open"]' })) {
+    // T72 后壳层常态件：side/topbar/市场钮（workbench-open 已移入市场页内、tabsbar 空态不挂=G2b 专检）
+    for (const [k, sel] of Object.entries({ side: '.app-side', topbar: '.sc-shell__actions', market: '[data-testid="workbench-market-open"]' })) {
       const el = document.querySelector(sel);
       if (el == null) { out[k] = 'MISSING'; continue; }
       if (el.clientWidth === 0 && el.clientHeight === 0) { out[k] = 'zero-box'; continue; }
