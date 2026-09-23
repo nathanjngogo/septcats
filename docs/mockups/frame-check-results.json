@@ -1,10 +1,15 @@
 {
-  "ranAt": "2026-09-22T18:03:12.491Z",
+  "ranAt": "2026-09-23T18:14:43.201Z",
   "assertions": [
+    {
+      "name": "打包 EXE 存在",
+      "ok": true,
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop\\dist\\win-unpacked\\Septcats.exe"
+    },
     {
       "name": "EXE 启动+CDP 连上",
       "ok": true,
-      "raw": "pid=31264"
+      "raw": "pid=3604"
     },
     {
       "name": "G1 整窗零滚动（横/纵）",
@@ -13,8 +18,8 @@
     },
     {
       "name": "G2 壳层三件在场且不出屏",
-      "ok": false,
-      "raw": "{\"side\":\"ok\",\"tabsbar\":\"MISSING\",\"topbar\":\"ok\",\"home\":\"ok\"}"
+      "ok": true,
+      "raw": "{\"side\":\"ok\",\"topbar\":\"ok\",\"market\":\"ok\"}"
     },
     {
       "name": "G3 计算族名命中思源/Noto（非系统兜底）",
@@ -34,7 +39,7 @@
     {
       "name": "G4 描边色=ink-edge 抽检",
       "ok": true,
-      "raw": "edge=RGB(26,26,26) checked=59 bad=[]"
+      "raw": "edge=RGB(26,26,26) checked=61 bad=[]"
     },
     {
       "name": "G5 data-theme 切换 ink-edge 换值",

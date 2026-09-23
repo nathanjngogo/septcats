@@ -1,6 +1,6 @@
 {
   "task": "TASK-T59-01 真机取证（主区域像素风黑色边框 + T52 骑缝融合）",
-  "ranAt": "2026-09-23T11:29:16.770Z",
+  "ranAt": "2026-09-23T17:41:20.685Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/截图 + Emulation.setDeviceMetricsOverride 两宽度与 dsf=1 像素量测 + Page.captureScreenshot clip.scale 放大取证 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -1008,7 +1008,7 @@
       "step": "G7|dark",
       "name": "G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）",
       "ok": true,
-      "raw": "bytes=68915 err=null"
+      "raw": "bytes=63417 err=null"
     },
     {
       "step": "teardown",

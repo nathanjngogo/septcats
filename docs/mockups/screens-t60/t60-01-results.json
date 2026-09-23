@@ -1,6 +1,6 @@
 {
   "task": "TASK-T60-01 真机取证（交互一致性批 R13 ①②③⑤⑥⑦）",
-  "ranAt": "2026-09-23T07:42:12.782Z",
+  "ranAt": "2026-09-23T17:40:30.745Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/拖拽/截图 + Emulation.setDeviceMetricsOverride 两宽度",
   "fixture": {
@@ -63,7 +63,7 @@
         "w": 58,
         "h": 28
       },
-      "blockId": "01M36KCWH0KW18644D5BA7C2K7",
+      "blockId": "01M37NMD08E6TMREW8EVXR92Z7",
       "ariaLabels": [
         "块操作",
         "新增块"
@@ -84,12 +84,12 @@
     "drag": {
       "mode": "native-cdp",
       "before": [
-        "01M36KCWH0KW18644D5BA7C2K7",
-        "01M36KCWHRKZF629K9GCE0PK21"
+        "01M37NMD08E6TMREW8EVXR92Z7",
+        "01M37NMD10F82Y0JD81C83K20J"
       ],
       "after": [
-        "01M36KCWHRKZF629K9GCE0PK21",
-        "01M36KCWH0KW18644D5BA7C2K7"
+        "01M37NMD10F82Y0JD81C83K20J",
+        "01M37NMD08E6TMREW8EVXR92Z7"
       ],
       "log": [
         {
@@ -101,8 +101,8 @@
       ]
     },
     "dbOrder": [
-      "01M36KCWHRKZF629K9GCE0PK21",
-      "01M36KCWH0KW18644D5BA7C2K7"
+      "01M37NMD10F82Y0JD81C83K20J",
+      "01M37NMD08E6TMREW8EVXR92Z7"
     ],
     "textsAfterDrag": [
       "T60 交互一致性第二段",
@@ -187,7 +187,7 @@
     },
     "rename": {
       "renameTarget": {
-        "testId": "side-node-01M36KCSXXKXTVGK5GR0W6PSG4",
+        "testId": "side-node-01M37NMADGN2251M3DZ6QQWWVQ",
         "text": "未命名"
       },
       "rowTitle": "T60 改名落库",
@@ -198,9 +198,9 @@
       "NEW_TITLE": "T60 改名落库"
     },
     "toast": {
-      "appearedAt": 1790149306916,
-      "goneAt": 1790149309886,
-      "lifeMs": 2970,
+      "appearedAt": 1790185204810,
+      "goneAt": 1790185207828,
+      "lifeMs": 3018,
       "text": "已转为 Wiki"
     },
     "cluster_dark": {
@@ -234,7 +234,7 @@
         "w": 58,
         "h": 28
       },
-      "blockId": "01M36KCWHRKZF629K9GCE0PK21",
+      "blockId": "01M37NMD10F82Y0JD81C83K20J",
       "ariaLabels": [
         "块操作",
         "新增块"
@@ -321,13 +321,13 @@
       "step": "G0|fixture",
       "name": "[info] 活动页 id（tab-<id> 派生）",
       "ok": null,
-      "raw": "01M36KCV7AQDJSNAKCYHTVJS3T"
+      "raw": "01M37NMBPRSP2YY38QJEJJFVBP"
     },
     {
       "step": "G1|cluster-light",
       "name": "[info] light 簇量测（原始）",
       "ok": null,
-      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":81.9,\"w\":58,\"h\":28},\"blockId\":\"01M36KCWH0KW18644D5BA7C2K7\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":81.9,\"w\":58,\"h\":28},\"blockId\":\"01M37NMD08E6TMREW8EVXR92Z7\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
     },
     {
       "step": "G1|cluster-light",
@@ -363,13 +363,13 @@
       "step": "G2|real-drag",
       "name": "[info] 拖拽坐标（原始）",
       "ok": null,
-      "raw": "handle={\"x\":394,\"y\":148} target={\"x\":490,\"y\":80} before=[\"01M36KCWH0KW18644D5BA7C2K7\",\"01M36KCWHRKZF629K9GCE0PK21\"]"
+      "raw": "handle={\"x\":394,\"y\":148} target={\"x\":490,\"y\":80} before=[\"01M37NMD08E6TMREW8EVXR92Z7\",\"01M37NMD10F82Y0JD81C83K20J\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "[info] 拖拽路径（原始）",
       "ok": null,
-      "raw": "mode=native-cdp log=[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}] after=[\"01M36KCWHRKZF629K9GCE0PK21\",\"01M36KCWH0KW18644D5BA7C2K7\"]"
+      "raw": "mode=native-cdp log=[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}] after=[\"01M37NMD10F82Y0JD81C83K20J\",\"01M37NMD08E6TMREW8EVXR92Z7\"]"
     },
     {
       "step": "G2|real-drag",
@@ -381,19 +381,19 @@
       "step": "G2|real-drag",
       "name": "G2-2 §0-1 落位后块序变化（拖动的块真实换位，非空操作）",
       "ok": true,
-      "raw": "before=[\"01M36KCWH0KW18644D5BA7C2K7\",\"01M36KCWHRKZF629K9GCE0PK21\"] after=[\"01M36KCWHRKZF629K9GCE0PK21\",\"01M36KCWH0KW18644D5BA7C2K7\"]"
+      "raw": "before=[\"01M37NMD08E6TMREW8EVXR92Z7\",\"01M37NMD10F82Y0JD81C83K20J\"] after=[\"01M37NMD10F82Y0JD81C83K20J\",\"01M37NMD08E6TMREW8EVXR92Z7\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "[info] 落库块序（原始）",
       "ok": null,
-      "raw": "[\"01M36KCWHRKZF629K9GCE0PK21\",\"01M36KCWH0KW18644D5BA7C2K7\"]"
+      "raw": "[\"01M37NMD10F82Y0JD81C83K20J\",\"01M37NMD08E6TMREW8EVXR92Z7\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "G2-3 §0-1 拖拽结果落库：blocks:list 序与 DOM 序一致（reorder 真写回）",
       "ok": true,
-      "raw": "[\"01M36KCWHRKZF629K9GCE0PK21\",\"01M36KCWH0KW18644D5BA7C2K7\"]"
+      "raw": "[\"01M37NMD10F82Y0JD81C83K20J\",\"01M37NMD08E6TMREW8EVXR92Z7\"]"
     },
     {
       "step": "G2|real-drag",
@@ -471,13 +471,13 @@
       "step": "G4|sidebar",
       "name": "G4-6 §0-4 点「重命名」→ 行内输入框出现（复用既有 beginRename 态）",
       "ok": true,
-      "raw": "input=true target={\"testId\":\"side-node-01M36KCSXXKXTVGK5GR0W6PSG4\",\"text\":\"未命名\"}"
+      "raw": "input=true target={\"testId\":\"side-node-01M37NMADGN2251M3DZ6QQWWVQ\",\"text\":\"未命名\"}"
     },
     {
       "step": "G4|sidebar",
       "name": "[info] 改名结果（原始）",
       "ok": null,
-      "raw": "{\"renameTarget\":{\"testId\":\"side-node-01M36KCSXXKXTVGK5GR0W6PSG4\",\"text\":\"未命名\"},\"rowTitle\":\"T60 改名落库\",\"dbTitle\":[\"T60 改名落库\",\"未命名\"],\"NEW_TITLE\":\"T60 改名落库\"}"
+      "raw": "{\"renameTarget\":{\"testId\":\"side-node-01M37NMADGN2251M3DZ6QQWWVQ\",\"text\":\"未命名\"},\"rowTitle\":\"T60 改名落库\",\"dbTitle\":[\"T60 改名落库\",\"未命名\"],\"NEW_TITLE\":\"T60 改名落库\"}"
     },
     {
       "step": "G4|sidebar",
@@ -489,7 +489,7 @@
       "step": "G5|toast-3s",
       "name": "[info] toast 生命周期（原始）",
       "ok": null,
-      "raw": "{\"appearedAt\":1790149306916,\"goneAt\":1790149309886,\"lifeMs\":2970,\"text\":\"已转为 Wiki\"}"
+      "raw": "{\"appearedAt\":1790185204810,\"goneAt\":1790185207828,\"lifeMs\":3018,\"text\":\"已转为 Wiki\"}"
     },
     {
       "step": "G5|toast-3s",
@@ -501,7 +501,7 @@
       "step": "G5|toast-3s",
       "name": "G5-2 §0-5 通知 3000ms 自动关闭（实测存活 ∈ [2600, 4000]ms，无手动关闭）",
       "ok": true,
-      "raw": "lifeMs=2970"
+      "raw": "lifeMs=3018"
     },
     {
       "step": "G7|dark",
@@ -513,13 +513,13 @@
       "step": "G7|dark",
       "name": "[info] 深色激活页（含 ≥2 块）",
       "ok": null,
-      "raw": "01M36KCV7AQDJSNAKCYHTVJS3T"
+      "raw": "01M37NMBPRSP2YY38QJEJJFVBP"
     },
     {
       "step": "G7|dark",
       "name": "[info] dark 簇量测（原始）",
       "ok": null,
-      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":254.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":254.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":254.9,\"w\":58,\"h\":28},\"blockId\":\"01M36KCWHRKZF629K9GCE0PK21\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":254.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":254.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":254.9,\"w\":58,\"h\":28},\"blockId\":\"01M37NMD10F82Y0JD81C83K20J\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
     },
     {
       "step": "G7|dark",
