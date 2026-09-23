@@ -31,6 +31,7 @@ import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
 import { LockGlyph } from '../components/LockGlyph';
 import { clampMenuRect } from './menuClamp';
+import { NewWorkspaceDialog } from './NewWorkspaceDialog';
 
 /** 行缩进：与既有假树 TreeRow 同式（app-nav-row 的 paddingLeft）。 */
 function indentStyle(depth: number): CSSProperties {
@@ -118,6 +119,51 @@ function RenameInput({ id, title }: { id: string; title: string }) {
       onKeyDown={handleKeyDown}
       onBlur={(event) => settle(event.currentTarget.value, 'commit')}
       aria-label={t('sidebar.renameAria')}
+    />
+  );
+}
+
+/**
+ * T70-01 ①：侧栏头「库名」原地重命名输入框（复用 RenameInput 的交互语法）。
+ *
+ * 三键语义 = Enter 提交 / Esc 取消 / 失焦提交；空名/同名 → 放弃（只退出编辑）。
+ * 提交走既有 `pagesActions.renameWorkspace(id, name)`（乐观更新 + IPC，零新协议）。
+ * `settledRef` 保证提交/取消只发生一次（Enter 提交卸载后 blur 不再多发 op）。
+ */
+function WorkspaceRenameInput({ id, name, onDone }: { id: string; name: string; onDone: () => void }) {
+  const settledRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const settle = (value: string, action: 'commit' | 'cancel'): void => {
+    if (settledRef.current) {
+      return;
+    }
+    settledRef.current = true;
+    const trimmed = value.trim();
+    if (action === 'commit' && trimmed.length > 0 && trimmed !== name) {
+      void pagesActions.renameWorkspace(id, trimmed);
+    }
+    onDone();
+  };
+  return (
+    <input
+      className="app-nav-input"
+      data-testid="side-ws-rename-input"
+      defaultValue={name}
+      autoFocus
+      ref={inputRef}
+      onFocus={(event) => event.currentTarget.select()}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          settle(event.currentTarget.value, 'commit');
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          settle(event.currentTarget.value, 'cancel');
+        }
+      }}
+      onBlur={(event) => settle(event.currentTarget.value, 'commit')}
+      aria-label={t('workspace.renameCurrent')}
     />
   );
 }
@@ -230,6 +276,13 @@ export function SidebarTree() {
   const lockedIds = usePages((state) => state.lockedIds);
   const [groupOpen, setGroupOpen] = useState<GroupOpen>({ favorites: false, recent: false, wiki: true });
 
+  // T70-01 ①：侧栏头 = 库切换器。库菜单展开态 + 锚点 + 头行原地重命名态 + 新建库弹框态。
+  const headRef = useRef<HTMLDivElement | null>(null);
+  const [wsMenuOpen, setWsMenuOpen] = useState(false);
+  const [wsMenuAt, setWsMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const [wsRenaming, setWsRenaming] = useState(false);
+  const [newWsOpen, setNewWsOpen] = useState(false);
+
   const byId = useMemo(() => nodeMap(nodes), [nodes]);
 
   /**
@@ -252,6 +305,39 @@ export function SidebarTree() {
     setRowMenuId(null);
     setRowMenuAt(null);
     setMovePickId(null);
+  };
+
+  /** T70-01 ①：打开库切换菜单（锚点贴头行下方）。 */
+  const openWsMenu = (): void => {
+    const rect = headRef.current?.getBoundingClientRect();
+    setWsMenuAt(rect !== undefined ? { x: rect.left, y: rect.bottom } : null);
+    setWsMenuOpen(true);
+  };
+
+  /** T70-01 ①：库切换菜单条目（当前库 ✓ 前缀；动作项始终给出）。 */
+  const wsItems: MenuEntry[] = [
+    ...workspaces.map((ws) => ({
+      id: `switch:${ws.id}`,
+      // ✓ 为符号（非 CJK），gate ③/⑤ 豁免；当前库打勾标识。
+      label: (ws.id === workspaceId ? '✓ ' : '') + ws.name,
+    })),
+    { id: '__new', label: t('workspace.newWorkspace') },
+    { id: '__rename', label: t('workspace.renameCurrent') },
+  ];
+
+  const onSelectWs = (action: string): void => {
+    setWsMenuOpen(false);
+    if (action === '__new') {
+      setNewWsOpen(true);
+      return;
+    }
+    if (action === '__rename') {
+      setWsRenaming(true);
+      return;
+    }
+    if (action.startsWith('switch:')) {
+      void pagesActions.switchWorkspace(action.slice('switch:'.length));
+    }
   };
 
   /**
@@ -724,10 +810,57 @@ export function SidebarTree() {
 
   return (
     <div className="app-side">
-      <div className="app-side-head" data-testid="side-workspace">
-        <Icon icon={FolderSimple} size="sm" />
-        {workspaceName}
-      </div>
+      {/* T70-01 ①：侧栏头 = 库切换器（role=button + data-testid=side-ws-head）。
+          点击弹 @septcats/ui Menu（outside-close/键盘导航免费继承）；「重命名当前库…」
+          走头行原地输入态。 */}
+      {wsRenaming ? (
+        <div className="app-side-head" data-testid="side-ws-head" ref={headRef}>
+          <WorkspaceRenameInput
+            id={workspaceId ?? ''}
+            name={workspaceName}
+            onDone={() => setWsRenaming(false)}
+          />
+        </div>
+      ) : (
+        <div
+          className="app-side-head"
+          data-testid="side-ws-head"
+          ref={headRef}
+          role="button"
+          tabIndex={0}
+          aria-haspopup="menu"
+          aria-expanded={wsMenuOpen}
+          onClick={(event) => {
+            // T70-01 PM 真机根修：头行是「恒开」语义（非 toggle），不截断冒泡的话，
+            // 同一次 click 会继续到达 Menu 挂载的 document outside-close 监听 →
+            // 刚开的菜单当场被自己关掉（真机实锤；jsdom 因 passive effect 时序测不出）。
+            event.stopPropagation();
+            openWsMenu();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openWsMenu();
+            }
+          }}
+        >
+          <Icon icon={FolderSimple} size="sm" />
+          <span className="app-side-head-name">{workspaceName}</span>
+          <Icon icon={CaretDown} size="sm" className="app-side-head-caret" />
+        </div>
+      )}
+      {wsMenuOpen && wsMenuAt !== null ? (
+        <span
+          style={{
+            position: 'fixed',
+            left: `${String(wsMenuAt.x)}px`,
+            top: `${String(wsMenuAt.y)}px`,
+            zIndex: 'var(--sc-z-dropdown)',
+          }}
+        >
+          <Menu label={t('workspace.menuTitle')} items={wsItems} onSelect={onSelectWs} onDismiss={() => setWsMenuOpen(false)} />
+        </span>
+      ) : null}
       <div className="app-side-scroll">
         {/* T23-02 §C.1：主体点击仍 = 新建空白页；右侧箭头展开模板子菜单 */}
         <NavRow
@@ -874,6 +1007,8 @@ export function SidebarTree() {
           />
         </span>
       ) : null}
+      {/* T70-01 ②：新建库弹框（名字 + 类型三选卡）；从库菜单「新建库…」开。 */}
+      <NewWorkspaceDialog open={newWsOpen} onClose={() => setNewWsOpen(false)} />
     </div>
   );
 }

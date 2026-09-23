@@ -12,12 +12,12 @@ export const zhCN = {
     untitled: '未命名',
     cancel: '取消',
     delete: '删除',
-    currentWorkspace: '当前工作区',
+    currentWorkspace: '当前库',
   },
   app: {
     searchLabel: '搜索（Ctrl+K）',
     settingsLabel: '设置',
-    noWorkspaceToSwitch: '没有可切换的工作区',
+    noWorkspaceToSwitch: '没有可切换的库',
     aiChatLabel: 'AI 对话（Ctrl+J）',
     // T52-01 §1.2：侧栏开合钮（搬到标签条行最左）的可访问名，随开合态翻转
     collapseSidebar: '收起侧栏',
@@ -74,9 +74,36 @@ export const zhCN = {
     relativeDays: '{n} 天前',
     relativeNow: '刚刚',
   },
+  // T70-01：库层级 UI（R20 条目①②）——库切换器 / 新建库弹框文案。仅改用户可见文案，
+  // 键名沿用 workspace 语义（代码/数据层 workspace 字样不动）。
   workspace: {
     // T27-01 §0.A：默认工作区种子名的文案基准（首次建库时由 main 侧按创建时 locale 取用）
     defaultName: '个人工作区',
+    // 侧栏头库切换 Menu 标题与动作项
+    menuTitle: '库',
+    newWorkspace: '新建库…',
+    renameCurrent: '重命名当前库…',
+    // 新建库弹框
+    newTitle: '新建库',
+    nameLabel: '名称',
+    namePlaceholder: '给库起个名字',
+    typeLabel: '类型',
+    typeWorkbench: '工作台库',
+    typeKnowledge: '知识库库',
+    typeBlank: '空白库',
+    typeWorkbenchDesc: '内置卡片仪表盘，开库即见工作台',
+    typeKnowledgeDesc: '预设 5 个结构页（收件箱 / 目录 / 资料 / 日志 / 归档）',
+    typeBlankDesc: '从零开始，自由搭建结构',
+    create: '创建',
+    createEmptyName: '请输入库名称',
+  },
+  // T70-01：知识库库种子结构页标题（createPage(null) 建 5 页后按此命名；正文不种）。
+  knowledgeBase: {
+    inbox: '收件箱',
+    moc: 'MOC 目录',
+    resources: '资料',
+    journal: '日志',
+    archive: '归档',
   },
   // T51-01：原生应用菜单文案（main 侧 menu.ts 与 renderer 同源读取本字典；
   // 键名与 en-US.ts 逐一同构，受 i18n.test.ts 门禁①/②约束）。
@@ -128,14 +155,14 @@ export const zhCN = {
     E_CYCLE: '不能把页面移动到它自己的子页面下',
     E_PARENT_GONE: '目标父页面不存在，或仍在回收站',
     E_NOT_FOUND: '页面不存在或已被删除',
-    E_NO_WORKSPACE: '没有可用的工作区',
+    E_NO_WORKSPACE: '没有可用的库',
     E_MALFORMED: '请求参数不合法',
     E_TEMPLATE_NOT_FOUND: '模板不存在或已被删除',
     E_SETTINGS_INVALID: '设置保存失败',
     E_AI_TIMEOUT: '请求超时',
   },
   sidebar: {
-    workspace: '个人工作区',
+    workspace: '个人库',
     createFromAria: '从模板新建',
     favorites: '收藏',
     recent: '最近',
@@ -156,7 +183,7 @@ export const zhCN = {
     newSubpage: '新建子页面',
     moveTo: '移入…',
     moveToTitle: '移入页面',
-    moveToRoot: '工作区根',
+    moveToRoot: '库根',
     trash: '回收站',
   },
   editor: {
@@ -228,7 +255,7 @@ export const zhCN = {
     recents: '最近查询',
     groupPages: '页面 · {n}',
     groupDatabases: '多维数据 · {n}',
-    emptyNoWorkspace: '还没有可用的工作区，无法检索',
+    emptyNoWorkspace: '还没有可用的库，无法检索',
     emptyNoMatch: '没有匹配的内容，试试更短的关键词',
   },
   palette: {
@@ -255,8 +282,8 @@ export const zhCN = {
     toastTrashEmptied: '回收站已清空',
     toastFavorited: '已移入收藏',
     toastUnfavorited: '已移出收藏',
-    toastWorkspaceCreated: '已创建工作区',
-    toastWorkspaceSwitched: '已切换工作区',
+    toastWorkspaceCreated: '已创建库',
+    toastWorkspaceSwitched: '已切换库',
     // T42-01：承载类型转换结果提示
     toastConvertedToWiki: '已转为 Wiki',
     toastConvertedToPage: '已转为普通页',
@@ -583,7 +610,7 @@ export const zhCN = {
     title: 'AI 对话',
     close: '关闭 AI 对话',
     clear: '清空历史',
-    clearConfirm: '确定清空当前工作区的 AI 对话历史？',
+    clearConfirm: '确定清空当前库的 AI 对话历史？',
     inputPlaceholder: '输入消息，Enter 发送，Shift+Enter 换行',
     send: '发送',
     stop: '停止',
@@ -675,7 +702,7 @@ export const zhCN = {
       removeLock: '移除密码锁',
     },
     workspace: {
-      switch: '切换工作区',
+      switch: '切换库',
     },
     app: {
       settings: '打开设置',
@@ -718,11 +745,11 @@ export const zhCN = {
       removeLock: '移除当前页口令锁',
     },
     workspace: {
-      switch: '切换到下一个工作区',
+      switch: '切换到下一个库',
     },
     app: {
       settings: '偏好与应用设置',
-      export: '导出当前工作区快照',
+      export: '导出当前库快照',
       trash: '查看已删除页面',
       sync: '查看同步状态',
       import: '从 Notion 导出包 / Markdown / CSV 导入',

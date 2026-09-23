@@ -329,6 +329,14 @@ function subtreeIds(nodes: readonly PageNode[], id: string): Set<string> {
 // actions
 // ---------------------------------------------------------------------------
 
+/**
+ * T70-01：新建库的类型。类型只决定「建库时种什么内容」，之后无差（用户可自定义结构）。
+ * - workbench：切库后自动开 home 工作台；
+ * - knowledge：新库下种 5 个结构页（收件箱/MOC 目录/资料/日志/归档），正文不种；
+ * - blank：无种子（现行默认空库）。
+ */
+export type WorkspaceType = 'workbench' | 'knowledge' | 'blank';
+
 export const pagesActions = {
   /** 首次加载：工作区列表 + 活动工作区 + 树 + 收藏/最近。 */
   async load(): Promise<void> {
@@ -811,7 +819,70 @@ export const pagesActions = {
       pushToast(describeError(error), 'danger');
     }
   },
+
+  /**
+   * T70-01：新建库（名字 + 类型）。建库通道本身不切活动库（main 侧只建行），故这里
+   * create 后立即 switch 到新库，确保后续种子 page 落到新库（pages.create 走
+   * requireActiveWorkspace）。成功后按类型做种；返回新库 id（失败返回 null）。
+   * **不**提供删除入口（main 无 delete 通道 —— 红线）。
+   */
+  async createWorkspaceWithType(name: string, type: WorkspaceType): Promise<string | null> {
+    let newId: string;
+    try {
+      const result = await bridge().workspaces.create({ name });
+      newId = result.id;
+    } catch (error) {
+      pushToast(describeError(error), 'danger');
+      return null;
+    }
+    // 切到新库（内部 load：清空树/页签，按新库还原）
+    await pagesActions.switchWorkspace(newId);
+    if (type === 'workbench') {
+      // 工作台库：切过去即见 home 工作台（复用既有 openHome，写开合标记）
+      workbenchActions.openHome();
+    } else if (type === 'knowledge') {
+      // 知识库库：种 5 个结构页（正文不种，PRD 预授权降级，记 DEVIATION）
+      await seedKnowledgeBase();
+    }
+    // blank：无种子
+    pushToast(t('pages.toastWorkspaceCreated'), 'success');
+    return newId;
+  },
 };
+
+/**
+ * T70-01：知识库库种子——在新库（当前已 switch）下建 5 个结构页并按 i18n 命名。
+ *
+ * **副作用雷区**：createPage 会开标签 + 进编辑态（editingId）。逐页建完后清掉多余
+ * 标签（closeTab 既有 action），只留「MOC 目录」一页打开；editingId 在 renamePage 后
+ * 已自动退出，无卡死重命名态。正文不种（降级口径，PRD 已预授权）。
+ */
+async function seedKnowledgeBase(): Promise<void> {
+  const titles = [
+    t('knowledgeBase.inbox'),
+    t('knowledgeBase.moc'),
+    t('knowledgeBase.resources'),
+    t('knowledgeBase.journal'),
+    t('knowledgeBase.archive'),
+  ];
+  const ids: string[] = [];
+  for (const title of titles) {
+    await pagesActions.createPage(null);
+    const createdId = pagesStore.getState().selectedId;
+    if (createdId !== null) {
+      // 改名并退出编辑态（renamePage 在 editingId===id 时清 editingId）
+      await pagesActions.renamePage(createdId, title);
+      ids.push(createdId);
+    }
+  }
+  // 只留 MOC 目录（index 1）打开，其余标签关掉
+  const mocId = ids[1];
+  for (const id of ids) {
+    if (id !== undefined && id !== mocId) {
+      pagesActions.closeTab(id);
+    }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // 拖拽落点 → move 入参（renderer 侧能算键就算，算不出交给 main 重平衡）

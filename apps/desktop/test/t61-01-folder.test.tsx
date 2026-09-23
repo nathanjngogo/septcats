@@ -276,7 +276,7 @@ describe('T61-01 §1.1「新建子页面」= 既有 createPage(该行 id)', () =
 // ---------------------------------------------------------------------------
 
 describe('T61-01 §1.3「移入…」二级选择（排除自身与后代防环）', () => {
-  it('一级菜单点「移入…」→ 换成二级列表（含「工作区根」+ 候选活页）', () => {
+  it('一级菜单点「移入…」→ 换成二级列表（含「库根」+ 候选活页）', () => {
     seedStore();
     render(<SidebarTree />);
     const first = openRowMenu('pg-a');
@@ -286,7 +286,7 @@ describe('T61-01 §1.3「移入…」二级选择（排除自身与后代防环�
     const labels = within(second)
       .getAllByRole('menuitem')
       .map((item) => item.textContent ?? '');
-    expect(labels[0]).toContain('工作区根');
+    expect(labels[0]).toContain('库根');
     expect(labels.some((label) => label.includes('论文速览'))).toBe(true);
     // 防环：自身与后代都不在候选里
     expect(labels.some((label) => label.includes('研究') && !label.includes('研究 Wiki'))).toBe(false);
@@ -317,12 +317,12 @@ describe('T61-01 §1.3「移入…」二级选择（排除自身与后代防环�
     expect(screen.queryByRole('menu', { name: '移入页面' })).toBeNull();
   });
 
-  it('选「工作区根」→ newParentId = null（回到顶层）', async () => {
+  it('选「库根」→ newParentId = null（回到顶层）', async () => {
     seedStore();
     render(<SidebarTree />);
     fireEvent.click(within(openRowMenu('pg-child')).getByRole('menuitem', { name: '移入…' }));
     const second = screen.getByRole('menu', { name: '移入页面' });
-    fireEvent.click(within(second).getByRole('menuitem', { name: '工作区根' }));
+    fireEvent.click(within(second).getByRole('menuitem', { name: '库根' }));
 
     await vi.waitFor(() => {
       expect(bridge.pages.move).toHaveBeenCalledWith({ id: 'pg-child', newParentId: null });

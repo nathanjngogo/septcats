@@ -86,14 +86,14 @@ describe('面包屑真路径（T22-01 §0.A 纯函数）', () => {
     expect(items).toEqual([{ label: '回收站' }]);
   });
 
-  it('无 selectedId：显示工作区名；查不到活动工作区回落「当前工作区」', () => {
+  it('无 selectedId：显示工作区名；查不到活动工作区回落「当前库」', () => {
     const nodes = [pageNode({ id: 'pg-root', title: '研究' })];
     expect(pagesBreadcrumbItems(baseState({ nodes, selectedId: null })).map((i) => i.label)).toEqual([
       '个人工作区',
     ]);
     expect(
       pagesBreadcrumbItems(baseState({ nodes, selectedId: null, workspaceId: 'ws-other' })).map((i) => i.label),
-    ).toEqual(['当前工作区']);
+    ).toEqual(['当前库']);
   });
 });
 

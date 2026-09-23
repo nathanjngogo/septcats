@@ -342,7 +342,7 @@ describe('T52-01 App 接线（编辑器视图搬家 + 设置页顶栏钮保留�
     const head = container.querySelector('.app-side > .app-side-head');
     expect(head).not.toBeNull();
     expect(head?.parentElement?.firstElementChild).toBe(head);
-    expect(container.querySelector('[data-testid="side-workspace"]')?.textContent).toContain('个人工作区');
+    expect(container.querySelector('[data-testid="side-ws-head"]')?.textContent).toContain('个人工作区');
     // 选中页时顶栏是「页面路径」面包屑（不是工作区名）
     expect(container.querySelector('.sc-shell__crumb')?.textContent).toContain('研究');
 

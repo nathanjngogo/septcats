@@ -1,0 +1,62 @@
+/* NewWorkspaceDialog.css —— T70-01 新建库弹框（像素风，复用 sc-* token）。 */
+
+.ws-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sc-space-sm);
+}
+
+.ws-dialog-field {
+  display: block;
+  margin-bottom: var(--sc-space-md);
+}
+
+.ws-dialog-label {
+  display: block;
+  margin-bottom: var(--sc-space-xxs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+/* 类型三选卡横排 */
+.ws-type-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sc-space-sm);
+}
+
+.ws-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-sm);
+  text-align: left;
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  border: 1px solid var(--sc-color-border);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ws-type-card:hover:not(:disabled) {
+  border-color: var(--sc-color-ink-faint);
+}
+
+.ws-type-card--active {
+  border-color: var(--sc-color-ink);
+  border-width: 2px;
+  padding: calc(var(--sc-space-sm) - 1px);
+  box-shadow: var(--sc-bevel-inset, 0 0 0 1px var(--sc-color-ink));
+}
+
+.ws-type-name {
+  font: var(--sc-text-ui-sm);
+  font-weight: 600;
+}
+
+.ws-type-desc {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}

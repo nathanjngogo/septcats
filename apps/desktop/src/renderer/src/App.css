@@ -134,6 +134,33 @@ html, body {
   color: var(--sc-color-ink-secondary);
 }
 
+/* T70-01 ①：头行可点 = 库切换器 */
+.app-side-head[role='button'] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.app-side-head[role='button']:hover {
+  color: var(--sc-color-ink);
+}
+
+.app-side-head[role='button']:focus-visible {
+  outline: 1px solid var(--sc-color-ink-faint);
+  outline-offset: -2px;
+}
+
+.app-side-head-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-side-head-caret {
+  flex: none;
+  opacity: 0.6;
+}
+
 .app-side-scroll {
   flex: 1;
   overflow-y: auto;

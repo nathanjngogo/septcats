@@ -11,12 +11,12 @@ export const enUS = {
     untitled: 'Untitled',
     cancel: 'Cancel',
     delete: 'Delete',
-    currentWorkspace: 'Current workspace',
+    currentWorkspace: 'Current vault',
   },
   app: {
     searchLabel: 'Search (Ctrl+K)',
     settingsLabel: 'Settings',
-    noWorkspaceToSwitch: 'No workspace to switch to',
+    noWorkspaceToSwitch: 'No vault to switch to',
     aiChatLabel: 'AI chat (Ctrl+J)',
     // T52-01 §1.2: accessible name of the sidebar toggle (now at the tab row's far left)
     collapseSidebar: 'Collapse sidebar',
@@ -72,10 +72,36 @@ export const enUS = {
     relativeDays: '{n} d ago',
     relativeNow: 'just now',
   },
+  // T70-01: library-level UI (R20 ①②) — switcher / new-vault dialog copy.
+  // User-facing copy only; key names keep the workspace semantics (code/data
+  // layer `workspace` token untouched).
   workspace: {
     // T27-01 §0.A: canonical seed name for the default workspace (main derives it
     // from the locale at creation time; kept in sync with zh-CN via the i18n gate)
     defaultName: 'Personal Workspace',
+    menuTitle: 'Vault',
+    newWorkspace: 'New vault…',
+    renameCurrent: 'Rename current vault…',
+    newTitle: 'New vault',
+    nameLabel: 'Name',
+    namePlaceholder: 'Name this vault',
+    typeLabel: 'Type',
+    typeWorkbench: 'Workbench vault',
+    typeKnowledge: 'Knowledge vault',
+    typeBlank: 'Blank vault',
+    typeWorkbenchDesc: 'Built-in card dashboard; opens to the workbench',
+    typeKnowledgeDesc: 'Seeds 5 structure pages (Inbox / MOC / Resources / Journal / Archive)',
+    typeBlankDesc: 'Start from scratch and build your own structure',
+    create: 'Create',
+    createEmptyName: 'Please enter a vault name',
+  },
+  // T70-01: knowledge-vault seed structure page titles.
+  knowledgeBase: {
+    inbox: 'Inbox',
+    moc: 'MOC',
+    resources: 'Resources',
+    journal: 'Journal',
+    archive: 'Archive',
   },
   // T51-01: native application menu copy (main/menu.ts reads the same dictionary
   // as the renderer; key set mirrors zh-CN.ts, enforced by the i18n gate).
@@ -127,14 +153,14 @@ export const enUS = {
     E_CYCLE: 'A page cannot be moved under its own subpage',
     E_PARENT_GONE: 'The target parent page does not exist, or is still in the Trash',
     E_NOT_FOUND: 'The page does not exist or has been deleted',
-    E_NO_WORKSPACE: 'No workspace available',
+    E_NO_WORKSPACE: 'No vault available',
     E_MALFORMED: 'Invalid request parameters',
     E_TEMPLATE_NOT_FOUND: 'The template does not exist or has been deleted',
     E_SETTINGS_INVALID: 'Failed to save settings',
     E_AI_TIMEOUT: 'Request timed out',
   },
   sidebar: {
-    workspace: 'Personal Workspace',
+    workspace: 'Personal vault',
     createFromAria: 'New from template',
     favorites: 'Favorites',
     recent: 'Recent',
@@ -152,7 +178,7 @@ export const enUS = {
     newSubpage: 'New subpage',
     moveTo: 'Move to…',
     moveToTitle: 'Move page into',
-    moveToRoot: 'Workspace root',
+    moveToRoot: 'Vault root',
     trash: 'Trash',
   },
   editor: {
@@ -225,7 +251,7 @@ export const enUS = {
     recents: 'Recent searches',
     groupPages: 'Pages · {n}',
     groupDatabases: 'Databases · {n}',
-    emptyNoWorkspace: 'No workspace available, search is unavailable',
+    emptyNoWorkspace: 'No vault available, search is unavailable',
     emptyNoMatch: 'No matching content. Try a shorter keyword.',
   },
   palette: {
@@ -252,8 +278,8 @@ export const enUS = {
     toastTrashEmptied: 'Trash emptied',
     toastFavorited: 'Added to favorites',
     toastUnfavorited: 'Removed from favorites',
-    toastWorkspaceCreated: 'Workspace created',
-    toastWorkspaceSwitched: 'Workspace switched',
+    toastWorkspaceCreated: 'Vault created',
+    toastWorkspaceSwitched: 'Vault switched',
     toastConvertedToWiki: 'Converted to Wiki',
     toastConvertedToPage: 'Converted to regular page',
   },
@@ -594,7 +620,7 @@ export const enUS = {
     title: 'AI Chat',
     close: 'Close AI chat',
     clear: 'Clear history',
-    clearConfirm: 'Clear the AI chat history for this workspace?',
+    clearConfirm: 'Clear the AI chat history for this vault?',
     inputPlaceholder: 'Type a message. Enter to send, Shift+Enter for a new line',
     send: 'Send',
     stop: 'Stop',
@@ -691,7 +717,7 @@ export const enUS = {
       removeLock: 'Remove Password Lock',
     },
     workspace: {
-      switch: 'Switch Workspace',
+      switch: 'Switch vault',
     },
     app: {
       settings: 'Open Settings',
@@ -733,11 +759,11 @@ export const enUS = {
       removeLock: 'Remove the password lock from the current page',
     },
     workspace: {
-      switch: 'Switch to the next workspace',
+      switch: 'Switch to the next vault',
     },
     app: {
       settings: 'Preferences and app settings',
-      export: 'Export a snapshot of the current workspace',
+      export: 'Export a snapshot of the current vault',
       trash: 'View deleted pages',
       sync: 'View sync status',
       import: 'Import from a Notion export / Markdown / CSV',
