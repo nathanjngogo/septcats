@@ -56,7 +56,7 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     // 进 @septcats/ui 像素族并撤本豁免——撤豁免即红，不放行蔓延。
     // T65-01 追加：调色板入口钮的 PixelPaletteGlyph 同理住 theme/pixelGlyph.tsx（像素族
     // 无对应 glyph，主文件禁改，DEVIATION 待 PM 收编）。
-    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph', 'PixelPaletteGlyph']);
+    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph', 'PixelPaletteGlyph', 'PixelShopGlyph']);
     const missing = unique.filter(
       (name) => typeof table[name] !== 'function' && !T66_LOCAL_GLYPHS.has(name),
     );

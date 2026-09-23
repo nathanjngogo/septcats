@@ -26,15 +26,18 @@ export const enUS = {
     // T61-01 §2: accessible names for the two drag-to-resize splitters (role=separator)
     resizeSidebar: 'Resize sidebar',
     resizeAi: 'Resize AI panel',
-    // T66-01 §1.2: top-bar workbench entry button (house glyph)
-    workbenchLabel: 'Workbench (Alt+H)',
+    // T66-01 §1.2: top-bar "My Workbench" entry button (house glyph); T72 keeps it
+    // as the in-market "My Workbench" row button.
+    workbenchLabel: 'My Workbench',
+    // T72-01 §1: top-bar "Workbench Template Market" entry button (shop glyph; Alt+H opens market)
+    workbenchMarketLabel: 'Template Market',
     paletteLabel: 'Color gallery',
   },
   // T66-01: personal workbench (home view) copy.
   workbench: {
     title: 'Workbench',
     close: 'Back to editor view',
-    restoredToast: 'Workbench restored to the editor view (open it again with Alt+H or the house button)',
+    restoredToast: 'Workbench restored to the editor view (open it again with the "My Workbench" button or command)',
     greetingMorning: 'Good morning',
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',
@@ -127,6 +130,50 @@ export const enUS = {
     libstatsDepth: 'Max depth',
     libstatsDb: 'Databases',
     libstatsFav: 'Favorites',
+    // T72-01: Workbench Template Market (shell for PRD ③④)
+    templateSaved: 'Saved as template',
+    templateNameRequired: 'Please enter a template name',
+    market: {
+      title: 'Workbench Template Market',
+      close: 'Close market',
+      tabTemplates: 'Templates',
+      tabCards: 'Cards',
+      builtinSection: 'Built-in templates',
+      mineSection: 'My templates',
+      emptyMine: 'No templates yet — hit "Save as template" on the workbench',
+      apply: 'Apply to current vault',
+      restore: 'Restore backup',
+      export: 'Export',
+      delete: 'Delete',
+      cardEnabled: 'Enabled',
+      cardDisabled: 'Disabled',
+      preview: 'Preview',
+      desc: 'Description',
+      importTitle: 'Import template',
+      importPick: 'Pick a file',
+      importTextLabel: 'Or paste JSON text',
+      importConfirm: 'Import',
+      importBadJson: 'Invalid template JSON, not imported',
+      applyConfirmTitle: 'Apply to the current workbench?',
+      applyConfirmBody: 'This replaces the current card layout and backs up the existing layout (restorable anytime).',
+      applyConfirmYes: 'Apply & back up',
+      applyConfirmNo: 'Cancel',
+      appliedToast: 'Template applied (original layout backed up)',
+      restoreToast: 'Layout backup restored',
+      saveTemplateTitle: 'Save as template',
+      saveConfirm: 'Save',
+      saveTemplateNameLabel: 'Template name',
+      saveTemplatePagesLabel: 'Pages to save as seed pages',
+      noPages: 'No pages to choose from',
+      seedNote: 'Seed page bodies are plain text only (layout and card config are also saved)',
+      applyConfirmSep: ':',
+      importJsonError: 'Invalid template JSON',
+      importNotObject: 'Top level must be an object',
+      importTitleMissing: 'Template title is required',
+      importLayoutMissing: 'Template layout is required',
+      importLayoutShape: 'Invalid layout (need v:2 with order/hidden arrays)',
+      importLayoutNormalize: 'Failed to normalize layout',
+    },
   },
   // T70-01: library-level UI (R20 ①②) — switcher / new-vault dialog copy.
   // User-facing copy only; key names keep the workspace semantics (code/data
@@ -788,8 +835,10 @@ export const enUS = {
       layoutPreset: 'Switch layout preset',
       layoutEditor: 'Layout editor',
       manual: 'User Manual',
-      // T66-01 §1.2: workbench (home view) command
-      workbench: 'Workbench',
+      // T66-01 §1.2: My Workbench (home view) command; T72 splits from the market
+      workbench: 'My Workbench',
+      // T72-01 §1: Workbench Template Market command (Alt+H opens the market)
+      workbenchMarket: 'Template Market',
     },
     theme: {
       light: 'Switch Theme: Light',
@@ -827,8 +876,9 @@ export const enUS = {
       layoutPreset: 'Cycle between Notion / Focus / Workbench',
       layoutEditor: 'Open the standalone layout editor (presets and every parameter on one page)',
       manual: 'Read the user manual inside the app',
-      // T66-01 §1.2
-      workbench: 'Open the personal workbench (card dashboard, Alt+H)',
+      // T66-01 §1.2 / T72-01 §1
+      workbench: 'Open the personal workbench (card dashboard)',
+      workbenchMarket: 'Open the workbench template market (built-in templates and cards, Alt+H)',
     },
     theme: {
       light: 'Interface theme',

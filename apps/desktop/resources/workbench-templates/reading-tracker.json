@@ -1,0 +1,13 @@
+{
+  "id": "reading-tracker",
+  "title": "阅读追踪",
+  "desc": "以摘抄、链接收藏与最近访问为主，沉淀阅读收获",
+  "layout": {
+    "v": 2,
+    "order": ["quote", "bookmarks", "recent", "favorites", "quick", "todo", "database", "shortcut", "countdown", "heatmap", "libstats"],
+    "hidden": ["quick", "todo", "database", "shortcut", "countdown", "heatmap", "libstats"]
+  },
+  "seedPages": [
+    { "title": "阅读笔记", "body": "书名：\n作者：\n摘抄：\n感悟：" }
+  ]
+}

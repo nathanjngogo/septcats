@@ -1,0 +1,13 @@
+{
+  "id": "project-board",
+  "title": "项目作战板",
+  "desc": "待办、多维数据与快速入口并排，适合推进具体项目",
+  "layout": {
+    "v": 2,
+    "order": ["todo", "database", "quick", "recent", "favorites", "shortcut", "countdown", "heatmap", "quote", "bookmarks", "libstats"],
+    "hidden": ["favorites", "shortcut", "countdown", "heatmap", "quote", "bookmarks", "libstats"]
+  },
+  "seedPages": [
+    { "title": "项目作战板", "body": "## 目标\n## 本周任务\n## 风险与阻塞" }
+  ]
+}

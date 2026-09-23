@@ -99,6 +99,11 @@ export interface CommandDeps {
    */
   openWorkbench?(): void;
   /**
+   * T72-01 §范围1：打开工作台模板市场。App 恒注入 → 命令恒出现；
+   * 测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
+   */
+  openWorkbenchMarket?(): void;
+  /**
    * T65-01 §1：打开主题画廊（六派系迷你预览弹框）。App 恒注入 → 命令恒出现；
    * 测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
@@ -213,6 +218,18 @@ export const WORKBENCH_DEF: PaletteCommandDef = {
   label: t('commands.app.workbench'),
   hint: t('commandHints.app.workbench'),
   aliases: ['gongzuotai', 'gzt', 'home', 'go home', 'workbench'],
+};
+
+/**
+ * T72-01 §范围1：「工作台模板市场」命令定义。**不在静态 COMMAND_DEFS 里**——同 openManual
+ * 走 deps 门（App 恒注入 openWorkbenchMarket → 恒出现；palette 基线测试的 spy deps
+ * 不注入 → 静态清单/别名基线不受影响）。
+ */
+export const WORKBENCH_MARKET_DEF: PaletteCommandDef = {
+  id: 'app.workbenchMarket',
+  label: t('commands.app.workbenchMarket'),
+  hint: t('commandHints.app.workbenchMarket'),
+  aliases: ['mobanshichang', 'mb sc', 'mbsc', 'mb', 'template market', 'market', 'templates'],
 };
 
 /**
@@ -397,6 +414,15 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.app.workbench'),
       hint: t('commandHints.app.workbench'),
       run: deps.openWorkbench,
+    });
+  }
+  // T72-01 §范围1：工作台模板市场命令（App 恒注入 → 恒出现）。
+  if (deps.openWorkbenchMarket !== undefined) {
+    commands.push({
+      ...WORKBENCH_MARKET_DEF,
+      label: t('commands.app.workbenchMarket'),
+      hint: t('commandHints.app.workbenchMarket'),
+      run: deps.openWorkbenchMarket,
     });
   }
   // T65-01 §1：主题画廊 + 六条「切到 X 派系」命令（App 恒注入 → 恒出现）。

@@ -95,6 +95,10 @@ import {
   type TemplatesService,
 } from './templates';
 import {
+  createWorkbenchTemplatesService,
+  registerWorkbenchTemplatesIpc,
+} from './workbenchTemplates';
+import {
   createLinksService,
   rebuildLinksIndex,
   registerLinksIpc,
@@ -833,8 +837,10 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerImporterIpc(services?.importer ?? null);
   // 块读写（T21-01）：blocks:list / blocks:commit；blocks:changed 只保留通道名不推送
   registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());
-  // 模板（T23-01）：templates:* 六通道
+  // 模板（T23-01）：templates:* 七通道（含 saveWorkbench）
   registerTemplatesIpc(services?.templates ?? null, dbViewRegistrar());
+  // 工作台内置模板（T72-01 §范围3）：workbenchTemplates:list 只读
+  registerWorkbenchTemplatesIpc(createWorkbenchTemplatesService(), dbViewRegistrar());
   // 双链（T44-01）：links:backlinks / links:rebuild
   registerLinksIpc(services?.links ?? null, dbViewRegistrar());
 

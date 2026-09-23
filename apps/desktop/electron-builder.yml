@@ -32,6 +32,12 @@ extraResources:
       - icon.ico
       - icon-tray.png
       - icon-tray@2x.png
+  # TASK-T72-01 §范围3：内置工作台模板（声明式 JSON，随包更新；运行时按
+  # `<resourcesPath>/workbench-templates/*.json` 读取，dev 态回退应用目录 resources/）。
+  - from: resources/workbench-templates
+    to: workbench-templates
+    filter:
+      - "*.json"
 
 # —— Win：NSIS per-user（免管理员，支持 /S 静默安装/卸载）——
 win:

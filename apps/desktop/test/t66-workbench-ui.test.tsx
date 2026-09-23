@@ -141,7 +141,8 @@ function installBridge(): void {
     sync: { status: vi.fn(async () => null), onState: vi.fn(() => () => {}), now: vi.fn(async () => null), setEnabled: vi.fn(async () => ({})) },
     collab: { attach: vi.fn(async () => ({ entries: [], ledgerHasCrdt: false })), detach: vi.fn(async () => ({})), apply: vi.fn(async () => ({ ok: true })), onUpdate: vi.fn(() => () => {}) },
     ai: { state: vi.fn(async () => ({ enabled: false, cloudConsent: false, activeProviderId: null, providers: [] })) },
-    templates: { list: vi.fn(async () => ({ templates: [] })) },
+    templates: { list: vi.fn(async () => ({ templates: [] })), saveWorkbench: vi.fn(async () => ({ id: 'wb-tpl-new' })) },
+    workbenchTemplates: { list: vi.fn(async () => ({ templates: [] })) },
     appMeta: vi.fn(async () => ({ name: 'Septcats', version: '0.0.0', schemaVersion: 1, layoutRoot: '.septcats' })),
     update: { onState: vi.fn(() => () => {}) },
     menu: { onAction: vi.fn(() => () => {}) },
@@ -264,35 +265,38 @@ describe('T66-01 卡片配置（⋯ 菜单 → localStorage）', () => {
   });
 });
 
-describe('T66-01 App 接线（顶栏房子钮 / Esc）', () => {
-  it('点房子钮出工作台（aria-pressed 翻转），再点回；Esc 关', () => {
+describe('T72-01 / T66-01 App 接线（顶栏市场钮 / Esc / Alt+H）', () => {
+  it('点顶栏市场钮出模板市场（aria-pressed 翻转）；Esc 关；可再次打开', () => {
     render(<App />);
-    expect(screen.queryByTestId('workbench')).toBeNull();
-    const house = screen.getByTestId('workbench-open');
-    fireEvent.click(house);
-    expect(screen.getByTestId('workbench')).toBeTruthy();
-    expect(house.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('wb-market')).toBeNull();
+    const marketBtn = screen.getByTestId('workbench-market-open');
+    fireEvent.click(marketBtn);
+    expect(screen.getByTestId('wb-market')).toBeTruthy();
+    expect(marketBtn.getAttribute('aria-pressed')).toBe('true');
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByTestId('workbench')).toBeNull();
-    fireEvent.click(house);
-    expect(screen.getByTestId('workbench')).toBeTruthy();
-    fireEvent.click(house);
-    expect(screen.queryByTestId('workbench')).toBeNull();
+    expect(screen.queryByTestId('wb-market')).toBeNull();
+    // 再次点击顶栏钮 → 重新打开（open 语义，非 toggle）
+    fireEvent.click(marketBtn);
+    expect(screen.getByTestId('wb-market')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('wb-market')).toBeNull();
   });
 
-  it('Alt+H 开合工作台', () => {
+  it('Alt+H 打开工作台模板市场；Esc 关闭', () => {
     render(<App />);
     fireEvent.keyDown(window, { key: 'h', altKey: true });
-    expect(screen.getByTestId('workbench')).toBeTruthy();
-    fireEvent.keyDown(window, { key: 'h', altKey: true });
-    expect(screen.queryByTestId('workbench')).toBeNull();
+    expect(screen.getByTestId('wb-market')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('wb-market')).toBeNull();
   });
 
-  it('home 打开时点侧栏页面行 → 先收 home 再正常开页（红线：home 不是死角）', async () => {
+  it('市场内「我的工作台」行内钮出 home；home 打开时点侧栏页面行 → 先收 home 再正常开页（红线：home 不是死角）', async () => {
     render(<App />);
+    fireEvent.click(screen.getByTestId('workbench-market-open'));
+    // 市场内 workbench-open 行内钮 → 开 home（保留的「我的工作台」入口）
     fireEvent.click(screen.getByTestId('workbench-open'));
     expect(screen.getByTestId('workbench')).toBeTruthy();
-    // 侧栏行 onClick 的语义就是 pagesActions.selectPage(node.id)（SidebarTree:549）；
+    // 侧栏行 onClick 的语义就是 pagesActions.selectPage(node.id)（SidebarTree）；
     // 直接走该公开入口验证「任何打开动作都先收 home」守卫，绕开整树重渲染的 DOM 竞态。
     await act(async () => {
       pagesActions.selectPage('page-a');

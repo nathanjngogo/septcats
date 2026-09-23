@@ -944,7 +944,7 @@ ON CONFLICT(id) DO UPDATE SET
   deleted_at = excluded.deleted_at`,
     params: z.object({
       id: idText,
-      kind: z.enum(['page', 'database']),
+      kind: z.enum(['page', 'database', 'workbench']),
       title: z.string().default(''),
       icon: nullableText,
       payload: z.string().min(1).default('{}'),
@@ -981,7 +981,7 @@ WHERE id = @id`,
     sql: `SELECT id, kind, title, icon, updated_at FROM template
 WHERE alive = 1 AND (@kind IS NULL OR kind = @kind)
 ORDER BY updated_at DESC, id`,
-    params: z.object({ kind: z.enum(['page', 'database']).nullable().default(null) }),
+    params: z.object({ kind: z.enum(['page', 'database', 'workbench']).nullable().default(null) }),
   },
   'template.softDelete': {
     kind: 'run',

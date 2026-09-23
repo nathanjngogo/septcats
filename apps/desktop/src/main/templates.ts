@@ -27,6 +27,7 @@ import {
   CHANNEL_TEMPLATES_LIST,
   CHANNEL_TEMPLATES_RENAME,
   CHANNEL_TEMPLATES_SAVE_FROM_PAGE,
+  CHANNEL_TEMPLATES_SAVE_WORKBENCH,
 } from '../shared/ipc';
 import type { DbBatchStatement } from '../db/rpc';
 import { CommitError, ledgerStatement } from './commit';
@@ -36,7 +37,27 @@ import { PagesApiError, type StatementExecutor } from './pages';
 // 公共形状（payload 为 JSON 安全的普通对象：零 React、零 IO）
 // ---------------------------------------------------------------------------
 
-export type TemplateKind = 'page' | 'database';
+export type TemplateKind = 'page' | 'database' | 'workbench';
+
+/** 工作台模板布局（T72 §范围3/④；与 workbench/state.ts 的 WorkbenchCardsPersist 同口径）。 */
+export interface WorkbenchTemplateLayout {
+  v: 2;
+  order: string[];
+  hidden: string[];
+}
+
+/** 工作台模板种子页（纯文本正文；建页后经 blocks.commit 写入）。 */
+export interface WorkbenchTemplateSeedPage {
+  title: string;
+  body: string;
+}
+
+/** 工作台模板 payload（kind='workbench' 时存于 template.payload）。 */
+export interface WorkbenchTemplatePayload {
+  title: string;
+  layout: WorkbenchTemplateLayout;
+  seedPages: WorkbenchTemplateSeedPage[];
+}
 
 /** 模板列表项（不含 payload；templates:list 出参）。 */
 export interface TemplateMeta {
@@ -251,6 +272,12 @@ export interface TemplatesService {
   delete(input: { id: string }): Promise<Record<string, never>>;
   /** 从模板新建页（深拷贝：新 page/block/collection id；records 不复制）。 */
   createPage(input: { templateId: string; parentId: string | null }): Promise<{ pageId: string }>;
+  /** 另存工作台模板（kind='workbench'；layout+seedPages 原样存 payload）。 */
+  saveWorkbench(input: {
+    title: string;
+    layout: WorkbenchTemplateLayout;
+    seedPages: WorkbenchTemplateSeedPage[];
+  }): Promise<{ id: string }>;
 }
 
 export interface TemplatesServiceOptions {
@@ -336,8 +363,8 @@ export function createTemplatesService(options: TemplatesServiceOptions): Templa
   return {
     async list(input) {
       const kind = input.kind;
-      if (kind !== undefined && kind !== 'page' && kind !== 'database') {
-        throw new TemplatesApiError('E_MALFORMED', 'kind 只能是 page 或 database');
+      if (kind !== undefined && kind !== 'page' && kind !== 'database' && kind !== 'workbench') {
+        throw new TemplatesApiError('E_MALFORMED', 'kind 只能是 page 或 database 或 workbench');
       }
       const data = await executor.all('template.list', { kind: kind ?? null });
       return {
@@ -525,6 +552,56 @@ export function createTemplatesService(options: TemplatesServiceOptions): Templa
         },
       ]);
       return {};
+    },
+
+    async saveWorkbench(input) {
+      if (typeof input.title !== 'string' || input.title.trim().length === 0) {
+        throw new TemplatesApiError('E_MALFORMED', 'title 必须是非空字符串');
+      }
+      if (input.layout === undefined || input.layout === null || typeof input.layout !== 'object') {
+        throw new TemplatesApiError('E_MALFORMED', 'layout 必须是对象');
+      }
+      if (!Array.isArray(input.seedPages)) {
+        throw new TemplatesApiError('E_MALFORMED', 'seedPages 必须是数组');
+      }
+      // 布局口径与 workbench/state.ts 一致（v=2 + order/hidden 子集校验由 renderer 侧把关，
+      // 这里只做最小结构守卫，避免落野 JSON 进 template 表）。
+      const layout = input.layout as WorkbenchTemplateLayout;
+      if (layout.v !== 2 || !Array.isArray(layout.order) || !Array.isArray(layout.hidden)) {
+        throw new TemplatesApiError('E_MALFORMED', 'layout 形状不合法');
+      }
+      const seedPages = (input.seedPages as WorkbenchTemplateSeedPage[]).map((page) => ({
+        title: typeof page?.title === 'string' ? page.title : '',
+        body: typeof page?.body === 'string' ? page.body : '',
+      }));
+      const title = input.title.trim();
+      const payload: WorkbenchTemplatePayload = {
+        title,
+        layout: { v: 2, order: layout.order.slice(), hidden: layout.hidden.slice() },
+        seedPages,
+      };
+      const at = now();
+      const id = ulid(at);
+      const op = templateOp(
+        id,
+        { kind: 'workbench', title, layout: payload.layout, seedPages, alive: 1, updated_at: at },
+        1,
+      );
+      await executor.batch([
+        ledgerStatement(op, null),
+        templateUpsertStatement({
+          id,
+          kind: 'workbench',
+          title,
+          icon: null,
+          payload: JSON.stringify(payload),
+          alive: 1,
+          version: 1,
+          createdAt: at,
+          updatedAt: at,
+        }),
+      ]);
+      return { id };
     },
 
     async createPage(input) {
@@ -764,8 +841,8 @@ export function registerTemplatesIpc(service: TemplatesService | null, registrar
     try {
       const input = asObject(raw);
       const kind = readOptionalText(input, 'kind');
-      if (kind !== undefined && kind !== 'page' && kind !== 'database') {
-        throw new TemplatesApiError('E_MALFORMED', 'kind 只能是 page 或 database');
+      if (kind !== undefined && kind !== 'page' && kind !== 'database' && kind !== 'workbench') {
+        throw new TemplatesApiError('E_MALFORMED', 'kind 只能是 page 或 database 或 workbench');
       }
       return await requireService().list(
         kind === undefined ? {} : { kind: kind as TemplateKind },
@@ -837,6 +914,22 @@ export function registerTemplatesIpc(service: TemplatesService | null, registrar
       return await requireService().createPage({
         templateId,
         parentId: parentId === undefined || parentId === null ? null : parentId,
+      });
+    } catch (error) {
+      return fail(error);
+    }
+  });
+
+  registrar.handle(CHANNEL_TEMPLATES_SAVE_WORKBENCH, async (raw: unknown): Promise<unknown> => {
+    try {
+      const input = asObject(raw);
+      const title = readText(input, 'title');
+      const layout = input.layout;
+      const seedPages = input.seedPages;
+      return await requireService().saveWorkbench({
+        title,
+        layout: layout as WorkbenchTemplateLayout,
+        seedPages: seedPages as WorkbenchTemplateSeedPage[],
       });
     } catch (error) {
       return fail(error);

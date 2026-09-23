@@ -27,8 +27,10 @@ export const zhCN = {
     // T61-01 §2：两侧拖拽宽度把手的可访问名（aria-label，role=separator）
     resizeSidebar: '调整侧栏宽度',
     resizeAi: '调整 AI 面板宽度',
-    // T66-01 §1.2：顶栏工作台入口钮（房子）
-    workbenchLabel: '工作台（Alt+H）',
+    // T66-01 §1.2：顶栏工作台入口钮（房子）；T72：语义改为「我的工作台」行内钮
+    workbenchLabel: '我的工作台',
+    // T72-01 §范围1：顶栏「工作台模板市场」入口钮（店铺 glyph，Alt+H 语义改开市场）
+    workbenchMarketLabel: '工作台模板市场',
     // T65-01 §1：顶栏调色板入口钮（画廊）
     paletteLabel: '配色画廊',
   },
@@ -36,7 +38,7 @@ export const zhCN = {
   workbench: {
     title: '工作台',
     close: '返回编辑视图',
-    restoredToast: '工作台已恢复为编辑视图（Alt+H 或房子钮可再次打开）',
+    restoredToast: '工作台已恢复为编辑视图（可用「我的工作台」按钮或命令再次打开）',
     greetingMorning: '早上好',
     greetingAfternoon: '下午好',
     greetingEvening: '晚上好',
@@ -129,6 +131,50 @@ export const zhCN = {
     libstatsDepth: '最深层级',
     libstatsDb: '多维数据',
     libstatsFav: '收藏',
+    // T72-01：工作台模板市场（PRD 条目③④的壳）
+    templateSaved: '已另存为模板',
+    templateNameRequired: '请输入模板名称',
+    market: {
+      title: '工作台模板市场',
+      close: '关闭市场',
+      tabTemplates: '模板',
+      tabCards: '卡片',
+      builtinSection: '内置模板',
+      mineSection: '我的模板',
+      emptyMine: '还没有我的模板——去工作台点「另存为模板」',
+      apply: '应用于当前库',
+      restore: '还原备份',
+      export: '导出',
+      delete: '删除',
+      cardEnabled: '启用中',
+      cardDisabled: '未启用',
+      preview: '预览',
+      desc: '说明',
+      importTitle: '导入模板',
+      importPick: '选择文件',
+      importTextLabel: '或粘贴 JSON 文本',
+      importConfirm: '导入',
+      importBadJson: '模板 JSON 不合法，未导入',
+      applyConfirmTitle: '应用到当前工作台？',
+      applyConfirmBody: '将替换当前卡片布局，并一键备份现有布局（可随时还原）。',
+      applyConfirmYes: '应用并备份',
+      applyConfirmNo: '取消',
+      appliedToast: '已应用模板（已备份原布局）',
+      restoreToast: '已还原布局备份',
+      saveTemplateTitle: '另存为模板',
+      saveConfirm: '保存',
+      saveTemplateNameLabel: '模板名称',
+      saveTemplatePagesLabel: '作为种子页一起保存的页面',
+      noPages: '当前库没有可选页面',
+      seedNote: '种子页正文仅记录纯文本（布局与卡片配置一并保存）',
+      applyConfirmSep: '：',
+      importJsonError: '模板 JSON 不合法',
+      importNotObject: '顶层必须是对象',
+      importTitleMissing: '模板缺少 title',
+      importLayoutMissing: '模板缺少 layout',
+      importLayoutShape: 'layout 形状不合法（需 v:2 与 order/hidden 数组）',
+      importLayoutNormalize: 'layout 归一化失败',
+    },
   },
   // T70-01：库层级 UI（R20 条目①②）——库切换器 / 新建库弹框文案。仅改用户可见文案，
   // 键名沿用 workspace 语义（代码/数据层 workspace 字样不动）。
@@ -773,8 +819,10 @@ export const zhCN = {
       layoutPreset: '切换布局预设',
       layoutEditor: '布局编辑器',
       manual: '使用说明书',
-      // T66-01 §1.2：工作台（home 视图）命令
-      workbench: '工作台',
+      // T66-01 §1.2：我的工作台（home 视图）命令；T72：与模板市场分列两条命令
+      workbench: '我的工作台',
+      // T72-01 §范围1：工作台模板市场命令（Alt+H 语义改开市场）
+      workbenchMarket: '工作台模板市场',
     },
     theme: {
       light: '切换主题：浅色',
@@ -813,8 +861,9 @@ export const zhCN = {
       layoutPreset: '在 Notion / 专注 / 工作台 之间循环切换',
       layoutEditor: '打开独立布局编辑器（预设与细项参数整页编辑）',
       manual: '在应用内阅读使用说明书',
-      // T66-01 §1.2
-      workbench: '打开个人工作台（卡片流仪表盘，Alt+H）',
+      // T66-01 §1.2 / T72-01 §范围1
+      workbench: '打开我的工作台（卡片流仪表盘）',
+      workbenchMarket: '打开工作台模板市场（内置模板与卡片，Alt+H）',
     },
     theme: {
       light: '界面主题',
