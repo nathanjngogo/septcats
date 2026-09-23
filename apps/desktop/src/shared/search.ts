@@ -33,6 +33,8 @@ export interface SearchHit {
   /** 排序分（越小越靠前；title 命中加权 ×0.6 已折入）。 */
   readonly score: number;
   readonly via: SearchHitVia;
+  /** 该命中所属页是否上锁（T67-01-B2-01 范围3：锁页标题可命中、结果行带锁 glyph）。 */
+  readonly locked: boolean;
   /** 命中行 updated_at（排序键之一；0 = 未知）。 */
   readonly updatedAt: number;
 }

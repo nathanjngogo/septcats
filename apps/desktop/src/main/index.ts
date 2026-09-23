@@ -458,10 +458,13 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       .catch((error: unknown) => {
         logger.error(`双链派生索引重建失败（下次启动重试）：${describeError(error)}`);
       });
+    // T67-01-B1-01：页面密码锁核心服务（DK 仅存会话 Map，落库只存盐/校验/包络密文）。
+    // 与 blocks 共享同一会话实例——blocks:list 读路径接线（B2 范围0）依赖它判定解锁态。
+    const lock = createLockService({ executor: handle });
     return {
       pages,
       db: createDbViewService({ executor, actor }),
-      search: createSearchService({ executor: handle }),
+      search: createSearchService({ executor: handle, lock }),
       importer: createImporterService({
         executor,
         actor,
@@ -474,8 +477,10 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           return workspaces.activeId;
         },
       }),
+      lock,
       // T21-01：块服务——写路径复用同一装饰后 executor（commitOps 成功即进攒段器）；
-      // T28-01：actor 是设备身份唯一真源，blocks:commit 写入前按它权威改写 op
+      // T28-01：actor 是设备身份唯一真源，blocks:commit 写入前按它权威改写 op；
+      // T67-01-B2-01 范围0：注入同一个 lock 服务，blocks:list 锁页返回 locked:true。
       blocks: createBlocksService({
         executor,
         actor,
@@ -486,6 +491,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           }
           return workspaces.activeId;
         },
+        lock,
       }),
       // T23-01：模板服务——写路径同样复用装饰后 executor（batch 成功即进攒段器）
       templates: createTemplatesService({
@@ -502,8 +508,6 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // T44-01：双链服务——派生索引维护/回链查询；用裸 handle（派生态不进攒段器，
       // 与 search 同款：derived 写不触发同步发布）
       links: createLinksService({ executor: handle }),
-      // T67-01-B1-01：页面密码锁核心服务（DK 仅存会话 Map，落库只存盐/校验/包络密文）
-      lock: createLockService({ executor: handle }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);

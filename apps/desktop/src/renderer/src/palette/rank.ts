@@ -21,7 +21,7 @@ export interface CommandLike {
 /** 命中条目（SearchHit 的展示子集；直接复用线上类型保证两侧一致）。 */
 export type HitLike = Pick<
   SearchHit,
-  'kind' | 'id' | 'pageId' | 'title' | 'path' | 'snippet' | 'via'
+  'kind' | 'id' | 'pageId' | 'title' | 'path' | 'snippet' | 'via' | 'locked'
 >;
 
 /**

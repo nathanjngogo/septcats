@@ -252,7 +252,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
     await h.pages.createPage({ parentId: page.id });
     await h.pages.renamePage({ id: child1.id, title: '子页甲' });
 
-    const beforeBlocks = blockFingerprint(await h.blocks.list({ pageId: page.id }));
+    const beforeBlocks = blockFingerprint((await h.blocks.list({ pageId: page.id })).blocks);
     const beforeTree = await h.pages.listTree({ workspaceId: WORKSPACE_ID });
     const beforeChildTitles = beforeTree
       .filter((node) => node.parentId === page.id)
@@ -265,7 +265,7 @@ describeDb('wiki-page（承载类型 / 转换 / 库页不退化）', (ctor) => {
     await h.db.convertPage({ pageId: page.id, to: 'wiki' });
     expect((await h.nodeOf(page.id))?.pageType).toBe('wiki');
 
-    const afterBlocks = blockFingerprint(await h.blocks.list({ pageId: page.id }));
+    const afterBlocks = blockFingerprint((await h.blocks.list({ pageId: page.id })).blocks);
     expect(afterBlocks).toBe(beforeBlocks);
     const afterTree = await h.pages.listTree({ workspaceId: WORKSPACE_ID });
     expect(

@@ -93,7 +93,7 @@ function installAppBridge(): void {
     pages: { tree: async () => [pageNode({ id: 'pg-1', title: '研究' })] },
     favorites: { list: async () => ({ pageIds: [] }) },
     recent: { list: async () => ({ pageIds: [] }), touch: vi.fn(async () => ({ pageIds: [] })) },
-    blocks: { list: vi.fn(async () => []), commit: vi.fn() },
+    blocks: { list: vi.fn(async () => ({ locked: false, blocks: [] })), commit: vi.fn() },
     db: { create: vi.fn(), load: vi.fn() },
     settings: {
       get: vi.fn(async () => defaultSettings()),

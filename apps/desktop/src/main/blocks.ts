@@ -25,6 +25,7 @@ import { CHANNEL_BLOCKS_COMMIT, CHANNEL_BLOCKS_LIST } from '../shared/ipc';
 import { CommitError, commitOps } from './commit';
 import { pageIdsTouchedByOps, syncLinksForPages } from './links';
 import { PagesApiError, type StatementExecutor } from './pages';
+import type { LockService } from './lock';
 
 // ---------------------------------------------------------------------------
 // 错误（与 PagesApiError 同形：{ code, message }）
@@ -148,9 +149,16 @@ function blockRowToBlock(row: unknown): Block {
 // 服务
 // ---------------------------------------------------------------------------
 
+export interface BlocksListResult {
+  /** 编辑器 Block 形状（按 sort_key, id 升序）。锁页未解锁时为空数组。 */
+  readonly blocks: Block[];
+  /** 该页是否处于密码锁锁定态（解锁前不可读正文）。 */
+  readonly locked: boolean;
+}
+
 export interface BlocksService {
-  /** 读一页的存活块（`block.listByPage`：alive=1，按 sort_key, id 升序）。 */
-  list(input: { pageId: string }): Promise<Block[]>;
+  /** 读一页的存活块；锁页未解锁返回 `{ locked: true, blocks: [] }`，已解锁返回明文块。 */
+  list(input: { pageId: string }): Promise<BlocksListResult>;
   /** 提交一批 Op（renderer EditSession 产出；写入前 actor 权威改写为本机真实值）。回提交条数。 */
   commit(input: { ops: Op[] }): Promise<number>;
 }
@@ -184,19 +192,34 @@ export interface BlocksServiceOptions {
   readonly actor: ActorId;
   /** 活动工作区解析（Q4 单库分片：物化语句的 workspace_id 取它）。缺工作区时抛 E_NO_WORKSPACE。 */
   readonly activeWorkspaceId: () => Promise<string>;
+  /**
+   * T67-01-B2-01 范围0：读路径接线。注入 lock 服务后，`list` 经 `readBlocks`
+   * 判定锁定态；未注入（null/undefined）时退化为原明文读（保持无锁页零开销）。
+   */
+  readonly lock?: LockService | null;
 }
 
 export function createBlocksService(options: BlocksServiceOptions): BlocksService {
   const { executor, actor, activeWorkspaceId } = options;
+  const lock = options.lock ?? null;
 
   return {
-    async list(input: { pageId: string }): Promise<Block[]> {
+    async list(input: { pageId: string }): Promise<BlocksListResult> {
       if (input.pageId.length === 0) {
         throw new BlocksApiError('E_MALFORMED', 'pageId 必须是非空字符串');
       }
-      const data = await executor.all('block.listByPage', { page_id: input.pageId });
-      // 语句内 ORDER BY sort_key, id —— 与编辑器 compareBlocksBySortKey 同一语义
-      return data.rows.map((row) => blockRowToBlock(row));
+      // 未接 lock 服务：原实现直读明文（无锁页零额外开销）。
+      if (lock === null) {
+        const data = await executor.all('block.listByPage', { page_id: input.pageId });
+        // 语句内 ORDER BY sort_key, id —— 与编辑器 compareBlocksBySortKey 同一语义
+        return { blocks: data.rows.map((row) => blockRowToBlock(row)), locked: false };
+      }
+      // 接 lock 服务：锁页未解锁 → 空且 locked:true；已解锁 → 解密映射为 Block[]。
+      const result = await lock.readBlocks(input.pageId);
+      if (result.locked) {
+        return { blocks: [], locked: true };
+      }
+      return { blocks: result.blocks.map((row) => blockRowToBlock(row)), locked: false };
     },
 
     async commit(input: { ops: Op[] }): Promise<number> {

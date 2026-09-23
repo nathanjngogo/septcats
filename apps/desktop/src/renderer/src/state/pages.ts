@@ -53,6 +53,15 @@ export interface PagesState {
   toasts: ToastMessage[];
   /** 「删除页面」二次确认弹层的目标页 id（null = 关闭；T24-01 §0.A）。 */
   deleteConfirmId: string | null;
+  /** T67-01-B2-01：当前已上锁页 id 集合（侧栏锁 glyph + 菜单项口径 + 命令面板条件项）。 */
+  lockedIds: Set<string>;
+  /** T67-01-B2-01 范围1：加锁/改密/移除 弹层状态（null = 关闭）。 */
+  lockDialog: { pageId: string; mode: 'set' | 'change' | 'remove' } | null;
+  /**
+   * T67-01-B2-01：锁态版本号。setPass/remove 后 bump，驱动 PageView 立即重探锁态
+   * （解锁当前打开的编辑器，杜绝「设锁后编辑器仍挂载、flush 回写明文块」的竞态）。
+   */
+  lockRev: number;
   /**
    * 编辑区多页签（TASK-T37-01 §0.1）：有序打开页 id；**当前选中项 = selectedId**。
    * 不变式：pages 视图下 selectedId ∈ tabs（openInTab/closeTab 统一维护）；
@@ -76,6 +85,9 @@ const initialState: PagesState = {
   recentIds: [],
   toasts: [],
   deleteConfirmId: null,
+  lockedIds: new Set<string>(),
+  lockDialog: null,
+  lockRev: 0,
   tabs: [],
 };
 
@@ -496,6 +508,47 @@ export const pagesActions = {
 
   cancelDeletePage(): void {
     pagesStore.setState((state) => ({ ...state, deleteConfirmId: null }));
+  },
+
+  // T67-01-B2-01 范围1：加锁/改密/移除 弹层开合（侧栏行菜单 + 命令面板共用）
+  openLockDialog(pageId: string, mode: 'set' | 'change' | 'remove'): void {
+    if (pageId.length === 0) {
+      return;
+    }
+    pagesStore.setState((state) => ({ ...state, lockDialog: { pageId, mode } }));
+  },
+
+  closeLockDialog(): void {
+    pagesStore.setState((state) => ({ ...state, lockDialog: null }));
+  },
+
+  /**
+   * T67-01-B2-01：锁态登记（PageView 在 getStatus 后回写；setPass/remove 后同步）。
+   * 驱动侧栏锁 glyph、菜单项口径与命令面板条件项。
+   *
+   * 仅当锁态**实际变化**时才 bump lockRev：否则 PageView 的 getStatus 探活 effect
+   * （依赖 lockRev）会在「getStatus 命中 → setPageLocked（同值仍 bump）→ effect 重跑 →
+   * 再 getStatus」间无限循环（React 深度超限崩溃）。锁态不变即不 bump，重探自然收敛。
+   */
+  setPageLocked(pageId: string, locked: boolean): void {
+    if (pageId.length === 0) {
+      return;
+    }
+    pagesStore.setState((state) => {
+      const same = locked === state.lockedIds.has(pageId);
+      let nextIds = state.lockedIds;
+      if (!same) {
+        const next = new Set(state.lockedIds);
+        if (locked) {
+          next.add(pageId);
+        } else {
+          next.delete(pageId);
+        }
+        nextIds = next;
+      }
+      // 仅锁态实际变化才 bump lockRev，驱动 PageView 立即重探（见上方说明，杜绝死循环）
+      return { ...state, lockedIds: nextIds, lockRev: same ? state.lockRev : state.lockRev + 1 };
+    });
   },
 
   /**

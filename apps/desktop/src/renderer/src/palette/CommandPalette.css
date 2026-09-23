@@ -107,6 +107,17 @@
   color: var(--sc-color-accent);
 }
 
+/* T67-01-B2-01 范围3：命中行锁 glyph（currentColor → 随行色）。2px 间隙豁免 no-magic。 */
+.palette-row-lock {
+  color: var(--sc-color-ink-secondary);
+  margin-right: 2px;
+  vertical-align: middle;
+}
+
+.palette-row--active .palette-row-lock {
+  color: var(--sc-color-accent);
+}
+
 .palette-row-tx {
   flex: 1;
   min-width: 0;

@@ -14,6 +14,7 @@ import { AiChatPanel } from './ai/AiChatPanel';
 import { aiChatActions, useAiChat } from './ai/chatState';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
+import { PageLockDialog } from './pages/PageLockDialog';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
@@ -118,6 +119,26 @@ function useCommandWiring(
                   },
                 }
               : {}),
+            // T67-01-B2-01 范围4：加锁/移除锁条件命令（仅当前选中页出现，且二选一）。
+            // 已锁页 → removeLock（开移除弹层）；未锁页 → addLock（开加锁弹层）。
+            // 两条互斥，与侧栏 ⋯ 菜单口径一致；无选中页由 configurePaletteCommands 摘除。
+            ...(state.selectedId !== null && state.lockedIds.has(state.selectedId)
+              ? {
+                  removeLock: (): void => {
+                    const id = pagesStore.getState().selectedId;
+                    if (id !== null) {
+                      pagesActions.openLockDialog(id, 'remove');
+                    }
+                  },
+                }
+              : {
+                  addLock: (): void => {
+                    const id = pagesStore.getState().selectedId;
+                    if (id !== null) {
+                      pagesActions.openLockDialog(id, 'set');
+                    }
+                  },
+                }),
             notify: (message): void => {
               pushToast(message, 'info');
             },
@@ -613,6 +634,8 @@ export function App() {
       />
       {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
       <PageDeleteDialog />
+      {/* T67-01-B2-01 范围1：加锁/改密/移除 弹层（侧栏行菜单 + 命令面板共用） */}
+      <PageLockDialog />
       {/* T54-01 §1②：关窗询问框（自绘像素模态；main 拦 close 并冲刷完后推 close:ask） */}
       <CloseAskDialog />
       {/* T24-01 §0.C：全局 Toast 视口（pushToast 队列渲染；根层挂载，底部居中、

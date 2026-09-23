@@ -79,7 +79,7 @@ function makeBridge() {
     },
     blocks: {
       commit: vi.fn(async () => 0),
-      list: vi.fn(async () => []),
+      list: vi.fn(async () => ({ locked: false, blocks: [] })),
       onChanged: vi.fn().mockReturnValue(() => {}),
     },
     collab: {

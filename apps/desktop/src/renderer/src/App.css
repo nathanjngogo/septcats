@@ -214,6 +214,23 @@ html, body {
   color: var(--sc-color-ink);
 }
 
+/* T67-01-B2-01 范围1：已锁页行前的像素锁 glyph（与文件/文件夹图标并列）。
+   纯 token 外观：锁 glyph 用 currentColor（随行色），与图标同色系；2px 间隙豁免 no-magic。 */
+.app-nav-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.app-nav-lock-glyph {
+  color: var(--sc-color-icon-faint);
+}
+
+.app-nav-row--active .app-nav-lock-glyph {
+  color: var(--sc-color-ink);
+}
+
 .app-nav-tx {
   overflow: hidden;
   text-overflow: ellipsis;

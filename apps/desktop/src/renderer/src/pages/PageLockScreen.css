@@ -1,0 +1,143 @@
+/**
+ * PageLockScreen.css —— 锁屏卡样式（T67-01-B2-01 范围2）。
+ *
+ * 红线：框轮廓一律 var(--sc-color-ink-edge)；box-shadow 只用 token 组合（禁裸 px）；
+ * 不写裸 hex（全部走 var(--sc-*)）；字号用 em（无 --sc-font-size-* token，避免裸 px）。
+ */
+.lock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sc-space-md);
+  width: min(92%, var(--sc-space-editor-measure));
+  margin: var(--sc-space-xl) auto;
+  padding: var(--sc-space-lg);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface-raised);
+  box-shadow: var(--sc-shadow-modal);
+  box-sizing: border-box;
+}
+
+.lock-glyph {
+  align-self: center;
+  color: var(--sc-color-ink);
+}
+
+.lock-title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.1em;
+  color: var(--sc-color-ink);
+}
+
+.lock-hint {
+  margin: 0;
+  text-align: center;
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+}
+
+.lock-hint--ok {
+  color: var(--sc-color-ink);
+}
+
+.lock-countdown {
+  margin: 0;
+  text-align: center;
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+}
+
+.lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+}
+
+.lock-form--recover {
+  margin-top: var(--sc-space-sm);
+}
+
+.lock-label {
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+}
+
+.lock-input {
+  width: 100%;
+  padding: var(--sc-space-sm);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font-size: 0.95em;
+  box-sizing: border-box;
+}
+
+.lock-input:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.lock-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lock-eye {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 0;
+}
+
+.lock-error {
+  margin: 0;
+  color: var(--sc-color-danger);
+  font-size: 0.85em;
+}
+
+.lock-submit {
+  padding: var(--sc-space-sm) var(--sc-space-lg);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-ink);
+  color: var(--sc-color-surface-raised);
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.lock-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lock-link {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.85em;
+}
+
+.lock-recovery-box {
+  padding: var(--sc-space-md);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-canvas);
+  text-align: center;
+}
+
+.lock-mono {
+  font-family: var(--sc-font-mono);
+  font-size: 1.1em;
+  letter-spacing: var(--sc-space-xxs);
+  color: var(--sc-color-ink);
+  word-break: break-all;
+}

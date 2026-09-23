@@ -178,7 +178,7 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
         blockUpsertOp('bk-list-1-a', 'pg-list-1', { sort_key: 'A00000000' }),
       ],
     });
-    const blocks = await service.list({ pageId: 'pg-list-1' });
+    const { blocks } = await service.list({ pageId: 'pg-list-1' });
     expect(blocks.map((block) => block.id)).toEqual(['bk-list-1-a', 'bk-list-1-b']);
     const first: Block = blocks[0] as Block;
     expect(first.page_id).toBe('pg-list-1');
@@ -228,14 +228,14 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
         ),
       ],
     });
-    const blocks = await service.list({ pageId: 'pg-list-2' });
+    const { blocks } = await service.list({ pageId: 'pg-list-2' });
     expect(blocks.map((block) => block.content)).toEqual([
       'er = np.interp(x, xp, fp)',
       null,
     ]);
 
     const empty = await service.list({ pageId: 'pg-empty-no-blocks' });
-    expect(empty).toEqual([]);
+    expect(empty.blocks).toEqual([]);
   });
 
   it('blocks:commit：upsert/patch/reorder/delete 真库 roundtrip（ledger + 物化同事务）', async () => {
@@ -258,7 +258,7 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
         ),
       ],
     });
-    let blocks = await service.list({ pageId: 'pg-commit-1' });
+    let { blocks } = await service.list({ pageId: 'pg-commit-1' });
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.content).toEqual(paragraphDoc('改后的正文'));
     expect(blocks[0]?.version).toBe(2);
@@ -267,12 +267,12 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
     await service.commit({
       ops: [makeOp('reorder', 'bk-commit-1', { sort_key: 'Z00000009' }, 3, 2)],
     });
-    blocks = await service.list({ pageId: 'pg-commit-1' });
+    ({ blocks } = await service.list({ pageId: 'pg-commit-1' }));
     expect(blocks[0]?.sort_key).toBe('Z00000009');
 
     // ④ delete（payload {} → block.softDelete，alive=0；delete 不允许携带 base）
     await service.commit({ ops: [makeOp('delete', 'bk-commit-1', {}, 4)] });
-    blocks = await service.list({ pageId: 'pg-commit-1' });
+    ({ blocks } = await service.list({ pageId: 'pg-commit-1' }));
     expect(blocks).toEqual([]);
 
     // 真相层：4 次提交 4 条 op 全部入账

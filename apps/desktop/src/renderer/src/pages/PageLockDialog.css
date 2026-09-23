@@ -1,0 +1,105 @@
+/**
+ * PageLockDialog.css —— 加锁/改密/移除 弹层样式（T67-01-B2-01 范围1）。
+ *
+ * 红线：框轮廓一律 var(--sc-color-ink-edge)；box-shadow 只用 token 组合（禁裸 px）；
+ * 不写裸 hex（全部走 var(--sc-*)）；字号用 em（无 --sc-font-size-* token）。
+ */
+.lock-dialog-title {
+  margin: 0 0 var(--sc-space-sm);
+  color: var(--sc-color-ink);
+  font-weight: 600;
+}
+
+.lock-dialog-hint {
+  margin: 0 0 var(--sc-space-sm);
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+}
+
+.lock-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  margin-bottom: var(--sc-space-sm);
+}
+
+.lock-dialog-field > span {
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+}
+
+.lock-input {
+  width: 100%;
+  padding: var(--sc-space-sm);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font-size: 0.95em;
+  box-sizing: border-box;
+}
+
+.lock-input:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.lock-eye {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 0;
+  margin-bottom: var(--sc-space-sm);
+}
+
+.lock-dialog-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-sm);
+  margin-bottom: var(--sc-space-sm);
+  color: var(--sc-color-ink);
+  font-size: 0.9em;
+}
+
+.lock-dialog-check-hint {
+  display: block;
+  margin-top: var(--sc-space-xxs);
+  color: var(--sc-color-ink-secondary);
+  font-size: 0.85em;
+  font-style: normal;
+}
+
+.lock-error {
+  margin: var(--sc-space-sm) 0 0;
+  color: var(--sc-color-danger);
+  font-size: 0.85em;
+}
+
+.lock-recovery-box {
+  padding: var(--sc-space-md);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-canvas);
+  text-align: center;
+  margin-bottom: var(--sc-space-sm);
+}
+
+.lock-mono {
+  font-family: var(--sc-font-mono);
+  font-size: 1.1em;
+  letter-spacing: var(--sc-space-xxs);
+  color: var(--sc-color-ink);
+  word-break: break-all;
+}
+
+.lock-dialog-copy {
+  background: none;
+  border: none;
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.85em;
+}

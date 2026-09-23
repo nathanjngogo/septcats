@@ -13,6 +13,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { FileText, GearSix, Icon, Kbd, MagnifyingGlass, Note, Plus } from '@septcats/ui';
 import type { IconGlyph } from '@septcats/ui';
 import { t } from '../i18n';
+import { LockGlyph } from '../components/LockGlyph';
 import { paletteActions, usePalette } from '../state/palette';
 import { templatesActions, useTemplates } from '../state/templates';
 import type { TemplateMeta } from '../../../main/templates';
@@ -71,6 +72,7 @@ function templateIconNode(template: TemplateMeta): ReactNode {
 function hitTitle(hit: HitLike): ReactNode {
   return (
     <>
+      {hit.locked ? <LockGlyph size={12} className="palette-row-lock" aria-hidden="true" /> : null}
       {hit.title}
       {hit.path.length > 0 ? <span className="palette-path"> / {hit.path.join(' / ')}</span> : null}
     </>

@@ -64,7 +64,7 @@ function makeEditorBridge() {
   return {
     blocks: {
       commit: vi.fn().mockResolvedValue(0),
-      list: vi.fn().mockResolvedValue([makeBlock('blk-1', 'A00000000', '第一段')]),
+      list: vi.fn().mockResolvedValue({ locked: false, blocks: [makeBlock('blk-1', 'A00000000', '第一段')] }),
       onChanged: vi.fn().mockReturnValue(() => {}),
     },
     recent: {
