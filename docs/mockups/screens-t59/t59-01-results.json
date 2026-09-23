@@ -1,6 +1,6 @@
 {
   "task": "TASK-T59-01 真机取证（主区域像素风黑色边框 + T52 骑缝融合）",
-  "ranAt": "2026-09-22T11:17:53.106Z",
+  "ranAt": "2026-09-23T05:58:40.015Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/截图 + Emulation.setDeviceMetricsOverride 两宽度与 dsf=1 像素量测 + Page.captureScreenshot clip.scale 放大取证 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -297,9 +297,9 @@
       "borderLeft": "2px solid rgb(26, 26, 26)",
       "rect": {
         "x": 312,
-        "y": 195.9,
+        "y": 195.5,
         "w": 560,
-        "h": 343.3
+        "h": 344
       }
     },
     "modalPixel": {
@@ -559,9 +559,9 @@
       "borderTop": "2px solid rgb(237, 237, 237)",
       "rect": {
         "x": 312,
-        "y": 195.9,
+        "y": 195.5,
         "w": 560,
-        "h": 343.3
+        "h": 344
       }
     },
     "darkModalPixel": {
@@ -798,7 +798,7 @@
       "step": "G6|light-shots",
       "name": "[info] 布局快选弹框（原始）",
       "ok": null,
-      "raw": "{\"role\":\"dialog\",\"borderTop\":\"2px solid rgb(26, 26, 26)\",\"borderLeft\":\"2px solid rgb(26, 26, 26)\",\"rect\":{\"x\":312,\"y\":195.9,\"w\":560,\"h\":343.3}}"
+      "raw": "{\"role\":\"dialog\",\"borderTop\":\"2px solid rgb(26, 26, 26)\",\"borderLeft\":\"2px solid rgb(26, 26, 26)\",\"rect\":{\"x\":312,\"y\":195.5,\"w\":560,\"h\":344}}"
     },
     {
       "step": "G6|light-shots",
@@ -996,7 +996,7 @@
       "step": "G7|dark",
       "name": "G7-5 §1.4 深色：模态外轮廓 = 2px solid ink-edge（#EDEDED）",
       "ok": true,
-      "raw": "{\"borderTop\":\"2px solid rgb(237, 237, 237)\",\"rect\":{\"x\":312,\"y\":195.9,\"w\":560,\"h\":343.3}}"
+      "raw": "{\"borderTop\":\"2px solid rgb(237, 237, 237)\",\"rect\":{\"x\":312,\"y\":195.5,\"w\":560,\"h\":344}}"
     },
     {
       "step": "G7|dark",
@@ -1008,7 +1008,7 @@
       "step": "G7|dark",
       "name": "G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）",
       "ok": true,
-      "raw": "bytes=61485 err=null"
+      "raw": "bytes=64935 err=null"
     },
     {
       "step": "teardown",

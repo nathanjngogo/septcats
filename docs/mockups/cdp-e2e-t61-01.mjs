@@ -497,11 +497,13 @@ try {
   phases.folder = { containerSigBefore, containerSigAfter, menuOpened, treeAfterSub };
   info('文件夹派生（原始）', JSON.stringify(phases.folder));
   check(
-    'G1-1 §1.1 ⋯ 菜单含「新建子页面」与「移入…」（顺序：重命名 → 新建子页面 → 移入…）',
+    'G1-1 §1.1 ⋯ 菜单含「新建子页面」与「移入…」（相对顺序：重命名 < 新建子页面 < 移入…）',
     menuOpened !== null &&
-      menuOpened.items[0].includes('重命名') &&
-      menuOpened.items[1].includes('新建子页面') &&
-      menuOpened.items[2].includes('移入…'),
+      menuOpened.items[0]?.includes('重命名') === true &&
+      menuOpened.items.some((i) => i.includes('新建子页面')) &&
+      menuOpened.items.some((i) => i.includes('移入…')) &&
+      menuOpened.items.indexOf(menuOpened.items.find((i) => i.includes('新建子页面')) ?? '') <
+        menuOpened.items.indexOf(menuOpened.items.find((i) => i.includes('移入…')) ?? ''),
     JSON.stringify(menuOpened?.items),
   );
   check(

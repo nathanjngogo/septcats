@@ -77,6 +77,18 @@ describe('Menu outside-close（T60-01 ③）', () => {
     expect(onDismiss).not.toHaveBeenCalled();
   });
 
+  it('点击中途目标被摘出 DOM（宿主同步换实例）→ 不误伤 outside-close（移入…二级回归钉）', () => {
+    const onDismiss = vi.fn();
+    render(<Menu items={items} onDismiss={onDismiss} />);
+    const btn = screen.getByRole('menuitem', { name: /重命名/ });
+    // 复现真实场景：宿主在按钮 onClick 里同步换菜单实例（旧按钮随旧实例卸载出 DOM）；
+    // click 继续沿 dispatch 开始时冻结的路径冒泡到 document，此时 target 是游离节点。
+    // 「移入…」二级（T61）依赖此语义：换实例不得被 outside-close 判成点空白自灭。
+    btn.addEventListener('click', () => btn.remove());
+    fireEvent.click(btn);
+    expect(onDismiss).not.toHaveBeenCalled();
+  });
+
   it('卸载即摘监听：再点空白不再回调（无泄漏）', () => {
     const onDismiss = vi.fn();
     const { unmount } = render(<Menu items={items} onDismiss={onDismiss} />);

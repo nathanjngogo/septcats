@@ -1,6 +1,6 @@
 {
   "task": "TASK-T60-01 真机取证（交互一致性批 R13 ①②③⑤⑥⑦）",
-  "ranAt": "2026-09-22T11:17:03.348Z",
+  "ranAt": "2026-09-23T05:52:12.337Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/拖拽/截图 + Emulation.setDeviceMetricsOverride 两宽度",
   "fixture": {
@@ -63,7 +63,7 @@
         "w": 58,
         "h": 28
       },
-      "blockId": "01M34D9HX8EKK0RPCA5782FH67",
+      "blockId": "01M36D3ERCQWDAMQYVGPVR1Z7Q",
       "ariaLabels": [
         "块操作",
         "新增块"
@@ -84,12 +84,12 @@
     "drag": {
       "mode": "native-cdp",
       "before": [
-        "01M34D9HX8EKK0RPCA5782FH67",
-        "01M34D9HXYWJM71RPA045DYYZA"
+        "01M36D3ERCQWDAMQYVGPVR1Z7Q",
+        "01M36D3ES62G516X4PSHEQKBP3"
       ],
       "after": [
-        "01M34D9HXYWJM71RPA045DYYZA",
-        "01M34D9HX8EKK0RPCA5782FH67"
+        "01M36D3ES62G516X4PSHEQKBP3",
+        "01M36D3ERCQWDAMQYVGPVR1Z7Q"
       ],
       "log": [
         {
@@ -101,8 +101,8 @@
       ]
     },
     "dbOrder": [
-      "01M34D9HXYWJM71RPA045DYYZA",
-      "01M34D9HX8EKK0RPCA5782FH67"
+      "01M36D3ES62G516X4PSHEQKBP3",
+      "01M36D3ERCQWDAMQYVGPVR1Z7Q"
     ],
     "textsAfterDrag": [
       "T60 交互一致性第二段",
@@ -145,18 +145,20 @@
       "items": [
         "重命名",
         "新建子页面",
+        "新建子文件夹",
         "移入…",
         "固定宽度",
         "转为 Wiki",
+        "添加密码锁",
         "删除"
       ],
       "rect": {
-        "left": 14,
+        "left": 196,
         "top": 237.5,
         "w": 210,
-        "h": 224
+        "h": 296
       },
-      "hostPosition": "relative"
+      "hostPosition": "fixed"
     },
     "ctxMenu": {
       "rowBox": {
@@ -167,23 +169,25 @@
         "items": [
           "重命名",
           "新建子页面",
+          "新建子文件夹",
           "移入…",
           "固定宽度",
           "转为 Wiki",
+          "添加密码锁",
           "删除"
         ],
         "rect": {
           "left": 56,
           "top": 224,
           "w": 210,
-          "h": 224
+          "h": 296
         },
         "hostPosition": "fixed"
       }
     },
     "rename": {
       "renameTarget": {
-        "testId": "side-node-01M34D9F9ZTA4NYJEWF7PFHFGM",
+        "testId": "side-node-01M36D3C55FCWZ5PWHMASV0QQ4",
         "text": "未命名"
       },
       "rowTitle": "T60 改名落库",
@@ -194,9 +198,9 @@
       "NEW_TITLE": "T60 改名落库"
     },
     "toast": {
-      "appearedAt": 1790075797432,
-      "goneAt": 1790075800401,
-      "lifeMs": 2969,
+      "appearedAt": 1790142706480,
+      "goneAt": 1790142709445,
+      "lifeMs": 2965,
       "text": "已转为 Wiki"
     },
     "cluster_dark": {
@@ -230,7 +234,7 @@
         "w": 58,
         "h": 28
       },
-      "blockId": "01M34D9HXYWJM71RPA045DYYZA",
+      "blockId": "01M36D3ES62G516X4PSHEQKBP3",
       "ariaLabels": [
         "块操作",
         "新增块"
@@ -249,16 +253,18 @@
         "items": [
           "重命名",
           "新建子页面",
+          "新建子文件夹",
           "移入…",
           "固定宽度",
           "转为 Wiki",
+          "添加密码锁",
           "删除"
         ],
         "rect": {
           "left": 56,
           "top": 240,
           "w": 210,
-          "h": 224
+          "h": 296
         },
         "hostPosition": "fixed"
       }
@@ -315,13 +321,13 @@
       "step": "G0|fixture",
       "name": "[info] 活动页 id（tab-<id> 派生）",
       "ok": null,
-      "raw": "01M34D9GKG5SB52K0KTBG9GAX7"
+      "raw": "01M36D3DENYE63F15FS4942BC3"
     },
     {
       "step": "G1|cluster-light",
       "name": "[info] light 簇量测（原始）",
       "ok": null,
-      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":81.9,\"w\":58,\"h\":28},\"blockId\":\"01M34D9HX8EKK0RPCA5782FH67\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":81.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":81.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":81.9,\"w\":58,\"h\":28},\"blockId\":\"01M36D3ERCQWDAMQYVGPVR1Z7Q\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
     },
     {
       "step": "G1|cluster-light",
@@ -357,13 +363,13 @@
       "step": "G2|real-drag",
       "name": "[info] 拖拽坐标（原始）",
       "ok": null,
-      "raw": "handle={\"x\":394,\"y\":148} target={\"x\":490,\"y\":80} before=[\"01M34D9HX8EKK0RPCA5782FH67\",\"01M34D9HXYWJM71RPA045DYYZA\"]"
+      "raw": "handle={\"x\":394,\"y\":148} target={\"x\":490,\"y\":80} before=[\"01M36D3ERCQWDAMQYVGPVR1Z7Q\",\"01M36D3ES62G516X4PSHEQKBP3\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "[info] 拖拽路径（原始）",
       "ok": null,
-      "raw": "mode=native-cdp log=[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}] after=[\"01M34D9HXYWJM71RPA045DYYZA\",\"01M34D9HX8EKK0RPCA5782FH67\"]"
+      "raw": "mode=native-cdp log=[{\"type\":\"dragstart\",\"tag\":\"BUTTON\",\"cls\":\"sc-blockcontrol__handle\",\"hasDt\":true}] after=[\"01M36D3ES62G516X4PSHEQKBP3\",\"01M36D3ERCQWDAMQYVGPVR1Z7Q\"]"
     },
     {
       "step": "G2|real-drag",
@@ -375,19 +381,19 @@
       "step": "G2|real-drag",
       "name": "G2-2 §0-1 落位后块序变化（拖动的块真实换位，非空操作）",
       "ok": true,
-      "raw": "before=[\"01M34D9HX8EKK0RPCA5782FH67\",\"01M34D9HXYWJM71RPA045DYYZA\"] after=[\"01M34D9HXYWJM71RPA045DYYZA\",\"01M34D9HX8EKK0RPCA5782FH67\"]"
+      "raw": "before=[\"01M36D3ERCQWDAMQYVGPVR1Z7Q\",\"01M36D3ES62G516X4PSHEQKBP3\"] after=[\"01M36D3ES62G516X4PSHEQKBP3\",\"01M36D3ERCQWDAMQYVGPVR1Z7Q\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "[info] 落库块序（原始）",
       "ok": null,
-      "raw": "[\"01M34D9HXYWJM71RPA045DYYZA\",\"01M34D9HX8EKK0RPCA5782FH67\"]"
+      "raw": "[\"01M36D3ES62G516X4PSHEQKBP3\",\"01M36D3ERCQWDAMQYVGPVR1Z7Q\"]"
     },
     {
       "step": "G2|real-drag",
       "name": "G2-3 §0-1 拖拽结果落库：blocks:list 序与 DOM 序一致（reorder 真写回）",
       "ok": true,
-      "raw": "[\"01M34D9HXYWJM71RPA045DYYZA\",\"01M34D9HX8EKK0RPCA5782FH67\"]"
+      "raw": "[\"01M36D3ES62G516X4PSHEQKBP3\",\"01M36D3ERCQWDAMQYVGPVR1Z7Q\"]"
     },
     {
       "step": "G2|real-drag",
@@ -435,43 +441,43 @@
       "step": "G4|sidebar",
       "name": "[info] ⋯ 菜单（原始）",
       "ok": null,
-      "raw": "{\"items\":[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":14,\"top\":237.5,\"w\":210,\"h\":224},\"hostPosition\":\"relative\"}"
+      "raw": "{\"items\":[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"],\"rect\":{\"left\":196,\"top\":237.5,\"w\":210,\"h\":296},\"hostPosition\":\"fixed\"}"
     },
     {
       "step": "G4|sidebar",
       "name": "G4-3 §0-4 ⋯ 菜单含「重命名」条目（位于删除之前）",
       "ok": true,
-      "raw": "[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+      "raw": "[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"]"
     },
     {
       "step": "G4|sidebar",
       "name": "[info] 右键菜单（原始）",
       "ok": null,
-      "raw": "{\"rowBox\":{\"x\":56,\"y\":224},\"menu\":{\"items\":[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":56,\"top\":224,\"w\":210,\"h\":224},\"hostPosition\":\"fixed\"}}"
+      "raw": "{\"rowBox\":{\"x\":56,\"y\":224},\"menu\":{\"items\":[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"],\"rect\":{\"left\":56,\"top\":224,\"w\":210,\"h\":296},\"hostPosition\":\"fixed\"}}"
     },
     {
       "step": "G4|sidebar",
       "name": "G4-4 §0-4 右键行 → 菜单弹出（条目 = 同一份行菜单，含重命名）",
       "ok": true,
-      "raw": "[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+      "raw": "[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"]"
     },
     {
       "step": "G4|sidebar",
       "name": "G4-5 §0-4 菜单位置 = 光标处（|Δ| ≤ 12px，clamp 后仍在视口内）且宿主 fixed",
       "ok": true,
-      "raw": "menu={\"left\":56,\"top\":224,\"w\":210,\"h\":224} cursor={\"x\":56,\"y\":224} host=fixed"
+      "raw": "menu={\"left\":56,\"top\":224,\"w\":210,\"h\":296} cursor={\"x\":56,\"y\":224} host=fixed"
     },
     {
       "step": "G4|sidebar",
       "name": "G4-6 §0-4 点「重命名」→ 行内输入框出现（复用既有 beginRename 态）",
       "ok": true,
-      "raw": "input=true target={\"testId\":\"side-node-01M34D9F9ZTA4NYJEWF7PFHFGM\",\"text\":\"未命名\"}"
+      "raw": "input=true target={\"testId\":\"side-node-01M36D3C55FCWZ5PWHMASV0QQ4\",\"text\":\"未命名\"}"
     },
     {
       "step": "G4|sidebar",
       "name": "[info] 改名结果（原始）",
       "ok": null,
-      "raw": "{\"renameTarget\":{\"testId\":\"side-node-01M34D9F9ZTA4NYJEWF7PFHFGM\",\"text\":\"未命名\"},\"rowTitle\":\"T60 改名落库\",\"dbTitle\":[\"T60 改名落库\",\"未命名\"],\"NEW_TITLE\":\"T60 改名落库\"}"
+      "raw": "{\"renameTarget\":{\"testId\":\"side-node-01M36D3C55FCWZ5PWHMASV0QQ4\",\"text\":\"未命名\"},\"rowTitle\":\"T60 改名落库\",\"dbTitle\":[\"T60 改名落库\",\"未命名\"],\"NEW_TITLE\":\"T60 改名落库\"}"
     },
     {
       "step": "G4|sidebar",
@@ -483,7 +489,7 @@
       "step": "G5|toast-3s",
       "name": "[info] toast 生命周期（原始）",
       "ok": null,
-      "raw": "{\"appearedAt\":1790075797432,\"goneAt\":1790075800401,\"lifeMs\":2969,\"text\":\"已转为 Wiki\"}"
+      "raw": "{\"appearedAt\":1790142706480,\"goneAt\":1790142709445,\"lifeMs\":2965,\"text\":\"已转为 Wiki\"}"
     },
     {
       "step": "G5|toast-3s",
@@ -495,7 +501,7 @@
       "step": "G5|toast-3s",
       "name": "G5-2 §0-5 通知 3000ms 自动关闭（实测存活 ∈ [2600, 4000]ms，无手动关闭）",
       "ok": true,
-      "raw": "lifeMs=2969"
+      "raw": "lifeMs=2965"
     },
     {
       "step": "G7|dark",
@@ -507,13 +513,13 @@
       "step": "G7|dark",
       "name": "[info] 深色激活页（含 ≥2 块）",
       "ok": null,
-      "raw": "01M34D9GKG5SB52K0KTBG9GAX7"
+      "raw": "01M36D3DENYE63F15FS4942BC3"
     },
     {
       "step": "G7|dark",
       "name": "[info] dark 簇量测（原始）",
       "ok": null,
-      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":252.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":252.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":252.9,\"w\":58,\"h\":28},\"blockId\":\"01M34D9HXYWJM71RPA045DYYZA\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
+      "raw": "{\"order\":[\"handle\",\"add\"],\"handleDraggable\":\"true\",\"addDraggable\":null,\"shellDraggable\":null,\"handleCursor\":\"grab\",\"addCursor\":\"pointer\",\"handleRect\":{\"left\":379.5,\"right\":407.5,\"top\":252.9,\"w\":28,\"h\":28},\"addRect\":{\"left\":409.5,\"right\":437.5,\"top\":252.9,\"w\":28,\"h\":28},\"clusterRect\":{\"left\":379.5,\"right\":437.5,\"top\":252.9,\"w\":58,\"h\":28},\"blockId\":\"01M36D3ES62G516X4PSHEQKBP3\",\"ariaLabels\":[\"块操作\",\"新增块\"],\"disabled\":[false,false]}"
     },
     {
       "step": "G7|dark",
@@ -549,7 +555,7 @@
       "step": "G7|dark",
       "name": "G7-1 深色：右键菜单同样弹在光标处（clamp）",
       "ok": true,
-      "raw": "{\"rowBoxDark\":{\"x\":56,\"y\":240},\"menu\":{\"items\":[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"rect\":{\"left\":56,\"top\":240,\"w\":210,\"h\":224},\"hostPosition\":\"fixed\"}}"
+      "raw": "{\"rowBoxDark\":{\"x\":56,\"y\":240},\"menu\":{\"items\":[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"],\"rect\":{\"left\":56,\"top\":240,\"w\":210,\"h\":296},\"hostPosition\":\"fixed\"}}"
     },
     {
       "step": "G8|two-widths",

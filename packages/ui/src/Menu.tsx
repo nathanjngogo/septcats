@@ -53,6 +53,12 @@ export function Menu({ items, label, onSelect, onDismiss, className }: MenuProps
       if (root === null) {
         return;
       }
+      // 「移入…」二级换实例修复（T64 后暴露）：宿主在按钮 onClick 里同步换菜单实例时，
+      // 旧按钮已被摘出 DOM；本 click 继续冒泡到 document，新实例的 root 不含这个游离
+      // 节点 → 会被误判为「点空白」而自灭。游离节点不是用户的真实点击目标，直接跳过。
+      if (event.target instanceof Node && !document.contains(event.target)) {
+        return;
+      }
       if (event.target instanceof Node && root.contains(event.target)) {
         return;
       }

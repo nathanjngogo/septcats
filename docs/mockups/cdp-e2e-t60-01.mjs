@@ -290,7 +290,7 @@ const BLOCK_DB_ORDER = (pageId) =>
     (id) =>
       window.septcats.blocks
         .list({ pageId: id })
-        .then((blocks) => blocks.filter((b) => b.alive === 1).map((b) => b.id))
+        .then((r) => (r.blocks ?? r).filter((b) => b.alive === 1).map((b) => b.id))
         .catch((e) => `ERR:${String(e).slice(0, 120)}`),
     pageId,
   );
@@ -402,7 +402,7 @@ try {
       const nodes = await window.septcats.pages.tree({ workspaceId: ws.activeId });
       for (const node of nodes.filter((n) => n.alive === 1)) {
         const blocks = await window.septcats.blocks.list({ pageId: node.id });
-        if (blocks.filter((b) => b.alive === 1).length >= 2) return node.id;
+        if ((blocks.blocks ?? blocks).filter((b) => b.alive === 1).length >= 2) return node.id;
       }
       return null;
     });
