@@ -19,7 +19,7 @@ export interface TodoItem {
   done: boolean;
 }
 
-export const TODOS_STORAGE_KEY = 'septca…odos';
+export const TODOS_STORAGE_KEY = 'septcats.workbench.todos';
 export const TODOS_PERSIST_VERSION = 1;
 
 function safeGetItem(key: string): string | null {

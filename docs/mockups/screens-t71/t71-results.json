@@ -1,0 +1,156 @@
+{
+  "task": "T71-01",
+  "ranAt": "2026-09-23T11:25:31.371Z",
+  "assertions": [
+    {
+      "step": "setup",
+      "name": "S1 工作台库创建并落 home",
+      "ok": true,
+      "raw": "menu=true home=true"
+    },
+    {
+      "step": "K1|内置5卡",
+      "name": "K1-1 槽序=注册表全集序（5 内置在前 + 6 新卡随后）",
+      "ok": true,
+      "raw": "quick,todo,database,recent,favorites,shortcut,countdown,heatmap,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K1|内置5卡",
+      "name": "K1-2 内置卡老 DOM/testid 原样未动（8 锚点）",
+      "ok": true,
+      "raw": "all 8 present"
+    },
+    {
+      "step": "K1|内置5卡",
+      "name": "K1-3 卡壳壳层齐（11 卡）",
+      "ok": true,
+      "raw": "cards=11"
+    },
+    {
+      "step": "K5|空态",
+      "name": "K5-1 消费卡空态占位齐全（8/8）",
+      "ok": true,
+      "raw": "8/8 → wb-todo-empty,wb-db-empty,wb-recent-empty,wb-favorites-empty,wb-shortcut-empty,wb-bookmarks-empty,wb-countdown-empty,wb-quote-empty"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-1 六新卡壳全在",
+      "ok": true,
+      "raw": "shortcut,countdown,heatmap,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-2 热力卡 7 格（含今日）",
+      "ok": true,
+      "raw": "cells=7"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-3 库统计 4 项数值齐",
+      "ok": true,
+      "raw": "0页面|0最深层级|0多维数据|0收藏"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-4 播种页落库（quick 卡新建页+打字真提交）",
+      "ok": true,
+      "raw": "ed=true pages 0→1 bodyHit=true"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-5 格言卡：从近期页首块取句（播种文本上卡）",
+      "ok": true,
+      "raw": "home=true quote=\"T71 格言样本正文\""
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-6 快捷方式卡：目录可选+录入即显+落 settings localStorage",
+      "ok": true,
+      "raw": "picker=true cand=1 ls=[{\"pageId\":\"01M3705XHQ0RB0B9ARZJMWYG2B\"}] card=\"快捷方式未命名添加快捷方式\""
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-7 倒计时卡：录入后显示剩余天数",
+      "ok": true,
+      "raw": "倒计时发布日还剩 30 天添加倒计时"
+    },
+    {
+      "step": "K2|新卡",
+      "name": "K2-8 收藏卡：录入即显；点击不跳转（D-1 无 openExternal 通道）",
+      "ok": true,
+      "raw": "row=true urlSame=true pages 1→1 clicked=true"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-0 前置：home 挂载且 11 卡在册",
+      "ok": true,
+      "raw": "home=true n=11"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-1 进自定义：grip+移除钮齐（11）",
+      "ok": true,
+      "raw": "grip=11 remove=11"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-2 拖排：heatmap 前移生效且即时落盘",
+      "ok": true,
+      "raw": "dragging=1 order0=heatmap ls={\"v\":2,\"order\":[\"heatmap\",\"quick\",\"todo\",\"database\",\"recent\""
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-3 移除卡片：11→10 且 quote 槽消失（hidden 记账）",
+      "ok": true,
+      "raw": "n=10 heatmap,quick,todo,database,recent,favorites,shortcut,countdown,bookmarks,libstats"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-4 添加卡片目录：移除的卡可加回",
+      "ok": true,
+      "raw": "add=true n=11"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-5 完成钮退出自定义（grip 归零且 home 仍在）",
+      "ok": true,
+      "raw": "grip=0 n=11"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-6 全卡在册（11 卡无丢失）",
+      "ok": true,
+      "raw": "heatmap,quick,todo,database,recent,favorites,shortcut,countdown,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K4|迁移",
+      "name": "K4-0 前置：v1 串已写入并回读一致",
+      "ok": true,
+      "raw": "{\"v\":1,\"order\":[\"quick\",\"todo\",\"database\",\"recent\",\"favorites\"],\"hidden\":[]}"
+    },
+    {
+      "step": "K4|迁移",
+      "name": "K4-1 v1 旧序保持 + 新卡追加在后",
+      "ok": true,
+      "raw": "n=11 quick,todo,database,recent,favorites,shortcut,countdown,heatmap,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K4|迁移",
+      "name": "K4-2 v1 读入迁移语义：DOM 全序 = 内置保序 + 六新卡补尾",
+      "ok": true,
+      "raw": "loadV=1 order=quick,todo,database,recent,favorites,shortcut,countdown,heatmap,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K4|迁移",
+      "name": "K4-3 迁移后写动作落盘 = v2 且 hidden 记账",
+      "ok": true,
+      "raw": "v=2 hidden=[\"libstats\"] raw={\"v\":2,\"order\":[\"quick\",\"todo\",\"database\",\"recent\",\"favorites\",\"shortcut\",\"countdown\",\"hea"
+    },
+    {
+      "step": "evidence",
+      "name": "E1 双证据截图产出",
+      "ok": true,
+      "raw": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t71\\t71-home-light.png"
+    }
+  ]
+}

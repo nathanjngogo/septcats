@@ -31,8 +31,8 @@ export type WorkbenchCardId = (typeof ALL_CARD_IDS)[number];
 export const DEFAULT_CARD_ORDER: readonly WorkbenchCardId[] = [...ALL_CARD_IDS];
 export const DEFAULT_HIDDEN_CARD_IDS: readonly WorkbenchCardId[] = [];
 
-export const WORKBENCH_OPEN_STORAGE_KEY = 'septca…nOpen';
-export const WORKBENCH_CARDS_STORAGE_KEY = 'septca…ards';
+export const WORKBENCH_OPEN_STORAGE_KEY = 'septcats.workbenchOpen';
+export const WORKBENCH_CARDS_STORAGE_KEY = 'septcats.workbench.cards';
 /** v1（T66）= {v:1,order,hidden}；v2（T71）= {v:2,order,hidden,sizes?}（sizes 可选）。 */
 export const WORKBENCH_CARDS_PERSIST_VERSION = 2;
 export const WORKBENCH_CARDS_LEGACY_V1 = 1;
