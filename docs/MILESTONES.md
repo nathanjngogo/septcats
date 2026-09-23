@@ -142,6 +142,7 @@
 | R15-② rc.4 出包 | 09-22 | ✅ 冒烟 54/0 | `Septcats Setup 0.4.1-rc.4.exe` 102,535,625 B sha256 7cefc1cce5200044…（= rc.3 + T63 全宽修正；feed 未动） |
 | R16（老板 09-22 晚：侧栏两修） | 09-22 | 🔄 T64 立项 | ①侧栏最小宽(200)时行 ⋯ 菜单超屏（实测 left=-26px；⋯ 路径走老 absolute、右键 T60 已 clamp→统一 fixed+clamp）②侧栏新建文件夹=page_type'folder'（TEXT 列零迁移；树容器语义：点击展开不建页签、selectPage 兜底、FolderSimple 像素图标复用） |
 | R17（老板 09-22 晚：主题+工作台选型） | 09-22 | 🔄 T65/T66 派子Agent | 主题=方案①画廊（palette 派系 data-palette 覆写块+LayoutPicker 同款弹框；语义色不动）；工作台=方案A+库（home 视图+数据库卡常驻+待办/最近/收藏卡，现有模式↔工作台一键切换）；两单在独立 worktree feat/t65-theme-gallery / feat/t66-workbench 并行（CB 忙时改派子 Agent=老板新规则），探针由 PM 合并后统一跑 |
+| R19（老板 09-23：🔭 换像素） | 09-23 | ✅ **收口** | T68 编辑区标题上方 emoji 🔭 → 局部像素望远镜 glyph（LockGlyph 先例，pixelIcons 主文件红线不动；16 网格 41 rect，currentColor 随主题）；PM 真机 4/0（crispEdges/32px/主题换色 26→237 实测）+像素渲染图目检构图成立（视觉模型今日 429 不可用，走程序化验证）；→ 0.4.1-rc.6 |
 | R18（老板 09-22 深夜：页面密码锁） | 09-22 | ✅ **B1+B2 全量闭环** | 锁=真加密（scrypt+AES 双包络+一次性恢复码，v10 两表 wire 轴零改动）；B1 后端 PM 20/0/2SKIP→B2 收口；B2 前端 PM 真机 35/0（三缺陷根修：Dialog 死第三栏/getStatus 补 unlockedInSession/recover 清会话弹回） |
 | R16-① T64 侧栏两修 | 09-23 | ✅ **PM 真机 15 PASS/0 FAIL** | CB 代码收口 a97f616（PM 补 commit.ts 闸门漏改等 4 处 DEVIATION）；PM 亲写探针：最小侧栏 ⋯/右键盒四边≥8px（修前 left=−26 越屏）、folder 创建/容器语义/转换/面包屑/重启还原、搜索不白屏；夹具隔离 untouched=true |
 | R17-② T66 个人工作台 | 09-23 | ✅ **PM 真机 21 PASS/0 FAIL** | 子 Agent 主体 1664 行 + PM salvage（假桥/正则/钉子新语义/墨线纪律）合入 main 08ed84d；库卡常驻=老板点名"加一个库"；三入口+home 非死角+重启防呆全绿；探针 3 处假红逐条定性为探针侧（Playwright force click 不触发 React onClick 等），产品零缺陷 |
