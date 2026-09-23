@@ -5,10 +5,11 @@
  * parseWorkbenchTemplateFile 单元（坏 JSON / 非对象 / 缺 title / layout 形状 / 落库形状）。
  * 与 renderer 侧 t72-market-model.test.ts 同源读取同一批 JSON，但本套盯的是「主进程通道」。
  */
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createWorkbenchTemplatesService,
   parseWorkbenchTemplateFile,
@@ -34,6 +35,24 @@ describe('workbenchTemplates（主进程 §范围3 只读通道）', () => {
       expect(Array.isArray(tpl.layout.order)).toBe(true);
       expect(Array.isArray(tpl.layout.hidden)).toBe(true);
       expect(Array.isArray(tpl.seedPages)).toBe(true);
+    }
+  });
+
+  // T72-02 回归钉（缺陷1）：dev 态无参路径必须经 __dirname 相对布局命中真实
+  // `resources/workbench-templates`。把 cwd 兜底隔离到一棵不含 resources/ 的临时树，
+  // 只留 `join(__dirname,'..','..','resources')` 候选生效——若未来把目录拼接改回少拼
+  // 一层（原缺陷：join(__dirname,'..','..') = apps/desktop，读不到 resources/），本用例即红。
+  it('dev 无参路径（不注入 resourcesDir）：cwd 隔离后仍经 __dirname 相对布局读到 4 内置模板', async () => {
+    const emptyTree = mkdtempSync(join(tmpdir(), 'septcats-t72-dev-'));
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(emptyTree);
+    try {
+      const service = createWorkbenchTemplatesService(); // 无参 → candidateDirs()
+      const { templates } = await service.list();
+      const ids = templates.map((tpl) => tpl.id).sort();
+      expect(ids).toEqual(['project-board', 'reading-tracker', 'weekly-review', 'work-journal']);
+    } finally {
+      cwdSpy.mockRestore();
+      rmSync(emptyTree, { recursive: true, force: true });
     }
   });
 

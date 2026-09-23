@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ALL_CARD_IDS,
   DEFAULT_CARD_ORDER,
+  readCardsPersist,
   workbenchActions,
   workbenchStore,
   type WorkbenchCardId,
@@ -220,5 +221,44 @@ describe('T72-01 备份 / 还原往返', () => {
 
   it('readLayoutBackup 无记录 → null', () => {
     expect(readLayoutBackup()).toBeNull();
+  });
+});
+
+// T72-02 回归钉（缺陷2）：`backupCurrentLayout()` 在 localStorage 无记录（全新用户
+// 从未改卡）时必须兜底读 store 当前布局——否则返回 null → `writeLayoutBackup(null)`
+// 清除备份 → 首次应用模板后「还原备份」永久不可用（真机 M4-a 实锤）。
+describe('T72-02 备份兜底（LS 无记录 → store 当前布局）', () => {
+  it('LS 清空 + store 默认态 → backupCurrentLayout 返回 v:2 合法 JSON（order=默认 11 序，hidden 空）', () => {
+    // 前置：确无持久化记录（beforeEach 已清 LS + store 复位）
+    expect(readCardsPersist()).toBeNull();
+    expect(readLayoutBackup()).toBeNull();
+
+    const backup = backupCurrentLayout();
+    expect(backup).not.toBeNull();
+    const parsed = JSON.parse(backup as string) as { v: number; order: string[]; hidden: string[] };
+    expect(parsed.v).toBe(2);
+    expect(parsed.order).toEqual([...DEFAULT_CARD_ORDER]);
+    expect(parsed.order).toHaveLength(ALL_CARD_IDS.length);
+    expect(parsed.hidden).toEqual([]);
+  });
+
+  it('兜底备份经 restoreLayoutBackup 回放 → 不崩且序与默认一致（还原可用）', () => {
+    const backup = backupCurrentLayout();
+    expect(backup).not.toBeNull();
+    // 模拟「已应用模板后」的新布局：倒序 + 隐藏 recent
+    workbenchActions.setCardOrder([...ALL_CARD_IDS].reverse() as WorkbenchCardId[]);
+    workbenchActions.setCardHidden('recent', true);
+    expect(workbenchStore.getState().cardOrder).toEqual([...ALL_CARD_IDS].reverse());
+    expect(workbenchStore.getState().hiddenCards).toEqual(['recent']);
+
+    let ok = false;
+    expect(() => {
+      ok = restoreLayoutBackup(backup as string);
+    }).not.toThrow();
+    expect(ok).toBe(true);
+
+    const state = workbenchStore.getState();
+    expect(state.cardOrder).toEqual([...DEFAULT_CARD_ORDER]);
+    expect(state.hiddenCards).toEqual([]);
   });
 });

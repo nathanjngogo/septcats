@@ -24,6 +24,7 @@ import {
   readCardsPersist,
   sanitizeCardsPersist,
   DEFAULT_CARD_ORDER,
+  WORKBENCH_CARDS_PERSIST_VERSION,
   workbenchActions,
   workbenchStore,
   type WorkbenchCardId,
@@ -151,13 +152,18 @@ export function captureCurrentLayout(): WorkbenchTemplateLayout {
   return { v: 2, order: [...cardOrder], hidden: [...hiddenCards] };
 }
 
-/** 一键备份当前布局到 septcats.wbcard.layoutBackup（返回原始 JSON 或 null）。 */
+/** 一键备份当前布局到 septcats.wbcard.layoutBackup（返回原始 JSON 或 null）。
+ * T72 PM 修：LS 无记录（全新安装未改卡）时兜底读 store 当前布局——否则备份永远 null、
+ * 「还原备份」不可用（真机 M4-a 实锤）。 */
 export function backupCurrentLayout(): string | null {
-  const persist: WorkbenchCardsPersist | null = readCardsPersist();
-  if (persist === null) {
-    return null;
+  const persist = readCardsPersist();
+  if (persist !== null) {
+    return JSON.stringify(persist);
   }
-  return JSON.stringify(persist);
+  // LS 无记录兜底 store 当前布局（显式注解打断 tsc 联合推导，修 T72 TS2589）
+  const snap = workbenchStore.getState();
+  const base: WorkbenchCardsPersist = { v: WORKBENCH_CARDS_PERSIST_VERSION, order: [...snap.cardOrder], hidden: [...snap.hiddenCards] };
+  return JSON.stringify(base);
 }
 
 /** 布局备份落地键（§范围2：应用前把当前布局一键备份到这里）。 */

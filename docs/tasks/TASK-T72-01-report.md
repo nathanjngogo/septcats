@@ -118,3 +118,79 @@
 ---
 
 > 收尾：`CB-T72-EXIT=0`。未 merge / 未 push / 未动主树。
+
+---
+
+## §8 PM 真机缺陷修复（T72-02 · T72 真机首轮两缺陷收口）
+
+> 来源：真机探针 `docs/mockups/cdp-e2e-t72-01.mjs` 首轮抓到 2 个产品缺陷。PM 已在主树工作区落下**底稿修复**（未提交），CB 在本单：**审查底稿 + 补 3 个回归钉 + 四门禁定稿**（任务书 `docs/tasks/TASK-T72-02.md`）。
+> 本单未改任何产品源码逻辑（底稿原样保留），仅新增 3 个测试用例 + 本文档章节；DEVIATION 续号 D8–D10。
+
+### §8.1 缺陷1 · dev 态内置模板空列表
+
+- **现象**：dev 运行（非打包）进入模板市场，「内置模板」区恒为空；打包态正常。
+- **根因**：`apps/desktop/src/main/workbenchTemplates.ts` 的 `candidateDirs()` dev 分支原为 `join(__dirname,'..','..')`。dev 态 `__dirname` = `apps/desktop/out/main`（源码态 = `apps/desktop/src/main`），上溯两级 = `apps/desktop`，再拼 `workbench-templates` = `apps/desktop/workbench-templates`——该目录不存在（真实资源在 `apps/desktop/resources/workbench-templates/`）。`existsSync` 永假 → 无候选命中 → `list()` 返回 `{templates: []}` → 内置区全空。
+- **修复（PM 底稿，CB 审查通过）**：dev 候选补齐一层 `resources`：`join(__dirname,'..','..','resources')`；并追加 `join(process.cwd(),'resources')` 兜底。两级上溯从 `out/main`（打包 dev 产物）与 `src/main`（vitest 源态）均得 `apps/desktop`，拼接后均命中真实 `resources/`，与打包态 `<resourcesPath>/workbench-templates` 对齐。
+- **审查结论**：正确、最小、与 `main/tray.ts` 三元组兜底同范式；候选顺序（resourcesPath 优先、命中即 break）与既有 `list()` 语义不冲突。**未重写**。
+
+### §8.2 缺陷2 · 备份恒 null → 「还原备份」不可用
+
+- **现象**：全新用户（从未动过卡）进入市场→应用模板→点「还原备份」无效果；真机 M4-a 实锤。
+- **根因**：`apps/desktop/src/renderer/src/workbench/market.ts` 的 `backupCurrentLayout()` 仅读 `readCardsPersist()`（localStorage 投影）。LS 无记录时返回 `null` → 调用方 `writeLayoutBackup(null)` 清除备份 → 应用模板改写布局后无处可还原。但**照施工单 §范围2 语义，「应用前备份当前布局」的真相源是 store 当前布局，LS 只是持久化投影**。
+- **修复（PM 底稿，CB 审查通过）**：`persist !== null` 时照旧 `stringify(persist)`；否则兜底读 `workbenchStore.getState()` 的 `{v:WORKBENCH_CARDS_PERSIST_VERSION, order:cardOrder, hidden:hiddenCards}`（数组浅拷贝 `[...]`）。
+- **审查结论**：`workbenchStore.getState()` 为一次性快照读、**不引入新订阅**；深拷贝数组隔离引用；显式 `WorkbenchCardsPersist` 注解无害。语义与 `captureCurrentLayout()`（同样直读 store）**一致**——两处同源取当前布局，属正确收敛。**未重写**。
+
+### §8.3 回归钉（新增 3 例 · 已验红）
+
+| # | 文件 | 用例名 | 钉住什么 |
+|---|---|---|---|
+| 1 | `apps/desktop/test/workbenchTemplates.test.ts` | dev 无参路径（不注入 resourcesDir）：cwd 隔离后仍经 __dirname 相对布局读到 4 内置模板 | 把 `process.cwd()` 兜底隔离到一棵**不含 resources/** 的临时树，只留 `join(__dirname,'..','..','resources')` 候选；4 模板可读即证明目录拼接正确。改回少拼一层 → 0 模板 → 红。 |
+| 2 | `apps/desktop/test/t72-market-model.test.ts` | LS 清空 + store 默认态 → backupCurrentLayout 返回 v:2 合法 JSON（order=默认 11 序，hidden 空） | 钉住「LS 无记录不得返回 null」：断言前置 `readCardsPersist()===null` 后，备份仍为 `{v:2, order=DEFAULT_CARD_ORDER(11), hidden:[]}`。 |
+| 3 | `apps/desktop/test/t72-market-model.test.ts` | 兜底备份经 restoreLayoutBackup 回放 → 不崩且序与默认一致（还原可用） | 钉住「还原链路可用」：倒序+隐 recent 模拟应用模板后的新布局，回放兜底备份 → 不抛且 `order===默认序`、`hidden===[]`。 |
+
+- **验红取证**（临时回退两处底稿 → 跑两套件，再原样复原）：
+```
+ Test Files  2 failed (2)
+      Tests  3 failed | 21 passed (24)
+```
+  失败点恰为上述 3 例（缺陷1 用例得 `[]`、缺陷2 两例得 `null`），证明回归钉真实钉住缺陷场景；复原后 3 例转绿。
+
+### §8.4 门禁原始输出（本单自跑）
+
+#### `pnpm typecheck`（目标 0 错）→ 0 错 ✅
+```
+Scope: 9 of 10 workspace projects
+（各包 typecheck: Done，含 apps/desktop tsc -p tsconfig.node.json && -p tsconfig.web.json）
+TYPECHECK_EXIT=0
+```
+
+#### `pnpm -C apps/desktop exec vitest run`（目标全绿，只增不减）→ 94/94 全绿 ✅
+```
+ Test Files  94 passed (94)
+      Tests  1014 passed (1014)
+```
+> 基线（T72-01 §7）1011 → 本单 **1014（+3，即 §8.3 三例）**，无删减、无关模块零回归。
+> 前置：`node scripts/ensure-abi.mjs node` 已先对齐 better-sqlite3 原生 ABI（`exec vitest run` 绕过 `pretest` 钩子；未对齐时 DB 用例会以 `NODE_MODULE_VERSION` 不符跳过 13 个文件，非绿账口径）。
+
+#### `pnpm -C packages/ui exec vitest run`（目标全绿）→ 157 全绿 ✅
+```
+ Test Files  32 passed (32)
+      Tests  157 passed (157)
+```
+
+#### `node packages/ui/tokens/no-magic.mjs`（目标 ✓）→ ✓ ✅
+```
+✓ no-magic：组件 CSS 无字面 hex、无非 1px 重复裸 px
+NO_MAGIC_EXIT=0
+```
+
+### §8.5 DEVIATION 续号（D8–D10）
+
+| 编号 | 现象 | 取舍 | 理由 |
+|---|---|---|---|
+| D8 | 底稿 `backupCurrentLayout` 注释称「显式注解打断 tsc 联合推导，修 T72 TS2589」 | 保留注解，注释照旧 | CB 复核：`tsc` 全量 0 错、未复现 TS2589；该显式 `WorkbenchCardsPersist` 注解**无害**且可在未来联合类型拓宽时防推导失败，故原样保留（不回退、不改注释，避免无谓噪声）。 |
+| D9 | dev 候选新增 `join(process.cwd(),'resources')` 与 `join(__dirname,'..','..','resources')` 在 dev 下解析到同一目录（冗余）；且两条 push 同处一个 `try`，`__dirname` 抛错时会连带跳过 cwd 兜底 | 接受 | dev/打包态 main 均为 CJS，`__dirname` 恒可用，cwd 冗余仅为 alternate-cwd 稳健性；主树未采用 ESM main，理论死角不存在。若未来 main 转 ESM，再把 cwd 兜底移出 `try`（届时立账）。 |
+| D10 | 缺陷1 回归钉未按任务书字面「建含真实 `resources/workbench-templates` 相对布局的临时目录树」，改用 `vi.spyOn(process,'cwd')` 隔离 cwd 兜底候选 | 接受 | 无参路径的目录由编译期 `__dirname` 决定、运行期无法改指；隔离 cwd 兜底是**唯一**能让 `__dirname` 相对候选独立受检、且回退即红的手法（已验红，见 §8.3），比真建临时树更贴近「防目录拼接回退」的目标。 |
+
+> 收尾：`CB-T72-02-EXIT=0`。未 merge / 未 push / 未动主树 / 未建表 / 未加依赖。
+

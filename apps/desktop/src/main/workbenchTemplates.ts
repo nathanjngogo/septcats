@@ -90,7 +90,10 @@ function candidateDirs(): string[] {
     dirs.push(process.resourcesPath);
   }
   try {
-    dirs.push(join(__dirname, '..', '..'));
+    // dev = 应用目录 `resources/workbench-templates`（与打包 `<resourcesPath>/workbench-templates` 对齐；
+    // T72 真机首轮抓到 PM 修正：原少拼一层 resources/ 致 dev 态候选目录永不存在 → 内置模板空列表）
+    dirs.push(join(__dirname, '..', '..', 'resources'));
+    dirs.push(join(process.cwd(), 'resources'));
   } catch {
     // __dirname 不可用时忽略（仅打包态以 resourcesPath 为准）
   }
