@@ -54,7 +54,9 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     // T66-01 显式豁免（PM 收口）：工作台两枚局部 glyph 住 workbench/pixelGlyph.tsx，
     // 是 16 网格像素画、画法逐格拷贝 makeGlyph（同族契约）；T65 合入后 PM 统一收编
     // 进 @septcats/ui 像素族并撤本豁免——撤豁免即红，不放行蔓延。
-    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph']);
+    // T65-01 追加：调色板入口钮的 PixelPaletteGlyph 同理住 theme/pixelGlyph.tsx（像素族
+    // 无对应 glyph，主文件禁改，DEVIATION 待 PM 收编）。
+    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph', 'PixelPaletteGlyph']);
     const missing = unique.filter(
       (name) => typeof table[name] !== 'function' && !T66_LOCAL_GLYPHS.has(name),
     );

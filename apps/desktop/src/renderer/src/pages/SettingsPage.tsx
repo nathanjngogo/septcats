@@ -24,6 +24,7 @@ import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18
 import { AiSection } from '../settings/AiSection';
 import { LayoutSection } from '../layout/LayoutSection';
 import { TemplatesSection } from '../templates/TemplatesSection';
+import { ThemeSection } from '../theme/ThemeSection';
 import './SettingsPage.css';
 
 /** i18n 模板替换：'{version}' / '{percent}' 槽位（t() 本身不做插值）。 */
@@ -375,6 +376,8 @@ export function SettingsPage() {
                 />
               }
             />
+            {/* T65-01 §1.2：配色派系入口（画廊）；「跟随明暗三态」主题开关已在上方 RadioGroup */}
+            <ThemeSection />
           </fieldset>
 
           {/* T39-01 §0.5：布局设计器区块（预设卡片 + 参数微调 + 导出/导入，LayoutSection 自管） */}

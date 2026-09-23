@@ -124,8 +124,8 @@
 }
 
 .wb-card:hover {
-  box-shadow: 4px 4px 0 0 var(--sc-color-shadow-pixel), inset 2px 2px 0 0 var(--sc-color-bevel-hi),
-    inset -2px -2px 0 0 var(--sc-color-bevel-lo);
+  /* T65-01 纪律收口：像素投影一律走 token（不写裸 px 偏移），与 --sc-pixel-out 同款 */
+  box-shadow: var(--sc-pixel-out);
 }
 
 .wb-card__head {

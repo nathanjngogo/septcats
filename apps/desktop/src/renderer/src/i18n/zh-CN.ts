@@ -29,6 +29,8 @@ export const zhCN = {
     resizeAi: '调整 AI 面板宽度',
     // T66-01 §1.2：顶栏工作台入口钮（房子）
     workbenchLabel: '工作台（Alt+H）',
+    // T65-01 §1：顶栏调色板入口钮（画廊）
+    paletteLabel: '配色画廊',
   },
   // T66-01：个人工作台（home 视图）文案。
   workbench: {
@@ -310,6 +312,20 @@ export const zhCN = {
       langSystem: '跟随系统',
       langZh: '简体中文',
       langEn: 'English',
+      // T65-01 §1：配色派系（六选，画廊预览即时切换；含「跟随明暗三态」既有主题开关）
+      palette: '配色派系',
+      paletteDesc: '六套中性配色，画廊预览即时切换并记住',
+      paletteGallery: '打开画廊',
+      paletteCurrent: '当前',
+      paletteDisabledOled: '纯黑仅深色背景生效',
+      paletteNames: {
+        mono: '单色',
+        oled: '纯黑',
+        contrast: '高对比',
+        paper: '纸张',
+        slate: '石墨',
+        moss: '苔青',
+      },
     },
     // T54-01：关闭行为——点窗口关闭按钮时的动作（询问框「记住我的选择」写这里，可改回）
     close: {
@@ -679,6 +695,9 @@ export const zhCN = {
       light: '切换主题：浅色',
       dark: '切换主题：深色',
       system: '切换主题：跟随系统',
+      // T65-01 §1：主题画廊（六派系迷你预览）；{name} = 派系名（settings.appearance.paletteNames）
+      palette: '主题画廊',
+      switch: '切到 {name} 配色',
     },
     ai: {
       continue: 'AI 续写',
@@ -714,6 +733,8 @@ export const zhCN = {
       light: '界面主题',
       dark: '界面主题',
       system: '界面主题',
+      palette: '打开主题画廊，六派系迷你预览即时切换',
+      switch: '切到 {name} 配色派系并记住',
     },
     ai: {
       continue: '基于选中文本或当前块继续写',

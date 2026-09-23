@@ -4,6 +4,8 @@ import { hasStoredTheme, setGlobalThemeMode, ThemeProvider } from '@septcats/ui'
 // 自托管思源黑体（T50-01）：@font-face 必须最先注册，后面的 tokens.css 才引用得到族名。
 import './styles/fonts.css';
 import '@septcats/ui/tokens.css';
+// T65-01 §1.2：配色派系层（下游覆写，必须跟在 tokens.css 之后；具体派系块见 themes.css 文件头纪律）
+import '@septcats/ui/themes.css';
 import { App } from './App';
 import { initLocale } from './i18n';
 import { syncAllCollab } from './collab/collabClient';
