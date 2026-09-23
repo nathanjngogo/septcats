@@ -108,6 +108,7 @@ export interface CommandDeps {
    * → 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
   setThemePalette?(id: PaletteId): void;
+  /**
    * T67-01-B2-01 范围4：加锁命令（仅当前选中且未锁页出现）。与 removeLock 互斥——
    * App 按 lockedIds 二选一注入（未注入 = 无选中页，configurePaletteCommands 摘除）。
    */
@@ -250,6 +251,7 @@ export function themeSwitchDef(id: PaletteId): PaletteCommandDef {
   };
 }
 
+ /**
  * T67-01-B2-01 范围4：「添加页面密码锁」命令定义。**不在静态 COMMAND_DEFS 里**——
  * 与 page.delete / page.toggleFullWidth 同走 deps 门（仅选中页且未锁时出现；
  * configurePaletteCommands 在无选中页时摘除）。与 REMOVE_LOCK_DEF 互斥——App 按
@@ -418,6 +420,7 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
         },
       });
     }
+  }
   // T67-01-B2-01 范围4：加锁/移除锁命令（与 addLock/removeLock deps 同门；二选一由
   // App 按 lockedIds 决定注入哪条，无选中页时 configurePaletteCommands 整键摘除）。
   if (deps.addLock !== undefined) {
