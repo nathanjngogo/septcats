@@ -34,21 +34,20 @@
   text-align: left;
   background: var(--sc-color-surface);
   color: var(--sc-color-ink);
-  border: 1px solid var(--sc-color-border);
+  border: 1px solid var(--sc-color-ink-edge);
   border-radius: var(--sc-radius-sm);
   cursor: pointer;
   font: inherit;
 }
 
 .ws-type-card:hover:not(:disabled) {
-  border-color: var(--sc-color-ink-faint);
+  background: var(--sc-color-surface-active);
 }
 
 .ws-type-card--active {
-  border-color: var(--sc-color-ink);
-  border-width: 2px;
+  border: 2px solid var(--sc-color-ink-edge);
   padding: calc(var(--sc-space-sm) - 1px);
-  box-shadow: var(--sc-bevel-inset, 0 0 0 1px var(--sc-color-ink));
+  box-shadow: var(--sc-bevel-inset, 0 0 0 1px var(--sc-color-ink-edge));
 }
 
 .ws-type-name {

@@ -365,3 +365,293 @@
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink-faint);
 }
+
+/* --------------------------------------------------------------------------
+ * 自定义模式（T71-01 §3）：toggle / 完成 / 拖拽槽 / 添加卡占位 / 手柄
+ * -------------------------------------------------------------------------- */
+
+.wb-customize {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sc-space-xs) var(--sc-space-md);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.wb-customize:hover {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.wb-customize--active {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
+}
+
+.wb-customize-done {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sc-space-xs) var(--sc-space-md);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.wb-customize-done:hover {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.wb-slot {
+  position: relative;
+  min-height: 0;
+}
+
+.wb-slot--drop {
+  outline: 2px dashed var(--sc-color-ink-edge);
+  outline-offset: var(--sc-space-xxs);
+}
+
+.wb-slot--dragging {
+  opacity: 0.5;
+}
+
+.wb-card__grip {
+  position: absolute;
+  top: var(--sc-space-xs);
+  left: var(--sc-space-xs);
+  z-index: 5;
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-sm);
+  cursor: grab;
+  letter-spacing: var(--sc-tracking-editor-body);
+  pointer-events: none;
+}
+
+.wb-card--customizing .wb-card__head {
+  padding-left: var(--sc-space-xl);
+}
+
+.wb-add-card {
+  position: relative;
+  display: flex;
+  border: 2px dashed var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sc-space-md);
+}
+
+.wb-add-card__btn {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  background: none;
+  border: none;
+  padding: var(--sc-space-xs);
+  cursor: pointer;
+}
+
+.wb-add-card__btn:hover {
+  color: var(--sc-color-ink);
+}
+
+/* --------------------------------------------------------------------------
+ * 新 6 卡通用：行内删除钮 / 表单 / 拾取器
+ * -------------------------------------------------------------------------- */
+
+.wb-row__del {
+  display: inline-flex;
+  flex: none;
+  color: var(--sc-color-ink-faint);
+  background: none;
+  border: none;
+  padding: var(--sc-space-xxs);
+  cursor: pointer;
+}
+
+.wb-row__del:hover {
+  color: var(--sc-color-danger);
+}
+
+.wb-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  margin-top: var(--sc-space-xs);
+}
+
+.wb-form__input {
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+}
+
+.wb-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  margin-top: var(--sc-space-xs);
+  padding: var(--sc-space-xs);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+}
+
+.wb-picker__input {
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+}
+
+.wb-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+/* --------------------------------------------------------------------------
+ * shortcut 卡
+ * -------------------------------------------------------------------------- */
+
+.wb-shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+/* --------------------------------------------------------------------------
+ * countdown 卡
+ * -------------------------------------------------------------------------- */
+
+.wb-countdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+.wb-row--danger .wb-row__meta {
+  color: var(--sc-color-danger);
+}
+
+/* --------------------------------------------------------------------------
+ * heatmap 卡（近 7 日；4 档走 --sc-* token，no-magic 钉）
+ * -------------------------------------------------------------------------- */
+
+.wb-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+.wb-heatmap__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sc-space-xxs);
+}
+
+.wb-heat {
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+}
+
+.wb-heat--0 {
+  background: var(--sc-color-surface);
+}
+
+.wb-heat--1 {
+  background: var(--sc-color-ink-faint);
+}
+
+.wb-heat--2 {
+  background: var(--sc-color-ink-secondary);
+}
+
+.wb-heat--3 {
+  background: var(--sc-color-ink);
+}
+
+/* --------------------------------------------------------------------------
+ * quote 卡
+ * -------------------------------------------------------------------------- */
+
+.wb-quote {
+  display: flex;
+}
+
+.wb-quote__text {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  word-break: break-word;
+}
+
+.wb-quote__text:hover {
+  color: var(--sc-color-ink-secondary);
+}
+
+/* --------------------------------------------------------------------------
+ * bookmarks 卡
+ * -------------------------------------------------------------------------- */
+
+.wb-bookmarks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+}
+
+/* --------------------------------------------------------------------------
+ * libstats 卡（四格聚合）
+ * -------------------------------------------------------------------------- */
+
+.wb-libstats {
+  display: flex;
+}
+
+.wb-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-sm);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+}
+
+.wb-stat__value {
+  font: var(--sc-text-h2);
+  color: var(--sc-color-ink);
+}
+
+.wb-stat__label {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}

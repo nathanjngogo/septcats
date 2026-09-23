@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { DotsThree, IconButton, Menu } from '@septcats/ui';
+import { DotsThree, IconButton, Menu, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { workbenchActions, workbenchStore, type WorkbenchCardId } from './state';
 
@@ -18,9 +18,13 @@ export interface WorkbenchCardProps {
   /** 空态/错误态等卡体右上区的附加动作（如数据库卡的「新建库」）。 */
   headerExtra?: ReactNode;
   children: ReactNode;
+  /** 自定义模式（T71-01 §3）：出左上 ⋮⋮ 手柄（拖拽视觉源）+ 右上 ⊟ 移除钮。 */
+  customizing?: boolean;
+  /** 自定义模式移除回调（⊟ → 进 hidden）。 */
+  onRemove?: () => void;
 }
 
-export function WorkbenchCard({ cardId, title, headerExtra, children }: WorkbenchCardProps) {
+export function WorkbenchCard({ cardId, title, headerExtra, children, customizing, onRemove }: WorkbenchCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const order = workbenchStore.getState().cardOrder;
   const hidden = workbenchStore.getState().hiddenCards;
@@ -39,15 +43,31 @@ export function WorkbenchCard({ cardId, title, headerExtra, children }: Workbenc
 
   return (
     <section
-      className="wb-card"
+      className={customizing ? 'wb-card wb-card--customizing' : 'wb-card'}
       data-testid={`wb-card-${cardId}`}
       data-hidden={isHidden ? '1' : undefined}
+      data-customizing={customizing ? '1' : undefined}
       aria-label={title}
     >
+      {customizing ? (
+        <span className="wb-card__grip" data-testid={`wb-card-grip-${cardId}`} aria-hidden="true">
+          ⋮⋮
+        </span>
+      ) : null}
       <header className="wb-card__head">
         <h3 className="wb-card__title">{title}</h3>
         <div className="wb-card__head-actions">
           {headerExtra ?? null}
+          {customizing ? (
+            <IconButton
+              icon={X}
+              label={t('workbench.cardRemove')}
+              data-testid={`wb-card-remove-${cardId}`}
+              onClick={() => {
+                onRemove?.();
+              }}
+            />
+          ) : null}
           <span className={menuOpen ? 'wb-card__menu-wrap wb-card__menu-wrap--open' : 'wb-card__menu-wrap'}>
             <IconButton
               icon={DotsThree}

@@ -52,6 +52,7 @@ import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { AiActionPanel } from '../ai/AiActionPanel';
 import { attachCollab, detachCollab } from '../collab/collabClient';
 import { t } from '../i18n';
+import { bumpActivityToday } from '../workbench/activity';
 import { aliveNodes, pushToast, pageTypeOf, pagesActions, usePages } from '../state/pages';
 import { usePageWidth } from '../state/pageWidth';
 import { registerFlushTask } from '../state/flushRegistry';
@@ -254,6 +255,9 @@ export function PageView({ page }: PageViewProps) {
       actor: PAGE_ACTOR_PLACEHOLDER,
       commit: async (ops) => {
         await window.septcats.blocks.commit({ ops });
+        // T71-01 热力写点唯一：每次编辑提交（防抖后）即 +1 当日活跃计数；失败由 commit 抛错不吞，
+        // 但活动计数写失败静默降级（绝不阻断编辑提交链路）。
+        bumpActivityToday();
       },
       now: () => Date.now(),
       initial,

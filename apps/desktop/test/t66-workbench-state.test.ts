@@ -90,22 +90,40 @@ describe('T66-01 卡配置持久化（野 JSON→默认/修补）', () => {
     expect(persist?.hidden).toEqual(workbenchStore.getState().hiddenCards);
   });
 
-  it('野 JSON 一律 sanitize null（非对象/数组/版本不符/缺字段）', () => {
-    for (const raw of ['{"v":2,"order":[],"hidden":[]}', '[]', '"x"', '{"order":[],"hidden":[]}', 'not-json']) {
+  it('野 JSON 一律 sanitize null（非对象/数组/版本不符/缺字段）；v2 现合法→不归 null', () => {
+    for (const raw of ['{"v":3,"order":[],"hidden":[]}', '[]', '"x"', '{"order":[],"hidden":[]}', 'not-json']) {
       window.localStorage.setItem(WORKBENCH_CARDS_STORAGE_KEY, raw);
       expect(readCardsPersist(), raw).toBeNull();
     }
+    // v2（T71）为合法版本 → 不归 null（空序会补全部默认卡）
+    window.localStorage.setItem(WORKBENCH_CARDS_STORAGE_KEY, '{"v":2,"order":[],"hidden":[]}');
+    const v2 = readCardsPersist();
+    expect(v2).not.toBeNull();
+    expect(v2?.v).toBe(2);
+    expect(v2?.order).toEqual([...DEFAULT_CARD_ORDER]);
   });
 
-  it('未知 id 丢弃 + 去重 + 缺失卡补尾 + hidden 只留存在的 id', () => {
+  it('未知 id 丢弃 + 去重 + 缺失卡补尾（含 6 新卡默认位）+ hidden 只留存在的 id', () => {
     const sanitized = sanitizeCardsPersist({
       v: 1,
       order: ['recent', 'recent', 'ghost', 'quick', 'todo'],
       hidden: ['database', 'ghost', 'todo', 'todo'],
     });
     expect(sanitized).not.toBeNull();
-    // database/favorites 缺失 → 按默认序补尾
-    expect(sanitized?.order).toEqual(['recent', 'quick', 'todo', 'database', 'favorites']);
+    // 5 内置去 ghost/去重后，按默认序补尾（database/favorites + 6 新卡）
+    expect(sanitized?.order).toEqual([
+      'recent',
+      'quick',
+      'todo',
+      'database',
+      'favorites',
+      'shortcut',
+      'countdown',
+      'heatmap',
+      'quote',
+      'bookmarks',
+      'libstats',
+    ]);
     expect(sanitized?.hidden).toEqual(['database', 'todo']);
   });
 
@@ -134,7 +152,8 @@ describe('T66-01 卡序/显隐纯函数', () => {
   it('moveCardInOrder 越界（首位上移/末位下移/隐藏卡）返回 null', () => {
     const order = [...DEFAULT_CARD_ORDER];
     expect(moveCardInOrder(order, [], 'quick', -1)).toBeNull();
-    expect(moveCardInOrder(order, [], 'favorites', 1)).toBeNull();
+    // T71：默认序含 6 新卡，末位现为 libstats
+    expect(moveCardInOrder(order, [], 'libstats', 1)).toBeNull();
     expect(moveCardInOrder(order, ['recent'], 'recent', -1)).toBeNull();
   });
 
