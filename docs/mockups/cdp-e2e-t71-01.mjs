@@ -296,6 +296,14 @@ async function main() {
       const finalSlots = await slots();
       check('K3-5 完成钮退出自定义（grip 归零且 home 仍在）', gripsAfter === 0 && finalSlots.length === 11, `grip=${String(gripsAfter)} n=${String(finalSlots.length)}`);
       check('K3-6 全卡在册（11 卡无丢失）', finalSlots.length === 11, finalSlots.join(','));
+      // K3-7 重启还原：reload 后自定义序仍在（先等 leveldb 落盘，避免假红）
+      await wait(2600);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await wait(3800);
+      await ensureHome();
+      await wait(1600);
+      const orderBack = await slots();
+      check('K3-7 重启还原：自定义序（heatmap 居首）仍在', orderBack.length === 11 && orderBack[0] === 'heatmap', `n=${String(orderBack.length)} order0=${String(orderBack[0])}`);
     });
 
     // ---- K4 v1→v2 迁移 ----

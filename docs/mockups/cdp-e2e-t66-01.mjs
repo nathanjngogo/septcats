@@ -181,13 +181,33 @@ async function main() {
     await wait(700);
     check('T3-a 库卡常驻可见', (await page.locator('[data-testid="wb-card-database"]').count()) > 0, String(await page.locator('[data-testid="wb-card-database"]').count()));
     const dbBefore = await page.locator('[data-testid^="wb-db-row-"]').count();
-    await page.locator('[data-testid="wb-quick-database"]').first().click({ force: true });
-    await wait(1800);
-    // 设计语义：建库 = closeHome 回 pages 打开新库页（dbview 在场即成立）
-    const dbEditorOpen = await page.evaluate(() => {
-      return document.querySelector('.dbpage') !== null;
+    // T70 教训：先清残留浮层（菜单/弹框 outside-close 之外的手动清理），页内原生 click 优先
+    await page.keyboard.press('Escape');
+    await wait(300);
+    if (!(await homeOpen(page))) { await page.keyboard.press('Alt+h'); await wait(800); }
+    const clickDb = await page.evaluate(() => {
+      const b = document.querySelector('[data-testid="wb-quick-database"]');
+      if (b === null) return false;
+      b.click();
+      return true;
     });
-    check('T3-b1 快捷建库后自动回 pages 开库页', (await homeOpen(page)) === false && dbEditorOpen, `home=${String(await homeOpen(page))} dbEditor=${String(dbEditorOpen)}`);
+    if (!clickDb) { await page.locator('[data-testid="wb-quick-database"]').first().click({ force: true }).catch(() => {}); }
+    // 轮询至多 8s（建库+refresh+closeHome+selectPage 是异步链）
+    let dbEditorOpen = false; let homeNow = true;
+    for (let i = 0; i < 20; i += 1) {
+      await wait(400);
+      homeNow = await homeOpen(page);
+      dbEditorOpen = await page.evaluate(() => document.querySelector('.dbpage') !== null);
+      if (homeNow === false && dbEditorOpen) break;
+    }
+    const dbg = await page.evaluate(() => ({
+      toast: [...document.querySelectorAll('.sc-toast, [data-testid^="toast"]')].map((e) => (e.textContent ?? '').trim()).join('|'),
+      hasBtn: document.querySelector('[data-testid="wb-quick-database"]') !== null,
+    }));
+    const dbgWs = await page.evaluate(async () => {
+      try { const r = await window.septcats?.workspaces?.list({}); return JSON.stringify(r).slice(0, 120); } catch (e) { return `ERR:${String(e?.message ?? e)}`; }
+    });
+    check('T3-b1 快捷建库后自动回 pages 开库页', homeNow === false && dbEditorOpen, `click=${String(clickDb)} home=${String(homeNow)} dbEditor=${String(dbEditorOpen)} btn=${String(dbg.hasBtn)} toast="${dbg.toast}" ws=${dbgWs}`);
     await page.keyboard.press('Alt+h');
     await wait(900);
     const dbAfter = await page.locator('[data-testid^="wb-db-row-"]').count();
@@ -239,7 +259,7 @@ async function main() {
     await page.locator('[data-testid="wb-reset"]').first().click({ force: true });
     await wait(700);
     const cardsReset = await page.locator('[data-testid^="wb-slot-"]').count();
-    check('T4-c 恢复→五卡齐', cardsReset === 5, `after=${String(cardsReset)}`);
+    check('T4-c 恢复→全卡齐（注册表 11：T71 后口径）', cardsReset === 11, `after=${String(cardsReset)}`);
 
     STEP = 'T5|待办卡';
     await page.locator('[data-testid="wb-todo-input"]').first().fill('T66 待办一枚');
@@ -249,13 +269,13 @@ async function main() {
     check('T5-a 待办回车→新增一行', todoRows >= 1, `rows=${String(todoRows)}`);
     const firstTodo = await page.evaluate(() => document.querySelector('[data-testid^="wb-todo-toggle-"]')?.getAttribute('data-testid')?.replace('wb-todo-toggle-', '') ?? null);
     if (firstTodo !== null) {
-      await page.locator(`[data-testid="wb-todo-toggle-${firstTodo}"]`).first().click({ force: true });
-      await wait(500);
+      await page.evaluate((id) => { document.querySelector(`[data-testid="wb-todo-toggle-${id}"]`)?.click(); }, firstTodo);
+      await wait(600);
       const done = await page.evaluate((id) => document.querySelector(`[data-testid="wb-todo-toggle-${id}"]`)?.getAttribute('aria-checked') ?? document.querySelector(`[data-testid="wb-todo-toggle-${id}"]`)?.className ?? 'gone', firstTodo);
       info('勾选后待办态', done);
-      await page.locator(`[data-testid="wb-todo-del-${firstTodo}"]`).first().click({ force: true });
-      await wait(500);
-      const todoAfterDel = await page.locator(`[data-testid="wb-todo-toggle-${firstTodo}"]`).count();
+      await page.evaluate((id) => { document.querySelector(`[data-testid="wb-todo-del-${id}"]`)?.click(); }, firstTodo);
+      let todoAfterDel = 1;
+      for (let i = 0; i < 10; i += 1) { await wait(400); todoAfterDel = await page.locator(`[data-testid="wb-todo-toggle-${firstTodo}"]`).count(); if (todoAfterDel === 0) break; }
       check('T5-b 删除待办→该行移除', todoAfterDel === 0, `after=${String(todoAfterDel)}`);
     }
     await page.screenshot({ path: join(SHOTS, 't5-todo.png') }).catch(() => {});
