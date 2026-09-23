@@ -1,6 +1,6 @@
 {
   "task": "T66-01",
-  "ranAt": "2026-09-22T17:14:24.543Z",
+  "ranAt": "2026-09-23T18:04:58.052Z",
   "assertions": [
     {
       "step": "T1|三入口",
@@ -10,7 +10,7 @@
     },
     {
       "step": "T1|三入口",
-      "name": "T1-b 房子钮开 home（.wb-root 出现）",
+      "name": "T1-b 市场链→我的工作台开 home（.wb-root 出现）",
       "ok": true,
       "raw": "true"
     },
@@ -22,9 +22,9 @@
     },
     {
       "step": "T1|三入口",
-      "name": "T1-d Alt+H 开 home",
+      "name": "T1-d Alt+H 开市场（wb-market 在场）",
       "ok": true,
-      "raw": "true"
+      "raw": "1"
     },
     {
       "step": "T1|三入口",
@@ -42,7 +42,7 @@
       "step": "T2|home非死角",
       "name": "T2-b 点侧栏行收 home（回编辑视图）",
       "ok": true,
-      "raw": "node=01M351RC7EN52XYRZR34JE0BSJ homeAfter=false"
+      "raw": "node=01M37Q1GYXP7Q4VTF9B3R5TJ5Z homeAfter=false"
     },
     {
       "step": "T2|home非死角",
@@ -60,7 +60,7 @@
       "step": "T3|库卡",
       "name": "T3-b1 快捷建库后自动回 pages 开库页",
       "ok": true,
-      "raw": "home=false dbEditor=true"
+      "raw": "click=true home=false dbEditor=true btn=false toast=\"已新建多维数据页\" ws={\"items\":[{\"id\":\"01M37Q1EAC4V6QMR38KG1SYDSA\",\"name\":\"个人工作区\"}],\"activeId\":\"01M37Q1EAC4V6QMR38KG1SYDSA\"}"
     },
     {
       "step": "T3|库卡",
@@ -78,13 +78,13 @@
       "step": "T4|卡显隐重置",
       "name": "[info] T4 钮盒",
       "ok": null,
-      "raw": "{\"x\":991,\"y\":620.375,\"width\":28,\"height\":28}"
+      "raw": "{\"x\":991,\"y\":344.703125,\"width\":28,\"height\":28}"
     },
     {
       "step": "T4|卡显隐重置",
       "name": "[info] T4 命中测试",
       "ok": null,
-      "raw": "rect={\"x\":991,\"y\":620,\"w\":28,\"h\":28} hit=rect.[object SVGAnimatedString] containsBtn=true"
+      "raw": "rect={\"x\":991,\"y\":345,\"w\":28,\"h\":28} hit=rect.[object SVGAnimatedString] containsBtn=true"
     },
     {
       "step": "T4|卡显隐重置",
@@ -108,7 +108,7 @@
       "step": "T4|卡显隐重置",
       "name": "T4-a 隐藏「最近」卡→该 slot 消失",
       "ok": true,
-      "raw": "cardsAll=5 recentSlotAfter=0"
+      "raw": "cardsAll=11 recentSlotAfter=0"
     },
     {
       "step": "T4|卡显隐重置",
@@ -118,9 +118,9 @@
     },
     {
       "step": "T4|卡显隐重置",
-      "name": "T4-c 恢复→五卡齐",
+      "name": "T4-c 恢复→全卡齐（注册表 11：T71 后口径）",
       "ok": true,
-      "raw": "after=5"
+      "raw": "after=11"
     },
     {
       "step": "T5|待办卡",
@@ -154,9 +154,9 @@
     },
     {
       "step": "T6|重启防呆",
-      "name": "T6-c 重启后 home 仍可开（入口未坏）",
+      "name": "T6-c 重启后市场→home 链可开（入口未坏）",
       "ok": true,
-      "raw": "true"
+      "raw": "mkt=true home=true"
     },
     {
       "step": "T7|存活",

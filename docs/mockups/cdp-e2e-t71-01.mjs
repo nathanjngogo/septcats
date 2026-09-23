@@ -112,11 +112,15 @@ async function main() {
     await wait(2800);
     return ok;
   };
-  // 回 home 的真实入口=顶栏房子钮 workbench-open（T66 口径）；切库回原库会恢复编辑页签、非 home。
+  // T72 后回 home 链：顶栏=开市场（workbench-market-open），home 钮在市场内（workbench-open）。
   const ensureHome = async () => {
     if (await has('workbench')) return true;
-    await page.locator('[data-testid="workbench-open"]').first().click({ force: true });
-    await wait(2600);
+    if (!(await has('wb-market'))) {
+      await page.evaluate(() => document.querySelector('[data-testid="workbench-market-open"]')?.click());
+      await wait(1200);
+    }
+    await page.evaluate(() => document.querySelector('[data-testid="workbench-open"]')?.click());
+    await wait(2400);
     return has('workbench');
   };
   const group = async (name, fn) => {
@@ -354,7 +358,8 @@ async function main() {
     await wait(2500);
     check('K6-2 本探针 electron 残留 0', electronCount() <= beforee, `before=${String(beforee)} after=${String(electronCount())}`);
     console.log(`\n===== T71-01：${pass} PASS / ${fail} FAIL =====`);
-    process.exit(fail === 0 ? 0 : 1);
+    if (assertions.length < 24) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 24（静默蒸发守卫）`); }
+    process.exit(fail === 0 && assertions.length >= 24 ? 0 : 1);
   }
 }
 main().catch((e) => { console.error('FATAL', e); process.exit(3); });

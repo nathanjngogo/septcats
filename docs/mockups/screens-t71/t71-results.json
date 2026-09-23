@@ -1,6 +1,6 @@
 {
   "task": "T71-01",
-  "ranAt": "2026-09-23T11:25:31.371Z",
+  "ranAt": "2026-09-23T17:53:22.267Z",
   "assertions": [
     {
       "step": "setup",
@@ -66,7 +66,7 @@
       "step": "K2|新卡",
       "name": "K2-6 快捷方式卡：目录可选+录入即显+落 settings localStorage",
       "ok": true,
-      "raw": "picker=true cand=1 ls=[{\"pageId\":\"01M3705XHQ0RB0B9ARZJMWYG2B\"}] card=\"快捷方式未命名添加快捷方式\""
+      "raw": "picker=true cand=1 ls=[{\"pageId\":\"01M37PBNNJNA3M6R31M7Z1KXVV\"}] card=\"快捷方式未命名添加快捷方式\""
     },
     {
       "step": "K2|新卡",
@@ -121,6 +121,12 @@
       "name": "K3-6 全卡在册（11 卡无丢失）",
       "ok": true,
       "raw": "heatmap,quick,todo,database,recent,favorites,shortcut,countdown,quote,bookmarks,libstats"
+    },
+    {
+      "step": "K3|自定义",
+      "name": "K3-7 重启还原：自定义序（heatmap 居首）仍在",
+      "ok": true,
+      "raw": "n=11 order0=heatmap"
     },
     {
       "step": "K4|迁移",

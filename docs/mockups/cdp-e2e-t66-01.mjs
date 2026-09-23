@@ -138,20 +138,28 @@ async function main() {
     await newPage(page, 'T66甲页');
     await newPage(page, 'T66乙页');
 
+    // T72 语义：Alt+H=开市场；进 home=市场内 workbench-open。helper 复用。
+    const goHome = async () => {
+      if (await homeOpen(page)) return true;
+      if ((await page.locator('[data-testid="wb-market"]').count()) === 0) {
+        await page.evaluate(() => document.querySelector('[data-testid="workbench-market-open"]')?.click());
+        await wait(1000);
+      }
+      await page.evaluate(() => document.querySelector('[data-testid="workbench-open"]')?.click());
+      await wait(900);
+      return homeOpen(page);
+    };
     STEP = 'T1|三入口';
     check('T1-a 初始非 home（编辑视图）', (await homeOpen(page)) === false, `home=${String(await homeOpen(page))}`);
-    await page.locator('[data-testid="workbench-open"]').first().click({ force: true });
-    await wait(800);
-    check('T1-b 房子钮开 home（.wb-root 出现）', await homeOpen(page), String(await homeOpen(page)));
+    check('T1-b 市场链→我的工作台开 home（.wb-root 出现）', await goHome(), String(await homeOpen(page)));
     await page.locator('[data-testid="wb-close"]').first().click({ force: true });
     await wait(600);
     check('T1-c wb-close 收 home', (await homeOpen(page)) === false, String(await homeOpen(page)));
-    // Alt+H
-    await page.locator('.app-side').first().click({ position: { x: 5, y: 5 }, force: true });
+    // Alt+H（T72 新语义=开市场；Esc 关）
     await page.keyboard.press('Alt+h');
     await wait(700);
-    check('T1-d Alt+H 开 home', await homeOpen(page), String(await homeOpen(page)));
-    await page.keyboard.press('Alt+h');
+    check('T1-d Alt+H 开市场（wb-market 在场）', (await page.locator('[data-testid="wb-market"]').count()) > 0, String(await page.locator('[data-testid="wb-market"]').count()));
+    await page.keyboard.press('Escape');
     await wait(500);
     // 命令面板 go home
     await page.keyboard.press('Control+k');
@@ -164,8 +172,7 @@ async function main() {
     check('T1-e 命令面板「工作台」开 home', found && (await homeOpen(page)), `rowFound=${String(found)} home=${String(await homeOpen(page))}`);
 
     STEP = 'T2|home非死角';
-    await page.locator('[data-testid="workbench-open"]').first().click({ force: true }).catch(() => {});
-    if (!(await homeOpen(page))) { await page.keyboard.press('Alt+h'); await wait(600); }
+    await goHome();
     check('T2-a home 开着时侧栏在（.app-side 可点）', (await page.locator('.app-side').count()) > 0, String(await page.locator('.app-side').count()));
     // 点侧栏某普通行 → 应收 home 开编辑器（openInTab 守卫）
     const anyNode = await firstSideNodeId(page);
@@ -176,15 +183,14 @@ async function main() {
     await page.screenshot({ path: join(SHOTS, 't2-back-to-editor.png') }).catch(() => {});
 
     STEP = 'T3|库卡';
-    // 开 home → 快捷「新建多维数据」→ 库卡出现该行 + 行数
-    await page.keyboard.press('Alt+h');
-    await wait(700);
+    // 进 home → 快捷「新建多维数据」→ 库卡出现该行 + 行数
+    await goHome();
     check('T3-a 库卡常驻可见', (await page.locator('[data-testid="wb-card-database"]').count()) > 0, String(await page.locator('[data-testid="wb-card-database"]').count()));
     const dbBefore = await page.locator('[data-testid^="wb-db-row-"]').count();
     // T70 教训：先清残留浮层（菜单/弹框 outside-close 之外的手动清理），页内原生 click 优先
     await page.keyboard.press('Escape');
     await wait(300);
-    if (!(await homeOpen(page))) { await page.keyboard.press('Alt+h'); await wait(800); }
+    if (!(await homeOpen(page))) { await goHome(); }
     const clickDb = await page.evaluate(() => {
       const b = document.querySelector('[data-testid="wb-quick-database"]');
       if (b === null) return false;
@@ -208,8 +214,8 @@ async function main() {
       try { const r = await window.septcats?.workspaces?.list({}); return JSON.stringify(r).slice(0, 120); } catch (e) { return `ERR:${String(e?.message ?? e)}`; }
     });
     check('T3-b1 快捷建库后自动回 pages 开库页', homeNow === false && dbEditorOpen, `click=${String(clickDb)} home=${String(homeNow)} dbEditor=${String(dbEditorOpen)} btn=${String(dbg.hasBtn)} toast="${dbg.toast}" ws=${dbgWs}`);
-    await page.keyboard.press('Alt+h');
-    await wait(900);
+    await goHome();
+    await wait(400);
     const dbAfter = await page.locator('[data-testid^="wb-db-row-"]').count();
     check('T3-b2 重开 home→库卡新增一行', dbAfter >= dbBefore + 1, `before=${String(dbBefore)} after=${String(dbAfter)}`);
     // 行数文案（可能 loading 或 N 行）
@@ -218,7 +224,7 @@ async function main() {
     await page.screenshot({ path: join(SHOTS, 't3-database-card.png') }).catch(() => {});
 
     STEP = 'T4|卡显隐重置';
-    const cardsAll = await page.locator('[data-testid="wb-slot-quick"],[data-testid="wb-slot-todo"],[data-testid="wb-slot-database"],[data-testid="wb-slot-recent"],[data-testid="wb-slot-favorites"]').count();
+    const cardsAll = await page.locator('[data-testid^="wb-slot-"]').count(); // T71 后=11
     const moreBtn = page.locator('[data-testid="wb-card-more-recent"]').first();
     await moreBtn.scrollIntoViewIfNeeded();
     await wait(300);
@@ -254,7 +260,7 @@ async function main() {
     }));
     await wait(700);
     const cardsAfterHide = await page.locator('[data-testid="wb-slot-recent"]').count();
-    check('T4-a 隐藏「最近」卡→该 slot 消失', cardsAfterHide === 0 && cardsAll === 5, `cardsAll=${String(cardsAll)} recentSlotAfter=${String(cardsAfterHide)}`);
+    check('T4-a 隐藏「最近」卡→该 slot 消失', cardsAfterHide === 0 && cardsAll === 11, `cardsAll=${String(cardsAll)} recentSlotAfter=${String(cardsAfterHide)}`);
     check('T4-b 有隐藏时出现「恢复」钮', (await page.locator('[data-testid="wb-reset"]').count()) > 0, String(await page.locator('[data-testid="wb-reset"]').count()));
     await page.locator('[data-testid="wb-reset"]').first().click({ force: true });
     await wait(700);
@@ -283,7 +289,7 @@ async function main() {
     STEP = 'T6|重启防呆';
     // home 开着 → 优雅退出 → 重启 → 应回 pages（不滞留 home）
     // （T3-b2 起 home 一直开着；Alt+H 是 toggle，盲按会反收——状态感知确保开）
-    if (!(await homeOpen(page))) { await page.keyboard.press('Alt+h'); await wait(600); }
+    await goHome();
     check('T6-a 退出前 home 开着', await homeOpen(page), String(await homeOpen(page)));
     await page.evaluate(() => window.close()).catch(() => {});
     await wait(2200);
@@ -294,10 +300,12 @@ async function main() {
     const homeAfterBoot = await homeOpen(page);
     const editorAfterBoot = (await page.locator('.pv-root').count()) > 0;
     check('T6-b 重启不滞留 home（防呆回 pages）', homeAfterBoot === false, `home=${String(homeAfterBoot)} editor=${String(editorAfterBoot)}`);
-    // 重启后 home 仍可开
+    // 重启后 home 仍可开（T72 链：Alt+H 市场→home 钮）
     await page.keyboard.press('Alt+h');
     await wait(700);
-    check('T6-c 重启后 home 仍可开（入口未坏）', await homeOpen(page), String(await homeOpen(page)));
+    const mkt = (await page.locator('[data-testid="wb-market"]').count()) > 0;
+    if (mkt) { await page.evaluate(() => document.querySelector('[data-testid="workbench-open"]')?.click()); await wait(800); }
+    check('T6-c 重启后市场→home 链可开（入口未坏）', mkt && (await homeOpen(page)), `mkt=${String(mkt)} home=${String(await homeOpen(page))}`);
     await page.screenshot({ path: join(SHOTS, 't6-restart-home.png') }).catch(() => {});
 
     STEP = 'T7|存活';
@@ -308,6 +316,8 @@ async function main() {
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't66-01-results.json'), JSON.stringify({ task: 'T66-01', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T66-01：${pass} PASS / ${fail} FAIL =====`);
+    if (assertions.length < 20) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 20（静默蒸发守卫）`); }
+
     try { await page?.evaluate(() => window.close()); } catch { /* */ }
     await wait(1800);
     try { browser?.close(); } catch { /* */ }
@@ -316,7 +326,7 @@ async function main() {
     info('真实数据根未被触碰', `untouched=${String(rootBefore === rootAfter)}`);
     info('node 孤儿差分', `now=${String(nodeCount())} baseline=${String(nodesBefore)}`);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
-    process.exit(fail === 0 ? 0 : 1);
+    process.exit(fail === 0 && assertions.length >= 20 ? 0 : 1);
   }
 }
 main().catch((e) => {
