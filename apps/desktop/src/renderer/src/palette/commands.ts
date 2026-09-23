@@ -14,6 +14,7 @@
  */
 import { t } from '../i18n';
 import type { AiBlockAction } from '../../../shared/aiPrompts';
+import { PALETTE_IDS, type PaletteId } from '../theme/paletteState';
 
 export interface PaletteCommandDef {
   readonly id: string;
@@ -97,6 +98,16 @@ export interface CommandDeps {
    * 测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
   openWorkbench?(): void;
+  /**
+   * T65-01 §1：打开主题画廊（六派系迷你预览弹框）。App 恒注入 → 命令恒出现；
+   * 测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
+   */
+  openThemeGallery?(): void;
+  /**
+   * T65-01 §1：切到指定配色派系（六条独立的「切到 X 派系」命令）。App 恒注入
+   * → 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
+   */
+  setThemePalette?(id: PaletteId): void;
   notify(message: string): void;
   setThemeMode(mode: 'light' | 'dark' | 'system'): void;
 }
@@ -194,6 +205,42 @@ export const WORKBENCH_DEF: PaletteCommandDef = {
   hint: t('commandHints.app.workbench'),
   aliases: ['gongzuotai', 'gzt', 'home', 'go home', 'workbench'],
 };
+
+/**
+ * T65-01 §1：主题画廊命令。**不在静态 COMMAND_DEFS 里**——同 openManual 走 deps 门
+ * （App 恒注入 openThemeGallery → 恒出现；palette 基线测试的 spy deps 不注入 →
+ * 静态清单/别名基线不受影响）。
+ */
+export const THEME_GALLERY_DEF: PaletteCommandDef = {
+  id: 'theme.palette',
+  label: t('commands.theme.palette'),
+  hint: t('commandHints.theme.palette'),
+  aliases: ['zhutiuhualang', 'zhutihualang', 'hualang', 'tzhl', 'theme gallery', 'gallery', 'palette'],
+};
+
+/**
+ * T65-01 §1：六条「切到 X 派系」命令（可发现性优先，不合并成循环）。
+ * 每条都按派系 id 动态生成 label/aliases（拼音 + 英文），不在静态 COMMAND_DEFS 里，
+ * 走 deps 门（App 恒注入 setThemePalette → 恒出现）。
+ */
+const PALETTE_SWITCH_ALIASES: Record<PaletteId, readonly string[]> = {
+  mono: ['danse', 'dansetiaose', 'mono', 'monochrome'],
+  oled: ['chunhei', 'oled', 'pureblack', 'black'],
+  contrast: ['gaoduibi', 'gaoduidibi', 'contrast', 'highcontrast'],
+  paper: ['zhizhang', 'paper'],
+  slate: ['shimo', 'shimoohui', 'slate', 'graphite'],
+  moss: ['taiqing', 'moss'],
+};
+
+/** 派系 id → 命令 def（label/hint 在绑定时经 t() 现取，见 bindPaletteCommands）。 */
+export function themeSwitchDef(id: PaletteId): PaletteCommandDef {
+  return {
+    id: `theme.switch.${id}`,
+    label: t('commands.theme.switch'),
+    hint: t('commandHints.theme.switch'),
+    aliases: PALETTE_SWITCH_ALIASES[id],
+  };
+}
 
 /** id → 行为绑定（穷尽 switch：新增 def 必须补分支）。 */
 export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
@@ -318,6 +365,28 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       hint: t('commandHints.app.workbench'),
       run: deps.openWorkbench,
     });
+  }
+  // T65-01 §1：主题画廊 + 六条「切到 X 派系」命令（App 恒注入 → 恒出现）。
+  if (deps.openThemeGallery !== undefined) {
+    commands.push({
+      ...THEME_GALLERY_DEF,
+      label: t('commands.theme.palette'),
+      hint: t('commandHints.theme.palette'),
+      run: deps.openThemeGallery,
+    });
+  }
+  if (deps.setThemePalette !== undefined) {
+    for (const id of PALETTE_IDS) {
+      const name = t(`settings.appearance.paletteNames.${id}`);
+      commands.push({
+        ...themeSwitchDef(id),
+        label: t('commands.theme.switch').replace('{name}', name),
+        hint: t('commandHints.theme.switch').replace('{name}', name),
+        run: (): void => {
+          deps.setThemePalette?.(id);
+        },
+      });
+    }
   }
   return commands;
 }

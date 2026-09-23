@@ -124,10 +124,8 @@
 }
 
 .wb-card:hover {
-  /* T66-01 PM 修正：裸 4px 违 no-magic 且破 T53 立体语法——hover 先例口径
-     （Button/IconButton=translate(--sc-space-xxs)+token 阴影）。卡浮起感=投影加深一档+微移。 */
-  box-shadow: var(--sc-pixel-flat);
-  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
+  /* T65-01 纪律收口：像素投影一律走 token（不写裸 px 偏移），与 --sc-pixel-out 同款 */
+  box-shadow: var(--sc-pixel-out);
 }
 
 .wb-card__head {

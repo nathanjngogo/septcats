@@ -40,6 +40,9 @@ import { WorkbenchPage } from './workbench/WorkbenchPage';
 import { workbenchActions, useWorkbench } from './workbench/state';
 import { PixelHomeGlyph } from './workbench/pixelGlyph';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
+import { paletteActions as themePaletteActions, OPEN_THEME_GALLERY_EVENT } from './theme/paletteState';
+import { ThemeGallery } from './theme/ThemeGallery';
+import { ThemePaletteButton } from './theme/ThemePaletteButton';
 import './App.css';
 
 /**
@@ -92,6 +95,13 @@ function useCommandWiring(
             openLayoutEditor,
             // T66-01 §1.2：命令面板「工作台」入口（go home / workbench）
             openWorkbench,
+            // T65-01 §1.2：命令面板「主题画廊」+「切到 X 派系」六条（经事件/派系状态同通道）
+            openThemeGallery: (): void => {
+              window.dispatchEvent(new Event(OPEN_THEME_GALLERY_EVENT));
+            },
+            setThemePalette: (id): void => {
+              themePaletteActions.setPalette(id);
+            },
             runAiAction: (action): void => {
               // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
               window.dispatchEvent(new CustomEvent('septcats:ai-action', { detail: { action } }));
@@ -161,6 +171,12 @@ export function App() {
   const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout'>('editor');
   // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
+  // T65-01 §1.2：主题画廊弹框开合（aria-pressed 同源；命令面板/设置入口经事件开）
+  const [themeGalleryOpen, setThemeGalleryOpen] = useState(false);
+  // T65-01 §1.1：当前明暗基底（data-theme 由 ThemeProvider 管，这里只读根属性，不借 useTheme
+  // 以兼容「App 直渲」集成测试未包 ThemeProvider 的接线）
+  const resolvedTheme: 'light' | 'dark' =
+    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);
@@ -210,6 +226,21 @@ export function App() {
   // T39-01 §0.2/§0.3：挂载时读布局存储（损坏回退默认）+ 注入根节点 CSS 变量
   useEffect(() => {
     layoutActions.init();
+  }, []);
+
+  // T65-01 §1.1：挂载时初始化配色派系（读存储 + 挂根属性 data-palette），
+  // 与 layoutActions.init 同款管线（theme 层 data-theme 由 ThemeProvider 管，palette 自管）。
+  useEffect(() => {
+    themePaletteActions.init();
+  }, []);
+
+  // T65-01 §1.2：监听「打开主题画廊」事件（设置页入口钮 / 命令面板同通道解耦），路由仍在 App。
+  useEffect(() => {
+    const openGallery = (): void => setThemeGalleryOpen(true);
+    window.addEventListener(OPEN_THEME_GALLERY_EVENT, openGallery);
+    return () => {
+      window.removeEventListener(OPEN_THEME_GALLERY_EVENT, openGallery);
+    };
   }, []);
 
   // T39-01：侧栏位置随布局状态同步（预设切换/导入布局后生效）
@@ -505,6 +536,14 @@ export function App() {
               data-testid="workbench-open"
               onClick={toggleWorkbench}
             />
+            {/* T65-01 §1.2：顶栏调色板入口钮（学 workbench-open 接线；glyph 局部自绘，
+                像素族无对应 glyph，禁改 pixelIcons 主文件，DEVIATION 待 PM 收编）。 */}
+            <ThemePaletteButton
+              ariaPressed={themeGalleryOpen}
+              onClick={() => {
+                setThemeGalleryOpen((open) => !open);
+              }}
+            />
             <IconButton
               icon={MagnifyingGlass}
               label={t('app.searchLabel')}
@@ -610,6 +649,14 @@ export function App() {
           setLayoutPickerOpen(false);
         }}
         onEdit={openLayoutEditor}
+      />
+      {/* T65-01 §1.2：主题画廊弹框（六派系迷你预览卡，点卡即时切换+持久化，不关闭） */}
+      <ThemeGallery
+        open={themeGalleryOpen}
+        resolvedTheme={resolvedTheme}
+        onClose={() => {
+          setThemeGalleryOpen(false);
+        }}
       />
       {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
       <PageDeleteDialog />

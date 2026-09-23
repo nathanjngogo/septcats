@@ -1,0 +1,149 @@
+/*
+ * themes.css —— 主题画廊·配色派系层（TASK-T65-01 §1.2）。
+ *
+ * 定位：tokens.css 的**下游覆写层**（必须在其之后加载）。theme 层（light/dark 基底）
+ * 不动，palette 层以 [data-palette="<id>"] 挂在同一 documentElement 上叠加，
+ * 与 [data-theme] 组合选择器实现「明暗基底 × 配色派系」两层模型：
+ *   - [data-theme="light"][data-palette="x"] / [data-theme="dark"][data-palette="x"]
+ *   - oled 只定义 dark 基底块（light 基底无覆写 = 按 mono 渲染，§1.1 口径）。
+ *  specificity（属性×2）高于 tokens.css 的 [data-theme="dark"]（属性×1），故覆写生效。
+ *
+ * 纪律（§3 红线）：
+ *  - 只覆写中性面 token（五级平面 / 文字四档 / 发丝线）；danger / success / accent
+ *    族 / focus-ring / selection / bevel / shadow-pixel / ink-edge 一律不碰——
+ *    语义色与像素黑框线语法在任何派系下保持原值。
+ *  - 每派系的中性色为**低饱和派生灰**（R/G/B 互差 ≤0x22），明暗两版各自过对比度：
+ *    ink/ink-secondary 对 canvas ≥4.5、ink-faint/icon-faint 对 canvas ≥3.0
+ *    （新派系门禁见 packages/ui/test/t65-palettes.test.ts，数值逐对钉死）。
+ *  - 本文件是 token 纪律豁免清单成员（no-magic.mjs EXEMPT_FILES）：派系色板的定义
+ *    即字面色值（同 tokens.css 之于 DESIGN.md），消费端一律 var(--sc-*)。
+ *
+ * 色板来源：§1.1 六派系口径（mono 无覆写 = tokens.css 现状默认）。
+ */
+
+/* —— oled：纯黑底（OLED 像素自发光），仅 dark 基底生效 —— */
+[data-theme="dark"][data-palette="oled"] {
+  --sc-color-canvas: #000000;
+  --sc-color-surface: #0A0A0A;
+  --sc-color-surface-raised: #121212;
+  --sc-color-content: #000000;
+  --sc-color-surface-active: #1A1A1A;
+  --sc-color-ink: #F2F2F2;
+  --sc-color-ink-secondary: #B0B0B0;
+  --sc-color-ink-faint: #9A9A9A;
+  --sc-color-icon-faint: #7A7A7A;
+  --sc-color-hairline: #2A2A2A;
+  --sc-color-hairline-strong: #454545;
+}
+
+/* —— contrast：高对比灰阶（浅色版 = 近白底纯黑字；深色版 = 近黑底纯白字） —— */
+[data-theme="light"][data-palette="contrast"] {
+  --sc-color-canvas: #FFFFFF;
+  --sc-color-surface: #F2F2F2;
+  --sc-color-surface-raised: #FFFFFF;
+  --sc-color-content: #FFFFFF;
+  --sc-color-surface-active: #E6E6E6;
+  --sc-color-ink: #000000;
+  --sc-color-ink-secondary: #262626;
+  --sc-color-ink-faint: #404040;
+  --sc-color-icon-faint: #5C5C5C;
+  --sc-color-hairline: #7A7A7A;
+  --sc-color-hairline-strong: #000000;
+}
+[data-theme="dark"][data-palette="contrast"] {
+  --sc-color-canvas: #050505;
+  --sc-color-surface: #101010;
+  --sc-color-surface-raised: #1A1A1A;
+  --sc-color-content: #000000;
+  --sc-color-surface-active: #222222;
+  --sc-color-ink: #FFFFFF;
+  --sc-color-ink-secondary: #D8D8D8;
+  --sc-color-ink-faint: #B8B8B8;
+  --sc-color-icon-faint: #9A9A9A;
+  --sc-color-hairline: #6E6E6E;
+  --sc-color-hairline-strong: #FFFFFF;
+}
+
+/* —— paper：纸黄暖灰（低饱和暖向，ink-faint 提档保 ≥3.0，同 T53 §2 预案） —— */
+[data-theme="light"][data-palette="paper"] {
+  --sc-color-canvas: #F4EFE6;
+  --sc-color-surface: #ECE6DA;
+  --sc-color-surface-raised: #FBF8F1;
+  --sc-color-content: #FCFAF4;
+  --sc-color-surface-active: #E2DBCC;
+  --sc-color-ink: #2B2620;
+  --sc-color-ink-secondary: #5C554A;
+  --sc-color-ink-faint: #6E675A;
+  --sc-color-icon-faint: #8C8471;
+  --sc-color-hairline: #DED6C6;
+  --sc-color-hairline-strong: #C3B9A5;
+}
+[data-theme="dark"][data-palette="paper"] {
+  --sc-color-canvas: #1A1712;
+  --sc-color-surface: #221E18;
+  --sc-color-surface-raised: #2A251E;
+  --sc-color-content: #14110D;
+  --sc-color-surface-active: #322C23;
+  --sc-color-ink: #EDE6D8;
+  --sc-color-ink-secondary: #BDB4A2;
+  --sc-color-ink-faint: #A69C88;
+  --sc-color-icon-faint: #857C6B;
+  --sc-color-hairline: #38322A;
+  --sc-color-hairline-strong: #4C443A;
+}
+
+/* —— slate：蓝灰（低饱和冷向） —— */
+[data-theme="light"][data-palette="slate"] {
+  --sc-color-canvas: #EEF1F4;
+  --sc-color-surface: #E4E8ED;
+  --sc-color-surface-raised: #F8FAFC;
+  --sc-color-content: #FAFBFD;
+  --sc-color-surface-active: #D8DEE6;
+  --sc-color-ink: #1F2733;
+  --sc-color-ink-secondary: #4C5866;
+  --sc-color-ink-faint: #5C6877;
+  --sc-color-icon-faint: #85909D;
+  --sc-color-hairline: #D2D8E0;
+  --sc-color-hairline-strong: #B4BEC9;
+}
+[data-theme="dark"][data-palette="slate"] {
+  --sc-color-canvas: #12151A;
+  --sc-color-surface: #1A1F26;
+  --sc-color-surface-raised: #222933;
+  --sc-color-content: #0E1116;
+  --sc-color-surface-active: #2A323E;
+  --sc-color-ink: #E3E8EF;
+  --sc-color-ink-secondary: #A9B2BC;
+  --sc-color-ink-faint: #909AA5;
+  --sc-color-icon-faint: #737E8C;
+  --sc-color-hairline: #2A313B;
+  --sc-color-hairline-strong: #3D4754;
+}
+
+/* —— moss：苔绿（低饱和绿向） —— */
+[data-theme="light"][data-palette="moss"] {
+  --sc-color-canvas: #EFF2EB;
+  --sc-color-surface: #E5E9DF;
+  --sc-color-surface-raised: #F7F9F3;
+  --sc-color-content: #F9FAF5;
+  --sc-color-surface-active: #D9DFD0;
+  --sc-color-ink: #22291F;
+  --sc-color-ink-secondary: #4F574A;
+  --sc-color-ink-faint: #616A5B;
+  --sc-color-icon-faint: #868E80;
+  --sc-color-hairline: #D3DAD0;
+  --sc-color-hairline-strong: #B6C0B2;
+}
+[data-theme="dark"][data-palette="moss"] {
+  --sc-color-canvas: #121612;
+  --sc-color-surface: #1A1F19;
+  --sc-color-surface-raised: #222820;
+  --sc-color-content: #0F130E;
+  --sc-color-surface-active: #2A3127;
+  --sc-color-ink: #E6EAE0;
+  --sc-color-ink-secondary: #ADB5A8;
+  --sc-color-ink-faint: #959E90;
+  --sc-color-icon-faint: #707A6C;
+  --sc-color-hairline: #293026;
+  --sc-color-hairline-strong: #3B4438;
+}

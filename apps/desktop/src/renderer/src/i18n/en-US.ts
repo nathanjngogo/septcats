@@ -28,6 +28,7 @@ export const enUS = {
     resizeAi: 'Resize AI panel',
     // T66-01 §1.2: top-bar workbench entry button (house glyph)
     workbenchLabel: 'Workbench (Alt+H)',
+    paletteLabel: 'Color gallery',
   },
   // T66-01: personal workbench (home view) copy.
   workbench: {
@@ -311,6 +312,20 @@ export const enUS = {
       langSystem: 'System',
       langZh: 'Chinese (Simplified)',
       langEn: 'English',
+      // T65-01 §1: color palettes (six to choose; live preview in gallery)
+      palette: 'Color palette',
+      paletteDesc: 'Six neutral palettes; preview and switch live in the gallery',
+      paletteGallery: 'Open gallery',
+      paletteCurrent: 'Current',
+      paletteDisabledOled: 'Pure Black only applies on dark background',
+      paletteNames: {
+        mono: 'Mono',
+        oled: 'Pure Black',
+        contrast: 'High Contrast',
+        paper: 'Paper',
+        slate: 'Graphite',
+        moss: 'Moss',
+      },
     },
     // T54-01: closing behavior — what the window close button does (the dialog's
     // "Remember my choice" writes here; changeable back to Ask every time)
@@ -696,6 +711,8 @@ export const enUS = {
       light: 'Switch Theme: Light',
       dark: 'Switch Theme: Dark',
       system: 'Switch Theme: System',
+      palette: 'Theme gallery',
+      switch: 'Switch to {name} palette',
     },
     ai: {
       continue: 'AI Continue Writing',
@@ -731,6 +748,8 @@ export const enUS = {
       light: 'Interface theme',
       dark: 'Interface theme',
       system: 'Interface theme',
+      palette: 'Open the theme gallery; preview six palettes live',
+      switch: 'Switch to the {name} palette and remember it',
     },
     ai: {
       continue: 'Keep writing based on the selection or current block',
