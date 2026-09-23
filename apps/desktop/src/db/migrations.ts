@@ -27,6 +27,7 @@ import { SCHEMA_V6_STATEMENTS } from './schema.v6';
 import { SCHEMA_V7_STATEMENTS } from './schema.v7';
 import { SCHEMA_V8_ADDED_COLUMNS } from './schema.v8';
 import { SCHEMA_V9_STATEMENTS } from './schema.v9';
+import { SCHEMA_V10_STATEMENTS } from './schema.v10';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -242,6 +243,21 @@ function applySchemaV9(db: SqliteDatabase): void {
 }
 
 /**
+ * migration #10：页面密码锁本地表（TASK-T67-01-B1-01，纯新增建表）。
+ *
+ * 幂等性：两表均 `IF NOT EXISTS`（语句自含主键）。语句见 `schema.v10.ts`。
+ * 向后兼容：纯新增派生态，旧库直接打开（MIN_SUPPORTED 不变）；密码锁为设备本地隐私，
+ * 不进 Op 账本、不随同步发布。锁页正文块密文化由应用层 `main/lock.ts` 在服务内完成，
+ * 页面删除的孤儿密文清理由 `pages.deletePage` 级联（`purgeLockForPage`）。
+ */
+function applySchemaV10(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V10_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '10');
+}
+
+/**
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
@@ -255,6 +271,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 7, name: 'v7-template', up: applySchemaV7 },
   { id: 8, name: 'v8-page-type', up: applySchemaV8 },
   { id: 9, name: 'v9-page-link-index', up: applySchemaV9 },
+  { id: 10, name: 'v10-page-lock', up: applySchemaV10 },
 ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */

@@ -407,6 +407,26 @@ export interface SeptcatsCloseApi {
   decide(input: CloseDecisionInput): Promise<{ action: CloseAction }>;
 }
 
+/**
+ * 页面密码锁（TASK-T67-01-B1-01 · 后端核心）。通道与 `src/shared/ipc.ts` 的
+ * LOCK_CHANNELS 一对一；载荷形状见 `src/shared/lock.ts`。错误经 Error.message 透传
+ * （E_LOCK_* 稳定 code；绝不把口令/恢复码写入日志或异常栈）。
+ */
+export interface SeptcatsLockApi {
+  /** 锁状态：{locked, failures, lockedUntil}。 */
+  getStatus(input: { pageId: string }): Promise<{ locked: boolean; failures: number; lockedUntil: number | null }>;
+  /** 设锁：返回一次性恢复码（B2 弹框展示，绝不二次可读）。 */
+  setPass(input: { pageId: string; pass: string }): Promise<{ recoveryCode: string }>;
+  /** 校验并解锁（DK 入会话缓存）。 */
+  verify(input: { pageId: string; pass: string }): Promise<{ ok: true }>;
+  /** 恢复码一次性解锁并换口令：返回新恢复码。 */
+  recover(input: { pageId: string; code: string; newPass: string }): Promise<{ ok: true; recoveryCode: string }>;
+  /** 改口令。 */
+  changePass(input: { pageId: string; oldPass: string; newPass: string }): Promise<{ ok: true }>;
+  /** 移除锁（解密回明文 + 删锁行）。 */
+  remove(input: { pageId: string; pass: string }): Promise<{ ok: true }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -440,6 +460,8 @@ export interface SeptcatsApi {
   templates: SeptcatsTemplatesApi;
   /** 双链（R8 · T44-01）。 */
   links: SeptcatsLinksApi;
+  /** 页面密码锁（TASK-T67-01-B1-01 · 后端核心）。 */
+  lock: SeptcatsLockApi;
   /** 原生应用菜单（T51-01）。 */
   menu: SeptcatsMenuApi;
   /** 关窗协作（T54-01：冲刷握手 + 自绘询问框）。 */

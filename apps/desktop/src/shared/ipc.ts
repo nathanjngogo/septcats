@@ -360,6 +360,35 @@ export const LINKS_CHANNELS = {
 export type LinksChannel = (typeof LINKS_CHANNELS)[keyof typeof LINKS_CHANNELS];
 
 // ---------------------------------------------------------------------------
+// 页面密码锁（TASK-T67-01-B1-01 · 后端核心）。通道名单一来源；preload 只 import 通道名。
+// 载荷形状见 main/lockIpc.ts（Lock*Input / Lock*Result 在 shared/lock.ts 另定义）。
+// ---------------------------------------------------------------------------
+
+/** 锁状态：{pageId} → LockStatus（{locked, failures, lockedUntil}）。 */
+export const CHANNEL_LOCK_GET_STATUS = 'lock:getStatus';
+/** 设锁：{pageId, pass} → {recoveryCode}（一次性恢复码，B2 弹框展示）。 */
+export const CHANNEL_LOCK_SET_PASS = 'lock:setPass';
+/** 校验并解锁：{pageId, pass} → {ok:true}（DK 入会话缓存）。 */
+export const CHANNEL_LOCK_VERIFY = 'lock:verify';
+/** 恢复码一次性解锁并换口令：{pageId, code, newPass} → {ok:true, recoveryCode}。 */
+export const CHANNEL_LOCK_RECOVER = 'lock:recover';
+/** 改口令：{pageId, oldPass, newPass} → {ok:true}。 */
+export const CHANNEL_LOCK_CHANGE_PASS = 'lock:changePass';
+/** 移除锁（解密回明文+删锁行）：{pageId, pass} → {ok:true}。 */
+export const CHANNEL_LOCK_REMOVE = 'lock:remove';
+
+export const LOCK_CHANNELS = {
+  getStatus: CHANNEL_LOCK_GET_STATUS,
+  setPass: CHANNEL_LOCK_SET_PASS,
+  verify: CHANNEL_LOCK_VERIFY,
+  recover: CHANNEL_LOCK_RECOVER,
+  changePass: CHANNEL_LOCK_CHANGE_PASS,
+  remove: CHANNEL_LOCK_REMOVE,
+} as const;
+
+export type LockChannel = (typeof LOCK_CHANNELS)[keyof typeof LOCK_CHANNELS];
+
+// ---------------------------------------------------------------------------
 // 原生应用菜单（T51-01）。main 侧菜单项被点击 → 推送给 renderer，由 renderer
 // 派发到既有 actions（Close Tab 复用页签逻辑，绝不用 role:'close' 关窗口）。
 // ---------------------------------------------------------------------------
