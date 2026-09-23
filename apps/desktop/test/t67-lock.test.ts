@@ -8,7 +8,7 @@
  * 纪律：不启动 Electron，ABI 保持 node；better-sqlite3 经 helpers 惰性加载。
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Database } from 'better-sqlite3';
 import {
   LATEST_SCHEMA_VERSION,
