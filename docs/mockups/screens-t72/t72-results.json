@@ -1,0 +1,132 @@
+{
+  "task": "T72-01",
+  "ranAt": "2026-09-23T17:32:17.284Z",
+  "assertions": [
+    {
+      "step": "setup",
+      "name": "S1 工作台就位且播种 1 页",
+      "ok": true,
+      "raw": "home=true seeded=true"
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-a 顶栏钮开市场",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-b 关闭钮收市场",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-c Alt+H 开市场（T72 新语义）",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-d Esc 关市场",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-e 命令面板含市场命令",
+      "ok": true,
+      "raw": "工作台模板市场打开工作台模板市场（内置模板与卡片，Alt+H）|在搜索结果页打开「模板市场」"
+    },
+    {
+      "step": "M1|入口",
+      "name": "M1-f 面板执行开市场",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M2|壳",
+      "name": "M2-a 模板/卡片两 Tab 齐",
+      "ok": true,
+      "raw": "tpl=true card=true"
+    },
+    {
+      "step": "M2|壳",
+      "name": "M2-b 市场文案零禁词「数据库」",
+      "ok": true,
+      "raw": "len=191"
+    },
+    {
+      "step": "M3|模板列表",
+      "name": "M3-a 内置四模板卡全在（workbenchTemplates.list 真机可达）",
+      "ok": true,
+      "raw": "work-journal,project-board,reading-tracker,weekly-review"
+    },
+    {
+      "step": "M3|模板列表",
+      "name": "M3-b 应用先弹确认（文案含模板名+备份语义）",
+      "ok": true,
+      "raw": "工作日志流：将替换当前卡片布局，并一键备份现有布局（可随时还原）。"
+    },
+    {
+      "step": "M4|应用还原",
+      "name": "M4-a 应用换布局+备份落地",
+      "ok": true,
+      "raw": "applied=true backupLen=140"
+    },
+    {
+      "step": "M4|应用还原",
+      "name": "M4-b 一键还原备份（布局回应用前 11 全显）",
+      "ok": true,
+      "raw": "eq=true n=11"
+    },
+    {
+      "step": "M5|卡开关",
+      "name": "M5-a 卡片行在场+状态随开关翻转（启用中→未启用）",
+      "ok": true,
+      "raw": "st0=\"启用中\" st1=\"未启用\""
+    },
+    {
+      "step": "M5|卡开关",
+      "name": "M5-b 市场关卡→home 卡消失（同源 setCardHidden）",
+      "ok": true,
+      "raw": "gone=true"
+    },
+    {
+      "step": "M5|卡开关",
+      "name": "M5-c 再开卡回工作台",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "M6|另存为",
+      "name": "M6-a 另存为→我的模板分区新增 1 卡（ULID id 契约）",
+      "ok": true,
+      "raw": "btn=true dlg=true mine=[\"01M37N688DCAMNVZA5QA4NG94M\"]"
+    },
+    {
+      "step": "M7|导入导出",
+      "name": "M7-a 导出钮：内置+我的模板均挂（anchor 下载不实点）",
+      "ok": true,
+      "raw": "bi=true mine=true"
+    },
+    {
+      "step": "M7|导入导出",
+      "name": "M7-b 导入合法 JSON→我的模板分区 1→2",
+      "ok": true,
+      "raw": "n=2"
+    },
+    {
+      "step": "M7|导入导出",
+      "name": "M7-c 坏 JSON→不落库+toast",
+      "ok": true,
+      "raw": "n=2 toast=\"模板 JSON 不合法|模板 JSON 不合法||模板 JSON 不合法\""
+    },
+    {
+      "step": "M8|删除",
+      "name": "M8-a 我的模板软删→分区少一",
+      "ok": true,
+      "raw": "del=true 2→1"
+    }
+  ]
+}
