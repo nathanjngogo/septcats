@@ -273,7 +273,7 @@ export function PageView({ page }: PageViewProps) {
     // 不 crash；真实 Electron 构建 preload 必注入 lock，此分支仅在非生产环境生效）。
     const lockApi = window.septcats?.lock;
     if (lockApi === undefined) {
-      const safe: LockStatusView = { locked: false, failures: 0, lockedUntil: null };
+      const safe: LockStatusView = { locked: false, unlockedInSession: true, failures: 0, lockedUntil: null };
       setLockStatus(safe);
       pagesActions.setPageLocked(activePageId, false);
       return;
@@ -292,7 +292,7 @@ export function PageView({ page }: PageViewProps) {
         if (cancelled) {
           return;
         }
-        const safe: LockStatusView = { locked: false, failures: 0, lockedUntil: null };
+        const safe: LockStatusView = { locked: false, unlockedInSession: true, failures: 0, lockedUntil: null };
         setLockStatus(safe);
         pagesActions.setPageLocked(activePageId, false);
       });
@@ -301,7 +301,9 @@ export function PageView({ page }: PageViewProps) {
     };
   }, [activePageId, lockRev]);
 
-  const isLocked = lockStatus?.locked === true;
+  // 门控判据：页面有口令 **且** 本会话未解锁 → 出锁屏卡。缺 unlockedInSession（老夹具/降级）
+  // 视为未解锁，保持原有"锁住"行为（安全默认）。
+  const isLocked = lockStatus?.locked === true && lockStatus.unlockedInSession !== true;
 
   // 解锁回调（锁屏卡 verify/recover 成功后）：解除 locked 并重新加载 blocks。
   const handleUnlock = useCallback(

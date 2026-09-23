@@ -1,6 +1,6 @@
 {
   "task": "TASK-T61-01 真机取证（结构批 R13 ④⑧）",
-  "ranAt": "2026-09-22T11:16:16.967Z",
+  "ranAt": "2026-09-23T05:40:45.232Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/原生拖拽/截图 + Emulation.setDeviceMetricsOverride 两宽度",
   "fixture": {
@@ -27,8 +27,8 @@
     "t61-01-dark-main.png",
     "t61-01-dark-resized.png"
   ],
-  "pass": 30,
-  "fail": 0,
+  "pass": 25,
+  "fail": 5,
   "electronFinal": 0,
   "quiet": {
     "gracefulExited": true,
@@ -42,13 +42,13 @@
       "renamedB": true,
       "tree0": [
         {
-          "id": "01M34D7RYE3A1CEHGS48B69WYR",
+          "id": "01M36CDT9JMGTYGGP250MVC8QC",
           "title": "T61 容器页",
           "parentId": null,
           "sortKey": "A00000000"
         },
         {
-          "id": "01M34D7T7Z73J55BZCPC5A61G6",
+          "id": "01M36CDVK50BJFCR2W659ZA9JQ",
           "title": "T61 被移动页",
           "parentId": null,
           "sortKey": "a"
@@ -71,7 +71,7 @@
           "w": "10"
         },
         "n": 29,
-        "testId": "side-node-01M34D7T7Z73J55BZCPC5A61G6",
+        "testId": "side-node-01M36CDVK50BJFCR2W659ZA9JQ",
         "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
       }
     },
@@ -83,7 +83,7 @@
           "w": "10"
         },
         "n": 29,
-        "testId": "side-node-01M34D7RYE3A1CEHGS48B69WYR",
+        "testId": "side-node-01M36CDT9JMGTYGGP250MVC8QC",
         "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
       },
       "containerSigAfter": {
@@ -93,7 +93,7 @@
           "w": "8"
         },
         "n": 20,
-        "testId": "side-node-01M34D7RYE3A1CEHGS48B69WYR",
+        "testId": "side-node-01M36CDT9JMGTYGGP250MVC8QC",
         "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
       },
       "menuOpened": {
@@ -101,9 +101,11 @@
         "items": [
           "重命名",
           "新建子页面",
+          "新建子文件夹",
           "移入…",
           "固定宽度",
           "转为 Wiki",
+          "添加密码锁",
           "删除"
         ],
         "disabled": [
@@ -112,32 +114,34 @@
           false,
           false,
           false,
+          false,
+          false,
           false
         ],
         "rect": {
-          "left": 14,
+          "left": 196,
           "top": 237.5,
           "w": 210,
-          "h": 224
+          "h": 296
         }
       },
       "treeAfterSub": [
         {
-          "id": "01M34D7RYE3A1CEHGS48B69WYR",
+          "id": "01M36CDT9JMGTYGGP250MVC8QC",
           "title": "T61 容器页",
           "parentId": null,
           "sortKey": "A00000000"
         },
         {
-          "id": "01M34D7T7Z73J55BZCPC5A61G6",
+          "id": "01M36CDVK50BJFCR2W659ZA9JQ",
           "title": "T61 被移动页",
           "parentId": null,
           "sortKey": "a"
         },
         {
-          "id": "01M34D81GPVDVV5CSH4XRHY3QN",
+          "id": "01M36CE2VW67K4P2PT7NRJAS6F",
           "title": "未命名",
-          "parentId": "01M34D7RYE3A1CEHGS48B69WYR",
+          "parentId": "01M36CDT9JMGTYGGP250MVC8QC",
           "sortKey": "A00000000"
         }
       ]
@@ -148,9 +152,11 @@
         "items": [
           "重命名",
           "新建子页面",
+          "新建子文件夹",
           "移入…",
           "固定宽度",
           "转为 Wiki",
+          "添加密码锁",
           "删除"
         ],
         "disabled": [
@@ -159,54 +165,38 @@
           false,
           false,
           false,
-          false
-        ],
-        "rect": {
-          "left": 14,
-          "top": 309.5,
-          "w": 210,
-          "h": 224
-        }
-      },
-      "moveMenu": {
-        "label": "移入页面",
-        "items": [
-          "工作区根",
-          "T61 容器页",
-          "未命名"
-        ],
-        "disabled": [
-          true,
+          false,
           false,
           false
         ],
         "rect": {
-          "left": 14,
+          "left": 196,
           "top": 309.5,
           "w": 210,
-          "h": 116
+          "h": 296
         }
-      }
+      },
+      "moveMenu": null
     },
     "moveResult": {
       "treeAfterMove": [
         {
-          "id": "01M34D7RYE3A1CEHGS48B69WYR",
+          "id": "01M36CDT9JMGTYGGP250MVC8QC",
           "title": "T61 容器页",
           "parentId": null,
           "sortKey": "A00000000"
         },
         {
-          "id": "01M34D81GPVDVV5CSH4XRHY3QN",
-          "title": "未命名",
-          "parentId": "01M34D7RYE3A1CEHGS48B69WYR",
-          "sortKey": "A00000000"
+          "id": "01M36CDVK50BJFCR2W659ZA9JQ",
+          "title": "T61 被移动页",
+          "parentId": null,
+          "sortKey": "a"
         },
         {
-          "id": "01M34D7T7Z73J55BZCPC5A61G6",
-          "title": "T61 被移动页",
-          "parentId": "01M34D7RYE3A1CEHGS48B69WYR",
-          "sortKey": "a"
+          "id": "01M36CE2VW67K4P2PT7NRJAS6F",
+          "title": "未命名",
+          "parentId": "01M36CDT9JMGTYGGP250MVC8QC",
+          "sortKey": "A00000000"
         }
       ],
       "expandedState": {
@@ -238,7 +228,7 @@
           },
           {
             "title": "T61 被移动页",
-            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 1)"
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
           }
         ]
       }
@@ -556,7 +546,7 @@
       "step": "G0|fixture",
       "name": "[info] 夹具树（原始）",
       "ok": null,
-      "raw": "[{\"id\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M34D7T7Z73J55BZCPC5A61G6\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"}]"
+      "raw": "[{\"id\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36CDVK50BJFCR2W659ZA9JQ\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"}]"
     },
     {
       "step": "G0|fixture",
@@ -568,25 +558,25 @@
       "step": "G0|fixture",
       "name": "[info] 像素签名（原始）",
       "ok": null,
-      "raw": "{\"folderSig\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20},\"fileSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M34D7T7Z73J55BZCPC5A61G6\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}}"
+      "raw": "{\"folderSig\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20},\"fileSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M36CDVK50BJFCR2W659ZA9JQ\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}}"
     },
     {
       "step": "G1|folder",
       "name": "[info] 文件夹派生（原始）",
       "ok": null,
-      "raw": "{\"containerSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M34D7RYE3A1CEHGS48B69WYR\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"containerSigAfter\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20,\"testId\":\"side-node-01M34D7RYE3A1CEHGS48B69WYR\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"menuOpened\":{\"label\":\"页面操作\",\"items\":[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"],\"disabled\":[false,false,false,false,false,false],\"rect\":{\"left\":14,\"top\":237.5,\"w\":210,\"h\":224}},\"treeAfterSub\":[{\"id\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M34D7T7Z73J55BZCPC5A61G6\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"},{\"id\":\"01M34D81GPVDVV5CSH4XRHY3QN\",\"title\":\"未命名\",\"parentId\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"sortKey\":\"A00000000\"}]}"
+      "raw": "{\"containerSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M36CDT9JMGTYGGP250MVC8QC\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"containerSigAfter\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20,\"testId\":\"side-node-01M36CDT9JMGTYGGP250MVC8QC\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"menuOpened\":{\"label\":\"页面操作\",\"items\":[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"],\"disabled\":[false,false,false,false,false,false,false,false],\"rect\":{\"left\":196,\"top\":237.5,\"w\":210,\"h\":296}},\"treeAfterSub\":[{\"id\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36CDVK50BJFCR2W659ZA9JQ\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"},{\"id\":\"01M36CE2VW67K4P2PT7NRJAS6F\",\"title\":\"未命名\",\"parentId\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"sortKey\":\"A00000000\"}]}"
     },
     {
       "step": "G1|folder",
       "name": "G1-1 §1.1 ⋯ 菜单含「新建子页面」与「移入…」（顺序：重命名 → 新建子页面 → 移入…）",
-      "ok": true,
-      "raw": "[\"重命名\",\"新建子页面\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"删除\"]"
+      "ok": false,
+      "raw": "[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"]"
     },
     {
       "step": "G1|folder",
       "name": "G1-2 §1.1 新建子页面落库：子页的 parentId = 容器页 id（既有 createPage(parentId)）",
       "ok": true,
-      "raw": "{\"containerId\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"children\":[\"01M34D81GPVDVV5CSH4XRHY3QN\"]}"
+      "raw": "{\"containerId\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"children\":[\"01M36CE2VW67K4P2PT7NRJAS6F\"]}"
     },
     {
       "step": "G1|folder",
@@ -598,37 +588,37 @@
       "step": "G2|move-picker",
       "name": "[info] 移入二级菜单（原始）",
       "ok": null,
-      "raw": "{\"label\":\"移入页面\",\"items\":[\"工作区根\",\"T61 容器页\",\"未命名\"],\"disabled\":[true,false,false],\"rect\":{\"left\":14,\"top\":309.5,\"w\":210,\"h\":116}}"
+      "raw": "null"
     },
     {
       "step": "G2|move-picker",
       "name": "G2-1 §1.3 点「移入…」→ 二级列表（含「工作区根」+ 容器页），排除多维数据行",
-      "ok": true,
-      "raw": "[\"工作区根\",\"T61 容器页\",\"未命名\"]"
+      "ok": false,
+      "raw": "undefined"
     },
     {
       "step": "G2|move-picker",
       "name": "G2-2 §1.3 防环：候选不含自身（被移动页）",
-      "ok": true,
-      "raw": "[\"工作区根\",\"T61 容器页\",\"未命名\"]"
+      "ok": false,
+      "raw": "undefined"
     },
     {
       "step": "G2|move-picker",
       "name": "[info] 移入结果（原始）",
       "ok": null,
-      "raw": "{\"treeAfterMove\":[{\"id\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M34D81GPVDVV5CSH4XRHY3QN\",\"title\":\"未命名\",\"parentId\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"sortKey\":\"A00000000\"},{\"id\":\"01M34D7T7Z73J55BZCPC5A61G6\",\"title\":\"T61 被移动页\",\"parentId\":\"01M34D7RYE3A1CEHGS48B69WYR\",\"sortKey\":\"a\"}],\"expandedState\":{\"childRowVisible\":true,\"rows\":[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"}]}}"
+      "raw": "{\"treeAfterMove\":[{\"id\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36CDVK50BJFCR2W659ZA9JQ\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"},{\"id\":\"01M36CE2VW67K4P2PT7NRJAS6F\",\"title\":\"未命名\",\"parentId\":\"01M36CDT9JMGTYGGP250MVC8QC\",\"sortKey\":\"A00000000\"}],\"expandedState\":{\"childRowVisible\":true,\"rows\":[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}]}}"
     },
     {
       "step": "G2|move-picker",
       "name": "G2-3 §1.3 移入落库：被移动页 parentId = 容器页 id（树形变化）",
-      "ok": true,
-      "raw": "moved.parentId=01M34D7RYE3A1CEHGS48B69WYR container.id=01M34D7RYE3A1CEHGS48B69WYR"
+      "ok": false,
+      "raw": "moved.parentId=null container.id=01M36CDT9JMGTYGGP250MVC8QC"
     },
     {
       "step": "G2|move-picker",
       "name": "G2-4 §1.3 目标父页自动展开（子树可见：子页与移入页同列可见）",
-      "ok": true,
-      "raw": "[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"}]"
+      "ok": false,
+      "raw": "[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}]"
     },
     {
       "step": "G3|drag-sidebar",

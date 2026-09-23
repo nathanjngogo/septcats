@@ -342,7 +342,7 @@ describeDb('T67 加密核心 · 设锁/解锁/恢复/限速', (ctor) => {
       expect(restored[0]!.content_json).toContain('移除后回归');
 
       // 状态回到未锁
-      expect(await h.lock.getStatus(PAGE_ID)).toEqual({ locked: false, failures: 0, lockedUntil: null });
+      expect(await h.lock.getStatus(PAGE_ID)).toEqual({ locked: false, unlockedInSession: false, failures: 0, lockedUntil: null });
     } finally {
       h.cleanup();
     }

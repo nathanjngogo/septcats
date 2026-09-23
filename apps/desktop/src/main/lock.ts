@@ -201,7 +201,10 @@ export interface LockServiceOptions {
 }
 
 export interface LockStatus {
+  /** 页面是否设有口令（页面属性）。 */
   readonly locked: boolean;
+  /** 会话内已解锁（verify/recover 后持有本页 DK）；UI 门控用 locked && !unlockedInSession。 */
+  readonly unlockedInSession?: boolean;
   readonly failures: number;
   readonly lockedUntil: number | null;
 }
@@ -334,12 +337,20 @@ export function createLockService(options: LockServiceOptions): LockService {
 
   return {
     async getStatus(pageId: string): Promise<LockStatus> {
-      const row = await loadRow(pageId);
-      if (row === null) {
-        return { locked: false, failures: 0, lockedUntil: null };
-      }
-      return { locked: true, failures: row.failures, lockedUntil: row.locked_until };
-    },
+          const row = await loadRow(pageId);
+          if (row === null) {
+            return { locked: false, unlockedInSession: false, failures: 0, lockedUntil: null };
+          }
+          // locked=页面属性（有口令即 true，搜索徽标/侧栏 glyph 依赖此位不变）。
+          // unlockedInSession=会话属性：verify/recover 后 session 持有 DK → 前端门控据此放行，
+          // 否则 PageView 解锁后重探本方法会立刻弹回锁屏卡（解锁→重探→又锁，永远进不去内容）。
+          return {
+            locked: true,
+            unlockedInSession: session.has(pageId),
+            failures: row.failures,
+            lockedUntil: row.locked_until,
+          };
+        },
 
     /** 设锁/重锁：生成盐+DK，双包络存表，正文密文化并删明文块。返回一次性恢复码。 */
     async setPass(pageId: string, pass: string): Promise<SetPassResult> {
@@ -440,7 +451,10 @@ export function createLockService(options: LockServiceOptions): LockService {
         locked_until: null,
         updated_at: clock(),
       });
-      session.delete(pageId);
+      // 恢复码验证成功 = 所有权已证明，且 DK 本身未轮换（只是重包络）→ 会话直接放行
+      // （session.set）。若删除会话解锁态，锁屏卡「进入内容」后 PageView 重探 getStatus
+      // 会立刻弹回锁屏（T67-B2 真机 U5-d 实锤的缺陷）。
+      session.set(pageId, dk);
       return { ok: true, recoveryCode: newRecoveryCode };
     },
 

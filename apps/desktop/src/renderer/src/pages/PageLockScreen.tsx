@@ -88,7 +88,7 @@ export function PageLockScreen({ pageId, title, onUnlock }: PageLockScreenProps)
     }
     try {
       await window.septcats.lock.verify({ pageId, pass });
-      onUnlock({ locked: false, failures: 0, lockedUntil: null });
+      onUnlock({ locked: false, unlockedInSession: true, failures: 0, lockedUntil: null });
     } catch (err) {
       const code = errorCodeOf(err);
       setErrorCode(code);
@@ -139,7 +139,7 @@ export function PageLockScreen({ pageId, title, onUnlock }: PageLockScreenProps)
           <div className="lock-recovery-box" data-testid="lock-new-recovery">
             <code className="lock-mono">{newRecovery}</code>
           </div>
-          <ButtonEnterContent onClick={() => onUnlock({ locked: false, failures: 0, lockedUntil: null })} />
+          <ButtonEnterContent onClick={() => onUnlock({ locked: false, unlockedInSession: true, failures: 0, lockedUntil: null })} />
         </div>
       </div>
     );

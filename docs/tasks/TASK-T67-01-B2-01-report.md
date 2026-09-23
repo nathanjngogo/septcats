@@ -80,3 +80,24 @@
 ---
 
 > PM 复跑节留（PM 补）：真机探针结论、Electron 端到端结论、lock 服务时序结论等由 PM 在真机复跑后补入。
+
+---
+
+## 10. PM 复跑与缺陷修复节（09-23 12:50~13:40，PM 实跑）
+
+**合并**：worktree 897ef7b → main 冲突两处（commands.ts 三段 / perf-history）按并集裁决；PM 手拼出 3 处残缺（孤儿 JSDoc×2 + 缺收尾括号）当轮 typecheck 抓出修复（0860738）。
+
+**PM 独立跑**：desktop node 全量 **952/952**（含锁 26 例）· typecheck 9/9 · selftest 前序已绿。
+
+**真机探针 cdp-e2e-t67-b2.mjs（PM 按实交付 testid 校准 35 断言）三轮**：
+- 第 1 轮 28/4：U1-b 文案口径（Dialog 标题行=页名非模式名）探针改口径；U5-d/U8 见下真缺陷；U8 改走第三靶页全 UI 链路（上锁→移除）。
+- 第 2 轮 34/1：U5-d 定位到根因=**CB 真缺陷 A**——`recover()` 成功路径 `session.delete`，而 B1 D4 设计 recover 不回填明文、依赖会话 DK → 锁屏卡「进入内容」后重探立刻弹回，**恢复码流程永远进不去正文**。修复：session.set(DK)（DK 未轮换，恢复成功=所有权已证明）+ getStatus 回 `unlockedInSession`。
+- 第 3 轮 35 PASS / 0 FAIL。
+
+**PM 抓出并修复的缺陷（共 3 个，其中 2 个 CB 自报测试盖不住）**：
+1. **PageLockDialog set 模式渲染三栏、submitSet 只读两栏**——中间 `lock-new-pass` 是死输入框，用户按 label 填"确认口令→新口令"必报"两次口令不一致"。单测把三栏全填所以全绿，真机第一眼就穿。修：set=口令/确认两栏；change=当前/新/确认新（label 正名）。
+2. **getStatus 会话语义缺失**（真缺陷 A 的门控面）：`locked` 混用"有口令"与"应出锁屏"两义。修：加 `unlockedInSession` 位（shared/main/renderer 类型面同步，搜索 locked 徽标语义保持"页面属性"不变，B1 单测三处期望同步钉死）；PageView 门控 `locked && !unlockedInSession`。
+3. **recover 清会话**（见上，根修）。
+
+**追认 D1~D7**：全过（D4 的"session-unlock 区分只在 readBlocks/verify"判断在 B2 接线后暴露出门控缺口=上述缺陷 2，非 CB 之过，任务书契约未写死该位）。
+**结论：T67-B2 验收通过 → R18 页面密码锁（B1 后端 + B2 前端）全量闭环。**

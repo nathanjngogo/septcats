@@ -8,7 +8,13 @@
 export type LockErrorCode = 'E_LOCK_NOT_SET' | 'E_LOCK_BADPASS' | 'E_LOCK_LOCKED' | 'E_LOCK_RECOVERY_USED';
 
 export interface LockStatus {
+  /** 页面是否设有口令（页面属性）——搜索徽标/侧栏锁 glyph 用此位。 */
   readonly locked: boolean;
+  /**
+   * 会话内是否已解锁（verify/recover 后主进程 session 持有本页 DK）。
+   * UI 门控必须用 `locked && unlockedInSession !== true`，否则解锁后重探会立刻弹回锁屏卡。
+   */
+  readonly unlockedInSession?: boolean;
   readonly failures: number;
   readonly lockedUntil: number | null;
 }

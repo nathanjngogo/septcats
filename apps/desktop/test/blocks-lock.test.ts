@@ -137,7 +137,7 @@ describeDb('blocks:list 读路径接线（锁页）', (ctor) => {
       paragraphDoc('第二块正文'),
     ]);
     // getStatus 未锁页口径
-    expect(await lock.getStatus('pg-lk-1')).toEqual({ locked: false, failures: 0, lockedUntil: null });
+    expect(await lock.getStatus('pg-lk-1')).toEqual({ locked: false, unlockedInSession: false, failures: 0, lockedUntil: null });
   });
 
   it('锁页未解锁：list 返回 { blocks:[], locked:true }（正文不透出）', async () => {

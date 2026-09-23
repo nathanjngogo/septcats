@@ -1,0 +1,216 @@
+{
+  "task": "T67-B2",
+  "ranAt": "2026-09-23T05:39:05.594Z",
+  "assertions": [
+    {
+      "step": "seed",
+      "name": "S1 造靶页",
+      "ok": true,
+      "raw": "01M36CBF0W1FGA30AR2NX5N1PX"
+    },
+    {
+      "step": "seed",
+      "name": "S2 基线可读",
+      "ok": true,
+      "raw": "len=331"
+    },
+    {
+      "step": "U1",
+      "name": "U1-a 未锁页 ⋯ 菜单含「添加密码锁」",
+      "ok": true,
+      "raw": "重命名|新建子页面|新建子文件夹|移入…|固定宽度|转为 Wiki|添加密码锁|删除"
+    },
+    {
+      "step": "U1",
+      "name": "U1-b 入口打开设置弹层（主钮=上锁；标题行=目标页名）",
+      "ok": true,
+      "raw": "btn=true title=B2锁靶页"
+    },
+    {
+      "step": "U1",
+      "name": "U1-c set 模式仅两栏（口令/确认口令），无多余第三栏",
+      "ok": true,
+      "raw": "pass+confirm only"
+    },
+    {
+      "step": "U1",
+      "name": "U1-d eye 钮切换显隐",
+      "ok": true,
+      "raw": "password→text"
+    },
+    {
+      "step": "U1",
+      "name": "U1-e 两栏不一致 → 拦截并报「两次口令不一致」",
+      "ok": true,
+      "raw": "两次口令不一致"
+    },
+    {
+      "step": "U1",
+      "name": "U1-f 未勾「我已保存好恢复码」→ 拦截（未落库）",
+      "ok": true,
+      "raw": "我已保存好恢复码 locked=false"
+    },
+    {
+      "step": "U2",
+      "name": "U2-a 上锁成功 → 一次性恢复码展示框",
+      "ok": true,
+      "raw": "len=39"
+    },
+    {
+      "step": "U2",
+      "name": "U2-b 恢复码等宽展示",
+      "ok": true,
+      "raw": "code.lock-mono"
+    },
+    {
+      "step": "U2",
+      "name": "U2-c 「我已复制并保存」后弹层关闭",
+      "ok": true,
+      "raw": "closed"
+    },
+    {
+      "step": "U2",
+      "name": "U2-d 二次展示路径不存在（已锁菜单无恢复码入口）",
+      "ok": true,
+      "raw": "重命名|新建子页面|新建子文件夹|移入…|固定宽度|转为 Wiki|修改口令|移除密码锁|删除"
+    },
+    {
+      "step": "U3",
+      "name": "U3-a 侧栏行出现锁 glyph",
+      "ok": true,
+      "raw": "app-nav-lock"
+    },
+    {
+      "step": "U3",
+      "name": "U3-b 已锁菜单=修改口令/移除（无「添加密码锁」）",
+      "ok": true,
+      "raw": "重命名|新建子页面|新建子文件夹|移入…|固定宽度|转为 Wiki|修改口令|移除密码锁|删除"
+    },
+    {
+      "step": "U3",
+      "name": "U3-c 重开页=锁屏卡且编辑器未挂载",
+      "ok": true,
+      "raw": "screen=true pvRootAbsent=true"
+    },
+    {
+      "step": "U4",
+      "name": "U4-a 错口令 → 错误文案 + 失败计数上行",
+      "ok": true,
+      "raw": "口令错误 · 剩余尝试次数：4 fails=1"
+    },
+    {
+      "step": "U4",
+      "name": "U4-b 连错 5 次 → 倒计时 + 输入禁用",
+      "ok": true,
+      "raw": "尝试次数过多，请于 59 秒后重试 disabled=true"
+    },
+    {
+      "step": "U5",
+      "name": "U5-a 恢复区三栏可见（恢复码/新口令/确认）",
+      "ok": true,
+      "raw": "lock-recovery-input/lock-new-pass/lock-new-pass2"
+    },
+    {
+      "step": "U5",
+      "name": "U5-b recover 成功 → 新恢复码展示",
+      "ok": true,
+      "raw": "len=39"
+    },
+    {
+      "step": "U5",
+      "name": "U5-c 旧恢复码二次被拒（轮换生效）",
+      "ok": true,
+      "raw": "{\"ok\":false,\"err\":\"Error invoking remote method 'lock:recover': Error: E_LOCK_BADPASS: code 必须是非空字符串\"}"
+    },
+    {
+      "step": "U5",
+      "name": "U5-d 进入内容：编辑器挂载（明文回填）",
+      "ok": true,
+      "raw": "pv-root=true screen=false locked=true recoveryBox=false"
+    },
+    {
+      "step": "U6",
+      "name": "U6-a 第二靶页就绪",
+      "ok": true,
+      "raw": "01M36CC66FGMB93KYFDNWGZE51"
+    },
+    {
+      "step": "U6",
+      "name": "U6-b 第二页上锁（IPC setPass 成功）",
+      "ok": true,
+      "raw": "rcLen=39"
+    },
+    {
+      "step": "U6",
+      "name": "U6-c 锁页读路径 = locked:true 且 blocks 空",
+      "ok": true,
+      "raw": "{\"blocks\":[],\"locked\":true}"
+    },
+    {
+      "step": "U6",
+      "name": "U6-d 锁页正文关键词永不中",
+      "ok": true,
+      "raw": "hits=0"
+    },
+    {
+      "step": "U6",
+      "name": "U6-e 锁页标题可中且标记 locked（驱动结果行锁 glyph）",
+      "ok": true,
+      "raw": "hits=1 locked=true"
+    },
+    {
+      "step": "U7",
+      "name": "U7-a verify 通过",
+      "ok": true,
+      "raw": "{\"ok\":true,\"data\":{\"ok\":true}}"
+    },
+    {
+      "step": "U7",
+      "name": "U7-b verify 后读路径明文且字节=加锁前基线",
+      "ok": true,
+      "raw": "baselineLen=299"
+    },
+    {
+      "step": "U7",
+      "name": "U7-c 设计内：session 解锁不回填明文行 → FTS 正文仍不中（remove 才恢复）",
+      "ok": true,
+      "raw": "hits=0"
+    },
+    {
+      "step": "U8",
+      "name": "U8-a 第三靶页就绪",
+      "ok": true,
+      "raw": "01M36CC9HW44VKTRX4N67GX5EW"
+    },
+    {
+      "step": "U8",
+      "name": "U8-b UI 上锁生效：读路径 locked:true + 侧栏 glyph + 一次性恢复码",
+      "ok": true,
+      "raw": "locked=true glyph=true rcLen=39"
+    },
+    {
+      "step": "U8",
+      "name": "U8-c 已锁页菜单入口「移除密码锁」",
+      "ok": true,
+      "raw": "重命名|新建子页面|新建子文件夹|移入…|固定宽度|转为 Wiki|修改口令|移除密码锁|删除"
+    },
+    {
+      "step": "U8",
+      "name": "U8-d 移除后明文回归=基线字节",
+      "ok": true,
+      "raw": "locked=false"
+    },
+    {
+      "step": "U8",
+      "name": "U8-e 侧栏锁 glyph 消失",
+      "ok": true,
+      "raw": "app-nav-lock"
+    },
+    {
+      "step": "U8",
+      "name": "U8-f FTS 正文恢复可中（remove 回填明文行）",
+      "ok": true,
+      "raw": "hits=1"
+    }
+  ]
+}

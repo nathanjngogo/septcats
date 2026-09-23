@@ -241,31 +241,32 @@ export function PageLockDialog() {
         </label>
       )}
 
+      {mode === 'change' && (
+        <label className="lock-dialog-field">
+          <span>{t('lock.newPassLabel')}</span>
+          <input
+            className="lock-input"
+            type={showPass ? 'text' : 'password'}
+            data-testid="lock-new-pass"
+            value={newPass}
+            autoComplete="off"
+            onChange={(event) => setNewPass(event.target.value)}
+          />
+        </label>
+      )}
+
       {(mode === 'set' || mode === 'change') && (
-        <>
-          <label className="lock-dialog-field">
-            <span>{t('lock.confirmPassLabel')}</span>
-            <input
-              className="lock-input"
-              type={showPass ? 'text' : 'password'}
-              data-testid="lock-new-pass"
-              value={newPass}
-              autoComplete="off"
-              onChange={(event) => setNewPass(event.target.value)}
-            />
-          </label>
-          <label className="lock-dialog-field">
-            <span>{t('lock.confirmPassLabel')}</span>
-            <input
-              className="lock-input"
-              type={showPass ? 'text' : 'password'}
-              data-testid="lock-confirm-pass"
-              value={confirm}
-              autoComplete="off"
-              onChange={(event) => setConfirm(event.target.value)}
-            />
-          </label>
-        </>
+        <label className="lock-dialog-field">
+          <span>{mode === 'change' ? t('lock.newPassConfirmLabel') : t('lock.confirmPassLabel')}</span>
+          <input
+            className="lock-input"
+            type={showPass ? 'text' : 'password'}
+            data-testid="lock-confirm-pass"
+            value={confirm}
+            autoComplete="off"
+            onChange={(event) => setConfirm(event.target.value)}
+          />
+        </label>
       )}
 
       <button

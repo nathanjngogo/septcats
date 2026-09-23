@@ -109,7 +109,6 @@ describe('PageLockDialog（范围1 加锁/改密/移除）', () => {
 
     // 未勾「由我保管」→ 提交被拦（不调 setPass）
     fireEvent.change(screen.getByTestId('lock-pass'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByTestId('lock-new-pass'), { target: { value: 'secret123' } });
     fireEvent.change(screen.getByTestId('lock-confirm-pass'), { target: { value: 'secret123' } });
     fireEvent.click(screen.getByTestId('lock-set-button'));
     expect(lockBridge.setPass).not.toHaveBeenCalled();
@@ -127,7 +126,6 @@ describe('PageLockDialog（范围1 加锁/改密/移除）', () => {
     pagesActions.openLockDialog('pg1', 'set');
     render(<PageLockDialog />);
     fireEvent.change(screen.getByTestId('lock-pass'), { target: { value: 'aaa111' } });
-    fireEvent.change(screen.getByTestId('lock-new-pass'), { target: { value: 'aaa111' } });
     fireEvent.change(screen.getByTestId('lock-confirm-pass'), { target: { value: 'bbb222' } });
     fireEvent.click(screen.getByTestId('lock-keep'));
     fireEvent.click(screen.getByTestId('lock-set-button'));
@@ -139,7 +137,6 @@ describe('PageLockDialog（范围1 加锁/改密/移除）', () => {
     pagesActions.openLockDialog('pg1', 'set');
     render(<PageLockDialog />);
     fireEvent.change(screen.getByTestId('lock-pass'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByTestId('lock-new-pass'), { target: { value: 'secret123' } });
     fireEvent.change(screen.getByTestId('lock-confirm-pass'), { target: { value: 'secret123' } });
     fireEvent.click(screen.getByTestId('lock-keep'));
     fireEvent.click(screen.getByTestId('lock-set-button'));
@@ -164,7 +161,23 @@ describe('PageLockDialog（范围1 加锁/改密/移除）', () => {
     expect(pagesStore.getState().lockDialog).toBeNull();
   });
 
-  it('remove：口令验证 → remove + 解锁当前页（setPageLocked(false)）', async () => {
+  it('布局回归：set 仅两栏（无多余第三口令框）；change 三栏且标签正名', () => {
+      pagesActions.openLockDialog('pg1', 'set');
+      const first = render(<PageLockDialog />);
+      expect(screen.getByTestId('lock-pass')).not.toBeNull();
+      expect(screen.getByTestId('lock-confirm-pass')).not.toBeNull();
+      // 回归：曾渲染一栏不被读取的「确认口令」，用户按常理填前两格必报「两次口令不一致」
+      expect(screen.queryByTestId('lock-new-pass')).toBeNull();
+      first.unmount();
+
+      pagesActions.openLockDialog('pg1', 'change');
+      render(<PageLockDialog />);
+      expect(screen.getByTestId('lock-current-pass')).not.toBeNull();
+      expect(screen.getByTestId('lock-new-pass')).not.toBeNull();
+      expect(screen.getByTestId('lock-confirm-pass').closest('label')?.textContent).toContain('确认新口令');
+    });
+
+    it('remove：口令验证 → remove + 解锁当前页（setPageLocked(false)）', async () => {
     pagesStore.setState((state) => ({ ...state, lockedIds: new Set(['pg1']) }));
     pagesActions.openLockDialog('pg1', 'remove');
     render(<PageLockDialog />);

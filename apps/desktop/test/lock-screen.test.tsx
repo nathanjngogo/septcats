@@ -97,7 +97,7 @@ describe('PageLockScreen（范围2 锁屏卡）', () => {
     await user.type(input, 'secret123');
     await user.click(screen.getByTestId('lock-unlock-button'));
     await waitFor(() => expect(onUnlock).toHaveBeenCalledTimes(1));
-    expect(onUnlock.mock.calls[0]?.[0]).toEqual({ locked: false, failures: 0, lockedUntil: null });
+    expect(onUnlock.mock.calls[0]?.[0]).toEqual({ locked: false, unlockedInSession: true, failures: 0, lockedUntil: null });
   });
 
   it('使用恢复码折叠 → recover 成功展示一次性新恢复码（lock-new-recovery）', async () => {

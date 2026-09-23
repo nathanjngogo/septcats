@@ -420,8 +420,8 @@ export interface SeptcatsCloseApi {
  * （E_LOCK_* 稳定 code；绝不把口令/恢复码写入日志或异常栈）。
  */
 export interface SeptcatsLockApi {
-  /** 锁状态：{locked, failures, lockedUntil}。 */
-  getStatus(input: { pageId: string }): Promise<{ locked: boolean; failures: number; lockedUntil: number | null }>;
+  /** 锁状态：{locked（页面属性）, unlockedInSession（会话属性）, failures, lockedUntil}。 */
+  getStatus(input: { pageId: string }): Promise<{ locked: boolean; unlockedInSession?: boolean; failures: number; lockedUntil: number | null }>;
   /** 设锁：返回一次性恢复码（B2 弹框展示，绝不二次可读）。 */
   setPass(input: { pageId: string; pass: string }): Promise<{ recoveryCode: string }>;
   /** 校验并解锁（DK 入会话缓存）。 */
