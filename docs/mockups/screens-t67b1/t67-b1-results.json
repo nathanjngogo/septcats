@@ -1,0 +1,144 @@
+{
+  "task": "T67-B1",
+  "ranAt": "2026-09-23T00:49:11.259Z",
+  "assertions": [
+    {
+      "step": "seed",
+      "name": "S1 造靶页（带正文）",
+      "ok": true,
+      "raw": "01M35VQPECAX9X3FY5PK4F1H1Y"
+    },
+    {
+      "step": "seed",
+      "name": "S2 blocks.list 基线可读",
+      "ok": true,
+      "raw": "len=315"
+    },
+    {
+      "step": "L1|setPass",
+      "name": "L1-a setPass 成功且回恢复码",
+      "ok": true,
+      "raw": "err=undefined rcShape=5a94ad826e"
+    },
+    {
+      "step": "L1|setPass",
+      "name": "L1-b getStatus.locked=true",
+      "ok": true,
+      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+    },
+    {
+      "step": "L1|setPass",
+      "name": "L1-c 锁后明文块不可读（空/拒发/locked 三形态 + 零泄露）",
+      "ok": true,
+      "raw": "[]"
+    },
+    {
+      "step": "L7|FTS 排除",
+      "name": "L7-w 取到 workspaceId",
+      "ok": true,
+      "raw": "01M35VQM0NT049R77PSF4AZ9ED"
+    },
+    {
+      "step": "L7|FTS 排除",
+      "name": "L7-a 锁定期正文关键词搜不到",
+      "ok": true,
+      "raw": "err=undefined hit=false"
+    },
+    {
+      "step": "L7|FTS 排除",
+      "name": "L7-b 标题（明文）仍可搜到",
+      "ok": true,
+      "raw": "{\"hits\":[{\"kind\":\"page\",\"id\":\"01M35VQPECAX9X3FY5PK4F1H1Y\",\"pageId\":\"01M35VQPECAX9X3FY5PK4F1H1Y\",\"title\":\"锁页靶标\",\"path\":[]"
+    },
+    {
+      "step": "L3|限速",
+      "name": "L3-a 错 5 次→限速置位",
+      "ok": true,
+      "raw": "Error invoking remote method 'lock:verify': Error: E_LOCK_LOCKED: 连续错误次数过多，已临时锁定 60 秒"
+    },
+    {
+      "step": "L3|限速",
+      "name": "L3-b 限速期内对口令也被拒",
+      "ok": true,
+      "raw": "Error invoking remote method 'lock:verify': Error: E_LOCK_LOCKED: 锁页处于限速锁定中，请稍后再试"
+    },
+    {
+      "step": "L4|unlock 还原",
+      "name": "L4-a 窗口过期后对口令通过",
+      "ok": true,
+      "raw": "{\"ok\":true}"
+    },
+    {
+      "step": "L4|unlock 还原",
+      "name": "L4-b 解锁后块字节=基线（B2 接线升级项）",
+      "ok": null,
+      "raw": "canonical=7595eea92a listNow=4f53cda18c"
+    },
+    {
+      "step": "L4|unlock 还原",
+      "name": "L4-c 解锁后 FTS 恢复可搜（B2 接线升级项）",
+      "ok": null,
+      "raw": "B1 明文未回填，FTS 无行=设计内"
+    },
+    {
+      "step": "L8|重启持久",
+      "name": "L8-a 重启后锁仍在（page_lock 持久）",
+      "ok": true,
+      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+    },
+    {
+      "step": "L8|重启持久",
+      "name": "L8-b 限速计数重置持久（成功解锁归零语义 + 行跨重启在表）",
+      "ok": true,
+      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+    },
+    {
+      "step": "L5|恢复码一次性",
+      "name": "L5-a 恢复码换口令成功",
+      "ok": true,
+      "raw": "err=undefined rcHash=5a94ad826e"
+    },
+    {
+      "step": "L5|恢复码一次性",
+      "name": "L5-b 旧恢复码二次被拒",
+      "ok": true,
+      "raw": "Error invoking remote method 'lock:recover': Error: E_LOCK_RECOVERY_USED: 恢复码无效或已被使用"
+    },
+    {
+      "step": "L5|恢复码一次性",
+      "name": "L5-c 新口令可验证",
+      "ok": true,
+      "raw": "{\"ok\":true}"
+    },
+    {
+      "step": "L6|remove",
+      "name": "L6-a remove 成功",
+      "ok": true,
+      "raw": "{\"ok\":true}"
+    },
+    {
+      "step": "L6|remove",
+      "name": "L6-b remove 后 locked=false",
+      "ok": true,
+      "raw": "{\"locked\":false,\"failures\":0,\"lockedUntil\":null}"
+    },
+    {
+      "step": "L6|remove",
+      "name": "L6-c 明文永久回归（基线块全数还原 + FTS 重命中）",
+      "ok": true,
+      "raw": "base=1 final=2 fts=true"
+    },
+    {
+      "step": "L9|删除无孤儿",
+      "name": "L9-a 删锁页进回收站不报错",
+      "ok": true,
+      "raw": ""
+    },
+    {
+      "step": "L9|删除无孤儿",
+      "name": "L9-b 删后 lock 状态无残留（getStatus 空/未锁）",
+      "ok": true,
+      "raw": "{\"locked\":false,\"failures\":0,\"lockedUntil\":null}"
+    }
+  ]
+}
