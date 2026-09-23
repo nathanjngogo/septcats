@@ -1,12 +1,12 @@
 {
   "task": "T67-B2",
-  "ranAt": "2026-09-23T07:57:44.018Z",
+  "ranAt": "2026-09-23T08:00:15.183Z",
   "assertions": [
     {
       "step": "seed",
       "name": "S1 造靶页",
       "ok": true,
-      "raw": "01M36M9AG2N6D1P3QT3WTJA7S6"
+      "raw": "01M36MDY44RM64KKTXJE4FHWW6"
     },
     {
       "step": "seed",
@@ -132,7 +132,7 @@
       "step": "U6",
       "name": "U6-a 第二靶页就绪",
       "ok": true,
-      "raw": "01M36MA1N8N7GZMKBJM56J56C5"
+      "raw": "01M36MEN94BT2AC8SWN8AC8BVQ"
     },
     {
       "step": "U6",
@@ -180,7 +180,7 @@
       "step": "U8",
       "name": "U8-a 第三靶页就绪",
       "ok": true,
-      "raw": "01M36MA512Q3QK6CJXGPJ3C8T4"
+      "raw": "01M36MERMHJCQ644RKDNVA5HB4"
     },
     {
       "step": "U8",
