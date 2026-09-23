@@ -1,0 +1,13 @@
+{
+  "id": "work-journal",
+  "title": "工作日志流",
+  "desc": "以快速入口、待办与最近访问为主，专注每日记录",
+  "layout": {
+    "v": 2,
+    "order": ["quick", "todo", "recent", "favorites", "database", "shortcut", "countdown", "heatmap", "quote", "bookmarks", "libstats"],
+    "hidden": ["database", "shortcut", "countdown", "heatmap", "quote", "bookmarks", "libstats"]
+  },
+  "seedPages": [
+    { "title": "今日日志", "body": "# 今日日志\n- 完成的事项\n- 待跟进的下一步" }
+  ]
+}

@@ -24,6 +24,7 @@ import {
   LINKS_CHANNELS,
   WORKSPACES_CHANNELS,
   LOCK_CHANNELS,
+  WORKBENCH_TEMPLATES_CHANNELS,
 } from '../shared/ipc';
 import { UPDATE_CHANNELS } from '../shared/ipc';
 
@@ -208,6 +209,16 @@ const api: SeptcatsApi = {
     createPage: (input) =>
       ipcRenderer.invoke(TEMPLATES_CHANNELS.createPage, input) as ReturnType<
         SeptcatsApi['templates']['createPage']
+      >,
+    saveWorkbench: (input) =>
+      ipcRenderer.invoke(TEMPLATES_CHANNELS.saveWorkbench, input) as ReturnType<
+        SeptcatsApi['templates']['saveWorkbench']
+      >,
+  },
+  workbenchTemplates: {
+    list: () =>
+      ipcRenderer.invoke(WORKBENCH_TEMPLATES_CHANNELS.list) as ReturnType<
+        SeptcatsApi['workbenchTemplates']['list']
       >,
   },
   links: {

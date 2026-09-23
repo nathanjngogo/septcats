@@ -435,6 +435,53 @@ describeDb('templatesApi（templates:* 六通道）', (ctor) => {
     expect((dead.row as Record<string, unknown>)['alive']).toBe(0);
     expect((dead.row as Record<string, unknown>)['deleted_at']).toBe(444);
   });
+
+  it('saveWorkbench：kind=workbench，payload.layout/seedPages 原样存、list 可按 kind 过滤', async () => {
+    const layout: { v: 2; order: string[]; hidden: string[] } = {
+      v: 2,
+      order: ['quick', 'todo', 'database', 'recent', 'favorites', 'shortcut', 'countdown', 'heatmap', 'quote', 'bookmarks', 'libstats'],
+      hidden: ['database', 'libstats'],
+    };
+    const saved = await service.saveWorkbench({
+      title: '我的工作台布局',
+      layout,
+      seedPages: [{ title: '种子页一', body: '正文一' }],
+    });
+    expect(saved.id.length).toBeGreaterThan(0);
+
+    const got = await service.get({ id: saved.id });
+    expect(got.template.kind).toBe('workbench');
+    expect(got.template.title).toBe('我的工作台布局');
+    const payload = got.template.payload as unknown as {
+      title: string;
+      layout: { v: number; order: string[]; hidden: string[] };
+      seedPages: Array<{ title: string; body: string }>;
+    };
+    expect(payload.layout).toEqual(layout);
+    expect(payload.seedPages).toEqual([{ title: '种子页一', body: '正文一' }]);
+
+    // list 按 kind 过滤：workbench 命中、page 不命中
+    const workbenchList = await service.list({ kind: 'workbench' });
+    expect(workbenchList.templates.map((t) => t.id)).toContain(saved.id);
+    const pageList = await service.list({ kind: 'page' });
+    expect(pageList.templates.map((t) => t.id)).not.toContain(saved.id);
+  });
+
+  it('saveWorkbench：非法入参 → E_MALFORMED（title 空 / layout 形状不合法 / seedPages 非数组）', async () => {
+    const okLayout: { v: 2; order: string[]; hidden: string[] } = { v: 2, order: ['quick'], hidden: [] };
+    await expectTemplatesError(
+      service.saveWorkbench({ title: '', layout: okLayout, seedPages: [] }),
+      'E_MALFORMED',
+    );
+    await expectTemplatesError(
+      service.saveWorkbench({ title: 't', layout: { v: 1, order: [], hidden: [] } as unknown as { v: 2; order: string[]; hidden: string[] }, seedPages: [] }),
+      'E_MALFORMED',
+    );
+    await expectTemplatesError(
+      service.saveWorkbench({ title: 't', layout: okLayout, seedPages: 'x' as unknown as [] }),
+      'E_MALFORMED',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -452,7 +499,7 @@ function makeRegistrar(): { handlers: Map<string, (input: unknown) => Promise<un
 }
 
 describe('registerTemplatesIpc（IPC 边界）', () => {
-  it('六通道全部注册；service=null 统一回 E_INVARIANT', async () => {
+  it('七通道全部注册；service=null 统一回 E_INVARIANT', async () => {
     const registrar = makeRegistrar();
     registerTemplatesIpc(null, registrar);
     for (const channel of [
@@ -462,6 +509,7 @@ describe('registerTemplatesIpc（IPC 边界）', () => {
       'templates:rename',
       'templates:delete',
       'templates:createPage',
+      'templates:saveWorkbench',
     ]) {
       expect(registrar.handlers.has(channel)).toBe(true);
     }
@@ -473,6 +521,7 @@ describe('registerTemplatesIpc（IPC 边界）', () => {
       ['templates:rename', { id: 'tpl-x', title: 't' }],
       ['templates:delete', { id: 'tpl-x' }],
       ['templates:createPage', { templateId: 'tpl-x', parentId: null }],
+      ['templates:saveWorkbench', { title: 't', layout: { v: 2, order: [], hidden: [] }, seedPages: [] }],
     ];
     for (const [channel, input] of cases) {
       const handler = registrar.handlers.get(channel) as (input: unknown) => Promise<unknown>;
@@ -499,12 +548,16 @@ describe('registerTemplatesIpc（IPC 边界）', () => {
       createPage: async () => {
         throw new TemplatesApiError('E_MALFORMED', 'createPage 不应被调用');
       },
+      saveWorkbench: async () => {
+        throw new TemplatesApiError('E_MALFORMED', 'saveWorkbench 不应被调用');
+      },
     };
     registerTemplatesIpc(fakeService, registrar);
     const get = registrar.handlers.get('templates:get') as (input: unknown) => Promise<unknown>;
     const save = registrar.handlers.get('templates:saveFromPage') as (input: unknown) => Promise<unknown>;
     const list = registrar.handlers.get('templates:list') as (input: unknown) => Promise<unknown>;
     const del = registrar.handlers.get('templates:delete') as (input: unknown) => Promise<unknown>;
+    const saveWb = registrar.handlers.get('templates:saveWorkbench') as (input: unknown) => Promise<unknown>;
 
     await expect(get(null)).rejects.toThrow(/E_MALFORMED/);
     await expect(get({ id: '' })).rejects.toThrow(/E_MALFORMED/);
@@ -512,6 +565,10 @@ describe('registerTemplatesIpc（IPC 边界）', () => {
     await expect(save({ pageId: '', title: 'x' })).rejects.toThrow(/E_MALFORMED/);
     await expect(list({ kind: 'evil' })).rejects.toThrow(/E_MALFORMED/);
     await expect(del({})).rejects.toThrow(/E_MALFORMED/);
+    // saveWorkbench：title 空 / layout 形状不合法 / 非对象入参
+    await expect(saveWb({ title: '', layout: { v: 2, order: [], hidden: [] }, seedPages: [] })).rejects.toThrow(/E_MALFORMED/);
+    await expect(saveWb({ title: 't', layout: { v: 1, order: [], hidden: [] }, seedPages: [] })).rejects.toThrow(/E_MALFORMED/);
+    await expect(saveWb('not-an-object')).rejects.toThrow(/E_MALFORMED/);
   });
 });
 

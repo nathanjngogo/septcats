@@ -1,0 +1,13 @@
+{
+  "id": "weekly-review",
+  "title": "周复盘",
+  "desc": "待办、近 7 日活跃与摘抄组合，适合每周回顾",
+  "layout": {
+    "v": 2,
+    "order": ["todo", "heatmap", "recent", "quote", "quick", "database", "favorites", "shortcut", "countdown", "bookmarks", "libstats"],
+    "hidden": ["quick", "database", "favorites", "shortcut", "countdown", "bookmarks", "libstats"]
+  },
+  "seedPages": [
+    { "title": "本周复盘", "body": "## 成就\n## 不足\n## 下周计划" }
+  ]
+}

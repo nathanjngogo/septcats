@@ -330,6 +330,8 @@ export const CHANNEL_TEMPLATES_RENAME = 'templates:rename';
 export const CHANNEL_TEMPLATES_DELETE = 'templates:delete';
 /** 从模板新建页：{templateId, parentId} → {pageId}（深拷贝；records 不复制）。 */
 export const CHANNEL_TEMPLATES_CREATE_PAGE = 'templates:createPage';
+/** 另存工作台模板：{title, layout, seedPages} → {id}（kind='workbench'；复用 template 表）。 */
+export const CHANNEL_TEMPLATES_SAVE_WORKBENCH = 'templates:saveWorkbench';
 
 export const TEMPLATES_CHANNELS = {
   list: CHANNEL_TEMPLATES_LIST,
@@ -338,9 +340,26 @@ export const TEMPLATES_CHANNELS = {
   rename: CHANNEL_TEMPLATES_RENAME,
   delete: CHANNEL_TEMPLATES_DELETE,
   createPage: CHANNEL_TEMPLATES_CREATE_PAGE,
+  saveWorkbench: CHANNEL_TEMPLATES_SAVE_WORKBENCH,
 } as const;
 
 export type TemplatesChannel = (typeof TEMPLATES_CHANNELS)[keyof typeof TEMPLATES_CHANNELS];
+
+// ---------------------------------------------------------------------------
+// 工作台模板（TASK-T72-01 §范围3）：内置模板只读清单（随包资源，dev=resources/）。
+// 出参形状见 main/workbenchTemplates.ts 的 WorkbenchTemplate。坏 JSON 跳过不抛，
+// 返回 {templates: [...]}（T72 红线：零外联，不新增 openExternal 通道）。
+// ---------------------------------------------------------------------------
+
+/** 内置模板清单：{} → {templates: WorkbenchTemplate[]}。 */
+export const CHANNEL_WORKBENCH_TEMPLATES_LIST = 'workbenchTemplates:list';
+
+export const WORKBENCH_TEMPLATES_CHANNELS = {
+  list: CHANNEL_WORKBENCH_TEMPLATES_LIST,
+} as const;
+
+export type WorkbenchTemplatesChannel =
+  (typeof WORKBENCH_TEMPLATES_CHANNELS)[keyof typeof WORKBENCH_TEMPLATES_CHANNELS];
 
 // ---------------------------------------------------------------------------
 // 双链（R8 · TASK-T44-01：页面互链派生索引 + 回链查询；派生态不进 Op，

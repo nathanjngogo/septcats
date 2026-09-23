@@ -150,4 +150,22 @@ export const templatesActions = {
       return false;
     }
   },
+
+  /** §范围4：另存为工作台模板（kind='workbench'；layout+seedPages 落 templates 数据根）。
+   * 成功 → 轻提示 + 刷新列表（「我的模板」随即出现）。 */
+  async saveWorkbench(input: {
+    title: string;
+    layout: { v: 2; order: string[]; hidden: string[] };
+    seedPages: Array<{ title: string; body: string }>;
+  }): Promise<boolean> {
+    try {
+      await bridge().templates.saveWorkbench(input);
+      pushToast(t('workbench.templateSaved'), 'success');
+      await templatesActions.loadTemplates();
+      return true;
+    } catch (error) {
+      pushToast(describeTemplateError(error), 'danger');
+      return false;
+    }
+  },
 };

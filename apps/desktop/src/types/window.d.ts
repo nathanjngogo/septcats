@@ -367,6 +367,30 @@ export interface SeptcatsTemplatesApi {
   remove(input: { id: string }): Promise<Record<string, never>>;
   /** 从模板新建页（深拷贝：新 page/block/collection id；records 不复制）。 */
   createPage(input: { templateId: string; parentId: string | null }): Promise<{ pageId: string }>;
+  /** 另存工作台模板（kind='workbench'；layout+seedPages 原样存 payload）。 */
+  saveWorkbench(input: {
+    title: string;
+    layout: { v: 2; order: string[]; hidden: string[] };
+    seedPages: Array<{ title: string; body: string }>;
+  }): Promise<{ id: string }>;
+}
+
+/**
+ * 工作台内置模板 IPC（TASK-T72-01 §范围3）。通道与 `src/shared/ipc.ts` 的
+ * WORKBENCH_TEMPLATES_CHANNELS 一对一；只读（随包资源，零外联）。
+ * 错误经 Error.message 透传（E_INVARIANT）。
+ */
+export interface SeptcatsWorkbenchTemplatesApi {
+  /** 内置模板清单（坏 JSON 跳过不抛；order/hidden 为原始字符串，归一化由 renderer 侧把关）。 */
+  list(): Promise<{
+    templates: Array<{
+      id: string;
+      title: string;
+      desc: string;
+      layout: { v: 2; order: string[]; hidden: string[] };
+      seedPages: Array<{ title: string; body: string }>;
+    }>;
+  }>;
 }
 
 /**
@@ -465,6 +489,8 @@ export interface SeptcatsApi {
   collab: SeptcatsCollabApi;
   /** 模板（M13 · T23-01 数据面）。 */
   templates: SeptcatsTemplatesApi;
+  /** 工作台内置模板（TASK-T72-01 §范围3，只读资源）。 */
+  workbenchTemplates: SeptcatsWorkbenchTemplatesApi;
   /** 双链（R8 · T44-01）。 */
   links: SeptcatsLinksApi;
   /** 页面密码锁（TASK-T67-01-B1-01 · 后端核心）。 */

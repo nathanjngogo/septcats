@@ -39,7 +39,8 @@ import { pageTypeOf, pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, 
 import { pageWidthActions } from './state/pageWidth';
 import { WorkbenchPage } from './workbench/WorkbenchPage';
 import { workbenchActions, useWorkbench } from './workbench/state';
-import { PixelHomeGlyph } from './workbench/pixelGlyph';
+import { PixelShopGlyph } from './workbench/pixelGlyph';
+import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import { paletteActions as themePaletteActions, OPEN_THEME_GALLERY_EVENT } from './theme/paletteState';
 import { ThemeGallery } from './theme/ThemeGallery';
@@ -56,6 +57,7 @@ function useCommandWiring(
   openManual: () => void,
   openLayoutEditor: () => void,
   openWorkbench: () => void,
+  openWorkbenchMarket: () => void,
 ): void {
   // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
   const locale = useLocale();
@@ -96,6 +98,8 @@ function useCommandWiring(
             openLayoutEditor,
             // T66-01 §1.2：命令面板「工作台」入口（go home / workbench）
             openWorkbench,
+            // T72-01 §范围1：命令面板「工作台模板市场」入口（与顶栏房子钮/Alt+H 同效）
+            openWorkbenchMarket,
             // T65-01 §1.2：命令面板「主题画廊」+「切到 X 派系」六条（经事件/派系状态同通道）
             openThemeGallery: (): void => {
               window.dispatchEvent(new Event(OPEN_THEME_GALLERY_EVENT));
@@ -175,7 +179,7 @@ function useCommandWiring(
     configure();
     const unsubscribe = pagesStore.subscribe(configure);
     return unsubscribe;
-  }, [openSettings, openImport, openManual, openLayoutEditor, openWorkbench, locale]);
+  }, [openSettings, openImport, openManual, openLayoutEditor, openWorkbench, openWorkbenchMarket, locale]);
 }
 
 /**
@@ -189,7 +193,7 @@ export function App() {
   // T39-01 §0.2：侧栏收起态由布局状态持有（持久化）；顶栏开合钮写入布局状态
   const sidebarPosition = useLayout((state) => state.layout.sidebar.position);
   const [collapsed, setCollapsed] = useState(sidebarPosition === 'collapsed');
-  const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout'>('editor');
+  const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout' | 'market'>('editor');
   // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
   // T65-01 §1.2：主题画廊弹框开合（aria-pressed 同源；命令面板/设置入口经事件开）
@@ -222,11 +226,14 @@ export function App() {
     workbenchActions.openHome();
   }, []);
   const closeWorkbench = useCallback(() => workbenchActions.closeHome(), []);
-  const toggleWorkbench = useCallback((): void => {
-    setView('editor');
-    workbenchActions.toggle();
+  // T72-01 §范围1：工作台模板市场入口（顶栏房子钮 / 命令 / Alt+H 同效）。
+  // 市场是覆盖编辑区的视图（与设置/导入同通道），打开先收 home——market 与 home 不叠放。
+  const openWorkbenchMarket = useCallback((): void => {
+    workbenchActions.closeHome();
+    setView('market');
   }, []);
-  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor, openWorkbench);
+  const closeMarket = useCallback(() => setView('editor'), []);
+  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor, openWorkbench, openWorkbenchMarket);
 
   // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -324,9 +331,8 @@ export function App() {
     };
   }, [paletteOpenForHotkey, toggleAiPanel]);
 
-  // T66-01 §1.2：快捷键 Alt+H 开合工作台（与既有 Ctrl/Cmd 系键位不相交；
-  // 无统一 keybind 注册面 → 挂 App 级 window keydown，同 Ctrl+J 先例；
-  // 命令面板打开时不劫持——输入焦点在 palette 输入框）。
+  // T72-01 §范围1：快捷键 Alt+H 打开工作台模板市场（T66 原「开合工作台」语义改为开市场；
+  // 与既有 Ctrl/Cmd 系键位不相交；命令面板打开时不劫持——输入焦点在 palette 输入框）。
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'h' || event.key === 'H')) {
@@ -334,14 +340,14 @@ export function App() {
           return;
         }
         event.preventDefault();
-        toggleWorkbench();
+        openWorkbenchMarket();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [paletteOpenForHotkey, toggleWorkbench]);
+  }, [paletteOpenForHotkey, openWorkbenchMarket]);
 
   // T18-03：AI 面板空态「打开设置」入口（PageView 经窗口事件解耦，路由仍在 App）
   useEffect(() => {
@@ -498,6 +504,7 @@ export function App() {
   const inImport = view === 'import';
   const inManual = view === 'manual';
   const inLayout = view === 'layout';
+  const inMarket = view === 'market';
 
   // T51-01：侧栏开合的唯一出口（顶栏/标签条按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -547,15 +554,16 @@ export function App() {
         breadcrumb={breadcrumb}
         actions={
           <>
-            {/* T66-01 §1.2：顶栏房子钮 = 工作台入口（Alt+H / 命令面板同效）。
-                glyph 为 workbench 目录内局部自绘（T65 红线：pixelIcons.tsx 不动；
-                DEVIATION：合并后由 PM 收编进族）。 */}
+            {/* T72-01 §范围1：顶栏房子钮 = 工作台模板市场入口（Alt+H / 命令面板同效）。
+                原「我的工作台」home 入口保留为市场内的 workbench-open 行内钮（见
+                TemplateMarketPage）。glyph 为 workbench 目录内局部自绘（T65 红线：
+                pixelIcons.tsx 不动；DEVIATION：合并后由 PM 收编进族）。 */}
             <IconButton
-              icon={PixelHomeGlyph}
-              label={t('app.workbenchLabel')}
-              aria-pressed={workbenchView === 'home'}
-              data-testid="workbench-open"
-              onClick={toggleWorkbench}
+              icon={PixelShopGlyph}
+              label={t('app.workbenchMarketLabel')}
+              aria-pressed={view === 'market'}
+              data-testid="workbench-market-open"
+              onClick={openWorkbenchMarket}
             />
             {/* T65-01 §1.2：顶栏调色板入口钮（学 workbench-open 接线；glyph 局部自绘，
                 像素族无对应 glyph，禁改 pixelIcons 主文件，DEVIATION 待 PM 收编）。 */}
@@ -636,6 +644,10 @@ export function App() {
         ) : inLayout ? (
           // T57-01 §1.3：独立布局编辑器页（「完成」回 editor）
           <LayoutEditorPage onDone={closeLayoutEditor} />
+        ) : inMarket ? (
+          // T72-01 §范围2：工作台模板市场（全屏 region，Esc/关闭钮回 editor；
+          // 与 home/workbench 不叠放——打开即收 home，见 openWorkbenchMarket）
+          <TemplateMarketPage onClose={closeMarket} onOpenWorkbench={openWorkbench} />
         ) : pagesState.view === 'trash' ? (
           <TrashList />
         ) : searchOpen ? (

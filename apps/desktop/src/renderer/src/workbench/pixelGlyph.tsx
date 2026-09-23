@@ -54,6 +54,26 @@ export const TODO_CHECK_GLYPH: readonly string[] = [
   '................',
 ];
 
+/** 店铺 / 货架（T72 入口钮 glyph；房子→店铺语义）。局部自绘，禁改 pixelIcons 主文件。 */
+export const SHOP_SHELF_GLYPH: readonly string[] = [
+  '................',
+  '..############..',
+  '..############..',
+  '..#..##....##..',
+  '..#..##....##..',
+  '..############..',
+  '..#..#o#..#o#..',
+  '..#..#o#..#o#..',
+  '..#..#o#..#o#..',
+  '..#..#o#..#o#..',
+  '..#........#..',
+  '..#........#..',
+  '..############..',
+  '..#.#......#.#..',
+  '..#.#......#.#..',
+  '..###......###..',
+];
+
 interface Cell {
   readonly x: number;
   readonly y: number;
@@ -128,3 +148,5 @@ function makeLocalGlyph(grid: readonly string[], displayName: string) {
 export const PixelHomeGlyph = makeLocalGlyph(HOME_HOUSE_GLYPH, 'PixelHomeGlyphLocal');
 /** 16×16 像素待办（todo 卡头装饰）。 */
 export const PixelTodoGlyph = makeLocalGlyph(TODO_CHECK_GLYPH, 'PixelTodoGlyphLocal');
+/** 16×16 像素店铺 / 货架（T72 顶栏「工作台模板市场」入口钮）。 */
+export const PixelShopGlyph = makeLocalGlyph(SHOP_SHELF_GLYPH, 'PixelShopGlyphLocal');

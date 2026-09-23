@@ -23,6 +23,7 @@ import {
 import { WorkbenchCard, WorkbenchPixelButton } from './WorkbenchCard';
 import { PixelHomeGlyph } from './pixelGlyph';
 import { CARD_DEFS, wbcardRead, wbcardWrite, type CardApi } from './cards';
+import { SaveTemplateDialog } from './SaveTemplateDialog';
 import { greetingPhase } from './work';
 import './WorkbenchPage.css';
 
@@ -45,6 +46,7 @@ export function WorkbenchPage({ onClose }: WorkbenchPageProps) {
   const hiddenCards = useWorkbench((state) => state.hiddenCards);
   const [customizing, setCustomizing] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
   const [dragId, setDragId] = useState<WorkbenchCardId | null>(null);
   const [dragOverId, setDragOverId] = useState<WorkbenchCardId | null>(null);
 
@@ -163,6 +165,20 @@ export function WorkbenchPage({ onClose }: WorkbenchPageProps) {
               {t('workbench.customizeDone')}
             </button>
           ) : null}
+          {/* T72-01 §范围4：另存为模板（弹框：名称 + 种子页勾选） */}
+          <button
+            type="button"
+            className="wb-save-template"
+            aria-label={t('workbench.market.saveTemplateTitle')}
+            data-testid="wb-save-template"
+            onClick={() => {
+              setCustomizing(false);
+              setCatalogOpen(false);
+              setSaveOpen(true);
+            }}
+          >
+            {t('workbench.market.saveTemplateTitle')}
+          </button>
           <button
             type="button"
             className="wb-close"
@@ -243,6 +259,7 @@ export function WorkbenchPage({ onClose }: WorkbenchPageProps) {
           </div>
         ) : null}
       </div>
+      <SaveTemplateDialog open={saveOpen} onClose={() => setSaveOpen(false)} />
     </div>
   );
 }
