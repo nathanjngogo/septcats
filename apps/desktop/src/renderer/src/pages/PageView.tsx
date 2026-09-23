@@ -60,6 +60,7 @@ import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
 import { PageLockScreen } from './PageLockScreen';
+import { TelescopeGlyph } from '../components/TelescopeGlyph';
 import type { LockStatusView } from '../lockStatus';
 import './PageView.css';
 
@@ -1223,7 +1224,7 @@ export function PageView({ page }: PageViewProps) {
     <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
       <div className="pv-title-row">
         <span className="pv-page-icon" aria-hidden="true">
-          🔭
+          <TelescopeGlyph />
         </span>
         <h1 className="pv-page-title">{activePage.title}</h1>
         <Button variant="secondary" size="sm" onClick={convertToDatabase}>

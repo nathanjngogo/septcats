@@ -1,0 +1,24 @@
+{
+  "assertions": [
+    {
+      "name": "P1 图标=像素 SVG（crispEdges·rect 网格）且 emoji 清除",
+      "ok": true,
+      "raw": "{\"host\":true,\"emoji\":false,\"svg\":true,\"crisp\":\"crispEdges\",\"rects\":44,\"box\":{\"w\":32,\"h\":32}}"
+    },
+    {
+      "name": "P2 尺寸=32 方图（标题上方大图标口径）",
+      "ok": true,
+      "raw": "{\"w\":32,\"h\":32}"
+    },
+    {
+      "name": "P3 图标色随主题（light→dark data-theme + 亮墨 rgb(237,..)）",
+      "ok": true,
+      "raw": "rgb(26, 26, 26) → rgb(237, 237, 237) theme=dark"
+    },
+    {
+      "name": "P5 真实数据根未被触碰",
+      "ok": true,
+      "raw": "before=1789991614995.1055"
+    }
+  ]
+}

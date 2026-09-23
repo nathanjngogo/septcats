@@ -19,8 +19,10 @@
 }
 
 .pv-page-icon {
+  display: inline-flex;
   font-size: var(--sc-space-xxl);
   line-height: 1;
+  color: var(--sc-color-ink);
 }
 
 .pv-page-title {
