@@ -92,7 +92,8 @@ async function mkPageWithBody(page, title, bodyText) {
   const ed = page.locator('.pv-root .ProseMirror, .pv-root [contenteditable="true"]').first();
   await ed.click();
   await page.keyboard.type(bodyText, { delay: 12 });
-  await page.locator('.app-side').first().click({ position: { x: 4, y: 4 } });
+  await page.locator('.pv-root').click({ position: { x: 600, y: 400 } }).catch(() => null); // 点正文空白退出（T70 教训：侧栏 (4,4)=库头行会误开菜单，禁魔数坐标）
+  await page.evaluate(() => { const el = document.activeElement; if (el instanceof HTMLElement) el.blur(); });
   await wait(1200);
   return page.evaluate((t) => {
     const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((el) => (el.textContent ?? '').includes(t.slice(0, 4)));
@@ -278,7 +279,26 @@ async function main() {
 
     // ---- U8 移除（走 UI 弹层：第三靶页 UI 上锁 → UI 移除）----
     STEP = 'U8';
-    const pageC = await mkPageWithBody(page, 'B2锁三页', 'B2KW丙丁三');
+    let pageC = null;
+    try {
+      pageC = await mkPageWithBody(page, 'B2锁三页', 'B2KW丙丁三');
+    } catch (e) {
+      console.log('U8-PREP-ERR', String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 1000));
+      const scene = await page.evaluate(() => {
+        const btn = document.querySelector('[data-testid="side-new-page"]');
+        const r = btn?.getBoundingClientRect();
+        const at = r !== undefined ? document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) : null;
+        return {
+          btn: btn !== null && btn !== undefined,
+          vis: r !== undefined ? `${String(Math.round(r.x))},${String(Math.round(r.y))},${String(Math.round(r.width))}x${String(Math.round(r.height))}` : '-',
+          topEl: at ? `${at.tagName}.${String(at.className).slice(0, 40)}#${at.getAttribute('data-testid') ?? ''}` : 'null',
+          menus: document.querySelectorAll('[role="menu"]').length,
+          search: document.querySelectorAll('[data-testid*="search"]').length,
+          dialog: document.querySelectorAll('[role="dialog"]').length,
+        };
+      });
+      console.log('U8-SCENE', JSON.stringify(scene));
+    }
     check('U8-a 第三靶页就绪', pageC !== null, String(pageC));
     const preC = await ipc(page, 'blocks.list', { pageId: pageC });
     const canonC = JSON.stringify(preC.data?.blocks ?? null);
