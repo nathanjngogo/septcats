@@ -1,7 +1,540 @@
 {
   "task": "TASK-T61-01 真机取证（结构批 R13 ④⑧）",
-  "partial": true,
-  "ranAt": "2026-09-23T07:40:42.379Z",
+  "ranAt": "2026-09-23T07:47:08.387Z",
+  "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
+  "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/原生拖拽/截图 + Emulation.setDeviceMetricsOverride 两宽度",
+  "fixture": {
+    "userDataDir": "E:\\Hermes Agent工作空间\\_scratch\\t61-01\\ud",
+    "rootPath": "E:\\Hermes Agent工作空间\\_scratch\\t61-01\\data",
+    "settingsFile": "E:\\Hermes Agent工作空间\\_scratch\\t61-01\\ud\\septcats.settings.json"
+  },
+  "isolation": {
+    "realRoot": "C:\\Users\\Administrator\\.septcats",
+    "realRootMtimeBefore": "1789991614995.1055",
+    "realRootMtimeAfter": "1789991614995.1055",
+    "untouched": true
+  },
+  "screenshots": [
+    "t61-01-light-main.png",
+    "t61-01-light-folder.png",
+    "t61-01-light-movemenu.png",
+    "t61-01-light-handle-hover.png",
+    "t61-01-light-sidebar-resized.png",
+    "t61-01-light-ai-resized.png",
+    "t61-01-light-slider-range.png",
+    "t61-01-light-main-1184.png",
+    "t61-01-light-main-894.png",
+    "t61-01-dark-main.png",
+    "t61-01-dark-resized.png"
+  ],
+  "pass": 30,
+  "fail": 0,
+  "electronFinal": 0,
+  "quiet": {
+    "gracefulExited": true,
+    "forced": false
+  },
+  "phases": {
+    "fixture": {
+      "CONTAINER": "T61 容器页",
+      "MOVED": "T61 被移动页",
+      "renamedA": true,
+      "renamedB": true,
+      "tree0": [
+        {
+          "id": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "title": "T61 容器页",
+          "parentId": null,
+          "sortKey": "A00000000"
+        },
+        {
+          "id": "01M36KNJQ1R0H38YF3KTFTPFZ5",
+          "title": "T61 被移动页",
+          "parentId": null,
+          "sortKey": "a"
+        }
+      ]
+    },
+    "signatures": {
+      "folderSig": {
+        "first": {
+          "x": "1",
+          "y": "3",
+          "w": "8"
+        },
+        "n": 20
+      },
+      "fileSigBefore": {
+        "first": {
+          "x": "3",
+          "y": "1",
+          "w": "10"
+        },
+        "n": 29,
+        "testId": "side-node-01M36KNJQ1R0H38YF3KTFTPFZ5",
+        "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+      }
+    },
+    "folder": {
+      "containerSigBefore": {
+        "first": {
+          "x": "3",
+          "y": "1",
+          "w": "10"
+        },
+        "n": 29,
+        "testId": "side-node-01M36KNHDHGNJF1XJQJX0QWF4P",
+        "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+      },
+      "containerSigAfter": {
+        "first": {
+          "x": "1",
+          "y": "3",
+          "w": "8"
+        },
+        "n": 20,
+        "testId": "side-node-01M36KNHDHGNJF1XJQJX0QWF4P",
+        "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+      },
+      "menuOpened": {
+        "label": "页面操作",
+        "items": [
+          "重命名",
+          "新建子页面",
+          "新建子文件夹",
+          "移入…",
+          "固定宽度",
+          "转为 Wiki",
+          "添加密码锁",
+          "删除"
+        ],
+        "disabled": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "rect": {
+          "left": 196,
+          "top": 237.5,
+          "w": 210,
+          "h": 296
+        }
+      },
+      "treeAfterSub": [
+        {
+          "id": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "title": "T61 容器页",
+          "parentId": null,
+          "sortKey": "A00000000"
+        },
+        {
+          "id": "01M36KNJQ1R0H38YF3KTFTPFZ5",
+          "title": "T61 被移动页",
+          "parentId": null,
+          "sortKey": "a"
+        },
+        {
+          "id": "01M36KNT07GR87G9YRZTDXEZ9H",
+          "title": "未命名",
+          "parentId": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "sortKey": "A00000000"
+        }
+      ]
+    },
+    "moveMenu": {
+      "moveOpened": {
+        "label": "页面操作",
+        "items": [
+          "重命名",
+          "新建子页面",
+          "新建子文件夹",
+          "移入…",
+          "固定宽度",
+          "转为 Wiki",
+          "添加密码锁",
+          "删除"
+        ],
+        "disabled": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "rect": {
+          "left": 196,
+          "top": 309.5,
+          "w": 210,
+          "h": 296
+        }
+      },
+      "moveMenu": {
+        "label": "移入页面",
+        "items": [
+          "库根",
+          "T61 容器页",
+          "未命名"
+        ],
+        "disabled": [
+          true,
+          false,
+          false
+        ],
+        "rect": {
+          "left": 196,
+          "top": 309.5,
+          "w": 210,
+          "h": 116
+        }
+      }
+    },
+    "moveResult": {
+      "treeAfterMove": [
+        {
+          "id": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "title": "T61 容器页",
+          "parentId": null,
+          "sortKey": "A00000000"
+        },
+        {
+          "id": "01M36KNT07GR87G9YRZTDXEZ9H",
+          "title": "未命名",
+          "parentId": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "sortKey": "A00000000"
+        },
+        {
+          "id": "01M36KNJQ1R0H38YF3KTFTPFZ5",
+          "title": "T61 被移动页",
+          "parentId": "01M36KNHDHGNJF1XJQJX0QWF4P",
+          "sortKey": "a"
+        }
+      ],
+      "expandedState": {
+        "childRowVisible": true,
+        "rows": [
+          {
+            "title": "新建页面",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+          },
+          {
+            "title": "收藏",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+          },
+          {
+            "title": "最近",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+          },
+          {
+            "title": "Wiki",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+          },
+          {
+            "title": "T61 容器页",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 0)"
+          },
+          {
+            "title": "未命名",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 1)"
+          },
+          {
+            "title": "T61 被移动页",
+            "paddingLeft": "calc(var(--sc-space-sm) + var(--sc-space-md) * 1)"
+          }
+        ]
+      }
+    },
+    "handleHover": {
+      "x": 240,
+      "y": 368,
+      "w": 4
+    },
+    "dragSidebar": {
+      "widthBeforeSide": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 240,
+          "w": 240,
+          "h": 735
+        },
+        "aiRect": null,
+        "sidebarVar": "240px",
+        "aiVar": "320px",
+        "sidebarPersisted": 240,
+        "aiPersisted": 320,
+        "handleSidebar": true,
+        "handleAi": false
+      },
+      "dragSide": {
+        "x": 240,
+        "y": 368,
+        "w": 4,
+        "endX": 330
+      },
+      "widthAfterSide": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 330,
+          "w": 330,
+          "h": 735
+        },
+        "aiRect": null,
+        "sidebarVar": "330px",
+        "aiVar": "320px",
+        "sidebarPersisted": 330,
+        "aiPersisted": 320,
+        "handleSidebar": true,
+        "handleAi": false
+      }
+    },
+    "clamp": {
+      "beforeClamp": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 330,
+          "w": 330,
+          "h": 800
+        },
+        "aiRect": null,
+        "sidebarVar": "330px",
+        "aiVar": "320px",
+        "sidebarPersisted": 330,
+        "aiPersisted": 320,
+        "handleSidebar": true,
+        "handleAi": false
+      },
+      "afterClamp": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": null,
+        "sidebarVar": "355px",
+        "aiVar": "320px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 320,
+        "handleSidebar": true,
+        "handleAi": false
+      },
+      "expectedMax": 355
+    },
+    "dragAi": {
+      "aiBefore": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 864,
+          "right": 1184,
+          "w": 320,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "320px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 320,
+        "handleSidebar": true,
+        "handleAi": true
+      },
+      "dragAi": {
+        "x": 864,
+        "y": 420,
+        "w": 4,
+        "endX": 834
+      },
+      "aiAfter": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 834,
+          "right": 1184,
+          "w": 350,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "350px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 350,
+        "handleSidebar": true,
+        "handleAi": true
+      },
+      "dragAiMax": {
+        "x": 834,
+        "y": 420,
+        "w": 4,
+        "endX": 534
+      },
+      "aiAfterMax": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 829,
+          "right": 1184,
+          "w": 355,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "355px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 355,
+        "handleSidebar": true,
+        "handleAi": true
+      }
+    },
+    "slider": {
+      "innerWidth": 1184,
+      "sideMax": "355",
+      "aiMax": "355",
+      "aiValue": "350",
+      "sideValue": "350"
+    },
+    "bottomMode": {
+      "bottomRow": true,
+      "panel": true,
+      "handleAi": false
+    },
+    "rightMode": {
+      "bottomRow": false,
+      "handleAi": true
+    },
+    "restart": {
+      "beforeReload": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 829,
+          "right": 1184,
+          "w": 355,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "355px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 355,
+        "handleSidebar": true,
+        "handleAi": true
+      },
+      "afterReload": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 829,
+          "right": 1184,
+          "w": 355,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "355px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 355,
+        "handleSidebar": true,
+        "handleAi": true
+      }
+    },
+    "dark": {
+      "darkBefore": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 355,
+          "w": 355,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 829,
+          "right": 1184,
+          "w": 355,
+          "h": 760
+        },
+        "sidebarVar": "355px",
+        "aiVar": "355px",
+        "sidebarPersisted": 355,
+        "aiPersisted": 355,
+        "handleSidebar": true,
+        "handleAi": true
+      },
+      "darkAfter": {
+        "innerWidth": 1184,
+        "sidebarRect": {
+          "left": 0,
+          "right": 295,
+          "w": 295,
+          "h": 800
+        },
+        "aiRect": {
+          "left": 829,
+          "right": 1184,
+          "w": 355,
+          "h": 760
+        },
+        "sidebarVar": "295px",
+        "aiVar": "355px",
+        "sidebarPersisted": 295,
+        "aiPersisted": 355,
+        "handleSidebar": true,
+        "handleAi": true
+      }
+    },
+    "widths": [
+      {
+        "w": 1184,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 1184,
+        "winClientW": 1184,
+        "sideTop": 0
+      },
+      {
+        "w": 894,
+        "winScrollH": 800,
+        "winClientH": 800,
+        "winScrollW": 894,
+        "winClientW": 894,
+        "sideTop": 0
+      }
+    ],
+    "electron": {
+      "before": 5,
+      "after": 0
+    }
+  },
   "assertions": [
     {
       "step": "boot",
@@ -31,7 +564,7 @@
       "step": "G0|fixture",
       "name": "[info] 夹具树（原始）",
       "ok": null,
-      "raw": "[{\"id\":\"01M36KB3HMXZ0KFD48SJJMV969\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36KB4V3TWADFH7TKE2M3YQ7\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"}]"
+      "raw": "[{\"id\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36KNJQ1R0H38YF3KTFTPFZ5\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"}]"
     },
     {
       "step": "G0|fixture",
@@ -43,7 +576,241 @@
       "step": "G0|fixture",
       "name": "[info] 像素签名（原始）",
       "ok": null,
-      "raw": "{\"folderSig\":null,\"fileSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M36KB4V3TWADFH7TKE2M3YQ7\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}}"
+      "raw": "{\"folderSig\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20},\"fileSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M36KNJQ1R0H38YF3KTFTPFZ5\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"}}"
+    },
+    {
+      "step": "G1|folder",
+      "name": "[info] 文件夹派生（原始）",
+      "ok": null,
+      "raw": "{\"containerSigBefore\":{\"first\":{\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"},\"n\":29,\"testId\":\"side-node-01M36KNHDHGNJF1XJQJX0QWF4P\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"containerSigAfter\":{\"first\":{\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"},\"n\":20,\"testId\":\"side-node-01M36KNHDHGNJF1XJQJX0QWF4P\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},\"menuOpened\":{\"label\":\"页面操作\",\"items\":[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"],\"disabled\":[false,false,false,false,false,false,false,false],\"rect\":{\"left\":196,\"top\":237.5,\"w\":210,\"h\":296}},\"treeAfterSub\":[{\"id\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36KNJQ1R0H38YF3KTFTPFZ5\",\"title\":\"T61 被移动页\",\"parentId\":null,\"sortKey\":\"a\"},{\"id\":\"01M36KNT07GR87G9YRZTDXEZ9H\",\"title\":\"未命名\",\"parentId\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"sortKey\":\"A00000000\"}]}"
+    },
+    {
+      "step": "G1|folder",
+      "name": "G1-1 §1.1 ⋯ 菜单含「新建子页面」与「移入…」（相对顺序：重命名 < 新建子页面 < 移入…）",
+      "ok": true,
+      "raw": "[\"重命名\",\"新建子页面\",\"新建子文件夹\",\"移入…\",\"固定宽度\",\"转为 Wiki\",\"添加密码锁\",\"删除\"]"
+    },
+    {
+      "step": "G1|folder",
+      "name": "G1-2 §1.1 新建子页面落库：子页的 parentId = 容器页 id（既有 createPage(parentId)）",
+      "ok": true,
+      "raw": "{\"containerId\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"children\":[\"01M36KNT07GR87G9YRZTDXEZ9H\"]}"
+    },
+    {
+      "step": "G1|folder",
+      "name": "G1-3 §1.2 父行图标由 FileText 变 FolderSimple（派生：有活子页 = 文件夹长相）",
+      "ok": true,
+      "raw": "before={\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"} after={\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"} folder={\"x\":\"1\",\"y\":\"3\",\"w\":\"8\"} file={\"x\":\"3\",\"y\":\"1\",\"w\":\"10\"}"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "[info] 移入二级菜单（原始）",
+      "ok": null,
+      "raw": "{\"label\":\"移入页面\",\"items\":[\"库根\",\"T61 容器页\",\"未命名\"],\"disabled\":[true,false,false],\"rect\":{\"left\":196,\"top\":309.5,\"w\":210,\"h\":116}}"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "G2-1 §1.3 点「移入…」→ 二级列表（含「库根」+ 容器页），排除多维数据行（T70 文案改口：工作区根→库根）",
+      "ok": true,
+      "raw": "[\"库根\",\"T61 容器页\",\"未命名\"]"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "G2-2 §1.3 防环：候选不含自身（被移动页）",
+      "ok": true,
+      "raw": "[\"库根\",\"T61 容器页\",\"未命名\"]"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "[info] 移入结果（原始）",
+      "ok": null,
+      "raw": "{\"treeAfterMove\":[{\"id\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"title\":\"T61 容器页\",\"parentId\":null,\"sortKey\":\"A00000000\"},{\"id\":\"01M36KNT07GR87G9YRZTDXEZ9H\",\"title\":\"未命名\",\"parentId\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"sortKey\":\"A00000000\"},{\"id\":\"01M36KNJQ1R0H38YF3KTFTPFZ5\",\"title\":\"T61 被移动页\",\"parentId\":\"01M36KNHDHGNJF1XJQJX0QWF4P\",\"sortKey\":\"a\"}],\"expandedState\":{\"childRowVisible\":true,\"rows\":[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"}]}}"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "G2-3 §1.3 移入落库：被移动页 parentId = 容器页 id（树形变化）",
+      "ok": true,
+      "raw": "moved.parentId=01M36KNHDHGNJF1XJQJX0QWF4P container.id=01M36KNHDHGNJF1XJQJX0QWF4P"
+    },
+    {
+      "step": "G2|move-picker",
+      "name": "G2-4 §1.3 目标父页自动展开（子树可见：子页与移入页同列可见）",
+      "ok": true,
+      "raw": "[{\"title\":\"新建页面\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"收藏\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"最近\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"Wiki\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"T61 容器页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 0)\"},{\"title\":\"未命名\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"},{\"title\":\"T61 被移动页\",\"paddingLeft\":\"calc(var(--sc-space-sm) + var(--sc-space-md) * 1)\"}]"
+    },
+    {
+      "step": "G3|drag-sidebar",
+      "name": "G3-0 §2.2 左把手命中区 = 4px 且骑缝在侧栏右缘（|left−侧栏宽| ≤ 2）",
+      "ok": true,
+      "raw": "{\"x\":240,\"y\":368,\"w\":4}"
+    },
+    {
+      "step": "G3|drag-sidebar",
+      "name": "[info] 拖左缘（原始）",
+      "ok": null,
+      "raw": "{\"widthBeforeSide\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":240,\"w\":240,\"h\":735},\"aiRect\":null,\"sidebarVar\":\"240px\",\"aiVar\":\"320px\",\"sidebarPersisted\":240,\"aiPersisted\":320,\"handleSidebar\":true,\"handleAi\":false},\"dragSide\":{\"x\":240,\"y\":368,\"w\":4,\"endX\":330},\"widthAfterSide\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":330,\"w\":330,\"h\":735},\"aiRect\":null,\"sidebarVar\":\"330px\",\"aiVar\":\"320px\",\"sidebarPersisted\":330,\"aiPersisted\":320,\"handleSidebar\":true,\"handleAi\":false}}"
+    },
+    {
+      "step": "G3|drag-sidebar",
+      "name": "G3-1 §2.2 拖左缘：侧栏 DOM 实宽随 Δx 增宽（getBoundingClientRect 实测）",
+      "ok": true,
+      "raw": "before=240 after=330 Δ=90"
+    },
+    {
+      "step": "G3|drag-sidebar",
+      "name": "G3-2 §2.2 松手落盘：localStorage septcats.layout.sidebar.width = DOM 实宽（同一真源）",
+      "ok": true,
+      "raw": "persisted=330 dom=330 var=330px"
+    },
+    {
+      "step": "G3|drag-sidebar",
+      "name": "G3-3 §2.2 根变量 --sc-layout-sidebar 与持久化/DOM 三处一致",
+      "ok": true,
+      "raw": "var=330px persisted=330"
+    },
+    {
+      "step": "G4|clamp-30pct",
+      "name": "[info] 30% 钳制（原始）",
+      "ok": null,
+      "raw": "{\"beforeClamp\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":330,\"w\":330,\"h\":800},\"aiRect\":null,\"sidebarVar\":\"330px\",\"aiVar\":\"320px\",\"sidebarPersisted\":330,\"aiPersisted\":320,\"handleSidebar\":true,\"handleAi\":false},\"afterClamp\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":null,\"sidebarVar\":\"355px\",\"aiVar\":\"320px\",\"sidebarPersisted\":355,\"aiPersisted\":320,\"handleSidebar\":true,\"handleAi\":false},\"expectedMax\":355}"
+    },
+    {
+      "step": "G4|clamp-30pct",
+      "name": "G4-1 §2.2 拖到极限：侧栏宽被夹在 min(480, 视口 30%)（1184 → 355）",
+      "ok": true,
+      "raw": "dom=355 expected=355"
+    },
+    {
+      "step": "G4|clamp-30pct",
+      "name": "G4-2 §2.2 钳制值同样落盘（持久化 = 355，不落未夹紧的原始像素）",
+      "ok": true,
+      "raw": "persisted=355"
+    },
+    {
+      "step": "G5|drag-ai",
+      "name": "[info] 拖右缘（原始）",
+      "ok": null,
+      "raw": "{\"aiBefore\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":864,\"right\":1184,\"w\":320,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"320px\",\"sidebarPersisted\":355,\"aiPersisted\":320,\"handleSidebar\":true,\"handleAi\":true},\"dragAi\":{\"x\":864,\"y\":420,\"w\":4,\"endX\":834},\"aiAfter\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":834,\"right\":1184,\"w\":350,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"350px\",\"sidebarPersisted\":355,\"aiPersisted\":350,\"handleSidebar\":true,\"handleAi\":true},\"dragAiMax\":{\"x\":834,\"y\":420,\"w\":4,\"endX\":534},\"aiAfterMax\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":829,\"right\":1184,\"w\":355,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"355px\",\"sidebarPersisted\":355,\"aiPersisted\":355,\"handleSidebar\":true,\"handleAi\":true}}"
+    },
+    {
+      "step": "G5|drag-ai",
+      "name": "G5-1 §2.2 右把手只挂 AI 面板（右侧栏布局）：面板在 DOM 且把手存在",
+      "ok": true,
+      "raw": "aiRect={\"left\":864,\"right\":1184,\"w\":320,\"h\":760} handle=true"
+    },
+    {
+      "step": "G5|drag-ai",
+      "name": "G5-2 §2.2 拖右缘：AI 面板 DOM 实宽随 Δx（向左拖 = 变宽）",
+      "ok": true,
+      "raw": "before=320 after=350 Δ=30"
+    },
+    {
+      "step": "G5|drag-ai",
+      "name": "G5-3 §2.2 AI 宽落盘：localStorage septcats.layout.ai.width = DOM 实宽",
+      "ok": true,
+      "raw": "persisted=350 dom=350 var=350px"
+    },
+    {
+      "step": "G5|drag-ai",
+      "name": "G5-4 §2.2 右缘同样受 30% 钳制：拖到极限夹在 min(480, 视口 30%)（1184 → 355）",
+      "ok": true,
+      "raw": "dom=355 expected=355 persisted=355"
+    },
+    {
+      "step": "G6|slider-range",
+      "name": "[info] T57 滑杆值域（原始）",
+      "ok": null,
+      "raw": "{\"innerWidth\":1184,\"sideMax\":\"355\",\"aiMax\":\"355\",\"aiValue\":\"350\",\"sideValue\":\"350\"}"
+    },
+    {
+      "step": "G6|slider-range",
+      "name": "G6-1 §2.3 布局编辑器两根宽度滑杆 max = floor(视口 × 0.30)（1184 → 355）",
+      "ok": true,
+      "raw": "{\"innerWidth\":1184,\"sideMax\":\"355\",\"aiMax\":\"355\",\"aiValue\":\"350\",\"sideValue\":\"350\"}"
+    },
+    {
+      "step": "G6|slider-range",
+      "name": "[info] AI 置底把手（原始）",
+      "ok": null,
+      "raw": "{\"bottomRow\":true,\"panel\":true,\"handleAi\":false}"
+    },
+    {
+      "step": "G6|slider-range",
+      "name": "G6-2 §2.2 AI position=bottom → 面板在位但右把手不挂（宽度对纵向布局无意义）",
+      "ok": true,
+      "raw": "{\"bottomRow\":true,\"panel\":true,\"handleAi\":false}"
+    },
+    {
+      "step": "G6|slider-range",
+      "name": "G6-3 §2.2 切回 AI position=right → 右把手恢复挂载（同一次会话内即时生效）",
+      "ok": true,
+      "raw": "{\"bottomRow\":false,\"handleAi\":true}"
+    },
+    {
+      "step": "G7|restart-restore",
+      "name": "[info] 重启还原（原始）",
+      "ok": null,
+      "raw": "{\"beforeReload\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":829,\"right\":1184,\"w\":355,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"355px\",\"sidebarPersisted\":355,\"aiPersisted\":355,\"handleSidebar\":true,\"handleAi\":true},\"afterReload\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":829,\"right\":1184,\"w\":355,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"355px\",\"sidebarPersisted\":355,\"aiPersisted\":355,\"handleSidebar\":true,\"handleAi\":true}}"
+    },
+    {
+      "step": "G7|restart-restore",
+      "name": "G7-1 §2.4 重启还原：侧栏宽 = 持久化值（DOM 实宽实测）",
+      "ok": true,
+      "raw": "before=355 after=355 persisted=355"
+    },
+    {
+      "step": "G7|restart-restore",
+      "name": "G7-2 §2.4 重启还原：AI 面板宽 = 持久化值（面板重开即按 ai.width 渲染）",
+      "ok": true,
+      "raw": "before=355 after=355"
+    },
+    {
+      "step": "G9|dark",
+      "name": "G9-0 深色主题就位",
+      "ok": true,
+      "raw": "data-theme=dark"
+    },
+    {
+      "step": "G9|dark",
+      "name": "[info] 深色拖拽（原始）",
+      "ok": null,
+      "raw": "{\"darkBefore\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":355,\"w\":355,\"h\":800},\"aiRect\":{\"left\":829,\"right\":1184,\"w\":355,\"h\":760},\"sidebarVar\":\"355px\",\"aiVar\":\"355px\",\"sidebarPersisted\":355,\"aiPersisted\":355,\"handleSidebar\":true,\"handleAi\":true},\"darkAfter\":{\"innerWidth\":1184,\"sidebarRect\":{\"left\":0,\"right\":295,\"w\":295,\"h\":800},\"aiRect\":{\"left\":829,\"right\":1184,\"w\":355,\"h\":760},\"sidebarVar\":\"295px\",\"aiVar\":\"355px\",\"sidebarPersisted\":295,\"aiPersisted\":355,\"handleSidebar\":true,\"handleAi\":true}}"
+    },
+    {
+      "step": "G9|dark",
+      "name": "G9-1 深色：左把手同样可拖（DOM 实宽随 Δx 变窄）且两侧把手齐备",
+      "ok": true,
+      "raw": "before=355 after=295 handles=true/true"
+    },
+    {
+      "step": "G10|two-widths",
+      "name": "[info] 两宽度零滚动（原始）",
+      "ok": null,
+      "raw": "[{\"w\":1184,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":1184,\"winClientW\":1184,\"sideTop\":0},{\"w\":894,\"winScrollH\":800,\"winClientH\":800,\"winScrollW\":894,\"winClientW\":894,\"sideTop\":0}]"
+    },
+    {
+      "step": "G10|two-widths",
+      "name": "G10-1 §3：1184/894 两宽度零滚动（纵向 + 横向）且侧栏 top 恒 0",
+      "ok": true,
+      "raw": "1184:{h 800/800,w 1184/1184,top=0} 894:{h 800/800,w 894/894,top=0}"
+    },
+    {
+      "step": "teardown",
+      "name": "[info] electron 进程计数（退出前后）",
+      "ok": null,
+      "raw": "{\"before\":5,\"after\":0}"
+    },
+    {
+      "step": "teardown",
+      "name": "G11-1 退出干净：window.close() 优雅退出（未强杀）",
+      "ok": true,
+      "raw": "{\"gracefulExited\":true,\"forced\":false}"
+    },
+    {
+      "step": "teardown",
+      "name": "G11-2 交付纪律：退出后 electron 进程计数 = 0",
+      "ok": true,
+      "raw": "before=5 after=0"
     }
   ]
 }

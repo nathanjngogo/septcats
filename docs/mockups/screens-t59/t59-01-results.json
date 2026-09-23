@@ -1,6 +1,6 @@
 {
   "task": "TASK-T59-01 真机取证（主区域像素风黑色边框 + T52 骑缝融合）",
-  "ranAt": "2026-09-23T05:58:40.015Z",
+  "ranAt": "2026-09-23T07:44:31.710Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP（playwright-core over --remote-debugging-port）量测/点击/截图 + Emulation.setDeviceMetricsOverride 两宽度与 dsf=1 像素量测 + Page.captureScreenshot clip.scale 放大取证 + main 进程 --inspect desktopCapturer 窗口级补拍",
   "fixture": {
@@ -191,7 +191,7 @@
       },
       "appSideTop": 40,
       "pvScrollTop": 0,
-      "pvBodyTop": 220.89,
+      "pvBodyTop": 222.89,
       "stackBelow": [
         {
           "tag": "active",
@@ -502,7 +502,7 @@
       },
       "appSideTop": 40,
       "pvScrollTop": 0,
-      "pvBodyTop": 220.89,
+      "pvBodyTop": 222.89,
       "stackBelow": [
         {
           "tag": "active",
@@ -684,13 +684,13 @@
       "step": "G3|light-seam",
       "name": "[info] 正文滚动位复位（接缝采样前置）",
       "ok": null,
-      "raw": "{\"before\":171,\"after\":0}"
+      "raw": "{\"before\":173,\"after\":0}"
     },
     {
       "step": "G3|light-seam",
       "name": "[info] 浅色骑缝几何（原始）",
       "ok": null,
-      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(255, 255, 255)\",\"pvBg\":\"rgb(255, 255, 255)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":220.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
+      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(255, 255, 255)\",\"pvBg\":\"rgb(255, 255, 255)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":222.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
     },
     {
       "step": "G3|light-seam",
@@ -930,7 +930,7 @@
       "step": "G7|dark",
       "name": "[info] 深色骑缝几何（原始）",
       "ok": null,
-      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(10, 10, 10)\",\"pvBg\":\"rgb(10, 10, 10)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":220.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
+      "raw": "{\"activeRect\":{\"x\":347,\"y\":48,\"w\":73,\"h\":30,\"bottom\":78},\"pvRect\":{\"x\":240,\"y\":76,\"w\":944,\"bottom\":735},\"barRect\":{\"x\":248,\"y\":40,\"bottom\":78},\"overlapPx\":2,\"inactiveBottom\":78,\"activeBg\":\"rgb(10, 10, 10)\",\"pvBg\":\"rgb(10, 10, 10)\",\"activeBorder\":\"2px/2px/0px/2px\",\"sampleActive\":{\"x\":384,\"y\":77},\"sampleBlank\":{\"x\":444,\"y\":77},\"appSideTop\":40,\"pvScrollTop\":0,\"pvBodyTop\":222.89,\"stackBelow\":[{\"tag\":\"active\",\"x\":384,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]},{\"tag\":\"blank\",\"x\":444,\"y\":79,\"stack\":[\"pv-root\",\"app-editor-col\",\"app-main-row\"]}]}"
     },
     {
       "step": "G7|dark",
@@ -1008,7 +1008,7 @@
       "step": "G7|dark",
       "name": "G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）",
       "ok": true,
-      "raw": "bytes=64935 err=null"
+      "raw": "bytes=63884 err=null"
     },
     {
       "step": "teardown",

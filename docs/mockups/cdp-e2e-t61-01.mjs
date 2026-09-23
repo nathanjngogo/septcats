@@ -478,7 +478,7 @@ try {
   );
 
   // 已知 FolderSimple（工作区头 = FolderSimple）与 FileText（叶子页行）的像素签名
-  const folderSig = await SIGNATURE_OF('[data-testid="side-workspace"] svg');
+  const folderSig = await SIGNATURE_OF('[data-testid="side-ws-head"] svg');
   const fileSigBefore = await SIGNATURE_OF_ROW(MOVED);
   phases.signatures = { folderSig, fileSigBefore };
   info('像素签名（原始）', JSON.stringify(phases.signatures));
@@ -530,9 +530,9 @@ try {
   phases.moveMenu = { moveOpened, moveMenu };
   info('移入二级菜单（原始）', JSON.stringify(moveMenu));
   check(
-    'G2-1 §1.3 点「移入…」→ 二级列表（含「工作区根」+ 容器页），排除多维数据行',
+    'G2-1 §1.3 点「移入…」→ 二级列表（含「库根」+ 容器页），排除多维数据行（T70 文案改口：工作区根→库根）',
     moveMenu !== null &&
-      moveMenu.items[0].includes('工作区根') &&
+      moveMenu.items[0].includes('库根') &&
       moveMenu.items.some((i) => i.includes(CONTAINER)) &&
       !moveMenu.items.some((i) => i.includes('多维数据')),
     JSON.stringify(moveMenu?.items),
