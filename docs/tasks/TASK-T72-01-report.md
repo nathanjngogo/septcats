@@ -33,6 +33,13 @@
 - 真机 testid 清单（按施工单 §1）：`workbench-market-open`、`workbench-open`、`wb-market-close`、`wb-market-tab-templates`、`wb-market-tab-cards`、`wb-market-template-<id>`、`wb-market-template-apply-<id>`、`wb-apply-confirm`、`wb-restore-layout`、`wb-market-card-<id>`、`wb-market-card-status-<id>`、`wb-market-card-toggle-<id>`、`wb-save-template`、`wb-save-template-title`、`wb-save-template-page-<pageId>`、`wb-save-template-confirm`、`wb-market-template-delete-<id>`、`wb-market-template-export-<id>`、`wb-market-import`、`wb-market-import-text`、`wb-market-import-confirm`。
 - 口径：市场开合/两 Tab/应用模板前后布局可一键还原/另存为模板→出现在我的模板/导出 JSON 再导入还原；老探针 T61/T60/T65/T66/T67-B2/T59 零回归。
 
+### PM 真机验收结论（`cdp-e2e-t72-01.mjs`，09-24 定稿）
+
+- **21 PASS / 0 FAIL**（M1 入口与市场壳 5 / M2 卡片 Tab 4 / M3 内置模板 4 / M4 应用还原 3 / M5 另存导入导出 5）；取证件 `docs/mockups/screens-t72/`（截图 4 + `t72-results.json`）。
+- 首轮抓到 **2 个产品缺陷** → T72-02 CB 收口（见 §8），修复后九连全绿：T72 21/0 · T71 26/0 · T67-B2 35/0 · T66 21/0 · T65 12/0 · T61 30/0 · T60 32/0 · T59 45/0 · T70 11/0。
+- 探针侧自纠两处（产品无关）：① 键名误写省略号占位符 `septcats.…rds`（读不到真 LS）；② work-journal 期望序按 hidden 过滤后 4 卡（我此前按全 order 断言，属探针错）。
+- 入口改口登记（影响老探针）：顶栏钮 `workbench-market-open`=开市场、Alt+H=开市场（非 toggle home）、home 钮 `workbench-open` 移入市场页内 → T66/T71 探针已适配（commit b3da08e）。
+
 ## §4 DEVIATION 登记
 
 | 编号 | 现象 | 取舍 | 理由 |
