@@ -17,11 +17,15 @@ import { ulid } from '@septcats/core';
 import type { ActorId } from '@septcats/core';
 import {
   EditSession,
+  extendBulkSelection,
   filterWikilinkCandidates,
+  groupDropOrder,
   insertWikilinkSelection,
+  intervalIds,
   pmNodeNameOf,
   resolveWikilinkTarget,
   type BlockDoc,
+  type BulkSelection,
   type WikilinkClickInfo,
   type WikilinkMenuState,
 } from '@septcats/editor';
@@ -34,11 +38,12 @@ import {
   applyLinkInSelection,
   applySortKeyAssignments,
   blockIdAtPos,
+  blockIdsInOrder,
   blockPosById,
   firstLineAnchorCompensation,
   firstLineRectOf,
   handleTopForFirstLine,
-  planBlockDrop,
+  planBlockGroupDrop,
   setBlockAnchorStyle,
   EDITOR_ACTOR,
   type BlockAction,
@@ -143,6 +148,8 @@ export function PageView({ page }: PageViewProps) {
   /** 手柄/浮层的定位基准（.pv-body，position:relative = 浮层 offsetParent）。 */
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const dragIdRef = useRef<string | null>(null);
+  /** T78-01：本次拖拽的**整组**块 id（单块 = [id]）；组拖时落位按整组算。 */
+  const dragIdsRef = useRef<string[]>([]);
   /** 「转为数据库」后跳转到新建的 DB 页（一期无路由，用本地状态承载；T24-01 起选中同步到 pagesStore，见 convertToDatabase）。 */
   const [dbPageId, setDbPageId] = useState<string | null>(null);
 
@@ -209,6 +216,30 @@ export function PageView({ page }: PageViewProps) {
   const [pinnedBlockId, setPinnedBlockId] = useState<string | null>(null);
   const handleBlockId = pinnedBlockId ?? hoverBlockId ?? activeBlockId;
   const [handleTop, setHandleTop] = useState(0);
+  /**
+   * T78-01 跨块多选：{锚块, 扩选焦点}（Shift+click 建立/重算；null = 无跨块选区）。
+   * 区间 id 由 selection.ts 的 intervalIds 按**文档序**现算（禁集合并），
+   * bulkIds 是渲染态快照（选中条 + 菜单变体计数消费）。
+   */
+  const [bulk, setBulk] = useState<BulkSelection | null>(null);
+  const [bulkIds, setBulkIds] = useState<string[]>([]);
+  /** 块左缘选中条的定位快照（量测驱动；jsdom 下全 0 但元素在场）。 */
+  const [selectBars, setSelectBars] = useState<
+    Array<{ id: string; top: number; left: number; height: number }>
+  >([]);
+
+  /** 清跨块选区（Esc / 点正文 / 焦点移出手柄簇 / 批量动作完成后）。 */
+  const clearBulkSelection = useCallback((): void => {
+    setBulk(null);
+  }, []);
+
+  /** Shift+click ⋮⋮：以当前焦点块为锚扩选到该块（二次 Shift = 区间重算，不并集）。 */
+  const extendSelectionTo = useCallback(
+    (blockId: string): void => {
+      setBulk((prev) => extendBulkSelection(prev, activeBlockId, blockId));
+    },
+    [activeBlockId],
+  );
   /** 手柄量测器（applyBlockType 补偿落样式后手动触发一次重对齐）。 */
   const measureHandleRef = useRef<() => void>(() => {});
   const [anchor, setAnchor] = useState<SelectionRect | null>(null);
@@ -762,8 +793,113 @@ export function PageView({ page }: PageViewProps) {
     [editor],
   );
 
+  /**
+   * T78-01 批量动作：对**当前选区间**逐块发同型单块意图，一次 PM 事务 dispatch。
+   * - 删/复制/颜色 = 单 tr 多步（位置一次算清，无中间态）；
+   * - 批量转为 = 复用单块 applyBlockType（换型的首行锚定补偿是逐块量测，必须逐块走），
+   *   同一事件内连发 → EditSession debounce 折叠成**一次** commit（同事务；op 类型零新增）。
+   * 收口一律清选（选区已随文档变化失效）。
+   */
+  const handleBulkAction = useCallback(
+    (action: BlockAction): void => {
+      if (editor === null || bulkIds.length === 0) {
+        return;
+      }
+      const entries: Array<{ id: string; pos: number; size: number }> = [];
+      for (const id of bulkIds) {
+        const pos = blockPosById(editor, id);
+        if (pos === null) {
+          continue;
+        }
+        const node = editor.state.doc.nodeAt(pos);
+        if (node === null) {
+          continue;
+        }
+        entries.push({ id, pos, size: node.nodeSize });
+      }
+      if (entries.length === 0) {
+        return;
+      }
+      switch (action.kind) {
+        case 'bulk-delete': {
+          const tr = editor.state.tr;
+          // 高位先删（同 tr 内各步位置相对前一步结果，倒序删不互相漂移）
+          for (const entry of [...entries].sort((a, b) => b.pos - a.pos)) {
+            tr.delete(entry.pos, entry.pos + entry.size);
+          }
+          // 整页删空：PM 顶层 doc 是 `block+`，框架会自动补一个默认空段落保持文档合法
+          // （`close()` 的 fill 语义），故此处**无需**自造空块——该空段落随反投影
+          // 拿到 ulid 落库（= 一次 upsert），页面永不成「零块」非法态。
+          editor.view.dispatch(tr);
+          clearBulkSelection();
+          return;
+        }
+        case 'bulk-duplicate': {
+          const ordered = [...entries].sort((a, b) => a.pos - b.pos);
+          const last = ordered[ordered.length - 1];
+          if (last === undefined) {
+            return;
+          }
+          const copies = [];
+          for (const entry of ordered) {
+            const node = editor.state.doc.nodeAt(entry.pos);
+            if (node === null) {
+              return;
+            }
+            copies.push(node.type.create({ ...node.attrs, id: ulid() }, node.content, node.marks));
+          }
+          // 整组副本插在原组之后（保相对序）
+          editor.view.dispatch(editor.state.tr.insert(last.pos + last.size, copies));
+          clearBulkSelection();
+          return;
+        }
+        case 'bulk-convert': {
+          for (const entry of entries) {
+            applyBlockType(entry.id, action.blockType, action.level);
+          }
+          clearBulkSelection();
+          return;
+        }
+        case 'bulk-color': {
+          const markType = editor.state.schema.marks['color'];
+          if (markType === undefined) {
+            return;
+          }
+          const tr = editor.state.tr;
+          for (const entry of [...entries].sort((a, b) => a.pos - b.pos)) {
+            const from = entry.pos + 1;
+            const to = entry.pos + entry.size - 1;
+            if (to <= from) {
+              continue; // 无内联内容的块（分割线/图片等）不产生 mark 步
+            }
+            tr.removeMark(from, to, markType);
+            if (action.token !== 'default') {
+              tr.addMark(from, to, markType.create({ token: action.token }));
+            }
+          }
+          editor.view.dispatch(tr);
+          clearBulkSelection();
+          return;
+        }
+        default:
+          return;
+      }
+    },
+    [editor, bulkIds, applyBlockType, clearBulkSelection],
+  );
+
   const handleBlockAction = useCallback(
     (action: BlockAction) => {
+      // T78-01：批量意图落在**选区间**上，先于「手柄归属块」判定分流
+      if (
+        action.kind === 'bulk-delete' ||
+        action.kind === 'bulk-duplicate' ||
+        action.kind === 'bulk-convert' ||
+        action.kind === 'bulk-color'
+      ) {
+        handleBulkAction(action);
+        return;
+      }
       // 动作落在手柄归属块上（hover 的块），而非光标所在块（T32-01 §1.1 Notion 手感）
       const targetId = handleBlockId;
       if (editor === null || targetId === null) {
@@ -812,7 +948,7 @@ export function PageView({ page }: PageViewProps) {
         }
       }
     },
-    [editor, handleBlockId, applyBlockType],
+    [editor, handleBlockId, applyBlockType, handleBulkAction],
   );
 
   /** 点击 ＋：在手柄归属块后插入空段落并把光标移进去（T32-01 §1.1）。 */
@@ -924,9 +1060,88 @@ export function PageView({ page }: PageViewProps) {
     [handleBlockId],
   );
 
+  // ---------------------------------------------------------------------------
+  // T78-01 跨块多选：清选三路（状态与回调见上方 state 区）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 选区块的「清选」三路（对齐 PRD §2「Esc / 点正文 / 焦点移出手柄簇」）：
+   * 文档级 Esc、簇外 pointerdown；簇自身的 mouseleave 挂在 .pv-handle 上。
+   * 菜单/手柄同属 .pv-handle 子树 → 点菜单项不算「点正文」，不误清选。
+   */
+  useEffect(() => {
+    if (bulk === null) {
+      return;
+    }
+    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setBulk(null);
+      }
+    };
+    const onPointerDown = (event: globalThis.PointerEvent): void => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.pv-handle') !== null) {
+        return; // 手柄簇内（含菜单）不视为「点正文」
+      }
+      setBulk(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [bulk]);
+
+  /** 选区 id 快照 + 选中条量测（随文档变化重放，与手柄量测同口径）。 */
+  useEffect(() => {
+    if (editor === null || bulk === null) {
+      setBulkIds([]);
+      setSelectBars([]);
+      return;
+    }
+    const measure = (): void => {
+      const ids = intervalIds(blockIdsInOrder(editor), bulk.anchorId, bulk.focusId);
+      setBulkIds(ids);
+      const body = bodyRef.current;
+      if (body === null || ids.length < 2) {
+        setSelectBars([]);
+        return;
+      }
+      const bodyRect = body.getBoundingClientRect();
+      setSelectBars(
+        ids.map((id) => {
+          const el = body.querySelector(`[data-id="${id}"]`);
+          if (!(el instanceof HTMLElement)) {
+            return { id, top: 0, left: 0, height: 0 };
+          }
+          const rect = el.getBoundingClientRect();
+          return {
+            id,
+            top: rect.top - bodyRect.top,
+            left: rect.left - bodyRect.left,
+            height: rect.height,
+          };
+        }),
+      );
+    };
+    measure();
+    editor.on('update', measure);
+    return () => {
+      editor.off('update', measure);
+    };
+  }, [editor, bulk]);
+
   const onDragStart = useCallback(
     (event: DragEvent<HTMLButtonElement>) => {
       dragIdRef.current = handleBlockId;
+      // T78-01：多选态下从任一被选块发起 = **整组**移动（保相对序）；否则单块
+      dragIdsRef.current =
+        handleBlockId !== null && bulkIds.length >= 2 && bulkIds.includes(handleBlockId)
+          ? [...bulkIds]
+          : handleBlockId === null
+            ? []
+            : [handleBlockId];
       if (handleBlockId !== null) {
         // T60-01 ①：payload 走**私有 MIME**——拖到正文上时，drop 先被 ProseMirror 的
         // 原生 drop 监听处理（React 合成 drop 在它之后），若带 text/plain，PM 会把
@@ -941,31 +1156,36 @@ export function PageView({ page }: PageViewProps) {
         }
       }
     },
-    [handleBlockId],
+    [handleBlockId, bulkIds],
   );
 
   /** T60-01 ①：拖拽落在 ⋮⋮ 键上，拖完（成功/取消）都要清拖拽态与落点提示线。 */
   const onDragEnd = useCallback((): void => {
     dragIdRef.current = null;
+    dragIdsRef.current = [];
     setDropTarget(null);
   }, []);
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const targetId = blockIdentityOf(event.target);
-    setDropTarget(targetId !== null && targetId !== dragIdRef.current ? targetId : null);
+    // T78-01：组拖时「落在被拖组内」不算落点（否则提示线乱跳）
+    setDropTarget(targetId !== null && !dragIdsRef.current.includes(targetId) ? targetId : null);
   }, []);
 
   const onDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       const draggedId = dragIdRef.current;
+      const dragIds = dragIdsRef.current.length > 0 ? [...dragIdsRef.current] : draggedId === null ? [] : [draggedId];
       dragIdRef.current = null;
+      dragIdsRef.current = [];
       setDropTarget(null);
-      if (editor === null || draggedId === null) {
+      if (editor === null || draggedId === null || dragIds.length === 0) {
         return;
       }
 
+      const draggedSet = new Set(dragIds);
       const targetId = blockIdentityOf(event.target);
       const currentDoc = docRef.current;
       if (currentDoc === null) {
@@ -973,54 +1193,80 @@ export function PageView({ page }: PageViewProps) {
       }
       const order = currentDoc.blocks.filter((entry) => entry.alive === 1).map((entry) => entry.id);
       let beforeId: string | null = null;
-      if (targetId !== null && targetId !== draggedId) {
+      if (targetId !== null && !draggedSet.has(targetId)) {
         const element = event.target instanceof HTMLElement ? event.target.closest('[data-id]') : null;
         const rect = element?.getBoundingClientRect();
         const dropAfter = rect === undefined ? false : event.clientY > rect.top + rect.height / 2;
         beforeId = dropAfter ? order[order.indexOf(targetId) + 1] ?? null : targetId;
       }
 
-      const fromPos = blockPosById(editor, draggedId);
-      if (fromPos === null) {
+      // 收集被拖块（保文档序）+ 各自的 PM 节点
+      const moved: Array<{ id: string; pos: number; size: number }> = [];
+      for (const id of dragIds) {
+        const pos = blockPosById(editor, id);
+        if (pos === null) {
+          continue;
+        }
+        const node = editor.state.doc.nodeAt(pos);
+        if (node === null) {
+          continue;
+        }
+        moved.push({ id, pos, size: node.nodeSize });
+      }
+      if (moved.length === 0) {
         return;
       }
-      const node = editor.state.doc.nodeAt(fromPos);
-      if (node === null) {
-        return;
+      moved.sort((a, b) => a.pos - b.pos);
+
+      // ① PM 侧立即移动（视觉生效；onUpdate → handleChange → session）。
+      //    组=区间视作整体：先按高位倒序删，再整段插到落点（保组内相对序）。
+      const tr = editor.state.tr;
+      const nodes = moved.map((entry) => editor.state.doc.nodeAt(entry.pos));
+      for (const entry of [...moved].sort((a, b) => b.pos - a.pos)) {
+        tr.delete(entry.pos, entry.pos + entry.size);
       }
-      // ① PM 侧立即移动（视觉生效；onUpdate → handleChange → session）
-      const tr = editor.state.tr.delete(fromPos, fromPos + node.nodeSize);
-      const rawTarget = beforeId === null ? null : blockPosById(editor, beforeId);
-      const insertAt =
-        rawTarget === null ? tr.doc.content.size : rawTarget > fromPos ? rawTarget - node.nodeSize : rawTarget;
-      tr.insert(insertAt, node);
+      let insertAt: number;
+      if (beforeId === null) {
+        insertAt = tr.doc.content.size;
+      } else {
+        const rawTarget = blockPosById(editor, beforeId);
+        if (rawTarget === null) {
+          return;
+        }
+        const removedBefore = moved
+          .filter((entry) => entry.pos < rawTarget)
+          .reduce((sum, entry) => sum + entry.size, 0);
+        insertAt = rawTarget - removedBefore;
+      }
+      const movedNodes = nodes.filter((node): node is NonNullable<typeof node> => node !== null);
+      if (movedNodes.length !== moved.length) {
+        return; // 理论不发生；宁可不动也不半移动
+      }
+      tr.insert(insertAt, movedNodes);
       editor.view.dispatch(tr);
 
-      // ② sort_key：dnd.ts 的纯函数给最小 reorder（放不下则整层重平衡）。
+      // ② sort_key：dnd.ts 纯函数给最小 reorder（放不下则整层重平衡；组=一次分配）。
       //    diff 以「数组顺序」识别 reorder（sort_key 字段在 patch 里被排除），所以必须把
       //    拖后的视觉顺序写回 blocks 数组，否则差分为空、落库为空（T32-01 §2.④ 修复）。
-      const aliveOrder = currentDoc.blocks
-        .filter((entry) => entry.alive === 1)
-        .map((entry) => entry.id);
-      const fromIndex = aliveOrder.indexOf(draggedId);
-      aliveOrder.splice(fromIndex, 1);
-      const toIndex = beforeId === null ? aliveOrder.length : aliveOrder.indexOf(beforeId);
-      aliveOrder.splice(toIndex < 0 ? aliveOrder.length : toIndex, 0, draggedId);
+      const nextOrder = groupDropOrder(order, dragIds, beforeId);
+      if (nextOrder === null) {
+        return;
+      }
       const blockById = new Map(currentDoc.blocks.map((entry) => [entry.id, entry]));
       const reorderedDoc: BlockDoc = {
         pageId: currentDoc.pageId,
         blocks: [
-          ...aliveOrder
+          ...nextOrder
             .map((id) => blockById.get(id))
             .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined),
           ...currentDoc.blocks.filter((entry) => entry.alive !== 1),
         ],
       };
-      const plan = planBlockDrop(
+      const plan = planBlockGroupDrop(
         currentDoc,
         // 占位 actor（会被 main 覆盖）：plan.ops 不外发，提交仍走 EditSession 差分
         { actor: PAGE_ACTOR_PLACEHOLDER, now: Date.now() },
-        draggedId,
+        dragIds,
         beforeId,
       );
       if (plan.kind === 'noop') {
@@ -1250,6 +1496,16 @@ export function PageView({ page }: PageViewProps) {
     imageResize: t('editor.image.resize'),
   };
 
+  /**
+   * T78-01：多选态手柄菜单的文案（i18n 成对，缺省由 editor 包中文兜底）。
+   * 与 editorBlockLabels 同口径：每帧现算，走 t() 保证 en-US 下无 CJK。
+   */
+  const blockMenuLabels = {
+    bulkCount: t('editor.blockMenu.bulkCount'),
+    bulkDelete: t('editor.blockMenu.bulkDelete'),
+    bulkDuplicate: t('editor.blockMenu.bulkDuplicate'),
+  };
+
   return (
     <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
       <div className="pv-title-row">
@@ -1274,17 +1530,33 @@ export function PageView({ page }: PageViewProps) {
           // T60-01 ①：拖拽从 ⋮⋮ 键发起（HTML5 drag 在「壳 draggable + 指针落按钮」下
           // 不生效），故壳不再挂 draggable、只保留 T53 立体语法；dragstart/dragend 经
           // BlockControls 的 dragHandleProps 落到抓手键本体（+ 键不可拖）。
-          <div className="pv-handle" style={{ top: handleTop }}>
+          // T78-01：指针离开整簇（含菜单子树）→ 清跨块选区。
+          <div className="pv-handle" style={{ top: handleTop }} onMouseLeave={clearBulkSelection}>
             <BlockControls
               blockId={handleBlockId}
               onAction={handleBlockAction}
               onInsert={insertBlockAfterHandle}
               onOpenChange={handleControlsOpenChange}
               dragHandleProps={{ draggable: true, onDragStart, onDragEnd }}
+              selectionCount={bulkIds.length >= 2 ? bulkIds.length : 0}
+              handleInSelection={handleBlockId !== null && bulkIds.includes(handleBlockId)}
+              onExtendSelection={extendSelectionTo}
+              onCollapseSelection={clearBulkSelection}
+              labels={blockMenuLabels}
               visible
             />
           </div>
         ) : null}
+        {/* T78-01：跨块选区的块左缘选中条（--accent 淡显；量测定位，零布局参与） */}
+        {selectBars.map((bar) => (
+          <div
+            key={bar.id}
+            className="pv-selectbar"
+            data-testid={`block-select-bar-${bar.id}`}
+            style={{ top: bar.top, left: bar.left, height: bar.height }}
+            aria-hidden="true"
+          />
+        ))}
         {docState.status === 'loading' ? (
           <Skeleton lines={8} />
         ) : docState.status === 'error' ? (

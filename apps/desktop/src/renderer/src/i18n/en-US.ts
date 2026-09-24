@@ -328,6 +328,12 @@ export const enUS = {
     image: {
       resize: 'Resize image',
     },
+    // R26 (T78-01): cross-block multi-select handle menu labels.
+    blockMenu: {
+      bulkCount: '{n} blocks selected',
+      bulkDelete: 'Delete selected',
+      bulkDuplicate: 'Duplicate selected',
+    },
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {

@@ -335,6 +335,13 @@ export const zhCN = {
     image: {
       resize: '调整图片宽度',
     },
+    // R26（T78-01）：跨块多选的手柄菜单文案（多选态变体）。
+    // `bulkCount` 的 {n} 由 editor 包 formatBulkCount 替换为选中块数。
+    blockMenu: {
+      bulkCount: '已选 {n} 块',
+      bulkDelete: '批量删除',
+      bulkDuplicate: '批量复制',
+    },
   },
   // T64-01：文件夹（page_type='folder' 容器节点）
   folder: {

@@ -70,35 +70,91 @@ async function ipcPageBlocks(page, name) {
     const hit = arr.find((x) => x?.title === pn);
     if (!hit) return { id: null };
     const b = await window.septcats.blocks.list({ pageId: hit.id });
-    return { id: hit.id, blocks: (b.blocks ?? []).map((x) => ({ t: x.type, c: (x.content ?? '').slice(0, 10) })) };
+    return { id: hit.id, blocks: (b.blocks ?? []).map((x) => {
+      const raw = String(typeof x.content === 'string' ? x.content : JSON.stringify(x.content) ?? '');
+      const texts = [...raw.matchAll(/"text":"([^"]*)"/g)].map((m) => m[1]).join('');
+      return { t: x.type, c: texts || raw.slice(0, 12) };
+    }) };
   }, name);
 }
 
-async function hoverBlock(page, text) {
-  // 悬停含 text 的块行 → ⋮⋮ 手柄出现（T60 口径：hover .sc-block-row 显形）
-  const pos = await page.evaluate((t) => {
-    const rows = [...document.querySelectorAll('[data-testid^="block-handle-"]')];
-    const row = rows.find((e) => (e.closest('[class*="sc-block-row"], .sc-block-row') ?? e.parentElement)?.innerText?.includes(t));
-    if (row == null) return null;
-    const r = row.getBoundingClientRect();
-    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+// 块正文坐标（点文本=设 PM 光标锚）
+async function blockTextPoint(page, text) {
+  return page.evaluate((t) => {
+    const ed = document.querySelector('.pv-body .ProseMirror');
+    const el = [...(ed?.querySelectorAll('p, h1, h2, h3, pre, li') ?? [])].find((e) => (e.textContent ?? '').includes(t));
+    if (el == null) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.x + 8, y: r.y + r.height / 2 };
   }, text);
-  if (pos == null) return false;
-  await page.mouse.move(pos.x, pos.y);
-  await wait(200);
+}
+async function clickText(page, text) {
+  const pt = await blockTextPoint(page, text);
+  if (pt == null) return false;
+  await page.mouse.click(pt.x, pt.y);
+  await wait(350);
+  // 锚点确认：activeBlockId 需由 PM 光标决定，补点一次保险（点正文不清选区逻辑仅在离开手柄簇时触发）
+  await page.mouse.click(pt.x, pt.y);
+  await wait(450);
   return true;
 }
-
-async function shiftClickHandle(page, text) {
-  const ok = await hoverBlock(page, text);
-  if (!ok) return false;
+// 块 id 映射（testid=block-handle-<id>，IPC 取序）
+async function blockIdByContent(page, name, text) {
+  const r = await page.evaluate(async (pn) => {
+    const ws = await window.septcats.workspaces.list({});
+    const t = await window.septcats.pages.tree({ workspaceId: ws.activeId ?? ws.items?.[0]?.id });
+    const arr = Array.isArray(t) ? t : (t?.pages ?? t?.nodes ?? []);
+    const hit = arr.find((x) => x?.title === pn);
+    if (!hit) return [];
+    const b = await window.septcats.blocks.list({ pageId: hit.id });
+    return (b.blocks ?? []).map((x) => {
+      const raw = String(typeof x.content === 'string' ? x.content : JSON.stringify(x.content) ?? '');
+      const texts = [...raw.matchAll(/"text":"([^"]*)"/g)].map((m) => m[1]).join('');
+      return { id: x.id, c: texts || raw };
+    });
+  }, name);
+  return r.find((x) => x.c.includes(text))?.id ?? null;
+}
+// 手柄坐标：hover 块文本行使柄显形 → 量 [data-testid="block-handle-<id>"]
+async function handlePointFor(page, id, hintText) {
+  const tp = await blockTextPoint(page, hintText);
+  if (tp == null) return null;
+  await page.mouse.move(tp.x, tp.y);
+  await wait(350);
+  const box = await page.evaluate((tid) => {
+    const h = document.querySelector(`[data-testid="block-handle-${tid}"]`) ?? document.querySelector(`[data-testid^="block-handle-${tid}"]`);
+    if (h == null) return null;
+    const r = h.getBoundingClientRect();
+    return r.width > 0 ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null;
+  }, id);
+  return box;
+}
+async function shiftClickHandle(page, id, hintText) {
+  const h = await handlePointFor(page, id, hintText);
+  if (h == null) return false;
   await page.keyboard.down('Shift');
-  await page.evaluate((t) => {
-    const rows = [...document.querySelectorAll('[data-testid^="block-handle-"]')];
-    const h = rows.find((e) => (e.closest('[class*="sc-block-row"], .sc-block-row') ?? e.parentElement)?.innerText?.includes(t));
-    if (h != null) { const r = h.getBoundingClientRect(); h.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, shiftKey: true })); h.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, shiftKey: true })); h.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, shiftKey: true })); }
-  }, text);
+  await page.mouse.click(h.x, h.y);
   await page.keyboard.up('Shift');
+  await wait(400);
+  return true;
+}
+// shift-click 后鼠标本就在手柄上：原地直接点当前手柄（不 hover 正文，否则 mouseleave 清选）
+async function clickCurrentHandleHere(page) {
+  const box = await page.evaluate(() => {
+    const h = document.querySelector('[data-testid^="block-handle-"]');
+    if (h == null) return null;
+    const r = h.getBoundingClientRect();
+    return r.width > 0 ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null;
+  });
+  if (box == null) return false;
+  await page.mouse.click(box.x, box.y);
+  await wait(400);
+  return true;
+}
+async function plainClickHandle(page, id, hintText) {
+  const h = await handlePointFor(page, id, hintText);
+  if (h == null) return false;
+  await page.mouse.click(h.x, h.y);
   await wait(400);
   return true;
 }
@@ -121,56 +177,65 @@ async function main() {
     check('M1-a 5 文本块入库', seeded.id != null && seeded.blocks.length === 5, JSON.stringify(seeded.blocks ?? seeded).slice(0, 200));
 
     STEP = 'M2|区间扩选';
-    // caret 放 行1（锚）→ Shift+click 行3 手柄 → 选中条 3 根
-    await page.evaluate(() => {
-      const p = [...document.querySelectorAll('.pv-body .ProseMirror p')].find((e) => e.innerText.includes('行1'));
-      if (p != null) { const r = p.getBoundingClientRect(); p.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5 })); }
-    });
-    await wait(400);
-    const sc2 = await shiftClickHandle(page, '行3');
-    const selCount = await page.evaluate(() => document.querySelectorAll('[data-testid^="block-select-bar-"]').length);
-    check('M2-a Shift+click→区间 3 块选中条', sc2 && selCount === 3, `sel=${String(selCount)}`);
+    // 锚=点 行1 文本（PM 光标）→ Shift+click 行3 手柄 → 区间 3 根选中条
+    check('M2-0 点中 行1 文本', await clickText(page, '行1'), 'clickText');
+    const id3 = await blockIdByContent(page, PAGE_NAME, '行3');
+    const id5 = await blockIdByContent(page, PAGE_NAME, '行5');
+    const id1 = await blockIdByContent(page, PAGE_NAME, '行1');
+    check('M2-0b IPC 块 id 齐', id1 != null && id3 != null && id5 != null, `${String(id1?.slice(-4))}/${String(id3?.slice(-4))}/${String(id5?.slice(-4))}`);
+    let selCount = 0;
+    for (let i = 0; i < 3; i += 1) {
+      await shiftClickHandle(page, id3, '行3');
+      await wait(350);
+      selCount = await page.evaluate(() => document.querySelectorAll('[data-testid^="block-select-bar-"]').length);
+      if (selCount === 3) break;
+    }
+    check('M2-a Shift+click→区间 3 块选中条', selCount === 3, `sel=${String(selCount)}`);
     await page.screenshot({ path: join(SHOTS, 'm2-selection.png') }).catch(() => {});
-    // 二次 Shift+click 行5 → 区间重算为 行1..行5（并集口径禁止：中途行3 已不算，最终=1..5 共 5）
-    await shiftClickHandle(page, '行5');
-    const selCount2 = await page.evaluate(() => document.querySelectorAll('[data-testid^="block-select-bar-"]').length);
+    // 二次 Shift+click 行5 → 区间重算 行1..行5
+    let selCount2 = 0;
+    for (let i = 0; i < 3; i += 1) {
+      await shiftClickHandle(page, id5, '行5');
+      await wait(350);
+      selCount2 = await page.evaluate(() => document.querySelectorAll('[data-testid^="block-select-bar-"]').length);
+      if (selCount2 === 5) break;
+    }
     check('M2-b 再 Shift+click 重算区间=5（非并集残留）', selCount2 === 5, String(selCount2));
-    // 批量计数文案
-    const bulk = await page.evaluate(() => {
-      const h = [...document.querySelectorAll('[data-testid^="block-handle-"]')].find((e) => (e.closest('[class*="sc-block-row"]') ?? e.parentElement)?.innerText?.includes('行1'));
-      const row = h?.closest('[class*="sc-block-row"]');
-      if (row != null) { const r = h.getBoundingClientRect(); h.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5 })); h.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); }
-      return true;
-    });
-    await wait(500);
+    // 普通点击选区内手柄 → 菜单批量变体
+    check('M2-c 原地点当前手柄开菜单', await clickCurrentHandleHere(page), 'clickHere');
     const bulkMenu = await page.evaluate(() => ({
       del: document.querySelector('[data-testid="block-menu-bulk-delete"]') != null,
       dup: document.querySelector('[data-testid="block-menu-bulk-duplicate"]') != null,
+      conv: document.querySelectorAll('[data-testid^="block-menu-bulk-convert-"]').length,
       cnt: document.querySelector('[data-testid="block-menu-bulk-count"]')?.textContent ?? '',
     }));
-    check('M2-c 多选态菜单变体（bulk 删/复制/计数=5）', bulkMenu.del && bulkMenu.dup && bulkMenu.cnt.includes('5'), JSON.stringify(bulkMenu));
+    check('M2-d 菜单变体（bulk 删/复制/转13 型/计数含5）', bulkMenu.del && bulkMenu.dup && bulkMenu.conv >= 13 && bulkMenu.cnt.includes('5'), JSON.stringify(bulkMenu).slice(0, 200));
+    await page.screenshot({ path: join(SHOTS, 'm2-menu.png') }).catch(() => {});
 
     STEP = 'M3|批量删除';
     await page.evaluate(() => document.querySelector('[data-testid="block-menu-bulk-delete"]')?.click());
     await wait(800);
     const afterDel = await ipcPageBlocks(page, PAGE_NAME);
-    check('M3-a 批量删→truth 层 0 块（N 单块 op）', afterDel.id != null && afterDel.blocks.length === 0, JSON.stringify(afterDel.blocks ?? afterDel).slice(0, 160));
+    // D-2：删空后框架自补 1 空段——判据=行1..5 无残留（0 或仅剩空 content 块）
+    const leftover = (afterDel.blocks ?? []).filter((x) => String(x.c ?? '').includes('行'));
+    check('M3-a 批量删→truth 层行1..5 全灭（N 单块 op）', afterDel.id != null && leftover.length === 0, JSON.stringify(afterDel.blocks ?? afterDel).slice(0, 160));
 
     STEP = 'M4|批量转换';
     await seedFiveBlocks(page); // 重建 5 块
     await wait(400);
-    await page.evaluate(() => {
-      const p = [...document.querySelectorAll('.pv-body .ProseMirror p')].find((e) => e.innerText.includes('行1'));
-      if (p != null) { const r = p.getBoundingClientRect(); p.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5 })); }
-    });
-    await wait(300);
-    await shiftClickHandle(page, '行2');
-    await page.evaluate(() => {
-      const rows = [...document.querySelectorAll('[data-testid^="block-handle-"]')];
-      const h = rows.find((e) => (e.closest('[class*="sc-block-row"]') ?? e.parentElement)?.innerText?.includes('行1'));
-      if (h != null) { const r = h.getBoundingClientRect(); h.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5 })); h.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); }
-    });
-    await wait(400);
+    await clickText(page, '行1');
+    const m4id2 = await blockIdByContent(page, PAGE_NAME, '行2');
+    let m4ok = false;
+    for (let i = 0; i < 3; i += 1) {
+      await shiftClickHandle(page, m4id2, '行2');
+      await clickCurrentHandleHere(page);
+      m4ok = await page.evaluate(() => document.querySelector('[data-testid="block-menu-bulk-delete"]') != null);
+      if (m4ok) break;
+      await page.keyboard.press('Escape');
+      await clickText(page, '行1');
+      await wait(300);
+    }
+    check('M4-0 原地点开批量菜单', m4ok, 'bulk 变体在');
     await page.evaluate(() => document.querySelector('[data-testid="block-menu-bulk-convert-heading"]')?.click());
     await wait(800);
     const afterConv = await ipcPageBlocks(page, PAGE_NAME);

@@ -362,6 +362,16 @@ h3.sc-block--heading {
   background: var(--sc-color-accent-soft);
 }
 
+/* T78-01：多选态菜单顶部的「已选 N 块」计数区（非菜单项，不参与键盘导航） */
+.sc-blockcontrol__bulk {
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  /* 分离线走 T62-01 §1 口径：内网格 1px ink-edge（非灰线） */
+  border-bottom: 1px solid var(--sc-color-ink-edge);
+  margin-bottom: var(--sc-space-xxs);
+}
+
 .sc-blockcontrol__glyph {
   display: grid;
   place-items: center;

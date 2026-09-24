@@ -130,6 +130,17 @@
   background: var(--sc-color-accent);
 }
 
+/* T78-01 跨块多选：块左缘选中条（--accent 淡显）。位置/高度由 PageView 量测后 inline
+   写入（与 .pv-handle 同口径），本类只管形态；pointer-events:none 不吃正文点击。 */
+.pv-selectbar {
+  position: absolute;
+  width: var(--sc-space-xxs);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-accent);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* T44-01：反向链接面板（双链）。与正文列同 measure（对齐标题行），token-only。 */
 .pv-backlinks {
   max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));

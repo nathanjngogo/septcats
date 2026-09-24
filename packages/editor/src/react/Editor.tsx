@@ -205,3 +205,18 @@ export function blockPosById(editor: TiptapEditor, blockId: string): number | nu
   });
   return found;
 }
+
+/**
+ * T78-01：顶层块 id 的**文档序**（缺 id 的瞬态节点跳过）。
+ * 跨块多选的区间计算以文档序为真源（见 ../selection.ts 的 intervalIds）。
+ */
+export function blockIdsInOrder(editor: TiptapEditor): string[] {
+  const ids: string[] = [];
+  editor.state.doc.forEach((node) => {
+    const id = node.attrs['id'];
+    if (typeof id === 'string' && id.length > 0) {
+      ids.push(id);
+    }
+  });
+  return ids;
+}

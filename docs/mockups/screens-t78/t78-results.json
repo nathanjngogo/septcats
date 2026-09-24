@@ -1,0 +1,84 @@
+{
+  "task": "T78-01",
+  "ranAt": "2026-09-24T08:58:36.664Z",
+  "assertions": [
+    {
+      "step": "M1|建场",
+      "name": "M1-a 5 文本块入库",
+      "ok": true,
+      "detail": "[{\"t\":\"paragraph\",\"c\":\"行1\"},{\"t\":\"paragraph\",\"c\":\"行2\"},{\"t\":\"paragraph\",\"c\":\"行3\"},{\"t\":\"paragraph\",\"c\":\"行4\"},{\"t\":\"paragraph\",\"c\":\"行5\"}]"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-0 点中 行1 文本",
+      "ok": true,
+      "detail": "clickText"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-0b IPC 块 id 齐",
+      "ok": true,
+      "detail": "TBKA/J93Z/FCT4"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-a Shift+click→区间 3 块选中条",
+      "ok": true,
+      "detail": "sel=3"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-b 再 Shift+click 重算区间=5（非并集残留）",
+      "ok": true,
+      "detail": "5"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-c 原地点当前手柄开菜单",
+      "ok": true,
+      "detail": "clickHere"
+    },
+    {
+      "step": "M2|区间扩选",
+      "name": "M2-d 菜单变体（bulk 删/复制/转13 型/计数含5）",
+      "ok": true,
+      "detail": "{\"del\":true,\"dup\":true,\"conv\":13,\"cnt\":\"已选 5 块\"}"
+    },
+    {
+      "step": "M3|批量删除",
+      "name": "M3-a 批量删→truth 层行1..5 全灭（N 单块 op）",
+      "ok": true,
+      "detail": "[{\"t\":\"paragraph\",\"c\":\"{\\\"type\\\":\\\"doc\"}]"
+    },
+    {
+      "step": "M4|批量转换",
+      "name": "M4-0 原地点开批量菜单",
+      "ok": true,
+      "detail": "bulk 变体在"
+    },
+    {
+      "step": "M4|批量转换",
+      "name": "M4-a 批量转标题→2 块 heading",
+      "ok": true,
+      "detail": "[{\"t\":\"heading\",\"c\":\"行1\"},{\"t\":\"heading\",\"c\":\"行2\"},{\"t\":\"paragraph\",\"c\":\"行3\"},{\"t\":\"paragraph\",\"c\":\"行4\"},{\"t\":\"paragraph\",\"c\":\"行5\"}]"
+    },
+    {
+      "step": "M5|重启持久",
+      "name": "M5-a 重启后=2 heading+3 段落（批量 op 全持久）",
+      "ok": true,
+      "detail": "[{\"t\":\"heading\",\"c\":\"行1\"},{\"t\":\"heading\",\"c\":\"行2\"},{\"t\":\"paragraph\",\"c\":\"行3\"},{\"t\":\"paragraph\",\"c\":\"行4\"},{\"t\":\"paragraph\",\"c\":\"行5\"}]"
+    },
+    {
+      "step": "M6|清选与存活",
+      "name": "M6-a Esc 清选（重启后无选区）",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "step": "M6|清选与存活",
+      "name": "M6-b 应用存活",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}
