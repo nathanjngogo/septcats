@@ -1,9 +1,9 @@
 /**
- * blockLabels.ts —— R25（T76-01）两个新块内置控件的**文案注入点**。
+ * blockLabels.ts —— R25（T76-01）/ R26（T77-01）内置控件的**文案注入点**。
  *
  * 为什么要有这一层：`@septcats/editor` 包（含 NodeView）不在 apps 的 i18n 扫描面内，
- * 本包既有控件（BlockControls 的「块操作」「新增块」等）一律用中文字面量。R25 的红线
- * 要求「i18n 成对（zh/en）」，故把新控件的可访问名/占位文案抽成**注入契约**：
+ * 本包既有控件（BlockControls 的「块操作」「新增块」等）一律用中文字面量。R25/R26 的
+ * 红线要求「i18n 成对（zh/en）」，故把新控件的可访问名/占位文案抽成**注入契约**：
  * 宿主（PageView）用 `t(...)` 传入 en/zh 文案，缺省回落到本包的中文默认值
  * （与既有控件口径一致，editor 包单测无需任何 i18n 依赖）。
  *
@@ -38,6 +38,16 @@ export interface BlockLabels {
   toggleTitlePlaceholder: string;
   /** 折叠列表正文行占位符。 */
   toggleBodyPlaceholder: string;
+  /** R26（T77-01）代码块语言下拉钮的可访问名。 */
+  codeLang: string;
+  /** 代码块语言下拉的「自动」选项文案（lang=''，非代码语言）。 */
+  codeLangAuto: string;
+  /** 代码块换行钮：当前为换行态时的可访问名（点击=取消换行）。 */
+  codeWrapOn: string;
+  /** 代码块换行钮：当前为不换行态时的可访问名（点击=自动换行）。 */
+  codeWrapOff: string;
+  /** R26（T77-01）图片宽度拖拽柄的可访问名。 */
+  imageResize: string;
 }
 
 /** 本包默认文案（中文；与 BlockControls/SlashMenu 既有的中文字面量口径一致）。 */
@@ -55,6 +65,11 @@ export const DEFAULT_BLOCK_LABELS: BlockLabels = {
   toggleCollapse: '收起',
   toggleTitlePlaceholder: '折叠列表标题',
   toggleBodyPlaceholder: ' ',
+  codeLang: '代码语言',
+  codeLangAuto: '自动',
+  codeWrapOn: '取消自动换行',
+  codeWrapOff: '自动换行',
+  imageResize: '调整图片宽度',
 };
 
 /** 合并宿主注入（缺省/缺键回落默认；注入 undefined 不覆盖）。 */

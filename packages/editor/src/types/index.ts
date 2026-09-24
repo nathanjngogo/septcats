@@ -25,6 +25,9 @@ import { ToggleNode } from './toggle';
 import { WikilinkNode } from './wikilink';
 
 export * from './blockLabels';
+// R26（T77-01）：代码块语言栏常量/纯函数与图片宽度吸附纯函数（测试与探针消费面）
+export * from './code';
+export * from './image';
 
 /** 撤销/重做（PM 侧）；Op 级撤销栈见 history.ts（两者职责不同）。 */
 export const SeptcatsHistory = Extension.create({
@@ -35,8 +38,8 @@ export const SeptcatsHistory = Extension.create({
 });
 
 /**
- * 不含 R25 两个内容块（table/toggle）的节点基座——它们带**可注入文案**
- * （见 blockLabels.ts），故在 editorExtensions 里按实例 configure。
+ * 不含带**可注入文案**（见 blockLabels.ts）的节点的基座——code/image（R26 T77-01）
+ * 与 table/toggle（R25 T76-01）在 editorExtensions 里按实例 configure。
  */
 export const BASE_BLOCK_NODES = [
   DocumentNode,
@@ -47,14 +50,14 @@ export const BASE_BLOCK_NODES = [
   NumberedListNode,
   TodoNode,
   QuoteNode,
-  CodeNode,
   DividerNode,
-  ImageNode,
 ];
 
-/** 全部块节点（table/toggle 用默认中文文案；等价于 editorExtensions() 的节点面）。 */
+/** 全部块节点（带文案的块用默认中文文案；等价于 editorExtensions() 的节点面）。 */
 export const BLOCK_NODES = [
   ...BASE_BLOCK_NODES,
+  CodeNode,
+  ImageNode,
   TableNode,
   ToggleNode,
   // T44-01：双链内联节点（inline，独立于块节点白名单；块级语义零触碰）
@@ -72,6 +75,8 @@ export function editorExtensions(options: EditorExtensionOptions = {}) {
   const labels = mergeBlockLabels(options.blockLabels);
   return [
     ...BASE_BLOCK_NODES,
+    CodeNode.configure({ labels }),
+    ImageNode.configure({ labels }),
     TableNode.configure({ labels }),
     ToggleNode.configure({ labels }),
     WikilinkNode,

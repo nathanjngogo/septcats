@@ -324,6 +324,17 @@ export const zhCN = {
       collapse: '收起',
       title: '折叠列表标题',
     },
+    // R26（T77-01）：代码块语言栏 + 图片宽度拖拽柄的内置控件文案。
+    // 现无语法高亮引擎（§0-③）：语言只作真相层 attr，UI 价值=导出/未来高亮。
+    code: {
+      lang: '代码语言',
+      langAuto: '自动',
+      wrapOn: '取消自动换行',
+      wrapOff: '自动换行',
+    },
+    image: {
+      resize: '调整图片宽度',
+    },
   },
   // T64-01：文件夹（page_type='folder' 容器节点）
   folder: {

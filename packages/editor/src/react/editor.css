@@ -88,6 +88,89 @@ h3.sc-block--heading {
   white-space: pre-wrap;
 }
 
+/* ---------------------------------------------------------------------------
+ * R26（T77-01）· 代码块语言栏（聚焦浮出）+ 淡 lang 标签
+ * 框线口径同 T62-01：浮层外轮廓 2px ink-edge；钮吃 T53 像素立体 token。
+ * ------------------------------------------------------------------------- */
+
+.sc-codebar {
+  position: absolute;
+  top: var(--sc-space-xs);
+  right: var(--sc-space-xs);
+  z-index: var(--sc-z-sticky-bar);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  /* pre 的 white-space:pre 会传染到浮层文案，显式收回 */
+  white-space: normal;
+}
+
+.sc-codebar[data-visible='false'] {
+  display: none;
+}
+
+.sc-codebar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.sc-codebar__btn:hover {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.sc-codebar__btn:active {
+  box-shadow: var(--sc-bevel-in);
+}
+
+.sc-codebar__menu {
+  position: absolute;
+  top: calc(100% + var(--sc-space-xs));
+  right: 0;
+  z-index: var(--sc-z-dropdown);
+  min-width: max-content;
+  max-height: calc(var(--sc-space-editor-measure) / 2);
+  overflow-y: auto;
+  padding: var(--sc-space-xs);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-popover);
+}
+
+.sc-codebar__item {
+  display: block;
+  width: 100%;
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  text-align: left;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.sc-codebar__item:hover,
+.sc-codebar__item--current {
+  background: var(--sc-color-accent-soft);
+}
+
+/* 非聚焦时左上角淡显的 lang 标签（默认/空 = 不显，见 code.ts 的 hidden 口径） */
+.sc-code-lang {
+  position: absolute;
+  top: var(--sc-space-xs);
+  left: var(--sc-space-xs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+  white-space: normal;
+}
+
 .sc-block--divider {
   border: 0;
   /* T62-01 §1.2：块内分隔线 = 1px ink-edge */
@@ -105,6 +188,60 @@ h3.sc-block--heading {
 .sc-image-body {
   display: block;
   max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * R26（T77-01）· 图片宽度拖拽柄 + 宽度 badge
+ * 拖拽柄贴**图片**右缘（frame = 内容锚包裹层），故 width < 容器时柄不悬空。
+ * ------------------------------------------------------------------------- */
+
+.sc-image-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  /* 去 inline 图片的基线缝，badge/柄的贴边按图片盒算 */
+  line-height: 0;
+}
+
+.sc-image-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--sc-space-sm);
+  height: 100%;
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.sc-block--image:hover .sc-image-resize,
+.sc-image-resize:focus-visible {
+  opacity: 1;
+}
+
+/* 右缘窄条：像素语法（视觉零占用，热区独立） */
+.sc-image-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--sc-color-ink-edge);
+}
+
+/* 拖拽中浮显的当前宽度（token 化；松手即收，见 image.ts） */
+.sc-image-badge {
+  position: absolute;
+  right: var(--sc-space-xs);
+  bottom: var(--sc-space-xs);
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
 }
 
 .sc-mark-code {

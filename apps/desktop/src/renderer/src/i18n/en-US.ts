@@ -318,6 +318,16 @@ export const enUS = {
       collapse: 'Collapse',
       title: 'Toggle list title',
     },
+    // R26 (T77-01): inner controls of the code block language bar and image resize handle
+    code: {
+      lang: 'Code language',
+      langAuto: 'Auto',
+      wrapOn: 'Turn off wrapping',
+      wrapOff: 'Wrap lines',
+    },
+    image: {
+      resize: 'Resize image',
+    },
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {
