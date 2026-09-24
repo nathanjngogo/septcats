@@ -1,6 +1,6 @@
 {
   "task": "T72-01",
-  "ranAt": "2026-09-24T01:27:17.128Z",
+  "ranAt": "2026-09-24T05:15:44.179Z",
   "assertions": [
     {
       "step": "setup",
@@ -102,7 +102,7 @@
       "step": "M6|另存为",
       "name": "M6-a 另存为→我的模板分区新增 1 卡（ULID id 契约）",
       "ok": true,
-      "raw": "btn=true dlg=true mine=[\"01M38GC04TT39J0T9E6XQD8J5R\"]"
+      "raw": "btn=true dlg=true mine=[\"01M38XE9XPZPH5EK0DMH8QFS6S\"]"
     },
     {
       "step": "M7|导入导出",

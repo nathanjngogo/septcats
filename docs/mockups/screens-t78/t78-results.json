@@ -1,6 +1,6 @@
 {
   "task": "T78-01",
-  "ranAt": "2026-09-24T08:58:36.664Z",
+  "ranAt": "2026-09-24T14:39:30.852Z",
   "assertions": [
     {
       "step": "M1|建场",
@@ -18,7 +18,7 @@
       "step": "M2|区间扩选",
       "name": "M2-0b IPC 块 id 齐",
       "ok": true,
-      "detail": "TBKA/J93Z/FCT4"
+      "detail": "TCWQ/DF19/0KP2"
     },
     {
       "step": "M2|区间扩选",

@@ -9,6 +9,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ActorId, Op } from '@septcats/core';
+import { defaultTableContent, defaultToggleContent } from '@septcats/editor';
 import type { Block } from '@septcats/editor';
 import type {
   AllData,
@@ -20,6 +21,7 @@ import type {
 } from '../src/db/rpc';
 import type { DbServerCore } from '../src/db/server';
 import {
+  blockContentOf,
   BlocksApiError,
   createBlocksService,
   registerBlocksIpc,
@@ -361,6 +363,74 @@ describeDb('blocksApi（blocks:list / blocks:commit）', (ctor) => {
     const deleteBatch = batches[3] as DbBatchStatement[];
     expect(deleteBatch[1]?.sqlId).toBe('block.softDelete');
     expect((deleteBatch[1]?.params as Record<string, unknown>)['id']).toBe('bk-fake-1');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// content_json → 块 content（TASK-T79-02 缺陷 A：blocks:list 与导出共用的唯一实现）
+// ---------------------------------------------------------------------------
+
+const EMPTY_PARAGRAPH_DOC = { type: 'doc', content: [{ type: 'paragraph' }] } as const;
+
+describe('blockContentOf：六种行形态分流（唯一实现）', () => {
+  it('文本类（paragraph/heading/quote…）：PM doc 原样透传', () => {
+    const json = JSON.stringify(paragraphDoc('正文文本'));
+    expect(blockContentOf('paragraph', json)).toEqual(paragraphDoc('正文文本'));
+    expect(blockContentOf('heading', json)).toEqual(paragraphDoc('正文文本'));
+    expect(blockContentOf('quote', json)).toEqual(paragraphDoc('正文文本'));
+  });
+
+  it('code：纯文本 string（null / 空串 → 空串，不 JSON 化）', () => {
+    expect(blockContentOf('code', 'const a = 1;')).toBe('const a = 1;');
+    expect(blockContentOf('code', '{ "not": "json" }')).toBe('{ "not": "json" }');
+    expect(blockContentOf('code', null)).toBe('');
+    expect(blockContentOf('code', '')).toBe('');
+  });
+
+  it('table：结构化 {rows,header}（PM 真机夹具形态，不是 PM doc）', () => {
+    const json = JSON.stringify({ rows: [['格A', '', ''], ['', '', ''], ['', '', '']], header: true });
+    expect(blockContentOf('table', json)).toEqual({
+      rows: [['格A', '', ''], ['', '', ''], ['', '', '']],
+      header: true,
+    });
+  });
+
+  it('table：colWidths 齐列时保留，不齐时丢弃（normalize 归一）', () => {
+    const kept = JSON.stringify({ rows: [['a', 'b']], header: false, colWidths: [120, 80] });
+    expect(blockContentOf('table', kept)).toEqual({ rows: [['a', 'b']], header: false, colWidths: [120, 80] });
+    const dropped = JSON.stringify({ rows: [['a', 'b']], header: true, colWidths: [120] });
+    expect(blockContentOf('table', dropped)).toEqual({ rows: [['a', 'b']], header: true });
+  });
+
+  it('toggle：结构化 {title,body}', () => {
+    const json = JSON.stringify({ title: '折叠标题Q', body: ['正文行R'] });
+    expect(blockContentOf('toggle', json)).toEqual({ title: '折叠标题Q', body: ['正文行R'] });
+    expect(blockContentOf('toggle', JSON.stringify({ title: '折叠标题Q', body: [''] }))).toEqual({
+      title: '折叠标题Q',
+      body: [''],
+    });
+  });
+
+  it('divider / image：恒 null（不看 content_json）', () => {
+    expect(blockContentOf('divider', null)).toBeNull();
+    expect(blockContentOf('divider', JSON.stringify(paragraphDoc('x')))).toBeNull();
+    expect(blockContentOf('image', null)).toBeNull();
+    expect(blockContentOf('image', '{"rows":[["a"]]}')).toBeNull();
+  });
+
+  it('降级：损坏 JSON / 非 doc 形态 / 空串 → 空段落（不丢块，只丢内容）', () => {
+    expect(blockContentOf('paragraph', '{坏了')).toEqual(EMPTY_PARAGRAPH_DOC);
+    expect(blockContentOf('paragraph', '')).toEqual(EMPTY_PARAGRAPH_DOC);
+    expect(blockContentOf('paragraph', null)).toEqual(EMPTY_PARAGRAPH_DOC);
+    expect(blockContentOf('paragraph', JSON.stringify({ type: 'table', rows: [['a']] }))).toEqual(EMPTY_PARAGRAPH_DOC);
+    expect(blockContentOf('paragraph', '[1,2,3]')).toEqual(EMPTY_PARAGRAPH_DOC);
+  });
+
+  it('结构化类型的损坏 JSON：归一为同型空结构（不是空段落，见报告 DEVIATION-1）', () => {
+    expect(blockContentOf('table', '{坏了')).toEqual(defaultTableContent());
+    expect(blockContentOf('table', null)).toEqual(defaultTableContent());
+    expect(blockContentOf('toggle', '{坏了')).toEqual(defaultToggleContent());
+    expect(blockContentOf('toggle', '"串"')).toEqual(defaultToggleContent());
   });
 });
 

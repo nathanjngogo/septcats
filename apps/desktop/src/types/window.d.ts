@@ -14,6 +14,11 @@ import type {
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
 import type { PageNodeView } from '../main/pages';
+import type {
+  PageExportConfirmResponse,
+  PageExportInput,
+  PageExportPreview,
+} from '../shared/pageExport';
 import type { SearchInput, SearchResponse } from '../shared/search';
 import type {
   AppSettings,
@@ -471,6 +476,22 @@ export interface SeptcatsShellApi {
   openExternal(input: ShellOpenInput): Promise<ShellOpenResult>;
 }
 
+/**
+ * 页面导出 Markdown（R27 · TASK-T79-01）。通道与 `src/shared/ipc.ts` 的
+ * PAGE_EXPORT_CHANNELS 一对一；载荷形状见 `src/main/pageExport.ts`。
+ * 全只读消费：preview 不落盘；confirm 预览→确认→落盘（目录选择取消 = 零落盘）；
+ * reveal 走 shell.openPath（**非** openExternal，file:// 不在其白名单）。
+ * 错误经 Error.message 透传（E_MALFORMED / E_NOT_FOUND / E_INVARIANT）。
+ */
+export interface SeptcatsPageExportApi {
+  /** 只读预览：读库 + 列附件，返回页/文件清单与孤儿清单（零盘写）。 */
+  preview(input: PageExportInput): Promise<PageExportPreview>;
+  /** 落盘：dir 缺省时弹系统目录选择；用户取消 → `{canceled:true}` 且零落盘。 */
+  confirm(input: PageExportInput): Promise<PageExportConfirmResponse>;
+  /** 在文件管理器中打开导出目录（shell.openPath）。 */
+  reveal(input: { dir: string }): Promise<{ ok: true }>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -514,6 +535,8 @@ export interface SeptcatsApi {
   close: SeptcatsCloseApi;
   /** 外部链接（TASK-T73-01：shell.openExternal，协议白名单）。 */
   shell: SeptcatsShellApi;
+  /** 页面导出 Markdown（R27 · T79-01）。 */
+  pageExport: SeptcatsPageExportApi;
 }
 
 declare global {

@@ -5,6 +5,8 @@
  * 代码围栏 ```、引用 `>`、分隔线 `---`、内联 粗/斜/删除线/行内代码/链接（href 白名单）。
  * R25（T76-01）追加：**表格**（`| a | b |` 行 + 可选 `| --- |` 分隔行 → table 块；
  * 判定纯函数住 content.ts，本文件只做块级归组）。
+ * R27（T79-01）追加：**callout**（`> [!<icon>] <inline>` → quote + icon）与
+ * **toggle**（`> [!toggle] <title>` + 紧邻 `> ` 行 body）——导出序列化器的对偶方言。
  * 不覆盖（超出 v1 子集，见报告 DEVIATIONS）：嵌套列表、图片、HTML 内联。
  */
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -20,6 +22,14 @@ const TODO = /^\s*[-*+]\s+\[( |x|X)\]\s+(.*)$/;
 const BULLET = /^\s*[-*+]\s+(.*)$/;
 const NUMBERED = /^\s*\d{1,9}[.)]\s+(.*)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
+/**
+ * T79-01（R27 导出）自家方言：callout / toggle 都以 quote 形态承载——
+ * - callout：`> [!<icon>] <inline>` → quote 节点 + attrs.icon（`types/quote.ts` 的 callout 口径）；
+ * - toggle：`> [!toggle] <title>` + 紧邻 `> ` 行为 body（连续 quote 行成组，空行断组）。
+ * 保留 token `toggle` 区分二型；方言为导出序列化器专属，真实世界 md 无此串 → 导入既有行为零改动。
+ */
+const CALLOUT = /^\s*>\s*\[!([^\]\n]+)\]\s?(.*)$/;
+const TOGGLE_TOKEN = 'toggle';
 const DIVIDER = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
 const INLINE_SOURCE =
   '(`[^`]+`|\\[[^\\]]*\\]\\([^)\\s]+\\)|\\*\\*[^*]+\\*\\*|__[^_]+__|~~[^~]+~~|\\*[^*]+\\*|_[^_]+_)';
@@ -203,6 +213,37 @@ export function parseMarkdown(text: string): PMDocJSON {
       content.push(
         listNode('to_do', todo[2] ?? '', { checked: marker === 'x' || marker === 'X' }),
       );
+      continue;
+    }
+    // T79-01：自家方言先于普通 quote 收口（callout / toggle）
+    const callout = CALLOUT.exec(line);
+    if (callout !== null) {
+      const token = callout[1] ?? '';
+      if (token === TOGGLE_TOKEN) {
+        // toggle：紧随的连续 quote 行为正文（空行 / 非 quote 行断组）
+        const body: string[] = [];
+        let cursor = index + 1;
+        while (cursor < lines.length) {
+          const inner = QUOTE.exec(lines[cursor] ?? '');
+          if (inner === null) {
+            break;
+          }
+          body.push(inner[1] ?? '');
+          cursor += 1;
+        }
+        content.push({
+          type: pmNodeNameOf('toggle'),
+          attrs: { title: callout[2] ?? '', body: body.length > 0 ? body : [''] },
+        });
+        index = cursor - 1;
+        continue;
+      }
+      const calloutNode: PMNodeJSON = { type: 'quote', attrs: { icon: token } };
+      const calloutInline = parseInlineMarkdown(callout[2] ?? '');
+      if (calloutInline.length > 0) {
+        calloutNode.content = calloutInline;
+      }
+      content.push(calloutNode);
       continue;
     }
     const quote = QUOTE.exec(line);

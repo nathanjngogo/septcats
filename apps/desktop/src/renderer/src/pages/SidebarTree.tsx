@@ -568,6 +568,12 @@ export function SidebarTree() {
         ...convertItems,
         // T67-01-B2-01：锁操作项（加锁 / 修改 / 移除）置于转换项之后、删除之前
         ...lockItems,
+        // R27（T79-01）：导出为 Markdown（页面级入口；testid 挂 label 内 span，
+        // 免改 @septcats/ui Menu 契约）。有子页时由 PageExportDialog 选 scope。
+        {
+          id: 'exportMarkdown',
+          label: <span data-testid="page-export-menu">{t('pageExport.menuLabel')}</span>,
+        },
         { id: 'delete', label: t('common.delete'), danger: true },
       ],
       onSelect: (action: string): void => {
@@ -612,6 +618,10 @@ export function SidebarTree() {
         }
         if (action === 'delete') {
           pagesActions.requestDeletePage(node.id);
+        }
+        // R27（T79-01）：导出为 Markdown（无子页直接导；有子页弹 scope 选择）
+        if (action === 'exportMarkdown') {
+          pagesActions.openPageExport(node.id);
         }
       },
     };

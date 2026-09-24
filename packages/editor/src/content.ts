@@ -285,7 +285,11 @@ export function toggleDeleteBodyLine(content: ToggleContent, index: number): Tog
 // markdown 表格（粘贴 / 解析共用；`| a | b |` 行 + 可选分隔行）
 // ---------------------------------------------------------------------------
 
-/** 单元格分隔：仅 `|`（不处理转义竖线，超出 v1 子集）。 */
+/**
+ * 单元格分隔：按**未转义**的 `|` 切分（T79-01 起反解导出方言的转义——`\|`→`|`、
+ * `<br>`→换行；见 serialize.ts 的 escapeCell）。单元格数量语义与旧版逐位一致
+ * （现网夹具不含 `\|`/`<br>`，故既有判等零回归）。
+ */
 function splitTableCells(line: string): string[] {
   let body = line.trim();
   if (body.startsWith('|')) {
@@ -294,7 +298,24 @@ function splitTableCells(line: string): string[] {
   if (body.endsWith('|')) {
     body = body.slice(0, -1);
   }
-  return body.split('|').map((cell) => cell.trim());
+  const raw: string[] = [];
+  let current = '';
+  for (let index = 0; index < body.length; index += 1) {
+    const ch = body[index];
+    if (ch === '\\' && body[index + 1] === '|') {
+      current += '|';
+      index += 1;
+      continue;
+    }
+    if (ch === '|') {
+      raw.push(current);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  raw.push(current);
+  return raw.map((cell) => cell.trim().replace(/<br\s*\/?>/gi, '\n'));
 }
 
 /** markdown 表格行：以 `|` 起首且以 `|` 收尾（`| a | b |`）。 */

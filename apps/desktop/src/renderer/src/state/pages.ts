@@ -16,6 +16,7 @@ import {
 } from '@septcats/editor';
 import type { ToastTone } from '@septcats/ui';
 import type { PageNodeView, SeptcatsApi, WorkspaceSummary } from '../../../types/window';
+import type { PageExportPreview, PageExportScope } from '../../../shared/pageExport';
 import { errorText, t } from '../i18n';
 import { createStore, useStore } from './store';
 import { closeTabFallback, moveTab, openInTabs, pruneTabs, readTabs, writeTabs } from './tabs';
@@ -31,6 +32,8 @@ export interface ToastMessage {
   id: string;
   message: string;
   tone: ToastTone;
+  /** 探针锚点（可选）：渲染为 `data-testid`，供真机/用例断言特定 toast（如页面导出）。 */
+  testId?: string;
 }
 
 export interface PagesState {
@@ -57,6 +60,8 @@ export interface PagesState {
   lockedIds: Set<string>;
   /** T67-01-B2-01 范围1：加锁/改密/移除 弹层状态（null = 关闭）。 */
   lockDialog: { pageId: string; mode: 'set' | 'change' | 'remove' } | null;
+  /** R27（T79-01）：页面导出 scope 选择弹层状态（null = 关闭；仅子页存在时开）。 */
+  exportDialog: { pageId: string; childCount: number } | null;
   /**
    * T67-01-B2-01：锁态版本号。setPass/remove 后 bump，驱动 PageView 立即重探锁态
    * （解锁当前打开的编辑器，杜绝「设锁后编辑器仍挂载、flush 回写明文块」的竞态）。
@@ -87,6 +92,7 @@ const initialState: PagesState = {
   deleteConfirmId: null,
   lockedIds: new Set<string>(),
   lockDialog: null,
+  exportDialog: null,
   lockRev: 0,
   tabs: [],
 };
@@ -236,9 +242,11 @@ function removeToast(id: string): void {
 }
 
 /** 应用级 Toast 入口（pagesActions 与命令面板共用；队列上限 3 条；3s 自动关闭）。 */
-export function pushToast(message: string, tone: ToastTone): void {
+export function pushToast(message: string, tone: ToastTone, testId?: string): void {
   toastSeq += 1;
-  const item: ToastMessage = { id: `toast-${String(toastSeq)}`, message, tone };
+  const item: ToastMessage = testId === undefined
+    ? { id: `toast-${String(toastSeq)}`, message, tone }
+    : { id: `toast-${String(toastSeq)}`, message, tone, testId };
   pagesStore.setState((state) => {
     const next = [...state.toasts, item];
     // 超上限被挤掉的老条目：它的定时器一并清掉（不留下一次「静默 dismiss」）
@@ -847,6 +855,70 @@ export const pagesActions = {
     // blank：无种子
     pushToast(t('pages.toastWorkspaceCreated'), 'success');
     return newId;
+  },
+
+  /**
+   * R27（T79-01）：页面行菜单「导出为 Markdown…」入口 → 开导出对话框（先预览后确认，
+   * 禁静默写盘）。子页数 > 0 时对话框额外给 scope 选项（本页 / 含子页）。
+   */
+  openPageExport(pageId: string): void {
+    const state = pagesStore.getState();
+    const byId = nodeMap(state.nodes);
+    const node = byId.get(pageId);
+    if (node === undefined || node.alive === 0) {
+      return;
+    }
+    const childCount = collectDescendants(pageId, childrenIndex(state.nodes)).filter(
+      (id) => byId.get(id)?.alive === 1,
+    ).length;
+    pagesStore.setState((current) => ({ ...current, exportDialog: { pageId, childCount } }));
+  },
+
+  closePageExport(): void {
+    pagesStore.setState((current) => (current.exportDialog === null ? current : { ...current, exportDialog: null }));
+  },
+
+  /**
+   * R27（T79-01）：只读预览（对话框列文件名用）。**零落盘**——main 侧只读库 + 列附件。
+   * 失败经 danger toast；返回 null 交对话框显示空态。
+   */
+  async loadPageExportPreview(pageId: string, scope: PageExportScope): Promise<PageExportPreview | null> {
+    try {
+      return await bridge().pageExport.preview({ pageId, scope });
+    } catch (error) {
+      pushToast(t('pageExport.failed').replace('{message}', describeError(error)), 'danger');
+      return null;
+    }
+  },
+
+  /**
+   * R27（T79-01）：执行导出。**预览→确认→落盘全在 main**（此间只读，禁静默写盘）；
+   * 用户取消目录选择 → info toast（零落盘）；成功 → success toast（挂 `page-export-toast`）
+   * 并 reveal 打开所在目录（main 侧 shell.openPath，非 openExternal）。
+   */
+  async runPageExport(pageId: string, scope: PageExportScope): Promise<void> {
+    pagesStore.setState((current) => (current.exportDialog === null ? current : { ...current, exportDialog: null }));
+    try {
+      const result = await bridge().pageExport.confirm({ pageId, scope });
+      if (result.canceled) {
+        pushToast(t('pageExport.canceled'), 'info');
+        return;
+      }
+      pushToast(
+        t('pageExport.done')
+          .replace('{pages}', String(result.counts.pages))
+          .replace('{assets}', String(result.counts.assets)),
+        'success',
+        'page-export-toast',
+      );
+      try {
+        await bridge().pageExport.reveal({ dir: result.dir });
+      } catch {
+        // reveal 失败不阻断（产物已在盘上）；不弹二次 toast
+      }
+    } catch (error) {
+      pushToast(t('pageExport.failed').replace('{message}', describeError(error)), 'danger');
+    }
   },
 };
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Editor as TiptapEditor } from '@tiptap/core';
 import { editorExtensions } from '../src/types';
-import { matchInputRule } from '../src/rules/inputRules';
+import { applyFenceEnterRule, applyInputRule, matchFenceRule, matchInputRule } from '../src/rules/inputRules';
 import { parseMarkdown } from '../src/rules/markdownPaste';
 import {
   activeSlashItem,
@@ -149,6 +149,91 @@ describe('inputRules：真 PM 执行（jsdom 也跑真 ProseMirror）', () => {
     });
     expect(typeInto(editor, '#')).toBe(false);
     expect(editor.state.doc.firstChild?.type.name).toBe('codeBlock');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 代码围栏：兑现帧 = Enter（TASK-T79-02 缺陷 B）
+// ---------------------------------------------------------------------------
+
+describe('inputRules：代码围栏在 Enter 帧兑现（缺陷 B）', () => {
+  /** 单段落：文本 = text，id 显式给定（验身份不分叉），光标置于段末。 */
+  function editorWithText(text: string, id = 'blk-fence'): TiptapEditor {
+    const editor = createEditor({
+      type: 'doc',
+      content: [{ type: 'paragraph', attrs: { id }, content: [{ type: 'text', text }] }],
+    });
+    // 光标置于段末（段落闭合标记前一位）
+    editor.commands.setTextSelection(editor.state.doc.content.size - 1);
+    return editor;
+  }
+
+  /** 走插件真实通道（handleKeyDown），不是直接调函数：顺带验 composition/形态守卫。 */
+  function pressEnter(editor: TiptapEditor): boolean {
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+    const handled = editor.view.someProp('handleKeyDown', (handler) => handler(editor.view, event));
+    return handled === true;
+  }
+
+  it('判定：``` / ```python / ```c++ 命中，deleteChars = 判定串全长', () => {
+    expect(matchFenceRule('```', false)).toEqual({ kind: 'code', lang: '', deleteChars: 3 });
+    expect(matchFenceRule('```python', false)).toEqual({ kind: 'code', lang: 'python', deleteChars: 9 });
+    expect(matchFenceRule('```c++', false)).toEqual({ kind: 'code', lang: 'c++', deleteChars: 6 });
+  });
+
+  it('判定：尾随字符 / 空格分隔 / 组合期一律不误判', () => {
+    for (const text of ['```python x', '```py thon', '``` python', '````', '``', '```py!', 'a```py']) {
+      expect(matchFenceRule(text, false), `不应命中：${text}`).toBeNull();
+    }
+    expect(matchFenceRule('```python', true)).toBeNull();
+  });
+
+  it('真 PM：```python + Enter → codeBlock(lang=python)，python 不落正文且零残留反引号', () => {
+    const editor = editorWithText('```python');
+    expect(pressEnter(editor)).toBe(true);
+    const first = editor.state.doc.firstChild;
+    expect(first?.type.name).toBe('codeBlock');
+    expect(first?.attrs['lang']).toBe('python');
+    expect(first?.attrs['id']).toBe('blk-fence');
+    // 删除字符数 = 判定串全长（3 反引号 + lang）：转换后文档里零残留反引号
+    expect(first?.textContent).toBe('');
+    expect(editor.state.doc.textContent.includes('`')).toBe(false);
+  });
+
+  it('真 PM：``` + Enter → codeBlock 空 lang（现行行为不破）', () => {
+    const editor = editorWithText('```', 'blk-fence-plain');
+    expect(pressEnter(editor)).toBe(true);
+    const first = editor.state.doc.firstChild;
+    expect(first?.type.name).toBe('codeBlock');
+    expect(first?.attrs['lang']).toBe('');
+    expect(first?.attrs['id']).toBe('blk-fence-plain');
+    expect(editor.state.doc.textContent.includes('`')).toBe(false);
+  });
+
+  it('第三个反引号那一帧不转块：文本帧不消费 code 动作（lang 不被吞进正文）', () => {
+    const editor = editorWithText('``');
+    const from = editor.state.selection.from;
+    expect(applyInputRule(editor.view, from, from, '`')).toBe(false);
+    expect(editor.state.doc.firstChild?.type.name).toBe('paragraph');
+    // 未被消费 → PM 照常插入第三个反引号；随后键入 lang，Enter 帧才兑现
+    editor.commands.insertContent('`python');
+    expect(editor.state.doc.textContent).toBe('```python');
+    expect(pressEnter(editor)).toBe(true);
+    expect(editor.state.doc.firstChild?.attrs['lang']).toBe('python');
+    expect(editor.state.doc.firstChild?.textContent).toBe('');
+  });
+
+  it('尾随字符不转块：```python x + Enter 不落代码块', () => {
+    const editor = editorWithText('```python x');
+    const from = editor.state.selection.from;
+    expect(applyFenceEnterRule(editor.view, from, from)).toBe(false);
+    expect(editor.state.doc.firstChild?.type.name).toBe('paragraph');
+  });
+
+  it('表格 Enter 规则不被围栏抢：|a|b| 仍走 table（既有 T76 语义不破）', () => {
+    const editor = editorWithText('|a|b|');
+    expect(pressEnter(editor)).toBe(true);
+    expect(editor.state.doc.firstChild?.type.name).toBe('table');
   });
 });
 

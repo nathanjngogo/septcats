@@ -1,6 +1,6 @@
 {
   "task": "T66-01",
-  "ranAt": "2026-09-24T01:29:23.812Z",
+  "ranAt": "2026-09-24T05:13:00.107Z",
   "assertions": [
     {
       "step": "T1|三入口",
@@ -42,7 +42,7 @@
       "step": "T2|home非死角",
       "name": "T2-b 点侧栏行收 home（回编辑视图）",
       "ok": true,
-      "raw": "node=01M38GF9TCV5WEK3PK2ZBEJNTP homeAfter=false"
+      "raw": "node=01M38X8QNGRRDG07V6DQWRYXSJ homeAfter=false"
     },
     {
       "step": "T2|home非死角",
@@ -60,7 +60,7 @@
       "step": "T3|库卡",
       "name": "T3-b1 快捷建库后自动回 pages 开库页",
       "ok": true,
-      "raw": "click=true home=false dbEditor=true btn=false toast=\"已新建多维数据页\" ws={\"items\":[{\"id\":\"01M38GF74RRXBPC0J8P8WFN8NJ\",\"name\":\"个人工作区\"}],\"activeId\":\"01M38GF74RRXBPC0J8P8WFN8NJ\"}"
+      "raw": "click=true home=false dbEditor=true btn=false toast=\"已新建多维数据页\" ws={\"items\":[{\"id\":\"01M38X8N0SEVTXXTZT42TSTCXE\",\"name\":\"个人工作区\"}],\"activeId\":\"01M38X8N0SEVTXXTZT42TSTCXE\"}"
     },
     {
       "step": "T3|库卡",

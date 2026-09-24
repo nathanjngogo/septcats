@@ -957,4 +957,20 @@ export const zhCN = {
     recoveryRequired: '请输入恢复码',
     passTooShort: '口令过短',
   },
+  // R27（T79-01）：页面导出 Markdown（行菜单 + scope 对话框 + toast）
+  pageExport: {
+    menuLabel: '导出为 Markdown…',
+    dialogTitle: '导出为 Markdown',
+    dialogHint: '确认导出范围与文件清单后继续；确认后会让你选择目标目录。',
+    scopeSingle: '仅本页',
+    scopeSubtree: '含子页（子树）',
+    filesTitle: '将导出以下文件：',
+    previewLoading: '正在读取预览…',
+    orphansHint: '{n} 个附件文件缺失，已在 Markdown 中留占位注释。',
+    confirm: '导出',
+    cancel: '取消',
+    done: '已导出 {pages} 个页面、{assets} 个附件',
+    canceled: '已取消导出',
+    failed: '导出失败：{message}',
+  },
 } as const;

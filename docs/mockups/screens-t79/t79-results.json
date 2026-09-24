@@ -1,0 +1,102 @@
+{
+  "task": "T79-01",
+  "ranAt": "2026-09-24T14:38:03.225Z",
+  "assertions": [
+    {
+      "step": "E1|建全块型页",
+      "name": "E1-c 单元格 DOM 值=格A（input 层）",
+      "ok": true,
+      "detail": "格A"
+    },
+    {
+      "step": "E1|建全块型页",
+      "name": "E1-a 全块型页建成（table 在场）",
+      "ok": true,
+      "detail": "slashTable=true"
+    },
+    {
+      "step": "E1|建全块型页",
+      "name": "E1-b IPC 取到页 id",
+      "ok": true,
+      "detail": "01M39XKC0A7NNGYSDAEMH6R8GS"
+    },
+    {
+      "step": "E1|建全块型页",
+      "name": "E1-d 真相层 blocks.list 表格 content 不降级（含 rows 与格A）",
+      "ok": true,
+      "detail": "{\"rows\":[[\"格A\",\"\",\"\"],[\"\",\"\",\"\"],[\"\",\"\",\"\"]],\"header\":true}"
+    },
+    {
+      "step": "E2|UI 链+取消零落盘",
+      "name": "E2-a 页面菜单含导出项",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "step": "E2|UI 链+取消零落盘",
+      "name": "E2-b 导出对话框=预览恒开+确认（D-6）",
+      "ok": true,
+      "detail": "{\"single\":false,\"preview\":27,\"confirm\":true}"
+    },
+    {
+      "step": "E2|UI 链+取消零落盘",
+      "name": "E2-c 取消=零落盘",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "step": "E3|IPC dir 落盘取证",
+      "name": "E3-a 单页导出 md 落盘",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t79-e2e\\export-target\\T79 导出页 mufmywj7\\T79 导出页 mufmywj7.md"
+    },
+    {
+      "step": "E3|IPC dir 落盘取证",
+      "name": "E3-b md 内容钉（标题/待办/引用/代码/表格）",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "step": "E3|IPC dir 落盘取证",
+      "name": "E3-c preview 契约回显（只预览不落盘）",
+      "ok": true,
+      "detail": "{\"rootName\":\"T79 导出页 mufmywj7\",\"pages\":[{\"pageId\":\"01M39XKC0A7NNGYSDAEMH6R8GS\",\"title\":\"T79 导出页 mufmywj7\",\"relPath\":\"T79"
+    },
+    {
+      "step": "E3-code|代码页",
+      "name": "E3-d 代码页 fence+内容忠实导出",
+      "ok": true,
+      "detail": "```python\nprint(\"hi\")\n```\n"
+    },
+    {
+      "step": "E3-code|代码页",
+      "name": "E3-d2 围栏 lang 忠实（```python 在场 + python 不作代码正文首行）",
+      "ok": true,
+      "detail": "{\"fenceLang\":true,\"pythonAsBodyLine1\":false,\"head\":\"```python\\nprint(\\\"hi\\\")\\n```\\n\"}"
+    },
+    {
+      "step": "E3-code|代码页",
+      "name": "E3-e 表格格A进表（D-1 方言钉）",
+      "ok": true,
+      "detail": "| 格A |  |  |"
+    },
+    {
+      "step": "E3-code|代码页",
+      "name": "E3-e2 表格行成行（行首为 | 且列数 ≥3）",
+      "ok": true,
+      "detail": "{\"line\":\"| 格A |  |  |\"}"
+    },
+    {
+      "step": "E4|子树 scope",
+      "name": "E4-a 子树导出 ≥2 md 含层级",
+      "ok": true,
+      "detail": "\\T79 导出页 mufmywj7\\T79 子页 mufmywj7\\T79 子页 mufmywj7.md,\\T79 导出页 mufmywj7\\T79 导出页 mufmywj7.md"
+    },
+    {
+      "step": "E5|存活",
+      "name": "E5-1 应用存活",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

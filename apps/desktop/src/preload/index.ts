@@ -16,6 +16,7 @@ import {
   FAVORITES_CHANNELS,
   IMPORT_CHANNELS,
   MENU_CHANNELS,
+  PAGE_EXPORT_CHANNELS,
   PAGES_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
@@ -265,6 +266,21 @@ const api: SeptcatsApi = {
     openExternal: (input) =>
       ipcRenderer.invoke(SHELL_CHANNELS.openExternal, input) as ReturnType<
         SeptcatsApi['shell']['openExternal']
+      >,
+  },
+  // R27（T79-01）：页面导出 Markdown（preview 只读 / confirm 落盘 / reveal 打开目录）
+  pageExport: {
+    preview: (input) =>
+      ipcRenderer.invoke(PAGE_EXPORT_CHANNELS.preview, input) as ReturnType<
+        SeptcatsApi['pageExport']['preview']
+      >,
+    confirm: (input) =>
+      ipcRenderer.invoke(PAGE_EXPORT_CHANNELS.confirm, input) as ReturnType<
+        SeptcatsApi['pageExport']['confirm']
+      >,
+    reveal: (input) =>
+      ipcRenderer.invoke(PAGE_EXPORT_CHANNELS.reveal, input) as ReturnType<
+        SeptcatsApi['pageExport']['reveal']
       >,
   },
 };

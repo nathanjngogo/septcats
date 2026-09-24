@@ -10,6 +10,8 @@
  */
 export * from './types';
 export * from './markdown';
+// R27（T79-01）：与解析器对偶的 Markdown 序列化器（页面导出用；纯 TS 零 IO）
+export * from './serialize';
 export * from './csvInfer';
 export * from './notion';
 export { buildPlan, contentHashOf, finalizePlan, MAX_PLAN_ITEMS, PlanTooLargeError } from './plan';

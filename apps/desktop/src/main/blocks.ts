@@ -20,7 +20,8 @@
  * main 侧不注册 handler、不推送 —— 协作/多窗口推送归后续任务（§0.3）。
  */
 import type { ActorId, Op } from '@septcats/core';
-import type { Block } from '@septcats/editor';
+import { normalizeTableContent, normalizeToggleContent } from '@septcats/editor';
+import type { Block, BlockContent } from '@septcats/editor';
 import { CHANNEL_BLOCKS_COMMIT, CHANNEL_BLOCKS_LIST } from '../shared/ipc';
 import { CommitError, commitOps } from './commit';
 import { pageIdsTouchedByOps, syncLinksForPages } from './links';
@@ -77,36 +78,59 @@ function rowNumber(row: unknown, key: string, fallback: number): number {
 }
 
 /** 空内联的 PM doc（model.ts 归一化约定：{type:'paragraph'} 不写 content 键）。 */
-const EMPTY_PARAGRAPH_DOC: NonNullable<Block['content']> = {
+const EMPTY_PARAGRAPH_DOC: BlockContent = {
   type: 'doc',
   content: [{ type: 'paragraph' }],
 };
 
+/** content_json → JSON 值；null / 空串 / 损坏 JSON 一律 null（调用方决定降级）。 */
+function parseContentJson(contentJson: string | null): unknown {
+  if (contentJson === null || contentJson.length === 0) {
+    return null;
+  }
+  try {
+    return JSON.parse(contentJson) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function isDocJson(value: unknown): value is BlockContent {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (value as { type?: unknown })['type'] === 'doc'
+  );
+}
+
 /**
- * content_json → 编辑器 BlockContent：
- * - code 块的 content 恒为纯文本（写入路径原样存串，不 JSON 化）；
- * - divider / image 恒为 null；
- * - 其余文本类块是 JSON 化的 PM doc，解析失败降级为空段落（不丢块，只丢样式）。
+ * content_json → 真相层块 content（**唯一实现**：`blocks:list` 读路径与本仓导出链路
+ * `main/pageExport.ts` 共用，后者不再自带副本——TASK-T79-02 缺陷 A）。
+ *
+ * 分流按 `packages/editor/src/model.ts` 的 `blockContentSchema`：
+ * - divider / image → null；
+ * - code → 纯文本 string（写入路径原样存串，不 JSON 化）；
+ * - table → 结构化 `{rows,header[,colWidths]}`；toggle → 结构化 `{title,body}`
+ *   （R25 冻结口径：**不是** PM doc，经 normalize 归一）；
+ * - 其余文本类 → JSON 化的 PM doc（`type:'doc'` 校验保留）；
+ * - 解析失败 / 形态不符 → 降级为空段落（不丢块，只丢内容，保持现韧性）。
  */
-function blockContentOf(type: string, contentJson: string | null): Block['content'] {
+export function blockContentOf(type: string, contentJson: string | null): BlockContent {
   if (type === 'divider' || type === 'image') {
     return null;
   }
-  if (contentJson === null) {
-    return type === 'code' ? '' : EMPTY_PARAGRAPH_DOC;
-  }
   if (type === 'code') {
-    return contentJson;
+    return contentJson ?? '';
   }
-  try {
-    const parsed = JSON.parse(contentJson) as unknown;
-    if (parsed !== null && typeof parsed === 'object' && (parsed as { type?: unknown })['type'] === 'doc') {
-      return parsed as Block['content'];
-    }
-  } catch {
-    // 落到下面的降级
+  if (type === 'table') {
+    return normalizeTableContent(parseContentJson(contentJson));
   }
-  return EMPTY_PARAGRAPH_DOC;
+  if (type === 'toggle') {
+    return normalizeToggleContent(parseContentJson(contentJson));
+  }
+  const parsed = parseContentJson(contentJson);
+  return isDocJson(parsed) ? parsed : EMPTY_PARAGRAPH_DOC;
 }
 
 function blockRowToBlock(row: unknown): Block {

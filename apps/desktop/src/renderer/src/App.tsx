@@ -16,6 +16,7 @@ import { aiChatActions, useAiChat } from './ai/chatState';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { PageLockDialog } from './pages/PageLockDialog';
+import { PageExportDialog } from './pages/PageExportDialog';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportWizard } from './pages/ImportWizard';
@@ -695,6 +696,8 @@ export function App() {
       <PageDeleteDialog />
       {/* T67-01-B2-01 范围1：加锁/改密/移除 弹层（侧栏行菜单 + 命令面板共用） */}
       <PageLockDialog />
+      {/* R27（T79-01）：页面导出 Markdown 的 scope 选择弹层（侧栏行菜单入口） */}
+      <PageExportDialog />
       {/* T54-01 §1②：关窗询问框（自绘像素模态；main 拦 close 并冲刷完后推 close:ask） */}
       <CloseAskDialog />
       {/* T24-01 §0.C：全局 Toast 视口（pushToast 队列渲染；根层挂载，底部居中、

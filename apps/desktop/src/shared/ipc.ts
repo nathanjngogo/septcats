@@ -491,6 +491,28 @@ export const SHELL_CHANNELS = {
 
 export type ShellChannel = (typeof SHELL_CHANNELS)[keyof typeof SHELL_CHANNELS];
 
+// ---------------------------------------------------------------------------
+// 页面导出 Markdown（R27 · TASK-T79-01）：三通道——preview 只读预览（不落盘）、
+// confirm 预览→确认→落盘（目录选择取消 = 零落盘）、reveal 打开所在目录
+// （走 shell.openPath，**非** openExternal——file:// 不在其白名单）。
+// 载荷形状见 main/pageExport.ts（PageExport*），preload 只 import 通道名。
+// ---------------------------------------------------------------------------
+
+/** {pageId, scope} → PageExportPreview（只读：读库 + 列附件，零盘写）。 */
+export const CHANNEL_PAGE_EXPORT_PREVIEW = 'page:export:preview';
+/** {pageId, scope, dir?} → PageExportConfirmResponse（dir 缺省时弹目录选择；取消回 {canceled:true}）。 */
+export const CHANNEL_PAGE_EXPORT_CONFIRM = 'page:export:confirm';
+/** {dir} → {ok:true}（在文件管理器中打开导出目录）。 */
+export const CHANNEL_PAGE_EXPORT_REVEAL = 'page:export:reveal';
+
+export const PAGE_EXPORT_CHANNELS = {
+  preview: CHANNEL_PAGE_EXPORT_PREVIEW,
+  confirm: CHANNEL_PAGE_EXPORT_CONFIRM,
+  reveal: CHANNEL_PAGE_EXPORT_REVEAL,
+} as const;
+
+export type PageExportChannel = (typeof PAGE_EXPORT_CHANNELS)[keyof typeof PAGE_EXPORT_CHANNELS];
+
 /** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
 export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
 

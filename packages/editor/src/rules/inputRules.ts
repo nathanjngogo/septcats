@@ -3,7 +3,8 @@
  *
  * 触发集（**只认半角 ASCII**，CJK 标点安全）：
  *   `# ` `## ` `### ` → heading 1/2/3；`- ` `* ` → bulleted_list；`1. ` → numbered_list；
- *   `[] ` `[ ] ` `[x] ` → to_do（checked）；`> ` → quote；``` ```lang ``` → code。
+ *   `[] ` `[ ] ` `[x] ` → to_do（checked）；`> ` → quote；``` ```lang ``` + **Enter** → code
+ *   （TASK-T79-02 缺陷 B：围栏的兑现帧是 Enter，lang 才能落进 attrs 而非代码正文）。
  *
  * R25（T76-01）追加：`|a|b|` + **Enter** → table（PRD §2A；判定器 matchTableShorthand
  * 住 content.ts，经 applyTableEnterRule 在 handleKeyDown 执行——Enter 不是文本输入，
@@ -37,6 +38,27 @@ const NUMBERED_RULE = /^\d{1,9}\. $/;
 const TODO_RULE = /^\[( ?|x|X)?\] $/;
 const FENCE_RULE = /^```([A-Za-z0-9_+#-]{0,32})$/;
 
+export type FenceInputAction = Extract<BlockInputAction, { kind: 'code' }>;
+
+/**
+ * 代码围栏判定（纯函数）：`` ``` `` 或 `` ```lang ``（lang 可省，最长 32）。
+ *
+ * TASK-T79-02 缺陷 B：它的**兑现帧是 Enter，不是文本帧**。若在第三个反引号那一帧
+ * 就转块（lang 捕获为 `''`），随后键入的 `python` 会落进代码正文 → 导出 md 恒为
+ * ```` ``` ```` 无语言。故 `matchInputRule` 虽仍认这两个形态（既有断言面），
+ * `applyInputRule` 不消费 code 动作，真正转块由 `applyFenceEnterRule` 在 Enter 帧做。
+ */
+export function matchFenceRule(textBeforeCursor: string, composing: boolean): FenceInputAction | null {
+  if (composing || textBeforeCursor.length === 0) {
+    return null;
+  }
+  const fence = FENCE_RULE.exec(textBeforeCursor);
+  if (fence === null) {
+    return null;
+  }
+  return { kind: 'code', lang: fence[1] ?? '', deleteChars: textBeforeCursor.length };
+}
+
 /** 纯判定：textBeforeCursor = 当前文本块内、光标之前的全部文本 + 本帧输入。 */
 export function matchInputRule(textBeforeCursor: string, composing: boolean): BlockInputAction | null {
   if (composing || textBeforeCursor.length === 0) {
@@ -69,11 +91,7 @@ export function matchInputRule(textBeforeCursor: string, composing: boolean): Bl
   if (textBeforeCursor === '> ') {
     return { kind: 'quote', deleteChars: textBeforeCursor.length };
   }
-  const fence = FENCE_RULE.exec(textBeforeCursor);
-  if (fence !== null) {
-    return { kind: 'code', lang: fence[1] ?? '', deleteChars: textBeforeCursor.length };
-  }
-  return null;
+  return matchFenceRule(textBeforeCursor, composing);
 }
 
 function attrsFor(action: BlockInputAction): Attrs {
@@ -112,6 +130,11 @@ export function applyInputRule(view: EditorView, from: number, to: number, text:
   const before = parent.textBetween(0, from - blockStart, undefined, '\ufffc');
   const action = matchInputRule(before + text, false);
   if (action === null) {
+    return false;
+  }
+  // 围栏不在此兑现：lang 是「转块之后继续键入」的字符，文本帧命中会把它吞进正文
+  // （TASK-T79-02 缺陷 B）。转块帧见 applyFenceEnterRule。
+  if (action.kind === 'code') {
     return false;
   }
   const nodeType = view.state.schema.nodes[pmNodeNameOf(action.kind)];
@@ -179,6 +202,45 @@ export function applyTableEnterRule(view: EditorView, from: number, to: number):
   return true;
 }
 
+/**
+ * TASK-T79-02 缺陷 B：文本块内键入 `` ``` `` 或 `` ```lang `` 后按 **Enter** → 转代码块。
+ *
+ * 与 applyTableEnterRule 同通道同口径（同一块级范围、同一 RULE_EXEMPT_TYPES 豁免、
+ * 同一「保留原块 id」纪律）。删除字符数 = 判定串全长（含三个反引号与 lang），故转换后
+ * 文档里**零残留反引号**；lang 缺省 = `''`（现行 `` ``` `` + Enter → 空 lang 行为不破）。
+ */
+export function applyFenceEnterRule(view: EditorView, from: number, to: number): boolean {
+  if (from !== to) {
+    return false;
+  }
+  const $from = view.state.doc.resolve(from);
+  const parent = $from.parent;
+  if (!parent.isTextblock || RULE_EXEMPT_TYPES.has(parent.type.name)) {
+    return false;
+  }
+  const blockStart = $from.start();
+  const before = parent.textBetween(0, from - blockStart, undefined, '\ufffc');
+  const action = matchFenceRule(before, false);
+  if (action === null) {
+    return false;
+  }
+  const nodeType = view.state.schema.nodes[pmNodeNameOf('code')];
+  if (nodeType === undefined) {
+    return false;
+  }
+  const tr = view.state.tr;
+  if (action.deleteChars > 0) {
+    tr.delete(from - action.deleteChars, from);
+  }
+  // setNodeMarkup 是全量替换：必须显式带原 id（同 applyInputRule 的身份纪律）
+  tr.setNodeMarkup($from.before($from.depth), nodeType, {
+    id: parent.attrs['id'],
+    lang: action.lang,
+  });
+  view.dispatch(tr.scrollIntoView());
+  return true;
+}
+
 /** Enter 键形态守卫：不带修饰键、非组合期（与 handleTextInput 的 IME 铁律同口径）。 */
 function isPlainEnter(event: KeyboardEvent): boolean {
   return (
@@ -212,12 +274,15 @@ export function createInputRulesPlugin(): Plugin {
         }
         return applyInputRule(view, from, to, text);
       },
-      // R25：`|a|b|` + Enter → 表格块（纯判定见 applyTableEnterRule）
+      // Enter 帧的两条块级规则：先围栏（```lang → code），再表格（|a|b| → table）。
+      // 两者判定串互斥（表格行必以 `|` 起收），顺序不影响正确性，只影响可读性。
       handleKeyDown: (view, event) => {
         if (composing || view.composing || !isPlainEnter(event)) {
           return false;
         }
-        return applyTableEnterRule(view, view.state.selection.from, view.state.selection.to);
+        const from = view.state.selection.from;
+        const to = view.state.selection.to;
+        return applyFenceEnterRule(view, from, to) || applyTableEnterRule(view, from, to);
       },
     },
   });

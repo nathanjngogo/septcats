@@ -104,6 +104,11 @@ import {
   registerLinksIpc,
   type LinksService,
 } from './links';
+import {
+  createPageExportService,
+  registerPageExportIpc,
+  type PageExportService,
+} from './pageExport';
 import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
@@ -363,6 +368,8 @@ interface DatabaseServices {
   templates: TemplatesService;
   links: LinksService;
   lock: LockService;
+  /** R27（T79-01）：页面导出 Markdown（只读消费；写盘只落用户选定目录）。 */
+  pageExport: PageExportService;
 }
 
 /**
@@ -513,6 +520,35 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // T44-01：双链服务——派生索引维护/回链查询；用裸 handle（派生态不进攒段器，
       // 与 search 同款：derived 写不触发同步发布）
       links: createLinksService({ executor: handle }),
+      // R27（T79-01）：页面导出——**全只读消费**（读库 + 读附件目录），写盘只落用户选定
+      // 导出目录；目录选择走系统对话框（取消 = 零落盘），reveal 走 shell.openPath。
+      pageExport: createPageExportService({
+        executor,
+        attachmentsDir: ctx.layout.attachments,
+        activeWorkspaceId: async () => {
+          const workspaces = await pages.listWorkspaces();
+          if (workspaces.activeId === null) {
+            throw new PagesApiError('E_NO_WORKSPACE', '无活动工作区，页面导出无法解析');
+          }
+          return workspaces.activeId;
+        },
+        pickDirectory: async () => {
+          const options = {
+            title: '选择导出目录',
+            properties: ['openDirectory', 'createDirectory'] as Array<'openDirectory' | 'createDirectory'>,
+          };
+          const window = mainWindow;
+          const result =
+            window === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(window, options);
+          if (result.canceled || result.filePaths.length === 0) {
+            return null;
+          }
+          return result.filePaths[0] ?? null;
+        },
+        openPath: async (dir) => {
+          await shell.openPath(dir);
+        },
+      }),
     };
   } catch (error) {
     logger.error(`DbServer 启动失败：${describeError(error)}`);
@@ -844,6 +880,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerWorkbenchTemplatesIpc(createWorkbenchTemplatesService(), dbViewRegistrar());
   // 双链（T44-01）：links:backlinks / links:rebuild
   registerLinksIpc(services?.links ?? null, dbViewRegistrar());
+  // 页面导出（R27 · T79-01）：page:export:preview / confirm / reveal 三通道
+  registerPageExportIpc(services?.pageExport ?? null, dbViewRegistrar());
   // 外部链接（T73-01）：shell:openExternal 唯一出口——协议白名单（仅 http/https）+
   // 审计只记 host（URL 原文不进审计正文）。入口恒可用（不依赖 DbServer）。
   const shellLogger = ctx.logger.forModule('shell');

@@ -1,6 +1,6 @@
 {
   "task": "T71-01",
-  "ranAt": "2026-09-24T01:28:48.375Z",
+  "ranAt": "2026-09-24T09:03:40.373Z",
   "assertions": [
     {
       "step": "setup",
@@ -66,7 +66,7 @@
       "step": "K2|新卡",
       "name": "K2-6 快捷方式卡：目录可选+录入即显+落 settings localStorage",
       "ok": true,
-      "raw": "picker=true cand=1 ls=[{\"pageId\":\"01M38GDKCSW8WKQYDNDKT7N16R\"}] card=\"快捷方式未命名添加快捷方式\""
+      "raw": "picker=true cand=1 ls=[{\"pageId\":\"01M39AEFN0R7NJVTM5Q4BEQ3D9\"}] card=\"快捷方式未命名添加快捷方式\""
     },
     {
       "step": "K2|新卡",

@@ -116,6 +116,10 @@ async function main() {
     check('E1-a 全块型页建成（table 在场）', hasTb, `slashTable=${String(hasTb)}`);
     const pageId = await ipcPageId(page, PAGE_NAME);
     check('E1-b IPC 取到页 id', pageId != null, String(pageId));
+    const ipcBlocks = await page.evaluate(async (pid) => { const r = await window.septcats.blocks.list({ pageId: pid }); return r.blocks.map((b) => ({ type: b.type, content: b.content })); }, pageId);
+    const tbBlock = ipcBlocks.find((b) => b.type === 'table');
+    const tbJson = JSON.stringify(tbBlock === undefined ? null : tbBlock.content);
+    check('E1-d 真相层 blocks.list 表格 content 不降级（含 rows 与格A）', tbBlock !== undefined && tbJson.includes('rows') && tbJson.includes('格A'), tbJson.slice(0, 130));
 
     STEP = 'E2|UI 链+取消零落盘';
     await page.evaluate((pn) => {
@@ -170,8 +174,13 @@ async function main() {
     await wait(900);
     const md3 = walkMd(EXP3, []).map((f) => readFileSync(f, 'utf8')).join('');
     check('E3-d 代码页 fence+内容忠实导出', md3.includes('```') && md3.includes('print("hi")'), md3.slice(0, 120));
-    info('E3-d2 输入规则 ```python 的 lang 落点（现实现观察项）', JSON.stringify({ fenceLang: md3.includes('```python'), pythonAsLine1: /^```\npython/.test(md3) }));
-    check('E3-e 表格格A进表（D-1 方言钉）', (typeof md === 'string') && md.includes('格A'), (typeof md === 'string' ? ((md.split('\n').find((l) => l.includes('格A')) ?? 'no-line')) : 'md-undefined'));
+    const NL = String.fromCharCode(10);
+    const fenceLang = md3.includes('```python');
+    const pythonAsBodyLine1 = md3.includes('```' + NL + 'python');
+    check('E3-d2 围栏 lang 忠实（```python 在场 + python 不作代码正文首行）', fenceLang === true && pythonAsBodyLine1 === false, JSON.stringify({ fenceLang, pythonAsBodyLine1, head: md3.slice(0, 60) }));
+    check('E3-e 表格格A进表（D-1 方言钉）', (typeof md === 'string') && md.includes('格A'), (typeof md === 'string' ? ((md.split(NL).find((l) => l.includes('格A')) ?? 'no-line')) : 'md-undefined'));
+    const tbLine = (typeof md === 'string' ? (md.split(NL).find((l) => l.includes('格A')) ?? '') : '');
+    check('E3-e2 表格行成行（行首为 | 且列数 ≥3）', tbLine.trim().startsWith('|') === true && tbLine.split('|').length >= 4 && tbLine.includes('格A'), JSON.stringify({ line: tbLine.trim().slice(0, 80) }));
 
     STEP = 'E4|子树 scope';
     await page.evaluate((pn) => { const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((e) => (e.textContent ?? '').includes(pn)); if (row != null) row.click(); }, PAGE_NAME);
@@ -205,14 +214,14 @@ async function main() {
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't79-results.json'), JSON.stringify({ task: 'T79-01', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T79-01：${pass} PASS / ${fail} FAIL =====`);
-    if (assertions.length < 12) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 12（静默蒸发守卫）`); }
+    if (assertions.length < 15) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 15（静默蒸发守卫）`); }
     try { await page?.evaluate(() => window.close()); } catch { /* */ }
     await wait(1800);
     try { browser?.close(); } catch { /* */ }
     killTree(child?.pid);
     info('真实数据根未被触碰', `untouched=${String(rootBefore === rootMtime())}`);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
-    process.exitCode = fail === 0 && assertions.length >= 12 ? 0 : 1;
+    process.exitCode = fail === 0 && assertions.length >= 15 ? 0 : 1;
   }
 }
 main().catch((e) => { console.error('FATAL', e); process.exitCode = 3; });

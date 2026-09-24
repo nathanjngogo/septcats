@@ -12,6 +12,8 @@ export interface ToastItem {
   id: string;
   message: string;
   tone?: ToastTone;
+  /** 可选探针锚点：渲染为 `data-testid`（供真机/用例断言特定 toast）。 */
+  testId?: string | undefined;
 }
 
 export interface ToastViewportProps {
@@ -39,7 +41,12 @@ export function ToastViewport({ toasts, onDismiss, className }: ToastViewportPro
       {visible.map((toast) => {
         const tone = toast.tone ?? 'info';
         return (
-          <div key={toast.id} className={clsx('sc-toast__item', `sc-toast__item--${tone}`)} data-tone={tone}>
+          <div
+            key={toast.id}
+            className={clsx('sc-toast__item', `sc-toast__item--${tone}`)}
+            data-tone={tone}
+            data-testid={toast.testId}
+          >
             <Icon icon={TONE_ICON[tone]} size="sm" className="sc-toast__icon" />
             <span className="sc-toast__message">{toast.message}</span>
             <IconButton

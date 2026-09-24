@@ -1,0 +1,60 @@
+{
+  "task": "T77-01",
+  "ranAt": "2026-09-24T14:39:03.150Z",
+  "assertions": [
+    {
+      "step": "C1|代码块语言栏",
+      "name": "C1-a 聚焦代码块→语言栏+换行钮浮出",
+      "ok": true,
+      "detail": "{\"bar\":true,\"wrap\":true}"
+    },
+    {
+      "step": "C1|代码块语言栏",
+      "name": "C1-b 下拉含 python 选项",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "step": "C1|代码块语言栏",
+      "name": "C1-c blur 后淡标签显 python（lang attr 已写）",
+      "ok": true,
+      "detail": "{\"shown\":true,\"text\":\"python\"}"
+    },
+    {
+      "step": "C4|持久化链",
+      "name": "C4-a 写链：truth 层 lang=python（同会话 IPC）",
+      "ok": true,
+      "detail": "{\"id\":\"01M39XN9GVKYH3WDZXKKAGSS00\",\"lang\":\"python\",\"hasX\":true,\"dump\":\"code:{\\\"lang\\\":\\\"python\\\"}:const a = 1;\"}"
+    },
+    {
+      "step": "C4|持久化链",
+      "name": "C4-b 重启还原：truth 层 lang=python 持久",
+      "ok": true,
+      "detail": "{\"id\":\"01M39XN9GVKYH3WDZXKKAGSS00\",\"lang\":\"python\",\"hasX\":true,\"dump\":\"code:{\\\"lang\\\":\\\"python\\\"}:const a = 1;\"}"
+    },
+    {
+      "step": "C4|持久化链",
+      "name": "C4-c 重启后渲染层 lang 标签还原",
+      "ok": true,
+      "detail": "{\"text\":\"python\",\"shown\":true}"
+    },
+    {
+      "step": "C2|wrap 开关（重启后测）",
+      "name": "C2-a 换行钮点击→aria-pressed 翻转",
+      "ok": true,
+      "detail": "{\"clicked\":true,\"before\":\"false\",\"after\":\"true\"}"
+    },
+    {
+      "step": "C3|图片块拖拽柄（新页防污染）",
+      "name": "C3-a 图片块在场→拖拽柄 testid 挂上",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "C5|存活",
+      "name": "C5-1 全流程后应用存活",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

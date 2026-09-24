@@ -79,6 +79,7 @@ function resetStore(): void {
     deleteConfirmId: null,
     lockedIds: new Set<string>(),
     lockDialog: null,
+    exportDialog: null,
     lockRev: 0,
     tabs: [],
   };

@@ -969,4 +969,20 @@ export const enUS = {
     recoveryRequired: 'Recovery code is required',
     passTooShort: 'Password is too short',
   },
+  // R27（T79-01）：page export to Markdown (row menu + scope dialog + toast)
+  pageExport: {
+    menuLabel: 'Export as Markdown…',
+    dialogTitle: 'Export as Markdown',
+    dialogHint: 'Review the scope and file list, then pick a destination folder.',
+    scopeSingle: 'This page only',
+    scopeSubtree: 'Include subpages (subtree)',
+    filesTitle: 'Files to export:',
+    previewLoading: 'Loading preview…',
+    orphansHint: '{n} attachment file(s) missing; placeholders were added to the Markdown.',
+    confirm: 'Export',
+    cancel: 'Cancel',
+    done: 'Exported {pages} page(s) and {assets} attachment(s)',
+    canceled: 'Export canceled',
+    failed: 'Export failed: {message}',
+  },
 } as const;
