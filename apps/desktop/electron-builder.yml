@@ -9,6 +9,10 @@ directories:
 
 # —— 体积护栏（R7：安装器 ≤ 150 MB）——
 asar: true
+# TASK-T75-01 §2：整包最大压缩（默认 normal）。GitHub Release 体验向；
+# 注：`compression` 是 electron-builder **顶层**选项（NsisOptions 无此键，见 scheme.json），
+# 任务书「nsis 段」为笔误 —— 落顶层，登记 DEVIATION-1。
+compression: maximum
 electronLanguages:
   - zh-CN
   - en
@@ -38,6 +42,13 @@ extraResources:
     to: workbench-templates
     filter:
       - "*.json"
+  # TASK-T75-01 §1：随包字体 Noto Sans SC（SIL OFL 1.1）许可文本。OFL 要求分发时随附
+  # 许可副本 —— 源文件由 PM 逐字节落盘（apps/desktop/resources/licenses/OFL-NotoSansSC.txt，
+  # 4388 B，禁改）；打包后落 `<resourcesPath>/licenses/`（extraResources 语义 = asar 之外）。
+  - from: resources/licenses
+    to: licenses
+    filter:
+      - "*.txt"
 
 # —— Win：NSIS per-user（免管理员，支持 /S 静默安装/卸载）——
 win:

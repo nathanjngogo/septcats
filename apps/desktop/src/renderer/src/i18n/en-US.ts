@@ -654,6 +654,8 @@ export const enUS = {
       title: 'About',
       version: 'Version',
       stack: 'Tech Stack',
+      thirdPartyLicense: 'Third-Party Licenses',
+      thirdPartyLicenseFile: 'Noto Sans SC (SIL OFL 1.1) · licenses/OFL-NotoSansSC.txt',
       logo: 'Septcats',
       checkUpdate: 'Check for Updates',
       statusIdle: 'Version {version}. Click to check for updates',

@@ -563,6 +563,12 @@ export function SettingsPage() {
               control={<span className="settings-lab-d">Electron · React · TypeScript · SQLite</span>}
             />
             <SettingsRow
+              title={t('settings.about.thirdPartyLicense')}
+              control={
+                <span className="settings-lab-d">{t('settings.about.thirdPartyLicenseFile')}</span>
+              }
+            />
+            <SettingsRow
               title={t('settings.about.checkUpdate')}
               desc={describeUpdateState(updateState, meta?.version ?? '')}
               control={

@@ -646,6 +646,8 @@ export const zhCN = {
       title: '关于',
       version: '版本',
       stack: '技术栈',
+      thirdPartyLicense: '第三方许可',
+      thirdPartyLicenseFile: 'Noto Sans SC（SIL OFL 1.1）· licenses/OFL-NotoSansSC.txt',
       logo: 'Septcats',
       checkUpdate: '检查更新',
       statusIdle: '当前版本 {version}，点击检查新版本',

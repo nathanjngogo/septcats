@@ -2,6 +2,7 @@
   "name": "septcats",
   "version": "0.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Septcats - 本地优先的块式笔记与轻量数据库工具（Monorepo）",
   "type": "module",
   "packageManager": "pnpm@9.15.9",

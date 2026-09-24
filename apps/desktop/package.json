@@ -2,6 +2,7 @@
   "name": "@septcats/desktop",
   "version": "0.4.2",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Septcats 桌面壳（Electron + React，electron-vite 三进程脚手架）",
   "author": "Septcats",
   "main": "./out/main/index.js",

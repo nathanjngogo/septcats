@@ -510,3 +510,16 @@ describe('设置页 · AI 助手（T18-02）', () => {
     expect(cloud.disabled).toBe(true);
   });
 });
+
+describe('设置页 · 关于块第三方许可（TASK-T75-01 §1）', () => {
+  it('第三方许可行渲染，文案指向随包路径 licenses/OFL-NotoSansSC.txt', async () => {
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    // 一行级文案行（无新按钮/浮层）：标题 + 右侧随包路径文本，均走 t()
+    const row = screen.getByText('第三方许可').closest('.settings-row');
+    expect(row).not.toBeNull();
+    expect(row?.textContent).toContain('Noto Sans SC（SIL OFL 1.1）');
+    expect(row?.textContent).toContain('licenses/OFL-NotoSansSC.txt');
+  });
+});
