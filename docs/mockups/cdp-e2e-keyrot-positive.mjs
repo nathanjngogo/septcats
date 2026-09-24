@@ -1,4 +1,5 @@
 /* 正面快检：装的 0.1.2（新 keygen 重打包）→ check 应 available 0.1.3（验签过=feedUrl 接线与轮换公钥双实证） */
+/* @probe-readonly —— 只读：仅走密钥轮换/锁定态读路径，无建页/写块/落盘 */
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 function sh(cmd, t = 30000) { try { return execFileSync('powershell', ['-NoProfile', '-Command', cmd], { encoding: 'utf8', timeout: t }).trim(); } catch (e) { return 'SH_ERR'; } }

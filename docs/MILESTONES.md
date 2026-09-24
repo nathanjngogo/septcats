@@ -206,4 +206,5 @@
 - [ ] ~~原 S4 批次 2~~：
 - [ ] **mac 签名与运行**（唯一需老板支出项）：买 Apple Developer ID 后做签名/公证 + macOS CI runner 真跑 credentials/keychain（待老板拍「买/不买」）
 - [ ] ~~原 mac 登记~~：（本机 Windows + 发布清单 §0 的 worktree 构建法）
+- [ ] **GC 物理清除欠账（M8·老板拍板开启同步时随账出包）**：`purgePage` 注释承诺「物理清除归 GC 任务」（`main/pages.ts`），但全仓 grep 无 GC 实现——purge 后只留 `deleted_at=0` 墓碑行与其块行（不可达、UI 不可见、FTS 已清）。09-24 真实库探针页清理的 34 页残留（34 墓碑 + 90 块行）即该欠账的实例；开启同步前应有 GC pass 顺手收口（含附件孤儿回收对账）。
 - [x] ~~T19-05-1 双空同开重复种子~~ → **已修**（attach 回 `ledgerHasCrdt` 种子门，editor `attach({seed})` 最小面；单测 §H×2 + editor 158 钉住；真机冒烟复跑 ALL-PASS 10/10。残留边界：attach 时刻双方账本**真同时**为空仍各自种子——网盘轮询天然错峰、概率极低，二期状态向量协商根治）

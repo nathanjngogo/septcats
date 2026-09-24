@@ -1,4 +1,5 @@
 /* PM 真机验收 M10-B 主链路：0.1.1 → dev feed(已验签 0.1.2) → check→download→install→自动重启 → 已是最新 */
+/* @probe-readonly —— 只读：更新链状态机断言，不写应用数据 */
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 

@@ -1,4 +1,5 @@
 /* 升级后验证：重启应用带 CDP → 检查更新应回「已是最新（0.1.1）」 */
+/* @probe-readonly —— 只读：已更新态检查，不写应用数据 */
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 

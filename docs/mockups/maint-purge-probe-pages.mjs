@@ -1,4 +1,5 @@
 /* maint-purge-probe-pages.mjs —— 真实库维护一次性脚本（老板 2026-09-24 授权）
+ * @probe-realroot —— 维护脚本：按老板授权清理真实库探针页，走产品 remove/purge 通道（白名单双门闸）
  * 背景：T76~T79 探针漏钉 rootPath 夹具，测试页写进了真实数据根 C:\\Users\\Administrator\\.septcats。
  * 纪律：① 白名单逐 id + 标题模式二次校验，任一不符即中止；② 走产品自身通道 pages.remove→purge（op-log/FTS 一致）；
  *       ③ 备份已先行（_scratch/reallib-backup-*）；④ 删后树 + 只读库双复核；⑤ 只处理白名单，绝不触碰老板自有页。

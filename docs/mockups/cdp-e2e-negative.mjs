@@ -1,4 +1,5 @@
 /* M10-B 负向三连 v2：⑩篡改 yml ⑪缺 sig ⑫无 dev 门 —— 每步硬断言（按钮真找到、实例真换新） */
+/* @probe-readonly —— 只读：负向安全断言（拒绝链），不写数据 */
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';

@@ -1,4 +1,5 @@
 /* maint-verify-real-lib.mjs —— 清理后只读复核（真实库；零写操作，仅读 IPC + DOM）*/
+/* @probe-readonly —— 维护复核：只读 tree/recent/favorites/DOM，零写操作 */
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
 import { join } from 'node:path';
