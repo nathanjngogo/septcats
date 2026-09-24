@@ -616,9 +616,15 @@ function svgProps(size: number | undefined, color: string | undefined, className
   };
 }
 
-/** 普通 glyph 组件工厂：整枚 glyph 一组 rect。 */
-function makeGlyph(name: PixelGlyphName) {
-  const runs = scanRuns(PIXEL_GLYPHS[name]);
+/**
+ * 通用 glyph 组件工厂：按 16×16 ASCII 画生成「整枚一组 rect」的像素组件。
+ *
+ * T74-01：族外 glyph（`./icons` 收编的房子/待办/店铺/调色板）复用同一条渲染管线——
+ * 同一 `scanRuns` 合并规则 + 同一 tone→opacity 档，这是「原应用层局部 glyph 迁移前后
+ * 外观零变化」的形式保证；族内 `makeGlyph` 是它的薄封装。
+ */
+export function createPixelGlyph(grid: readonly string[], displayName: string) {
+  const runs = scanRuns(grid);
   function PixelGlyph({ size, color, className, ...rest }: PixelGlyphProps) {
     return (
       <svg {...rest} {...svgProps(size, color, className)}>
@@ -626,8 +632,13 @@ function makeGlyph(name: PixelGlyphName) {
       </svg>
     );
   }
-  PixelGlyph.displayName = `Pixel${name}`;
+  PixelGlyph.displayName = displayName;
   return PixelGlyph;
+}
+
+/** 普通 glyph 组件工厂：整枚 glyph 一组 rect。 */
+function makeGlyph(name: PixelGlyphName) {
+  return createPixelGlyph(PIXEL_GLYPHS[name], `Pixel${name}`);
 }
 
 /** 两态 glyph（AiRobot）：眼部/天线单独成组，供 CSS 按开合态切换明暗。 */

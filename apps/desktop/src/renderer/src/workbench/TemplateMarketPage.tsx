@@ -14,7 +14,7 @@
  * 零外联（模板 JSON 不内嵌 URL 请求，未新增 openExternal 通道）。
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, Icon, Switch, X } from '@septcats/ui';
+import { Button, Dialog, Icon, PixelShopGlyph, Switch, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { pushToast } from '../state/pages';
 import { templatesActions, useTemplates } from '../state/templates';
@@ -24,7 +24,6 @@ import {
   useWorkbench,
 } from './state';
 import { CARD_DEFS } from './cards';
-import { PixelShopGlyph } from './pixelGlyph';
 import {
   applyTemplateSeeds,
   applyTemplateToWorkbench,

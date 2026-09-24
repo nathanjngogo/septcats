@@ -86,3 +86,8 @@ export {
 } from './pixelIcons';
 export { PIXEL_GLYPHS, PIXEL_GLYPH_GRID, TONE_OPACITY, GLYPH_TONES } from './pixelIcons';
 export type { PixelGlyphName, PixelGlyphProps } from './pixelIcons';
+
+// T74-01：族外 glyph（房子/待办/店铺/调色板 —— 原应用层局部像素画收编进设计系统）。
+// 与族内 glyph 同一出口、同一渲染管线；调用点仍旧 `icon={X}` / `<X size={n} />`。
+export { PIXEL_GLYPHS_EXTRA, PixelHomeGlyph, PixelPaletteGlyph, PixelShopGlyph, PixelTodoGlyph } from './icons';
+export type { ExtraPixelGlyphName } from './icons';

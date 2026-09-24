@@ -1,6 +1,6 @@
 {
   "task": "TASK-T58-01 真机取证（AI 钮像素化 + 全仓图标像素族接线）",
-  "ranAt": "2026-09-22T07:34:37.133Z",
+  "ranAt": "2026-09-24T01:25:54.402Z",
   "appdir": "E:\\Hermes Agent工作空间\\Septcats\\apps\\desktop",
   "method": "renderer CDP (playwright-core over --remote-debugging-port) 量测/点击/截图 + Emulation.setDeviceMetricsOverride 放大 + 自写 PNG 解码逐像素采样",
   "fixture": {
@@ -10,8 +10,8 @@
   },
   "isolation": {
     "realRoot": "C:\\Users\\Administrator\\.septcats",
-    "realRootMtimeBefore": "1789991614995.1055",
-    "realRootMtimeAfter": "1789991614995.1055",
+    "realRootMtimeBefore": "1790212008806.7554",
+    "realRootMtimeAfter": "1790212008806.7554",
     "untouched": true
   },
   "screenshots": [
@@ -30,8 +30,22 @@
   },
   "phases": {
     "toolbar": {
-      "count": 5,
+      "count": 7,
       "rows": [
+        {
+          "label": "工作台模板市场",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 52,
+          "stroke": null
+        },
+        {
+          "label": "配色画廊",
+          "viewBox": "0 0 16 16",
+          "crisp": "crispEdges",
+          "rects": 37,
+          "stroke": null
+        },
         {
           "label": "搜索（Ctrl+K）",
           "viewBox": "0 0 16 16",
@@ -271,13 +285,13 @@
       ],
       "iconBox": {
         "x": 970,
-        "y": 11.5,
+        "y": 11,
         "width": 16,
         "height": 16
       },
       "buttonBox": {
         "x": 964,
-        "y": 5.5,
+        "y": 5,
         "width": 28,
         "height": 28
       },
@@ -494,13 +508,13 @@
       ],
       "iconBox": {
         "x": 970,
-        "y": 11.5,
+        "y": 11,
         "width": 16,
         "height": 16
       },
       "buttonBox": {
         "x": 964,
-        "y": 5.5,
+        "y": 5,
         "width": 28,
         "height": 28
       },
@@ -708,13 +722,13 @@
       ],
       "iconBox": {
         "x": 970,
-        "y": 11.5,
+        "y": 11,
         "width": 16,
         "height": 16
       },
       "buttonBox": {
         "x": 964,
-        "y": 5.5,
+        "y": 5,
         "width": 28,
         "height": 28
       },
@@ -744,19 +758,19 @@
       "step": "G1|toolbar-family",
       "name": "[info] 顶栏图标钮（原始）",
       "ok": null,
-      "raw": "[{\"label\":\"搜索（Ctrl+K）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":16,\"stroke\":null},{\"label\":\"AI 对话（Ctrl+J）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":25,\"stroke\":null},{\"label\":\"导入\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":10,\"stroke\":null},{\"label\":\"布局\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":30,\"stroke\":null},{\"label\":\"设置\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":24,\"stroke\":null}]"
+      "raw": "[{\"label\":\"工作台模板市场\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":52,\"stroke\":null},{\"label\":\"配色画廊\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":37,\"stroke\":null},{\"label\":\"搜索（Ctrl+K）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":16,\"stroke\":null},{\"label\":\"AI 对话（Ctrl+J）\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":25,\"stroke\":null},{\"label\":\"导入\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":10,\"stroke\":null},{\"label\":\"布局\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":30,\"stroke\":null},{\"label\":\"设置\",\"viewBox\":\"0 0 16 16\",\"crisp\":\"crispEdges\",\"rects\":24,\"stroke\":null}]"
     },
     {
       "step": "G1|toolbar-family",
       "name": "G1-1 顶栏图标钮一个不漏都是像素族（viewBox 0 0 16 16 + crispEdges + rect 网格）",
       "ok": true,
-      "raw": "钮数=5 非像素族=[]"
+      "raw": "钮数=7 非像素族=[]"
     },
     {
       "step": "G1|toolbar-family",
       "name": "G1-2 无描边残留（phosphor 时代 stroke-width 属性在顶栏图标上一律不存在）",
       "ok": true,
-      "raw": "搜索（Ctrl+K）:null AI 对话（Ctrl+J）:null 导入:null 布局:null 设置:null"
+      "raw": "工作台模板市场:null 配色画廊:null 搜索（Ctrl+K）:null AI 对话（Ctrl+J）:null 导入:null 布局:null 设置:null"
     },
     {
       "step": "G2|pixel-proof",
@@ -828,13 +842,13 @@
       "step": "G4|screens",
       "name": "[info] 设置页/整屏图标族抽样",
       "ok": null,
-      "raw": "{\"count\":17,\"allPixel\":true}"
+      "raw": "{\"count\":20,\"allPixel\":true}"
     },
     {
       "step": "G4|screens",
       "name": "G4-2 整屏图标（侧栏 + 顶栏 + 设置页）零漏网：全部是像素族几何（无 phosphor 混族残留）",
       "ok": true,
-      "raw": "{\"count\":17,\"allPixel\":true}"
+      "raw": "{\"count\":20,\"allPixel\":true}"
     },
     {
       "step": "G4|screens",

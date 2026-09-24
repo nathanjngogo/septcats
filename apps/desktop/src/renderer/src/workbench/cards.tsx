@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { CheckCircle, Circle, Clock, FolderSimple, Icon, Note, Plus, Star, X } from '@septcats/ui';
+import { CheckCircle, Circle, Clock, FolderSimple, Icon, Note, PixelTodoGlyph, Plus, Star, X } from '@septcats/ui';
 import { t } from '../i18n';
 import {
   ancestorsOf,
@@ -27,7 +27,6 @@ import {
 import type { PageNodeView, SeptcatsApi } from '../../../types/window';
 import { workbenchActions, type WorkbenchCardId } from './state';
 import { WorkbenchPixelButton } from './WorkbenchCard';
-import { PixelTodoGlyph } from './pixelGlyph';
 import {
   addTodo,
   countDbRows,

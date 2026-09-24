@@ -51,12 +51,12 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     expect(names.length).toBeGreaterThan(15);
     const unique = [...new Set(names)];
     const table = ui as unknown as Record<string, unknown>;
-    // T66-01 显式豁免（PM 收口）：工作台两枚局部 glyph 住 workbench/pixelGlyph.tsx，
-    // 是 16 网格像素画、画法逐格拷贝 makeGlyph（同族契约）；T65 合入后 PM 统一收编
-    // 进 @septcats/ui 像素族并撤本豁免——撤豁免即红，不放行蔓延。
-    // T65-01 追加：调色板入口钮的 PixelPaletteGlyph 同理住 theme/pixelGlyph.tsx（像素族
-    // 无对应 glyph，主文件禁改，DEVIATION 待 PM 收编）。
-    const T66_LOCAL_GLYPHS = new Set(['PixelHomeGlyph', 'PixelTodoGlyph', 'PixelPaletteGlyph', 'PixelShopGlyph']);
+    // T66-01 / T65-01 的历史豁免名单（工作台房子·待办·店铺 + 调色板四枚局部 glyph）
+    // 已于 T74-01（2026-09-24）**清零**：四枚全部迁进 @septcats/ui（`src/icons.tsx`，
+    // 复用 pixelIcons 的 createPixelGlyph 同一渲染管线），应用层两份局部实现已删除。
+    // 本集合自此为空——再出现任何名字落不进 ui 出口即红，豁免不放行蔓延。
+    const T66_LOCAL_GLYPHS = new Set<string>([]);
+    expect(T66_LOCAL_GLYPHS.size, 'T74-01 收口后豁免名单必须为空（glyph 一律住 @septcats/ui）').toBe(0);
     const missing = unique.filter(
       (name) => typeof table[name] !== 'function' && !T66_LOCAL_GLYPHS.has(name),
     );
@@ -64,6 +64,24 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     // 覆盖清单抽查（T58 前就在用的高频图标）
     for (const name of ['Plus', 'Trash', 'X', 'MagnifyingGlass', 'CaretDown', 'AiRobot', 'FileText']) {
       expect(unique, `${name} 的调用点消失（扫描面失灵或调用点被误改）`).toContain(name);
+    }
+  });
+
+  it('T74-01 收口：四枚原局部 glyph 已是 @septcats/ui 出口，应用层零局部实现残留', () => {
+    const table = ui as unknown as Record<string, unknown>;
+    for (const name of ['PixelHomeGlyph', 'PixelTodoGlyph', 'PixelShopGlyph', 'PixelPaletteGlyph']) {
+      expect(typeof table[name], `${name} 未从 @septcats/ui 出口`).toBe('function');
+    }
+    // 反蔓延：消费目录内不许再出现局部 glyph 工厂（画法拷贝是本单要还的债）
+    const leftovers = consumerFiles.filter((file) =>
+      /makeLocalGlyph|LocalGlyphProps/.test(readFileSync(file, 'utf8')),
+    );
+    expect(leftovers.map((f) => f.replace(REPO, ''))).toEqual([]);
+    for (const rel of ['workbench', 'theme']) {
+      expect(
+        existsSync(join(REPO, 'apps', 'desktop', 'src', 'renderer', 'src', rel, 'pixelGlyph.tsx')),
+        `${rel}/pixelGlyph.tsx 应已删除（T74-01 收编）`,
+      ).toBe(false);
     }
   });
 

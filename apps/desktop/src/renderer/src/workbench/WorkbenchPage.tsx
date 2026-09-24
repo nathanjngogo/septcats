@@ -12,7 +12,7 @@
  * 数据面全走现成通道 / tree 缓存 / settings localStorage；main/preload/shared/ipc 零改动。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon, Menu, X } from '@septcats/ui';
+import { Icon, Menu, PixelHomeGlyph, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { pagesActions } from '../state/pages';
 import {
@@ -21,7 +21,6 @@ import {
   type WorkbenchCardId,
 } from './state';
 import { WorkbenchCard, WorkbenchPixelButton } from './WorkbenchCard';
-import { PixelHomeGlyph } from './pixelGlyph';
 import { CARD_DEFS, wbcardRead, wbcardWrite, type CardApi } from './cards';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
 import { greetingPhase } from './work';

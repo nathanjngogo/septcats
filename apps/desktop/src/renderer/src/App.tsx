@@ -7,6 +7,7 @@ import {
   GearSix,
   IconButton,
   MagnifyingGlass,
+  PixelShopGlyph,
   Plus,
   SidebarSimple,
 } from '@septcats/ui';
@@ -39,7 +40,6 @@ import { pageTypeOf, pagesActions, pagesStore, pagesBreadcrumbItems, pushToast, 
 import { pageWidthActions } from './state/pageWidth';
 import { WorkbenchPage } from './workbench/WorkbenchPage';
 import { workbenchActions, useWorkbench } from './workbench/state';
-import { PixelShopGlyph } from './workbench/pixelGlyph';
 import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import { paletteActions as themePaletteActions, OPEN_THEME_GALLERY_EVENT } from './theme/paletteState';
@@ -556,8 +556,8 @@ export function App() {
           <>
             {/* T72-01 §范围1：顶栏房子钮 = 工作台模板市场入口（Alt+H / 命令面板同效）。
                 原「我的工作台」home 入口保留为市场内的 workbench-open 行内钮（见
-                TemplateMarketPage）。glyph 为 workbench 目录内局部自绘（T65 红线：
-                pixelIcons.tsx 不动；DEVIATION：合并后由 PM 收编进族）。 */}
+                TemplateMarketPage）。glyph 曾为应用层局部自绘，T74-01 已收编进
+                @septcats/ui（packages/ui/src/icons.tsx），调用点零改动。 */}
             <IconButton
               icon={PixelShopGlyph}
               label={t('app.workbenchMarketLabel')}
@@ -565,8 +565,8 @@ export function App() {
               data-testid="workbench-market-open"
               onClick={openWorkbenchMarket}
             />
-            {/* T65-01 §1.2：顶栏调色板入口钮（学 workbench-open 接线；glyph 局部自绘，
-                像素族无对应 glyph，禁改 pixelIcons 主文件，DEVIATION 待 PM 收编）。 */}
+            {/* T65-01 §1.2：顶栏调色板入口钮（学 workbench-open 接线；glyph 曾局部自绘，
+                T74-01 已收编进 @septcats/ui，调用点零改动）。 */}
             <ThemePaletteButton
               ariaPressed={themeGalleryOpen}
               onClick={() => {
