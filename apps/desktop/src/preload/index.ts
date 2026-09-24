@@ -19,6 +19,7 @@ import {
   PAGES_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
+  SHELL_CHANNELS,
   SYNC_CHANNELS,
   TEMPLATES_CHANNELS,
   LINKS_CHANNELS,
@@ -258,6 +259,13 @@ const api: SeptcatsApi = {
     onAsk: (listener) => subscribe(CLOSE_CHANNELS.ask, listener),
     decide: (input) =>
       ipcRenderer.invoke(CLOSE_CHANNELS.decide, input) as ReturnType<SeptcatsApi['close']['decide']>,
+  },
+  // T73-01：外部链接（shell.openExternal 包装；协议白名单 + 审计只记 host）
+  shell: {
+    openExternal: (input) =>
+      ipcRenderer.invoke(SHELL_CHANNELS.openExternal, input) as ReturnType<
+        SeptcatsApi['shell']['openExternal']
+      >,
   },
 };
 

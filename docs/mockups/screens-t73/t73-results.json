@@ -1,0 +1,60 @@
+{
+  "task": "T73-01",
+  "ranAt": "2026-09-24T01:07:35.560Z",
+  "assertions": [
+    {
+      "step": "H|通道护栏",
+      "name": "H-a 面在场（shell.openExternal 函数）",
+      "ok": true,
+      "detail": "face=true"
+    },
+    {
+      "step": "H|通道护栏",
+      "name": "H-b file:// 拒绝 E_PROTOCOL",
+      "ok": true,
+      "detail": "{\"ok\":false,\"error\":{\"code\":\"E_PROTOCOL\",\"message\":\"协议不允许：file:\"}}"
+    },
+    {
+      "step": "H|通道护栏",
+      "name": "H-c javascript: 拒绝 E_PROTOCOL",
+      "ok": true,
+      "detail": "{\"ok\":false,\"error\":{\"code\":\"E_PROTOCOL\",\"message\":\"协议不允许：javascript:\"}}"
+    },
+    {
+      "step": "H|通道护栏",
+      "name": "H-d 空白串拒绝 E_EMPTY",
+      "ok": true,
+      "detail": "{\"ok\":false,\"error\":{\"code\":\"E_EMPTY\",\"message\":\"URL 不能为空\"}}"
+    },
+    {
+      "step": "H|通道护栏",
+      "name": "H-e 畸形拒绝（结构化不抛）",
+      "ok": true,
+      "detail": "{\"ok\":false,\"error\":{\"code\":\"E_PROTOCOL\",\"message\":\"URL 无法解析（畸形）\"}}"
+    },
+    {
+      "step": "H|通道护栏",
+      "name": "H-f 非字符串 url 拒绝 E_MALFORMED",
+      "ok": true,
+      "detail": "{\"ok\":false,\"error\":{\"code\":\"E_MALFORMED\",\"message\":\"url 必须是字符串\"}}"
+    },
+    {
+      "step": "B|书签卡接线",
+      "name": "B-a home 在场",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "step": "B|书签卡接线",
+      "name": "B-b 添加带 URL 书签→open 钮出现",
+      "ok": true,
+      "detail": "added=clicked openBtn=1"
+    },
+    {
+      "step": "Z|存活",
+      "name": "Z-1 应用存活",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

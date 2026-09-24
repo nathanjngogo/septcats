@@ -123,7 +123,7 @@ export const enUS = {
     bookmarkTitle: 'Title (optional)',
     bookmarkSubmit: 'Save',
     bookmarkBadUrl: 'URL must start with http:// or https://',
-    bookmarkRecorded: 'Saved (no jump in this build)',
+    bookmarkOpenFailed: 'Failed to open link',
     cardLibstats: 'Library stats',
     cardLibstatsDesc: "Overview of the current library's pages",
     libstatsPages: 'Pages',

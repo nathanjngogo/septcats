@@ -8,6 +8,8 @@ import type {
   CloseDecisionInput,
   EditorFlushAckInput,
   MenuActionId,
+  ShellOpenInput,
+  ShellOpenResult,
 } from '../shared/ipc';
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
@@ -458,6 +460,17 @@ export interface SeptcatsLockApi {
   remove(input: { pageId: string; pass: string }): Promise<{ ok: true }>;
 }
 
+/**
+ * 外部链接（TASK-T73-01）。通道与 `src/shared/ipc.ts` 的 SHELL_CHANNELS 一对一。
+ * 安全护栏：main 侧仅放行 http:/https:（其余结构化拒绝）；结果不抛异常——
+ * 失败经 `error.code`（E_PROTOCOL / E_EMPTY / E_MALFORMED / E_OPEN_FAILED）透传。
+ * 隐私红线：审计只记 host，URL 原文不进审计正文。
+ */
+export interface SeptcatsShellApi {
+  /** 用系统默认浏览器打开外部链接；仅 http/https 放行。 */
+  openExternal(input: ShellOpenInput): Promise<ShellOpenResult>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -499,6 +512,8 @@ export interface SeptcatsApi {
   menu: SeptcatsMenuApi;
   /** 关窗协作（T54-01：冲刷握手 + 自绘询问框）。 */
   close: SeptcatsCloseApi;
+  /** 外部链接（TASK-T73-01：shell.openExternal，协议白名单）。 */
+  shell: SeptcatsShellApi;
 }
 
 declare global {

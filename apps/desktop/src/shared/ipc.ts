@@ -474,3 +474,34 @@ export const CLOSE_CHANNELS = {
   ask: CHANNEL_CLOSE_ASK,
   decide: CHANNEL_CLOSE_DECIDE,
 } as const;
+
+// ---------------------------------------------------------------------------
+// 外部链接（TASK-T73-01）：`shell.openExternal` 包装通道。安全护栏=仅放行
+// http:/https:（new URL 解析 + 协议白名单），其余一律结构化拒绝（E_PROTOCOL /
+// E_EMPTY / E_MALFORMED）；隐私红线=审计只记 host，URL 原文绝不进审计正文。
+// 零外联不变：只在用户点击时触发，启动无自起请求。通道名单一来源本文件。
+// ---------------------------------------------------------------------------
+
+/** renderer → main：{url} → {ok:true} | {ok:false, error:{code,message}}。 */
+export const CHANNEL_SHELL_OPEN_EXTERNAL = 'shell:openExternal';
+
+export const SHELL_CHANNELS = {
+  openExternal: CHANNEL_SHELL_OPEN_EXTERNAL,
+} as const;
+
+export type ShellChannel = (typeof SHELL_CHANNELS)[keyof typeof SHELL_CHANNELS];
+
+/** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
+export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
+
+export interface ShellOpenInput {
+  url: string;
+}
+
+export interface ShellOpenError {
+  code: ShellErrorCode;
+  message: string;
+}
+
+/** 结构化结果（不抛异常：失败经 error.code 透传，供 renderer toast）。 */
+export type ShellOpenResult = { ok: true } | { ok: false; error: ShellOpenError };

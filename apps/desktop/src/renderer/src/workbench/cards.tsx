@@ -949,7 +949,8 @@ function QuoteCardBody({ api }: { api: CardApi }) {
 }
 
 // --- bookmarks：链接收藏（settings bookmarks.list: [{url,title}]） ---
-// DEVIATION D-1：window.septcats 无 openExternal 通道 → 点击只做收藏记录、不跳转。
+// T73-01：条目有 URL 时点击经 `window.septcats.shell.openExternal` 跳系统浏览器
+// （main 侧协议白名单护栏）；失败（含协议拒绝）给 toast。收藏/取消交互不变。
 
 interface Bookmark {
   url: string;
@@ -1014,6 +1015,25 @@ function BookmarksCardBody({ api }: { api: CardApi }) {
     [items, commit],
   );
 
+  /** T73-01：跳系统浏览器（失败/协议拒绝 → toast）。桥未接时静默（降级态不误报）。 */
+  const openBookmark = useCallback(
+    (target: string): void => {
+      const shellApi = septcatsApi()?.shell;
+      if (shellApi === undefined) {
+        return;
+      }
+      const failed = (): void => {
+        pushToast(api.t('workbench.bookmarkOpenFailed'), 'danger');
+      };
+      void shellApi.openExternal({ url: target }).then((result) => {
+        if (!result.ok) {
+          failed();
+        }
+      }, failed);
+    },
+    [api],
+  );
+
   return (
     <div className="wb-bookmarks" data-testid="wb-bookmarks">
       {items.length === 0 && !adding ? (
@@ -1029,8 +1049,7 @@ function BookmarksCardBody({ api }: { api: CardApi }) {
               className="wb-row"
               data-testid={`wb-bookmarks-open-${item.url}`}
               onClick={() => {
-                // D-1：无 openExternal 通道，仅做收藏记录（点击不跳转）
-                pushToast(api.t('workbench.bookmarkRecorded'), 'success');
+                openBookmark(item.url);
               }}
             >
               <span className="wb-row__title">{item.title}</span>

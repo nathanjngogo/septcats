@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings, writeSettings } from '@septcats/platform';
@@ -104,6 +104,7 @@ import {
   registerLinksIpc,
   type LinksService,
 } from './links';
+import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
   toImporterError,
@@ -843,6 +844,18 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerWorkbenchTemplatesIpc(createWorkbenchTemplatesService(), dbViewRegistrar());
   // 双链（T44-01）：links:backlinks / links:rebuild
   registerLinksIpc(services?.links ?? null, dbViewRegistrar());
+  // 外部链接（T73-01）：shell:openExternal 唯一出口——协议白名单（仅 http/https）+
+  // 审计只记 host（URL 原文不进审计正文）。入口恒可用（不依赖 DbServer）。
+  const shellLogger = ctx.logger.forModule('shell');
+  registerShellIpc(
+    createShellService({
+      openExternal: (url) => shell.openExternal(url),
+      log: (message, audit) => {
+        shellLogger.info(message, audit);
+      },
+    }),
+    dbViewRegistrar(),
+  );
 
   // 同步运行时（M8b）：status / setEnabled / now 三通道 + 状态推流（sync:state 在
   // bootstrapDatabase 的 onState 里广播）。runtime 缺失时统一回 E_INVARIANT。

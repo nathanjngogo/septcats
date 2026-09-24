@@ -124,7 +124,7 @@ export const zhCN = {
     bookmarkTitle: '标题（可选）',
     bookmarkSubmit: '收藏',
     bookmarkBadUrl: '网址须以 http:// 或 https:// 开头',
-    bookmarkRecorded: '已收藏（当前版本不跳转）',
+    bookmarkOpenFailed: '打开链接失败',
     cardLibstats: '库统计',
     cardLibstatsDesc: '当前库的页面与收藏概览',
     libstatsPages: '页面',
