@@ -61,6 +61,11 @@ async function mainEval(expression) {
 
 async function main() {
   mkdirSync(UD, { recursive: true }); mkdirSync(ROOT, { recursive: true });
+  writeFileSync(
+    `${UD}\\septcats.settings.json`,
+    JSON.stringify({ schema: 1, rootPath: ROOT, theme: 'light', locale: 'zh-CN', privacy: { telemetry: false, linkPreviewOnType: true }, editor: { defaultEditMode: 'rich', spellcheck: true }, data: { note: '' }, sync: { enabled: false, encrypted: false, relay: '' } }, null, 2),
+    'utf8',
+  );
   writeFileSync(join(ROOT, 'layout.root'), ROOT);
   for (const pid of listeningPids(INSPECT)) killTree(pid);
   console.log('启动装包 exe:', EXE);

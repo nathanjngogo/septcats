@@ -11,6 +11,7 @@ const REPO = 'E:/Hermes Agent工作空间/Septcats';
 const APPDIR = join(REPO, 'apps', 'desktop');
 const RUN = join(REPO, '..', '_scratch', 't73-e2e');
 const UD = `${RUN}\\ud`;
+const ROOT = join(RUN, 'data');
 const SHOTS = join(REPO, 'docs', 'mockups', 'screens-t73');
 const PORT = 9234;
 const ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
@@ -39,6 +40,12 @@ async function launch() {
 async function main() {
   rmSync(RUN, { recursive: true, force: true });
   mkdirSync(UD, { recursive: true });
+  mkdirSync(ROOT, { recursive: true });
+  writeFileSync(
+    `${UD}\\septcats.settings.json`,
+    JSON.stringify({ schema: 1, rootPath: ROOT, theme: 'light', locale: 'zh-CN', privacy: { telemetry: false, linkPreviewOnType: true }, editor: { defaultEditMode: 'rich', spellcheck: true }, data: { note: '' }, sync: { enabled: false, encrypted: false, relay: '' } }, null, 2),
+    'utf8',
+  );
   mkdirSync(SHOTS, { recursive: true });
   const rootBefore = rootMtime();
   let child = null; let browser = null; let page = null;
