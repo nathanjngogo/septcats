@@ -1,6 +1,6 @@
 # TASK-T78-01 · 跨块多选与批量操作（R26 第二单）
 
-> PRD=`docs/PRD-R26-编辑器体验包.md` §2（必读）。**基线 = main 含 T77 收口提交（等 T77 合入后开工，禁并行）。**
+> PRD=`docs/PRD-R26-编辑器体验包.md` §2（必读）。**基线 = main `750b4f4`（T77 已合入：CodeBarView/image 拖拽柄已就位，报告 §8 含真机 9/0）。**
 > 工作目录=主树 `E:\Hermes Agent工作空间\Septcats`（分支 main）。禁碰 git；不建表、不加依赖。
 > 开工侦察三问写报告 §0：① BlockControls 菜单开态与 `onAction` 宿主链（PageView→EditSession）现结构——多选态怎么插进「意图发送」模式最薄；② `dnd.ts`（123 行，纯函数 planDrop）对「一次拖多块」的适配面：DropPlan 是否已按块列表工作还是单块假设，列出最小改法；③ 撤销链现状（ops 入段事务边界；**不要求**新增撤销语义——批量=N 个单块 op 同事务提交，undo 粒度天然=一次提交即一步）。
 
@@ -25,4 +25,4 @@
 非连续 ctrl+click 多选、跨页多选、多选拖拽的动画美化、批量 undo 的「一步撤销多步」新语义。
 
 ## 交付
-报告 `docs/tasks/TASK-T78-01-report.md`（§0 侦察三问 → §6 门禁，骨架待 PM 建）。门禁四件套原始输出（基线=T77 合入后实测值，只增不减）。收尾打印 `CB-T78-01-EXIT=0`。
+报告 `docs/tasks/TASK-T78-01-report.md`（§0 侦察三问 → §6 门禁，骨架待 PM 建）。门禁四件套原始输出（基线=desktop **1100** / editor **221** / ui **168** / tsc **0** / no-magic ✓，只增不减）。收尾打印 `CB-T78-01-EXIT=0`。
