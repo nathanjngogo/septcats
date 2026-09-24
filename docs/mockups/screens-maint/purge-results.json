@@ -1,0 +1,338 @@
+{
+ "startedAt": "2026-09-24T14:09:09.662Z",
+ "realRoot": "C:\\Users\\Administrator\\.septcats",
+ "whitelist": 34,
+ "removed": [
+  {
+   "id": "01M34P0VYP4PXZQTABRCQ45C2E",
+   "title": "诊断页",
+   "deleted": 1
+  },
+  {
+   "id": "01M38WZGBY2X8C0QS3V6CWWWG4",
+   "title": "T76 表格页",
+   "deleted": 1
+  },
+  {
+   "id": "01M38X128MPAVQA00X22EJAJNM",
+   "title": "T76 表格页",
+   "deleted": 1
+  },
+  {
+   "id": "01M38X32M2KV4EP1GV0WVD0278",
+   "title": "T76 表格页",
+   "deleted": 1
+  },
+  {
+   "id": "01M3971JYV0G3JBSNXPSMAJ4AZ",
+   "title": "T77 代码页",
+   "deleted": 1
+  },
+  {
+   "id": "01M3974EJFXMBGMHF6Z4SNVW3D",
+   "title": "C4 诊断页",
+   "deleted": 1
+  },
+  {
+   "id": "01M3975CQS4FD3QZMDJK0AQT04",
+   "title": "C4 诊断页",
+   "deleted": 1
+  },
+  {
+   "id": "01M3976JTDZAZ119JQN2BMRTTS",
+   "title": "C4 诊断页",
+   "deleted": 1
+  },
+  {
+   "id": "01M3978D6B03YCEAP4JGB5T8WH",
+   "title": "T77 代码页",
+   "deleted": 1
+  },
+  {
+   "id": "01M397ABDPCT6TW2ZQKXXMNJGD",
+   "title": "T77 代码页",
+   "deleted": 1
+  },
+  {
+   "id": "01M397Q0C9MZ8BDJ7CT7KNAP1R",
+   "title": "T77 代码页",
+   "deleted": 1
+  },
+  {
+   "id": "01M397QKFK9VPDKBM35860YJJ7",
+   "title": "T77 图片页",
+   "deleted": 1
+  },
+  {
+   "id": "01M397ZMN4CGVK0R8Q599JRADT",
+   "title": "T77 代码页 muf9h33o",
+   "deleted": 1
+  },
+  {
+   "id": "01M3980A34HBZY0CKYZWBJV3ZM",
+   "title": "T77 代码页 muf9h33o 图",
+   "deleted": 1
+  },
+  {
+   "id": "01M3981FZ5Z2G5EH8A2AQ6GK99",
+   "title": "T77 代码页 muf9idyv",
+   "deleted": 1
+  },
+  {
+   "id": "01M39825CCSENV4CNX6HK5J3B0",
+   "title": "T77 代码页 muf9idyv 图",
+   "deleted": 1
+  },
+  {
+   "id": "01M3987A3NDB8WDYH2Z1T1B922",
+   "title": "T76 表格页",
+   "deleted": 1
+  },
+  {
+   "id": "01M399TGX3XB8D7EAZWPKX569E",
+   "title": "T78 多选页 mufamfrr",
+   "deleted": 1
+  },
+  {
+   "id": "01M399Z95WB8BYTH08DBDPB3W1",
+   "title": "T78 多选页 mufaps6v",
+   "deleted": 1
+  },
+  {
+   "id": "01M39A2SSAB97RF6BT7DCCC7Z7",
+   "title": "T78 多选页 mufas96v",
+   "deleted": 1
+  },
+  {
+   "id": "01M39A5Z37T5N089QVWCPTTJ3Y",
+   "title": "T78 多选页 mufauh7g",
+   "deleted": 1
+  },
+  {
+   "id": "01M39ABQDR4SNGX6MW645AQXJE",
+   "title": "T77 代码页 mufayivc",
+   "deleted": 1
+  },
+  {
+   "id": "01M39ACCX0BVY3KJW9Z7XTW3HG",
+   "title": "T77 代码页 mufayivc 图",
+   "deleted": 1
+  },
+  {
+   "id": "01M39ACM3BER2D8EY8E84STY4C",
+   "title": "T76 表格页",
+   "deleted": 1
+  },
+  {
+   "id": "01M39EYMJ3MB4K5WNJFKSJXWW0",
+   "title": "T79 导出页 mufdtpa4",
+   "deleted": 2
+  },
+  {
+   "id": "01M39F2KTN0ZXKTGCS0WP6N3PN",
+   "title": "DBG2 dmufdwhwo",
+   "deleted": 1
+  },
+  {
+   "id": "01M39F8AKG652D6YC02J046N3Z",
+   "title": "DBG3 d3mufe0i9k",
+   "deleted": 1
+  },
+  {
+   "id": "01M39FBDD1T5ZQ5HNH49EE7660",
+   "title": "T79 导出页 mufe2ob1",
+   "deleted": 1
+  },
+  {
+   "id": "01M39FBSAYBDCACY9T1CKCZJW4",
+   "title": "T79 代码页 mufe2ob1",
+   "deleted": 1
+  },
+  {
+   "id": "01M39FFKC8ZD2NKMFTS3RR42ZV",
+   "title": "T79 导出页 mufe5m7d",
+   "deleted": 2
+  },
+  {
+   "id": "01M39FG1Q7V62CYX9PGQ0PTXJJ",
+   "title": "T79 代码页 mufe5m7d",
+   "deleted": 1
+  },
+  {
+   "id": "01M39FTAJZP0E50FHEVX3HJ4PJ",
+   "title": "CELL 定案页",
+   "deleted": 1
+  }
+ ],
+ "purged": [
+  {
+   "id": "01M34P0VYP4PXZQTABRCQ45C2E",
+   "purged": 1
+  },
+  {
+   "id": "01M38WZGBY2X8C0QS3V6CWWWG4",
+   "purged": 1
+  },
+  {
+   "id": "01M38X128MPAVQA00X22EJAJNM",
+   "purged": 1
+  },
+  {
+   "id": "01M38X32M2KV4EP1GV0WVD0278",
+   "purged": 1
+  },
+  {
+   "id": "01M3971JYV0G3JBSNXPSMAJ4AZ",
+   "purged": 1
+  },
+  {
+   "id": "01M3974EJFXMBGMHF6Z4SNVW3D",
+   "purged": 1
+  },
+  {
+   "id": "01M3975CQS4FD3QZMDJK0AQT04",
+   "purged": 1
+  },
+  {
+   "id": "01M3976JTDZAZ119JQN2BMRTTS",
+   "purged": 1
+  },
+  {
+   "id": "01M3978D6B03YCEAP4JGB5T8WH",
+   "purged": 1
+  },
+  {
+   "id": "01M397ABDPCT6TW2ZQKXXMNJGD",
+   "purged": 1
+  },
+  {
+   "id": "01M397Q0C9MZ8BDJ7CT7KNAP1R",
+   "purged": 1
+  },
+  {
+   "id": "01M397QKFK9VPDKBM35860YJJ7",
+   "purged": 1
+  },
+  {
+   "id": "01M397ZMN4CGVK0R8Q599JRADT",
+   "purged": 1
+  },
+  {
+   "id": "01M3980A34HBZY0CKYZWBJV3ZM",
+   "purged": 1
+  },
+  {
+   "id": "01M3981FZ5Z2G5EH8A2AQ6GK99",
+   "purged": 1
+  },
+  {
+   "id": "01M39825CCSENV4CNX6HK5J3B0",
+   "purged": 1
+  },
+  {
+   "id": "01M3987A3NDB8WDYH2Z1T1B922",
+   "purged": 1
+  },
+  {
+   "id": "01M399TGX3XB8D7EAZWPKX569E",
+   "purged": 1
+  },
+  {
+   "id": "01M399Z95WB8BYTH08DBDPB3W1",
+   "purged": 1
+  },
+  {
+   "id": "01M39A2SSAB97RF6BT7DCCC7Z7",
+   "purged": 1
+  },
+  {
+   "id": "01M39A5Z37T5N089QVWCPTTJ3Y",
+   "purged": 1
+  },
+  {
+   "id": "01M39ABQDR4SNGX6MW645AQXJE",
+   "purged": 1
+  },
+  {
+   "id": "01M39ACCX0BVY3KJW9Z7XTW3HG",
+   "purged": 1
+  },
+  {
+   "id": "01M39ACM3BER2D8EY8E84STY4C",
+   "purged": 1
+  },
+  {
+   "id": "01M39EYMJ3MB4K5WNJFKSJXWW0",
+   "purged": 2
+  },
+  {
+   "id": "01M39EZ2Y7ET3XY95C31MXSVCB",
+   "purged": 1
+  },
+  {
+   "id": "01M39F2KTN0ZXKTGCS0WP6N3PN",
+   "purged": 1
+  },
+  {
+   "id": "01M39F8AKG652D6YC02J046N3Z",
+   "purged": 1
+  },
+  {
+   "id": "01M39FBDD1T5ZQ5HNH49EE7660",
+   "purged": 1
+  },
+  {
+   "id": "01M39FBSAYBDCACY9T1CKCZJW4",
+   "purged": 1
+  },
+  {
+   "id": "01M39FFKC8ZD2NKMFTS3RR42ZV",
+   "purged": 2
+  },
+  {
+   "id": "01M39FG1Q7V62CYX9PGQ0PTXJJ",
+   "purged": 1
+  },
+  {
+   "id": "01M39FGBHT7KX2EKK6T4D20XE0",
+   "purged": 1
+  },
+  {
+   "id": "01M39FTAJZP0E50FHEVX3HJ4PJ",
+   "purged": 1
+  }
+ ],
+ "errors": [
+  {
+   "id": "01M39EZ2Y7ET3XY95C31MXSVCB",
+   "op": "remove",
+   "msg": "page.evaluate: Error: Error invoking remote method 'page:delete': Error: E_NOT_FOUND: 页面不存在或已删除：01M39EZ2Y7ET3XY95C31MXSVCB"
+  },
+  {
+   "id": "01M39FGBHT7KX2EKK6T4D20XE0",
+   "op": "remove",
+   "msg": "page.evaluate: Error: Error invoking remote method 'page:delete': Error: E_NOT_FOUND: 页面不存在或已删除：01M39FGBHT7KX2EKK6T4D20XE0"
+  }
+ ],
+ "verified": {
+  "aliveAfter": 14,
+  "leftover": 0,
+  "keepPresent": 14,
+  "keepExpected": 14
+ },
+ "gate": {
+  "aliveBefore": 48,
+  "whitelistHit": 34,
+  "missing": [],
+  "badTitle": [],
+  "keepHit": 14,
+  "sampleTitles": [
+   "双子星页(alive=1)",
+   "双子星页(alive=1)",
+   "双子星页(alive=1)",
+   "双子星页(alive=1)",
+   "未命名(alive=1)",
+   "未命名(alive=1)"
+  ]
+ }
+}
