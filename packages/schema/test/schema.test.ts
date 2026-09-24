@@ -54,6 +54,37 @@ describe('schema', () => {
     expect(targetTables).toContain('page');
   });
 
+  // R25（T76-01）：白名单门禁——两个新块型必须在册，且不得顺手增删既有 14 型。
+  it('R25 块白名单：+table/+toggle 且既有 14 型一字不动（T76-01）', () => {
+    expect(blockTypes).toContain('table');
+    expect(blockTypes).toContain('toggle');
+    expect(blockTypes.length).toBe(16);
+    expect([...blockTypes].sort()).toEqual(
+      [
+        'bookmark',
+        'bulleted_list',
+        'callout',
+        'code',
+        'divider',
+        'heading1',
+        'heading2',
+        'heading3',
+        'image',
+        'numbered_list',
+        'page_link',
+        'paragraph',
+        'quote',
+        'table',
+        'todo',
+        'toggle',
+      ].sort(),
+    );
+  });
+
+  it('R25：op 目标表不变（table/toggle 走 block 表，无新 targetTable）', () => {
+    expect([...targetTables]).toEqual(['page', 'block', 'collection', 'record', 'schema']);
+  });
+
   it('zod→JSON Schema 生成非空且含 block/page 全字段', () => {
     const doc = generateJsonSchema();
 

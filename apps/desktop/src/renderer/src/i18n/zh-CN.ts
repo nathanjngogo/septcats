@@ -307,6 +307,23 @@ export const zhCN = {
     backlinksTitle: '反向链接',
     backlinksEmpty: '暂无页面引用本页',
     backlinksJumpAria: '跳转到引用位置',
+    // R25（T76-01）：内容块扩展（表格块 / 折叠列表）内置控件的可访问名与提示。
+    // 话术纪律：一律「表格块」，与「多维数据（库）」明确区分（旧称退役，门禁⑥把关）。
+    table: {
+      addRow: '添加行',
+      addCol: '添加列',
+      delRow: '删除行',
+      delCol: '删除列',
+      headerOn: '取消表头',
+      headerOff: '设为表头',
+      colResize: '调整列宽',
+      cell: '单元格',
+    },
+    toggle: {
+      expand: '展开',
+      collapse: '收起',
+      title: '折叠列表标题',
+    },
   },
   // T64-01：文件夹（page_type='folder' 容器节点）
   folder: {

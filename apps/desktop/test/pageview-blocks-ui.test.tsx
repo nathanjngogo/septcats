@@ -128,7 +128,8 @@ describe('PageView 斜杠菜单（T32-01 §1.2）', () => {
 
     fireEvent.keyDown(body, { key: '/' });
     const menu = await screen.findByTestId('septcats-slashmenu');
-    expect(menu.querySelectorAll('[role="option"]').length).toBe(11);
+    // 13 项 = 11（文本/标题×3/列表×3/引用/代码/分割线/图片）+ R25（T76-01）表格 + 折叠列表
+    expect(menu.querySelectorAll('[role="option"]').length).toBe(13);
 
     // ↓ 一次 → 第 2 项「标题 1」；Enter 应用
     fireEvent.keyDown(window, { key: 'ArrowDown' });

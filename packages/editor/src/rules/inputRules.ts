@@ -5,6 +5,10 @@
  *   `# ` `## ` `### ` → heading 1/2/3；`- ` `* ` → bulleted_list；`1. ` → numbered_list；
  *   `[] ` `[ ] ` `[x] ` → to_do（checked）；`> ` → quote；``` ```lang ``` → code。
  *
+ * R25（T76-01）追加：`|a|b|` + **Enter** → table（PRD §2A；判定器 matchTableShorthand
+ * 住 content.ts，经 applyTableEnterRule 在 handleKeyDown 执行——Enter 不是文本输入，
+ * 走不了 handleTextInput 通道）。
+ *
  * CJK 组合期铁律（任务书 §0.4）：compositionstart→compositionend 之间
  * **零触发**（本地 flag + `view.composing` 双保险）；面板/输入法提交的那一帧不误伤。
  *
@@ -15,6 +19,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { Attrs } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
+import { matchTableShorthand, type TableContent } from '../content';
 import { pmNodeNameOf } from '../model';
 
 export type ParagraphInputKind = 'heading' | 'bulleted_list' | 'numbered_list' | 'to_do' | 'quote' | 'code';
@@ -130,6 +135,61 @@ export function applyInputRule(view: EditorView, from: number, to: number, text:
 
 export const inputRulesPluginKey = new PluginKey('septcatsInputRules');
 
+/**
+ * R25（T76-01 §A.5）输入规则：文本块内键入 `|a|b|` 后按 **Enter** → 转表格块。
+ *
+ * 为什么挂在 handleKeyDown 而非 handleTextInput：触发键是 Enter（不是文本输入），
+ * 现有 `handleTextInput` 通道结构上吃不到（它只在插入字符那一帧被调用）。
+ * 判定仍是纯函数 `matchTableShorthand`（content.ts），本函数只做执行——
+ * 与 applyInputRule 同一口径（同一块级范围、同一 RULE_EXEMPT_TYPES 豁免）。
+ * 保留原块 id：与「# 」「- 」等输入规则一致，身份不因换型分叉。
+ */
+export function applyTableEnterRule(view: EditorView, from: number, to: number): boolean {
+  if (from !== to) {
+    return false;
+  }
+  const $from = view.state.doc.resolve(from);
+  const parent = $from.parent;
+  if (!parent.isTextblock || RULE_EXEMPT_TYPES.has(parent.type.name)) {
+    return false;
+  }
+  const blockStart = $from.start();
+  const before = parent.textBetween(0, from - blockStart, undefined, '\ufffc');
+  const content: TableContent | null = matchTableShorthand(before);
+  if (content === null) {
+    return false;
+  }
+  const nodeType = view.state.schema.nodes[pmNodeNameOf('table')];
+  if (nodeType === undefined) {
+    return false;
+  }
+  const blockPos = $from.before($from.depth);
+  const tr = view.state.tr;
+  tr.replaceWith(
+    blockPos,
+    blockPos + parent.nodeSize,
+    nodeType.create({
+      id: parent.attrs['id'],
+      rows: content.rows,
+      header: content.header,
+      colWidths: null,
+    }),
+  );
+  view.dispatch(tr.scrollIntoView());
+  return true;
+}
+
+/** Enter 键形态守卫：不带修饰键、非组合期（与 handleTextInput 的 IME 铁律同口径）。 */
+function isPlainEnter(event: KeyboardEvent): boolean {
+  return (
+    event.key === 'Enter' &&
+    !event.shiftKey &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}
+
 /** PM 插件：composition flag + handleTextInput。 */
 export function createInputRulesPlugin(): Plugin {
   let composing = false;
@@ -151,6 +211,13 @@ export function createInputRulesPlugin(): Plugin {
           return false;
         }
         return applyInputRule(view, from, to, text);
+      },
+      // R25：`|a|b|` + Enter → 表格块（纯判定见 applyTableEnterRule）
+      handleKeyDown: (view, event) => {
+        if (composing || view.composing || !isPlainEnter(event)) {
+          return false;
+        }
+        return applyTableEnterRule(view, view.state.selection.from, view.state.selection.to);
       },
     },
   });

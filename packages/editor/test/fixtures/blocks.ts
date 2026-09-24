@@ -1,9 +1,14 @@
 /**
- * 黄金样例 · blocks —— schema-v1 §6 承诺「9 种块各一个标准样例」的编辑器侧对照：
+ * 黄金样例 · blocks —— schema-v1 §6 承诺「每种块一个标准样例」的编辑器侧对照：
  * 每个 fixture 给 {块模型, 投影节点}，model.test 用它做 roundtrip 恒等与确定性断言。
  *
  * 注意：这些是**归一化后的规范形状**（见 model.ts 顶部约定）——numbered_list 无 start
- * 即不写、空内联的 paragraph 不写 content 键。
+ * 即不写、空内联的 paragraph 不写 content 键；R25（T76-01）的 table/toggle 是
+ * 结构化 content（rows/header[/colWidths]、title/body），PM 侧为 atom 节点，attr 名
+ * 与 content 键逐字同名。
+ *
+ * 唯一的「未知块」样例（embed）刻意**不用**已知类型名：R25 前它是 toggle，
+ * toggle 转正后必须换成真正未知的类型，否则该用例失去意义（见报告 §3 DEVIATION-1）。
  */
 import { inlineDoc, text, type Block, type PMNodeJSON } from '../../src/model';
 
@@ -48,6 +53,9 @@ const CO = 'blk00000000000000000001c';
 const DV = 'blk00000000000000000001d';
 const IM = 'blk00000000000000000001i';
 const UN = 'blk00000000000000000001u';
+const TB = 'blk00000000000000000001x';
+const TC = 'blk00000000000000000001y';
+const TG = 'blk00000000000000000001z';
 
 const IMAGE_SHA = 'a'.repeat(64);
 
@@ -210,26 +218,104 @@ export const BLOCK_FIXTURES: readonly BlockFixture[] = [
     },
   },
   {
-    name: 'unknown(toggle)',
+    name: 'table',
     block: base({
-      id: UN,
-      type: 'toggle',
-      props: { open: false },
-      content: inlineDoc([]),
+      id: TB,
+      type: 'table',
+      props: {},
+      content: {
+        rows: [
+          ['事件', '曝光量'],
+          ['LZ 2025 SR', '4.2 ton·yr'],
+        ],
+        header: true,
+      },
       sort_key: 'A0000000B',
     }),
     node: {
+      type: 'table',
+      attrs: {
+        id: TB,
+        rows: [
+          ['事件', '曝光量'],
+          ['LZ 2025 SR', '4.2 ton·yr'],
+        ],
+        header: true,
+        colWidths: null,
+      },
+    },
+  },
+  {
+    name: 'table_with_col_widths',
+    block: base({
+      id: TC,
+      type: 'table',
+      props: {},
+      content: {
+        rows: [
+          ['参数', '值'],
+          ['阈值', '3.5 keV'],
+        ],
+        header: true,
+        colWidths: [160, 96],
+      },
+      sort_key: 'A0000000C',
+    }),
+    node: {
+      type: 'table',
+      attrs: {
+        id: TC,
+        rows: [
+          ['参数', '值'],
+          ['阈值', '3.5 keV'],
+        ],
+        header: true,
+        colWidths: [160, 96],
+      },
+    },
+  },
+  {
+    name: 'toggle',
+    block: base({
+      id: TG,
+      type: 'toggle',
+      props: {},
+      content: { title: '口径问答', body: ['为什么用 ton·yr？', '统一下限换算基准。'] },
+      sort_key: 'A0000000D',
+    }),
+    node: {
+      type: 'toggle',
+      attrs: { id: TG, title: '口径问答', body: ['为什么用 ton·yr？', '统一下限换算基准。'] },
+    },
+  },
+  {
+    name: 'unknown(embed)',
+    block: base({
+      id: UN,
+      type: 'embed',
+      props: { url: 'https://example.com/chart' },
+      content: inlineDoc([]),
+      sort_key: 'A0000000E',
+    }),
+    node: {
       type: 'paragraph',
-      attrs: { id: UN, _unsupported: 'toggle', _raw: { open: false } },
+      attrs: {
+        id: UN,
+        _unsupported: 'embed',
+        _raw: { url: 'https://example.com/chart' },
+      },
     },
   },
 ];
 
-/** 「一页假文档，含 9 块型各一」——apps 接线与 react 冒烟共用。 */
+/**
+ * 「一页假文档，含各块型各一」——apps 接线与 react 冒烟共用。
+ * 排除唯一的「未知块」样例（UN）：它投影成 paragraph，不属于常规内容面。
+ */
 export function demoBlockDoc(): { pageId: string; blocks: Block[] } {
   return {
     pageId: FIXTURE_PAGE_ID,
-    blocks: BLOCK_FIXTURES.filter((fixture) => fixture.name !== 'unknown(toggle)').map(
+    blocks: BLOCK_FIXTURES.filter((fixture) => !fixture.name.startsWith('unknown')).map(
       (fixture) => fixture.block,
     ),
   };

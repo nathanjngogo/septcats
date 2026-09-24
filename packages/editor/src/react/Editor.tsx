@@ -18,7 +18,9 @@ import {
   type PMDocJSON,
 } from '../model';
 import { editorExtensions } from '../types';
+import type { BlockLabels } from '../types';
 import { blockAnchorPlugin } from './blockAnchor';
+import { createMarkdownTablePastePlugin } from '../rules/markdownPaste';
 import {
   createWikilinkClickPlugin,
   createWikilinkInputRulePlugin,
@@ -90,9 +92,25 @@ export interface EditorProps {
    * 缺省 undefined = 双链插件照常注册但全部 no-op（不影响既有用例）。
    */
   wikilinkHost?: WikilinkHostHandlers | undefined;
+  /**
+   * R25（T76-01，只增）：两个新内容块（表格 / 折叠列表）内置控件的文案。
+   * 宿主（PageView）用 i18n 的 t(...) 传入 zh/en 文案；缺省回落包内中文默认值
+   * （与 BlockControls/SlashMenu 既有中文字面量口径一致，editor 包单测零 i18n 依赖）。
+   * 与 wikilinkHost 同样走 ref 热更新；**节点在构造时按此文案 configure**，
+   * 故文案变化不改既有编辑器实例（换页重建实例时生效，与其它 props 同口径）。
+   */
+  blockLabels?: Partial<BlockLabels> | undefined;
 }
 
-export function Editor({ doc, onChange, onReady, editable = true, className, wikilinkHost }: EditorProps) {
+export function Editor({
+  doc,
+  onChange,
+  onReady,
+  editable = true,
+  className,
+  wikilinkHost,
+  blockLabels,
+}: EditorProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const docRef = useRef<BlockDoc>(doc);
   const onChangeRef = useRef(onChange);
@@ -104,6 +122,9 @@ export function Editor({ doc, onChange, onReady, editable = true, className, wik
   // WikilinkHostRef = { current: WikilinkHostHandlers | null }，可变 ref 天然满足
   const wikilinkHostRef = useRef<WikilinkHostHandlers | null>(null) as WikilinkHostRef;
   wikilinkHostRef.current = wikilinkHost ?? null;
+  // R25：新块内置控件的文案（构造期读取；见 props 注释）
+  const blockLabelsRef = useRef<Partial<BlockLabels> | undefined>(blockLabels);
+  blockLabelsRef.current = blockLabels;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -118,7 +139,7 @@ export function Editor({ doc, onChange, onReady, editable = true, className, wik
     }
     const instance = new TiptapEditor({
       element: host,
-      extensions: editorExtensions(),
+      extensions: editorExtensions({ blockLabels: blockLabelsRef.current }),
       content: initial,
       editable: editableRef.current,
       onUpdate: ({ editor: instance, transaction }) => {
@@ -136,6 +157,8 @@ export function Editor({ doc, onChange, onReady, editable = true, className, wik
     });
     // T36-01：块锚定补偿装饰（换块型首行视觉锚定；见 react/blockAnchor.ts）
     instance.registerPlugin(blockAnchorPlugin());
+    // R25（T76-01 §A.4）：md 表格粘贴窄口（仅整段是表时接管，其余粘贴行为零变化）
+    instance.registerPlugin(createMarkdownTablePastePlugin());
     // T44-01：双链三插件（补全菜单状态机 / `]]` 收口 / 点击回调）——宿主经
     // wikilinkHostRef 注入能力；未注入时插件 no-op，不影响既有行为。
     instance.registerPlugin(createWikilinkMenuPlugin(wikilinkHostRef));

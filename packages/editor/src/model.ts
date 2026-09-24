@@ -10,17 +10,29 @@
  * - numbered_list 的 props 缺 start 即视为 1（不写默认值）；to_do 恒写 checked；
  *   quote 的 icon 仅在有值时出现；code 恒写 lang（可为 ''）；image 恒写 file_id。
  * - divider / image 的 content 恒为 null；code 的 content 恒为纯文本 string。
+ * - R25（T76-01）：table 的 content 恒为 `{rows,header[,colWidths]}`、toggle 恒为
+ *   `{title,body}`（结构化对象，normalize 归一，见 content.ts）；两者的 PM 侧是
+ *   **atom 节点**（attrs 逐字同名），投影↔反投影不引入第二套字段名。
  * - 未知 type（v1 拒收，schema-v1 §3）：投影为 paragraph + attrs._unsupported/_raw，
  *   反投影时**原样恢复** type 与 props（不丢数据），UI 层灰显「不支持的块」。
  */
 import { z } from 'zod';
 import { sortBetween, ulid } from '@septcats/core';
 import type { Lamport, TargetTable } from '@septcats/core';
+import {
+  normalizeTableContent,
+  normalizeToggleContent,
+  tableContentSchema,
+  toggleContentSchema,
+} from './content';
 
 /** Op 的目标表名（复用 core 的 TargetTable 语义）。 */
 export const BLOCK_TARGET_TABLE: TargetTable = 'block';
 
-/** schema-v1 §3 冻结的 9 种块类型。 */
+/**
+ * schema-v1 §3 冻结的 9 种块类型 + R25（T76-01）新增 2 种单块自包含内容块
+ * （table / toggle，结构化 content JSON，见 content.ts 顶部）。
+ */
 export const BLOCK_TYPES = [
   'paragraph',
   'heading',
@@ -31,6 +43,8 @@ export const BLOCK_TYPES = [
   'code',
   'divider',
   'image',
+  'table',
+  'toggle',
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 
@@ -120,8 +134,14 @@ export function parsePMDoc(value: unknown): PMDocJSON | null {
 // 块模型（BlockDoc / Block）
 // ---------------------------------------------------------------------------
 
-/** 块 content：PM doc（文本类）| 纯文本（code）| null（divider/image）。 */
-export const blockContentSchema = z.union([pmDocSchema, z.string(), z.null()]);
+/** 块 content：PM doc（文本类）| 纯文本（code）| 结构化对象（table/toggle）| null（divider/image）。 */
+export const blockContentSchema = z.union([
+  pmDocSchema,
+  z.string(),
+  tableContentSchema,
+  toggleContentSchema,
+  z.null(),
+]);
 export type BlockContent = z.infer<typeof blockContentSchema>;
 
 /**
@@ -192,9 +212,19 @@ export function cloneJson<T>(value: T): T {
 // 内联内容助手
 // ---------------------------------------------------------------------------
 
+/** content 是否为 PM doc 形态（R25 起 content 还有结构化对象两形态，须先收窄）。 */
+export function isPmDocContent(content: BlockContent): content is PMDocJSON {
+  return (
+    content !== null &&
+    typeof content === 'object' &&
+    !Array.isArray(content) &&
+    (content as { type?: unknown }).type === 'doc'
+  );
+}
+
 /** 取出块 content 里的内联节点（PM doc 的唯一 paragraph 的 content）。 */
 export function inlineNodes(content: BlockContent): PMNodeJSON[] {
-  if (content === null || typeof content === 'string') {
+  if (!isPmDocContent(content)) {
     return [];
   }
   const paragraph = (content.content ?? [])[0];
@@ -321,6 +351,29 @@ export function blockToPMNode(block: Block): PMNodeJSON {
       return { type: 'image', attrs };
     }
 
+    // R25（T76-01）：单块自包含内容块——PM attr 名与 content 键逐字同构（零映射表）。
+    // colWidths 缺省写 null（attr 形态恒定，roundtrip 恒等由 normalize 保证）。
+    case 'table': {
+      const content = normalizeTableContent(block.content);
+      return {
+        type: 'table',
+        attrs: {
+          ...base,
+          rows: content.rows,
+          header: content.header,
+          colWidths: content.colWidths ?? null,
+        },
+      };
+    }
+
+    case 'toggle': {
+      const content = normalizeToggleContent(block.content);
+      return {
+        type: 'toggle',
+        attrs: { ...base, title: content.title, body: content.body },
+      };
+    }
+
     default: {
       // schema-v1 §3：未知 type → paragraph + props 原样存 _raw，不丢数据。
       return withContent(
@@ -443,12 +496,32 @@ function semanticsOf(node: PMNodeJSON): NodeSemantics {
       }
       return { type: 'image', props, content: null };
     }
+    // R25（T76-01）：结构化 content 两形态——PM attrs → 真相层 content（normalize 归一，
+    // 故「新建节点 attrs 为默认值」与「投影节点」产出**同一**规范 content）。
+    case 'table':
+      return {
+        type: 'table',
+        props: {},
+        content: normalizeTableContent({
+          rows: attrs['rows'],
+          header: attrs['header'],
+          colWidths: attrs['colWidths'],
+        }),
+      };
+    case 'toggle':
+      return {
+        type: 'toggle',
+        props: {},
+        content: normalizeToggleContent({ title: attrs['title'], body: attrs['body'] }),
+      };
     case 'paragraph':
     default:
       return { type: 'paragraph', props: {}, content: inlineDoc(inline) };
   }
 }
 
+/** 节点名是否为已知块（先还原投影别名，如 codeBlock→code）。
+ */
 function isBlockTypeName(type: string): boolean {
   return KNOWN_BLOCK_TYPES.has(type) || type === 'paragraph';
 }

@@ -337,3 +337,212 @@ h3.sc-block--heading {
 .sc-selectiontoolbar__glyph {
   font: var(--sc-text-ui-sm);
 }
+
+/* ---------------------------------------------------------------------------
+ * R25（T76-01）· 表格块（table，单块自包含）
+ * 框线纪律（R14 / 任务书红线）：外轮廓 2px、网格线 1px，两档都是 ink-edge——
+ * 禁灰线、禁裸 px 魔法值，全部走 var(--sc-*)。浮层/按钮吃 T53 像素立体 token。
+ * ------------------------------------------------------------------------- */
+
+.sc-block--table {
+  padding: var(--sc-space-xs) 0;
+}
+
+.sc-table {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sc-space-xxs);
+  background: var(--sc-color-surface-raised);
+  /* 块外框 = 2px ink-edge（与 code 块同一档） */
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  overflow-x: auto;
+}
+
+.sc-table__row {
+  display: grid;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.sc-table__cell {
+  display: flex;
+  min-width: 0;
+  /* 网格线 = 1px ink-edge（与块内分隔线同一档） */
+  border-right: 1px solid var(--sc-color-ink-edge);
+  border-bottom: 1px solid var(--sc-color-ink-edge);
+}
+
+/* 末列/末行不画内线：外框 2px 已收口（避免 1px+2px 叠成 3px 的参差） */
+.sc-table__row > .sc-table__cell:nth-last-child(2) {
+  border-right: 0;
+}
+
+.sc-table > .sc-table__row:nth-last-child(2) > .sc-table__cell {
+  border-bottom: 0;
+}
+
+.sc-table__input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+}
+
+.sc-table__input::placeholder {
+  color: var(--sc-color-ink-faint);
+}
+
+.sc-table__input:focus {
+  outline: none;
+  background: var(--sc-color-surface);
+}
+
+.sc-table__row--header .sc-table__input {
+  font-weight: 600;
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface);
+}
+
+/* 行/列柄：hover 显形（对齐块手柄 .sc-blockcontrol 的口径） */
+.sc-table__toolcell,
+.sc-table__rowtools {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-table__handle {
+  display: grid;
+  place-items: center;
+  width: var(--sc-size-control-sm);
+  height: var(--sc-size-control-sm);
+  border-radius: var(--sc-radius-sm);
+  color: var(--sc-color-ink-faint);
+  opacity: 0;
+  transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.sc-table__row:hover .sc-table__handle,
+.sc-table__handle:focus-visible {
+  opacity: 1;
+}
+
+.sc-table__handle:hover {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink-secondary);
+}
+
+/* 列宽拖拽柄：贴列右缘的窄轨（视觉零占用，指针热区独立） */
+.sc-table__colresize {
+  position: absolute;
+  top: 0;
+  right: calc(var(--sc-space-xxs) * -1);
+  width: var(--sc-space-sm);
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* 表格工具条：像素钮复用既有 wb-pixbtn 风格口径（flat → hover out → active in） */
+.sc-table__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding-top: var(--sc-space-xs);
+  padding-left: var(--sc-space-xs);
+}
+
+.sc-table__pixbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface-raised);
+  border: 2px solid var(--sc-color-ink-edge);
+  border-radius: var(--sc-radius-sm);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+.sc-table__pixbtn:hover {
+  background: var(--sc-color-surface-active);
+  box-shadow: var(--sc-pixel-out);
+}
+
+.sc-table__pixbtn:active {
+  box-shadow: var(--sc-bevel-in);
+}
+
+/* ---------------------------------------------------------------------------
+ * R25（T76-01）· 折叠列表（toggle，单块自包含）
+ * 展开态是纯视图态：`--open` 只由 NodeView 切，箭头 transform 旋转（零新 token）。
+ * ------------------------------------------------------------------------- */
+
+.sc-block--toggle {
+  padding: var(--sc-space-xs) 0;
+}
+
+.sc-toggle__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+}
+
+.sc-toggle__arrow {
+  display: grid;
+  place-items: center;
+  width: var(--sc-size-control-sm);
+  height: var(--sc-size-control-sm);
+  color: var(--sc-color-ink-secondary);
+  border-radius: var(--sc-radius-sm);
+  transition: transform var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.sc-toggle--open .sc-toggle__arrow {
+  transform: rotate(90deg);
+}
+
+.sc-toggle__title {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sc-color-ink);
+  font: var(--sc-text-editor-body);
+}
+
+.sc-toggle__title:focus,
+.sc-toggle__line:focus {
+  outline: none;
+}
+
+.sc-toggle__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  padding-left: var(--sc-space-xl);
+  padding-top: var(--sc-space-xxs);
+}
+
+/* 收起 = hidden（语义 + 视觉同源；显式覆盖上面的 display:flex） */
+.sc-toggle__body[hidden] {
+  display: none;
+}
+
+.sc-toggle__line {
+  border: 0;
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+}
+
+/* 原子块被 NodeSelection 选中时的落点提示（与块手柄的像素语法同族） */
+.sc-block--table.sc-block--selected,
+.sc-block--toggle.sc-block--selected {
+  box-shadow: var(--sc-pixel-out);
+}

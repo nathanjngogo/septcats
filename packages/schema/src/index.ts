@@ -16,7 +16,12 @@ import {
 
 export { SCHEMA_VERSION };
 
-/** 一期块类型白名单（对应 M4.2；与实际块规范一起演进）。 */
+/**
+ * 一期块类型白名单（对应 M4.2；与实际块规范一起演进）。
+ *
+ * R25（T76-01）新增 `table` / `toggle`：**单块自包含**（结构化 content JSON 存块内，
+ * 不建子块）——与 code 块同构（PM 侧形态可变，真相层 content 语义不可动）。
+ */
 export const blockTypes = [
   'paragraph',
   'heading1',
@@ -32,6 +37,8 @@ export const blockTypes = [
   'image',
   'page_link',
   'bookmark',
+  'table',
+  'toggle',
 ] as const;
 export type BlockType = (typeof blockTypes)[number];
 

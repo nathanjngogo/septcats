@@ -1224,6 +1224,26 @@ export function PageView({ page }: PageViewProps) {
   // （Skeleton / ErrorPanel，均为 @septcats/ui 既有组件，无新增组件与 token）。
   const editorDoc: BlockDoc | null = docState.status === 'ready' ? docState.doc : null;
 
+  /**
+   * R25（T76-01）：两个新内容块（表格 / 折叠列表）内置控件的文案。
+   * 节点在编辑器**构造期**按此文案 configure（见 Editor 的 blockLabels 注释），
+   * 故这里每帧现算、由 Editor 内部 ref 取最新值，换页重建实例时生效。
+   * i18n 成对：zh-CN/en-US 的 editor.table / editor.toggle 两域（门禁①键集合等价把关）。
+   */
+  const editorBlockLabels = {
+    tableAddRow: t('editor.table.addRow'),
+    tableAddCol: t('editor.table.addCol'),
+    tableDelRow: t('editor.table.delRow'),
+    tableDelCol: t('editor.table.delCol'),
+    tableHeaderOn: t('editor.table.headerOn'),
+    tableHeaderOff: t('editor.table.headerOff'),
+    tableColResize: t('editor.table.colResize'),
+    tableCell: t('editor.table.cell'),
+    toggleExpand: t('editor.toggle.expand'),
+    toggleCollapse: t('editor.toggle.collapse'),
+    toggleTitlePlaceholder: t('editor.toggle.title'),
+  };
+
   return (
     <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
       <div className="pv-title-row">
@@ -1271,6 +1291,7 @@ export function PageView({ page }: PageViewProps) {
             onChange={handleChange}
             onReady={setEditor}
             wikilinkHost={wikilinkHost}
+            blockLabels={editorBlockLabels}
           />
         ) : null}
         {dropTarget === null ? null : <div className="pv-dropline" data-target={dropTarget} />}

@@ -28,7 +28,7 @@ function expectBlock(spec: BlockSpec, type: string, props: unknown, content: unk
   expect(spec.content).toEqual(content);
 }
 
-describe('blocks：14 块型（对照 packages/schema blockTypes）', () => {
+describe('blocks：16 块型（对照 packages/schema blockTypes）', () => {
   it('paragraph：空内联不写 content 键；有文本走单 paragraph 包裹', () => {
     const empty = pmDocToBlocks(docOf({ type: 'paragraph' }));
     expect(empty).toHaveLength(1);
@@ -137,9 +137,34 @@ describe('blocks：14 块型（对照 packages/schema blockTypes）', () => {
   });
 
   it('未知节点名（无 _unsupported 标记）跳过，不产出垃圾 paragraph', () => {
-    const specs = pmDocToBlocks(docOf({ type: 'toggle', content: [textNode('x')] }, para('保留')));
+    const specs = pmDocToBlocks(docOf({ type: 'embed', content: [textNode('x')] }, para('保留')));
     expect(specs).toHaveLength(1);
     expectBlock(specs[0] as BlockSpec, 'paragraph', {}, inlineDocOf(textNode('保留')));
+  });
+
+  // R25（T76-01）：单块自包含内容块——两条反投影路径（model.ts / blocks.ts）同口径
+  it('R25 · table：attrs → {rows,header,colWidths}（colWidths 缺省不进 content）', () => {
+    const rows = [
+      ['a', 'b'],
+      ['c', 'd'],
+    ];
+    const plain = pmDocToBlocks(docOf({ type: 'table', attrs: { rows, header: true } }));
+    expectBlock(plain[0] as BlockSpec, 'table', {}, { rows, header: true });
+
+    const sized = pmDocToBlocks(
+      docOf({ type: 'table', attrs: { rows, header: false, colWidths: [120, 80] } }),
+    );
+    expectBlock(sized[0] as BlockSpec, 'table', {}, { rows, header: false, colWidths: [120, 80] });
+  });
+
+  it('R25 · toggle：attrs → {title,body}；body 非法回落单空行', () => {
+    const filled = pmDocToBlocks(
+      docOf({ type: 'toggle', attrs: { title: '问', body: ['答'] } }),
+    );
+    expectBlock(filled[0] as BlockSpec, 'toggle', {}, { title: '问', body: ['答'] });
+
+    const bare = pmDocToBlocks(docOf({ type: 'toggle' }));
+    expectBlock(bare[0] as BlockSpec, 'toggle', {}, { title: '', body: [''] });
   });
 });
 

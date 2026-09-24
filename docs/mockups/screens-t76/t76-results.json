@@ -1,0 +1,84 @@
+{
+  "task": "T76-01",
+  "ranAt": "2026-09-24T05:09:45.499Z",
+  "assertions": [
+    {
+      "step": "S1|建页入表",
+      "name": "S1-a 斜杠菜单出现「表格」项",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "S1|建页入表",
+      "name": "S1-b 插入 3×3 表（9 格+加行钮）",
+      "ok": true,
+      "detail": "{\"cells\":9,\"addRow\":true,\"grid\":true}"
+    },
+    {
+      "step": "S1|建页入表",
+      "name": "S1-c 单元格输入落值「甲」",
+      "ok": true,
+      "detail": "\"甲\""
+    },
+    {
+      "step": "S2|行列操作",
+      "name": "S2-a 加行+加列→4×4=16 格",
+      "ok": true,
+      "detail": "16"
+    },
+    {
+      "step": "S2|行列操作",
+      "name": "S2-b 删行3+删列3→回 3×3=9 格且首格仍「甲」",
+      "ok": true,
+      "detail": "9"
+    },
+    {
+      "step": "S2|行列操作",
+      "name": "S2-c 首格值保真「甲」",
+      "ok": true,
+      "detail": "\"甲\""
+    },
+    {
+      "step": "S2|行列操作",
+      "name": "S2-d 表头开关→aria-pressed 翻转+首行 header class",
+      "ok": true,
+      "detail": "{\"before\":{\"pressed\":\"false\",\"headerRows\":0},\"after\":{\"pressed\":\"true\",\"headerRows\":1}}"
+    },
+    {
+      "step": "S3|折叠列表",
+      "name": "S3-a 斜杠菜单出现「折叠列表」项",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "S3|折叠列表",
+      "name": "S3-b toggle 块在场（标题+正文行）",
+      "ok": true,
+      "detail": "{\"title\":1,\"line\":1,\"expandedBtn\":3}"
+    },
+    {
+      "step": "S3|折叠列表",
+      "name": "S3-c 默认收起（aria-expanded=false 或 data-open=false）",
+      "ok": true,
+      "detail": "{\"exp\":\"false\",\"open0\":\"NO_ROOT\"}"
+    },
+    {
+      "step": "S3|折叠列表",
+      "name": "S3-d 点开→aria-expanded=true 且正文行可见",
+      "ok": true,
+      "detail": "{\"exp\":\"true\",\"lineVisible\":true,\"lines\":1}"
+    },
+    {
+      "step": "S4|重启持久化",
+      "name": "S4-a 重启后表格块还原（9 格+首格「甲」）",
+      "ok": true,
+      "detail": "{\"cells\":9,\"first\":\"甲\"} back=true"
+    },
+    {
+      "step": "S5|存活",
+      "name": "S5-1 全流程后应用存活",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

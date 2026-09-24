@@ -26,7 +26,7 @@ function docOf(block: Block): BlockDoc {
   return { pageId: FIXTURE_PAGE_ID, blocks: [block] };
 }
 
-describe('model：9 块型投影（确定性 + roundtrip 恒等）', () => {
+describe('model：块型投影（确定性 + roundtrip 恒等，含 R25 的 table/toggle）', () => {
   for (const fixture of BLOCK_FIXTURES) {
     it(`${fixture.name}：blocksToPMDoc 确定性 & pmDocToBlocks 恒等`, () => {
       const doc = docOf(fixture.block);

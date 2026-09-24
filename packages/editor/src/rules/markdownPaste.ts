@@ -3,8 +3,13 @@
  *
  * 覆盖：标题（#..######，块级钳到 H1–H3）、无序/有序列表、待办 `- [ ]`/`- [x]`、
  * 代码围栏 ```、引用 `>`、分隔线 `---`、内联 粗/斜/删除线/行内代码/链接（href 白名单）。
- * 不覆盖（超出 v1 子集，见报告 DEVIATIONS）：表格、嵌套列表、图片、HTML 内联。
+ * R25（T76-01）追加：**表格**（`| a | b |` 行 + 可选 `| --- |` 分隔行 → table 块；
+ * 判定纯函数住 content.ts，本文件只做块级归组）。
+ * 不覆盖（超出 v1 子集，见报告 DEVIATIONS）：嵌套列表、图片、HTML 内联。
  */
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
+import { isMarkdownTableRow, isMarkdownTableSeparator, matchMarkdownTable } from '../content';
 import { isAllowedHref } from '../marks';
 import { pmNodeNameOf } from '../model';
 import type { PMDocJSON, PMMarkJSON, PMNodeJSON } from '../model';
@@ -116,14 +121,26 @@ function listNode(type: string, text: string, extra?: Record<string, unknown>): 
   return node;
 }
 
-/** Markdown（子集）→ PM doc。 */
+/** 表格块节点（R25）：attrs 形态与 model.ts 的 blockToPMNode 完全一致（零映射）。 */
+function tableBlock(rows: string[][], header: boolean): PMNodeJSON {
+  return { type: pmNodeNameOf('table'), attrs: { rows, header, colWidths: null } };
+}
+
+/**
+ * Markdown（子集）→ PM doc。
+ *
+ * 表格归组（R25）：进入一段连续 pipe 行时，用 matchMarkdownTable 一次判完——
+ * 要求「第一行是 pipe 行 + （第二行是分隔行 或 第二行也是 pipe 行）」，否则按普通
+ * 段落收口（`|` 开头但不构成表格的行不受影响）。
+ */
 export function parseMarkdown(text: string): PMDocJSON {
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   const content: PMNodeJSON[] = [];
   let fenced: string | null = null;
   let buffer: string[] = [];
 
-  for (const line of lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
     if (fenced !== null) {
       if (FENCE.test(line)) {
         content.push(codeBlock(fenced, buffer.join('\n')));
@@ -147,6 +164,32 @@ export function parseMarkdown(text: string): PMDocJSON {
     if (DIVIDER.test(line)) {
       content.push({ type: 'divider' });
       continue;
+    }
+
+    // R25：表格块（连续 pipe 行整段归组）。
+    // 归组门槛刻意收紧：**≥2 行 pipe 行，或第 2 行是分隔行**——单独一行 `| a | b |`
+    // 在 markdown 里不构成表格（GFM 要求分隔行），若在此处放行，M12 导入链
+    // （importer 逐行走同一个 parseMarkdown）会把普通正文里的孤立竖线行改判成表格，
+    // 违背「导入导出零改动」红线。粘贴侧的「整段即表格」由窄口插件单独承接
+    // （handlePaste，用户显式粘贴，不经过导入链）。
+    if (isMarkdownTableRow(line) || isMarkdownTableSeparator(line)) {
+      const run: string[] = [];
+      let cursor = index;
+      while (cursor < lines.length) {
+        const candidate = lines[cursor] ?? '';
+        if (!isMarkdownTableRow(candidate) && !isMarkdownTableSeparator(candidate)) {
+          break;
+        }
+        run.push(candidate);
+        cursor += 1;
+      }
+      const eligible = run.length >= 2 || isMarkdownTableSeparator(lines[index + 1] ?? '');
+      const table = eligible ? matchMarkdownTable(run.join('\n')) : null;
+      if (table !== null) {
+        content.push(tableBlock(table.rows, table.header));
+        index = cursor - 1;
+        continue;
+      }
     }
 
     const headingMatch = HEADING.exec(line);
@@ -187,4 +230,46 @@ export function parseMarkdown(text: string): PMDocJSON {
     content.push({ type: 'paragraph' });
   }
   return { type: 'doc', content };
+}
+
+export const markdownTablePastePluginKey = new PluginKey('septcatsMarkdownTablePaste');
+
+/**
+ * 窄口 `handlePaste`（R25 §A.4）：**仅当**剪贴板纯文本整体就是一张 markdown 表格时
+ * 才接管——其余（含正文夹表格、纯文本、HTML）一律返回 false，PM 默认粘贴行为零变化。
+ *
+ * 为什么需要它：`parseMarkdown` 在此之前**只被测试调用**（全仓无运行时消费方，
+ * 见报告 §0-③），只扩解析器等于功能不可达。窄口接管让「md 表格 → 表格块」在真机
+ * 可用，同时把行为面压到最小。
+ */
+export function createMarkdownTablePastePlugin(): Plugin {
+  return new Plugin({
+    key: markdownTablePastePluginKey,
+    props: {
+      handlePaste: (view: EditorView, event: ClipboardEvent): boolean => {
+        const text = event.clipboardData?.getData('text/plain') ?? '';
+        if (text.length === 0) {
+          return false;
+        }
+        const table = matchMarkdownTable(text);
+        if (table === null) {
+          return false;
+        }
+        const nodeType = view.state.schema.nodes[pmNodeNameOf('table')];
+        if (nodeType === undefined) {
+          return false;
+        }
+        // id 留 null：交 pmDocToBlocks 生成 ulid，再由 Editor 的 id 回写落 DOM（T32-01B）
+        const node = nodeType.create({
+          id: null,
+          rows: table.rows,
+          header: table.header,
+          colWidths: null,
+        });
+        const { from, to } = view.state.selection;
+        view.dispatch(view.state.tr.replaceWith(from, to, node).scrollIntoView());
+        return true;
+      },
+    },
+  });
 }

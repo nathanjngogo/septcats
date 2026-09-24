@@ -6,7 +6,7 @@
  * 所有落库动作由 desktop main 侧执行。warnings 全量记录降级/跳过，绝不静默。
  */
 import { z } from 'zod';
-import { pmDocSchema } from '@septcats/editor';
+import { pmDocSchema, tableContentSchema, toggleContentSchema } from '@septcats/editor';
 import type { BlockSpec, PMDocJSON } from '@septcats/editor';
 
 export type { BlockSpec, PMDocJSON };
@@ -15,11 +15,16 @@ export type { BlockSpec, PMDocJSON };
 // 块规格
 // ---------------------------------------------------------------------------
 
-/** 与 @septcats/editor 的 BlockSpec 同构（zod 校验版）；type 用真相层名。 */
+/**
+ * 与 @septcats/editor 的 BlockSpec 同构（zod 校验版）；type 用真相层名。
+ * R25（T76-01）：content 联合随 editor 的 BlockContent 扩到 5 形态（新增 table/toggle
+ * 两个结构化对象）——只放宽**接受面**，importer 自身不产出这两型（GFM 表格仍按
+ * 一期口径降级为 code 块 + warning，见 markdown.ts），导入行为零改动。
+ */
 export const blockSpecSchema = z.object({
   type: z.string().min(1),
   props: z.record(z.string(), z.unknown()),
-  content: z.union([pmDocSchema, z.string(), z.null()]),
+  content: z.union([pmDocSchema, z.string(), tableContentSchema, toggleContentSchema, z.null()]),
 });
 
 // ---------------------------------------------------------------------------

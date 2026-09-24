@@ -302,6 +302,22 @@ export const enUS = {
     backlinksTitle: 'Backlinks',
     backlinksEmpty: 'No pages link here yet',
     backlinksJumpAria: 'Jump to reference',
+    // R25 (T76-01): inner controls of the two new content blocks (table / toggle list)
+    table: {
+      addRow: 'Add row',
+      addCol: 'Add column',
+      delRow: 'Delete row',
+      delCol: 'Delete column',
+      headerOn: 'Turn off header row',
+      headerOff: 'Use first row as header',
+      colResize: 'Resize column',
+      cell: 'Cell',
+    },
+    toggle: {
+      expand: 'Expand',
+      collapse: 'Collapse',
+      title: 'Toggle list title',
+    },
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {

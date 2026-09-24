@@ -17,7 +17,8 @@ export interface SlashItem {
   keywords: readonly string[];
 }
 
-/** 9 个块型的拼音/英文关键词表（拼音首字母在 keywords 里，如 'bt'）。 */
+/** 9 个块型的拼音/英文关键词表（拼音首字母在 keywords 里，如 'bt'）。
+ *  R25（T76-01）新增 table / toggle 两型（PRD §2 的斜杠入口）。 */
 export const SLASH_KEYWORDS: Record<BlockType, readonly string[]> = {
   paragraph: ['wenben', 'duanluo', 'wb', 'dl', 'text', 'paragraph', 'p'],
   heading: ['biaoti', 'bt', 'heading', 'title', 'h'],
@@ -28,6 +29,8 @@ export const SLASH_KEYWORDS: Record<BlockType, readonly string[]> = {
   code: ['daima', 'dmk', 'code', 'codeblock', 'c'],
   divider: ['fengexian', 'fgx', 'divider', 'hr', 'separator', 'f'],
   image: ['tupian', 'tp', 'image', 'img', 'picture', 't'],
+  table: ['biaoge', 'bg', 'table', 'grid'],
+  toggle: ['zhedieliebiao', 'zdlb', 'toggle', 'fold', 'collapse'],
 };
 
 function headingItem(level: 1 | 2 | 3, hint: string): SlashItem {
@@ -101,6 +104,22 @@ export const SLASH_ITEMS: readonly SlashItem[] = [
     label: '图片',
     hint: '附件图片（内容寻址）',
     keywords: SLASH_KEYWORDS.image,
+  },
+  // R25（T76-01）：内容块扩展两型（表格块 / 折叠列表）。
+  // 话术纪律：一律「表格块」，与「多维数据（库）」明确区分。
+  {
+    id: 'table',
+    blockType: 'table',
+    label: '表格',
+    hint: '行列表格块（默认 3×3）',
+    keywords: SLASH_KEYWORDS.table,
+  },
+  {
+    id: 'toggle',
+    blockType: 'toggle',
+    label: '折叠列表',
+    hint: '可折叠的标题与正文',
+    keywords: SLASH_KEYWORDS.toggle,
   },
 ];
 

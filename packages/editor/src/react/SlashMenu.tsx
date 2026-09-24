@@ -144,6 +144,9 @@ export function SlashMenu({ open, query, onSelect, onClose, items, position, tit
             role="option"
             aria-selected={index === activeIndex}
             data-command-id={item.id}
+            // R25（T76-01 §10）：斜杠项 testid 契约——`slash-item-<id>`
+            // （table → slash-item-table、toggle → slash-item-toggle）
+            data-testid={`slash-item-${item.id}`}
             className={
               index === activeIndex
                 ? 'sc-slashmenu__item sc-slashmenu__item--active'

@@ -19,6 +19,7 @@ import {
   cloneJson,
   inlineDoc,
 } from './model';
+import { normalizeTableContent, normalizeToggleContent } from './content';
 import type { BlockContent, PMDocJSON, PMNodeJSON } from './model';
 
 /** 真相层块规格（无 id / sort_key / version —— 由执行器落库时补）。 */
@@ -112,6 +113,24 @@ function semanticsOf(node: PMNodeJSON): BlockSpec {
       }
       return { type: 'image', props, content: null };
     }
+    // R25（T76-01）：单块自包含内容块（口径与 model.ts 的 semanticsOf 逐字一致，
+    // normalize 同一份纯函数——两条反投影路径不可分叉）。
+    case 'table':
+      return {
+        type: 'table',
+        props: {},
+        content: normalizeTableContent({
+          rows: attrs['rows'],
+          header: attrs['header'],
+          colWidths: attrs['colWidths'],
+        }),
+      };
+    case 'toggle':
+      return {
+        type: 'toggle',
+        props: {},
+        content: normalizeToggleContent({ title: attrs['title'], body: attrs['body'] }),
+      };
     case 'paragraph':
     default:
       return { type: 'paragraph', props: {}, content: inlineDoc(inline) };

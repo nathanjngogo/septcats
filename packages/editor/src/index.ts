@@ -8,6 +8,8 @@
  */
 
 export * from './model';
+// R25（T76-01）：单块自包含内容块（table/toggle）的真相层 shape 与纯函数算子
+export * from './content';
 // 显式命名导出优先于 star：model 的三参 pmDocToBlocks 不受影响（M12 导入器用纯版）
 export { pmDocToBlocks as pmDocToBlockSpecs, type BlockSpec } from './blocks';
 export * from './diff';
