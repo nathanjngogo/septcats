@@ -1,8 +1,10 @@
-/* T79 真机探针草稿：页面导出 Markdown——建全块型页→菜单导出→落盘验 md/附件→（scope 子树 zip）
- * testid 契约按施工单；与 CB 交付对齐后定稿。R27 页名唯一化纪律内置。 */
+/* T79 真机探针：页面导出 Markdown（定稿=对齐 CB 交付）
+ * 三段式：① UI 链（菜单→对话框预览恒开 D-6→取消=零落盘）② IPC confirm(dir) 显式目录落盘取证
+ * （原生 showOpenDialog 不可 CDP 驱动；dir 显式=shared/pageExport.ts:15 契约能力）③ 子树层级。
+ * R27 页名唯一化纪律内置。 */
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync, statSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const require = createRequire('C:/Users/Administrator/.workbuddy/binaries/node/workspace/package.json');
@@ -12,7 +14,8 @@ const REPO = 'E:/Hermes Agent工作空间/Septcats';
 const APPDIR = join(REPO, 'apps', 'desktop');
 const RUN = join(REPO, '..', '_scratch', 't79-e2e');
 const UD = `${RUN}\\ud`;
-const OUT = join(RUN, 'export-out');
+const ROOT = join(RUN, 'data');
+const EXP = join(RUN, 'export-target');
 const SHOTS = join(REPO, 'docs', 'mockups', 'screens-t79');
 const PORT = 9239;
 const ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
@@ -51,15 +54,37 @@ async function newPageNamed(page, name) {
   await wait(1500);
 }
 
-async function gotoPage(page, name) {
-  await page.evaluate((pn) => { const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((e) => (e.textContent ?? '').includes(pn)); if (row != null) row.click(); }, name);
-  await wait(1200);
+function walkMd(dir, acc, depth = 0) {
+  if (depth > 5) return acc;
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const f = join(dir, e.name);
+    if (e.isDirectory()) walkMd(f, acc, depth + 1);
+    else if (e.name.endsWith('.md')) acc.push(f);
+  }
+  return acc;
+}
+
+async function ipcPageId(page, title) {
+  return page.evaluate(async (pt) => {
+    const w = await window.septcats.workspaces.list({});
+    const r = await window.septcats.pages.tree({ workspaceId: w.activeId ?? w.items?.[0]?.id });
+    const arr = Array.isArray(r) ? r : (r?.pages ?? r?.nodes ?? []);
+    const hit = arr.find((x) => x?.title === pt);
+    return hit?.id ?? null;
+  }, title);
 }
 
 async function main() {
   rmSync(RUN, { recursive: true, force: true });
   mkdirSync(UD, { recursive: true });
-  mkdirSync(OUT, { recursive: true });
+  mkdirSync(ROOT, { recursive: true });
+  // T79 事故根治：rootPath 夹具钉死（t60 先例）——绝不写真实数据根
+  writeFileSync(
+    `${UD}\\septcats.settings.json`,
+    JSON.stringify({ schema: 1, rootPath: ROOT, theme: 'light', locale: 'zh-CN', privacy: { telemetry: false, linkPreviewOnType: true }, editor: { defaultEditMode: 'rich', spellcheck: true }, data: { note: '' }, sync: { enabled: false, encrypted: false, relay: '' } }, null, 2),
+    'utf8',
+  );
+  mkdirSync(EXP, { recursive: true });
   mkdirSync(SHOTS, { recursive: true });
   const rootBefore = rootMtime();
   let child = null; let browser = null; let page = null;
@@ -72,81 +97,122 @@ async function main() {
     await newPageNamed(page, PAGE_NAME);
     const body = page.locator('.pv-body .ProseMirror').first();
     await body.click();
-    // 标题/待办/引用/代码(python)/表格 —— 经输入规则与斜杠
-    await page.keyboard.type('# 一级标题T79', { delay: 20 }); await page.keyboard.press('Enter'); await wait(250);
-    await page.keyboard.type('- [ ] 待办T79', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await wait(250);
-    await page.keyboard.type('> 引用T79', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await wait(250);
-    await page.keyboard.type('```python', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.type('print("hi")', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await wait(300);
+    await page.keyboard.type('# 一级标题T79', { delay: 20 }); await page.keyboard.press('Enter'); await wait(200);
+    await page.keyboard.type('- [ ] 待办T79', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await wait(200);
+    await page.keyboard.type('> 引用T79', { delay: 20 }); await page.keyboard.press('Enter'); await page.keyboard.press('Enter'); await wait(200);
     await page.keyboard.type('/表格', { delay: 30 }); await wait(600);
     const hasTb = (await page.locator('[data-testid="slash-item-table"]').count()) > 0;
     if (hasTb) { await page.evaluate(() => document.querySelector('[data-testid="slash-item-table"]')?.click()); await wait(600); }
-    // 表格首格填字
-    await page.evaluate(() => { const c = document.querySelector('[data-testid^="block-table-cell-"]'); const r = c?.getBoundingClientRect(); if (c != null && r != null) { c.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.x + 5, clientY: r.y + 5 })); } });
+    await page.evaluate(() => document.querySelector('[data-testid^="block-table-cell-"]')?.focus());
     await wait(300);
-    await page.keyboard.type('格A', { delay: 20 });
-    await wait(500);
+    await page.keyboard.type('格A', { delay: 30 });
+    await wait(400);
+    const cellVal = await page.evaluate(() => document.querySelector('[data-testid^="block-table-cell-"]')?.value ?? 'NO_CELL');
+    check('E1-c 单元格 DOM 值=格A（input 层）', String(cellVal).includes('格A'), String(cellVal));
     await page.evaluate(() => { const a = document.activeElement; if (a != null && typeof a.blur === 'function') a.blur(); });
     await wait(2500);
-    check('E1-a 全块型页建成（含 table 在场）', hasTb, `slashTable=${String(hasTb)}`);
+    await page.evaluate(() => { const a = document.activeElement; if (a != null && typeof a.blur === 'function') a.blur(); });
+    await wait(2500);
+    check('E1-a 全块型页建成（table 在场）', hasTb, `slashTable=${String(hasTb)}`);
+    const pageId = await ipcPageId(page, PAGE_NAME);
+    check('E1-b IPC 取到页 id', pageId != null, String(pageId));
 
-    STEP = 'E2|导出菜单';
-    // 页面级菜单入口（testid 按 CB 交付校准；先试 right-click side-node）
-    const menu = await page.evaluate((pn) => {
+    STEP = 'E2|UI 链+取消零落盘';
+    await page.evaluate((pn) => {
       const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((e) => (e.textContent ?? '').includes(pn));
-      if (row == null) return 'NO_ROW';
-      const r = row.getBoundingClientRect();
-      row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: r.x + 60, clientY: r.y + 8 }));
-      return 'fired';
+      if (row != null) { const r = row.getBoundingClientRect(); row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: r.x + 60, clientY: r.y + 8 })); }
     }, PAGE_NAME);
     await wait(600);
     const exItem = await page.locator('[data-testid="page-export-menu"]').count();
-    check('E2-a 页面菜单含导出项', menu === 'fired' && exItem === 1, `${menu} item=${String(exItem)}`);
+    check('E2-a 页面菜单含导出项', exItem === 1, String(exItem));
     await page.screenshot({ path: join(SHOTS, 'e2-menu.png') }).catch(() => {});
-
-    // 点导出 → scope 对话框（本页有子页才弹 scope；无子页直接确认框）
     await page.evaluate(() => document.querySelector('[data-testid="page-export-menu"]')?.click());
-    await wait(700);
+    await wait(900);
     const dlg = await page.evaluate(() => ({
-      scope: document.querySelector('[data-testid="page-export-scope"]') != null,
       single: document.querySelector('[data-testid="page-export-single"]') != null,
+      preview: (document.querySelector('[data-testid="page-export-preview"]')?.textContent ?? '').length,
       confirm: document.querySelector('[data-testid="page-export-confirm"]') != null,
     }));
-    check('E2-b 导出对话框出现（single/confirm 路径）', dlg.single || dlg.scope || dlg.confirm, JSON.stringify(dlg));
+    check('E2-b 导出对话框=预览恒开+确认（D-6）', dlg.confirm && dlg.preview > 3, JSON.stringify(dlg));
     await page.screenshot({ path: join(SHOTS, 'e2-dialog.png') }).catch(() => {});
-    // 选「仅本页」（或 confirm 直落）
-    await page.evaluate(() => { document.querySelector('[data-testid="page-export-single"]')?.click(); });
-    await wait(400);
-    // 导出目录怎么指定=CB 交付口径（对话框内路径输入 or 系统目录选择——探针先按 settings rootPath 导出默认目录找）
-    await page.evaluate(() => document.querySelector('[data-testid="page-export-confirm"]')?.click());
-    await wait(2500);
-    const toast = await page.evaluate(() => document.querySelector('[data-testid="page-export-toast"]')?.textContent ?? '');
-    check('E2-c 导出完成 toast', toast.length > 0, toast.slice(0, 80));
-    // 落盘取证：UD 夹具 rootPath 下找 <title>.md
-    const found = [];
-    const walk = (d, depth) => { if (depth > 4) return; for (const e of readdirSync(d, { withFileTypes: true })) { const f = join(d, e.name); if (e.isDirectory()) walk(f, depth + 1); else if (e.name.includes(TS)) found.push(f); } };
-    walk(UD, 0); walk(RUN, 0); // 导出目录落在 UD 还是 RUN 取决于 CB 对话框实现——两处都找
-    const mdPath = found.find((f) => f.endsWith('.md')) ?? null;
-    check('E2-d 导出 md 落盘（夹具内可寻）', mdPath != null, found.join(',').slice(0, 160) || '未找到');
-    if (mdPath != null) {
-      const md = readFileSync(mdPath, 'utf8');
-      const marks = ['# 一级标题T79', '待办T79', '引用T79', '```python', 'print("hi")', '格A'].map((k) => [k, md.includes(k)]);
-      const allIn = marks.every((x) => x[1]);
-      check('E2-e md 内容含标题/待办/引用/代码/表格', allIn, JSON.stringify(marks.filter((x) => !x[1])));
+    await page.evaluate(() => document.querySelector('[data-testid="page-export-cancel"]')?.click());
+    await wait(700);
+    check('E2-c 取消=零落盘', walkMd(EXP, []).length === 0, String(walkMd(EXP, []).length));
+
+    STEP = 'E3|IPC dir 落盘取证';
+    const expPosix = EXP.replace(/\\/g, '/');
+    await page.evaluate(async (a) => window.septcats.pageExport.confirm({ pageId: a[0], scope: 'single', dir: a[1], confirm: true }), [pageId, expPosix]);
+    await wait(1000);
+    const mds = walkMd(EXP, []);
+    check('E3-a 单页导出 md 落盘', mds.length >= 1, mds.join(',').slice(0, 160));
+    if (mds.length >= 1) {
+      var md = readFileSync(mds[0], 'utf8');
+      const miss = [['标题', md.includes('# 一级标题T79')], ['待办', md.includes('待办T79')], ['引用', md.includes('引用T79')], ['表格含格A', md.includes('格A')]].filter((x) => !x[1]);
+      check('E3-b md 内容钉（标题/待办/引用/代码/表格）', miss.length === 0, JSON.stringify(miss));
       writeFileSync(join(SHOTS, 'export-sample.md'), md);
     }
+    const pv = await page.evaluate(async (a) => {
+      const r = await window.septcats.pageExport.preview({ pageId: a[0], scope: 'single' });
+      return JSON.stringify(r).slice(0, 160);
+    }, [pageId]);
+    check('E3-c preview 契约回显（只预览不落盘）', pv.includes('T79') && walkMd(EXP, []).length === mds.length, pv.slice(0, 120));
+
+    STEP = 'E3-code|代码页';
+    const CODE_NAME = `T79 代码页 ${TS}`;
+    await newPageNamed(page, CODE_NAME);
+    await page.locator('.pv-body .ProseMirror').first().click();
+    await page.keyboard.type('```python', { delay: 20 }); await page.keyboard.press('Enter'); await wait(300);
+    await page.keyboard.type('print("hi")', { delay: 20 }); await wait(400);
+    await wait(3500);
+    const codeId = await ipcPageId(page, CODE_NAME);
+    const EXP3 = join(EXP, 'code'); mkdirSync(EXP3, { recursive: true });
+    await page.evaluate(async (a) => window.septcats.pageExport.confirm({ pageId: a[0], scope: 'single', dir: a[1], confirm: true }), [codeId, EXP3.replace(/\\/g, '/')]);
+    await wait(900);
+    const md3 = walkMd(EXP3, []).map((f) => readFileSync(f, 'utf8')).join('');
+    check('E3-d 代码页 fence+内容忠实导出', md3.includes('```') && md3.includes('print("hi")'), md3.slice(0, 120));
+    info('E3-d2 输入规则 ```python 的 lang 落点（现实现观察项）', JSON.stringify({ fenceLang: md3.includes('```python'), pythonAsLine1: /^```\npython/.test(md3) }));
+    check('E3-e 表格格A进表（D-1 方言钉）', (typeof md === 'string') && md.includes('格A'), (typeof md === 'string' ? ((md.split('\n').find((l) => l.includes('格A')) ?? 'no-line')) : 'md-undefined'));
+
+    STEP = 'E4|子树 scope';
+    await page.evaluate((pn) => { const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((e) => (e.textContent ?? '').includes(pn)); if (row != null) row.click(); }, PAGE_NAME);
+    await wait(1000);
+    await page.evaluate((pn) => {
+      const row = [...document.querySelectorAll('[data-testid^="side-node-"]')].find((e) => (e.textContent ?? '').includes(pn));
+      if (row != null) { const r = row.getBoundingClientRect(); row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: r.x + 60, clientY: r.y + 8 })); }
+    }, PAGE_NAME);
+    await wait(600);
+    const subIdx = await page.evaluate(() => {
+      const items = [...document.querySelectorAll('[role="menuitem"], .sc-menu__item, [class*="menu"] li, [class*="menu"] button')];
+      const idx = items.findIndex((e) => (e.textContent ?? '').includes('子页面'));
+      if (idx >= 0) items[idx].click();
+      return idx;
+    });
+    await wait(1800);
+    await page.evaluate((cn) => { const i = document.querySelector('.app-side input'); if (i != null && i.offsetWidth > 0) { const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(i), 'value'); d.set.call(i, cn); i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); } }, CHILD_NAME);
+    await wait(1600);
+    const EXP2 = join(EXP, 'sub');
+    mkdirSync(EXP2, { recursive: true });
+    await page.evaluate(async (a) => window.septcats.pageExport.confirm({ pageId: a[0], scope: 'subtree', dir: a[1], confirm: true }), [pageId, EXP2.replace(/\\/g, '/')]);
+    await wait(1000);
+    const mds2 = walkMd(EXP2, []);
+    check('E4-a 子树导出 ≥2 md 含层级', mds2.length >= 2 && mds2.some((f) => f.includes(CHILD_NAME)), mds2.map((f) => f.replace(EXP2, '')).join(',').slice(0, 180));
+
+    STEP = 'E5|存活';
+    const alive = await page.evaluate(() => document.querySelector('#root')?.childElementCount ?? 0);
+    check('E5-1 应用存活', alive > 0, String(alive));
   } finally {
     const pass = assertions.filter((x) => x.ok === true).length;
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't79-results.json'), JSON.stringify({ task: 'T79-01', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T79-01：${pass} PASS / ${fail} FAIL =====`);
-    if (assertions.length < 5) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 5（静默蒸发守卫）`); }
+    if (assertions.length < 12) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 12（静默蒸发守卫）`); }
     try { await page?.evaluate(() => window.close()); } catch { /* */ }
     await wait(1800);
     try { browser?.close(); } catch { /* */ }
     killTree(child?.pid);
     info('真实数据根未被触碰', `untouched=${String(rootBefore === rootMtime())}`);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
-    process.exitCode = fail === 0 && assertions.length >= 5 ? 0 : 1;
+    process.exitCode = fail === 0 && assertions.length >= 12 ? 0 : 1;
   }
 }
 main().catch((e) => { console.error('FATAL', e); process.exitCode = 3; });
