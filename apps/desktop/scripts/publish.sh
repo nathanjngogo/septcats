@@ -40,9 +40,19 @@ grep -q "url: ${FEED_BASE}" apps/desktop/electron-builder.yml || { echo "publish
 git add apps/desktop/electron-builder.yml
 git commit -q -m "chore(release): publish feed URL -> GitHub Releases ${USER}/${REPO} (tag=latest 通道)" || true
 
-# 3) 重打包（app-update.yml 由 publish 配置生成，url 变更必须重打）+ 签 feed + 护栏
+# 3) 重打包（app-update.yml 由 publish 配置生成，url 变更必须重打）+ 护栏
 pnpm -C apps/desktop dist
 node -e "const t=require('node:fs').readFileSync('apps/desktop/dist/win-unpacked/resources/app-update.yml','utf8'); if(!t.includes('${FEED_BASE}')) { console.error('app-update.yml feed 不符：'+t); process.exit(1); } console.log('app-update.yml feed 校验通过')"
+# 3.5 T0.4.2 教训：先归一化 latest.yml 安装包名（空格→点，匹配 gh 上传实名），**再**签名——
+#     旧顺序（先 sign 后改 yml）会让 latest.yml.sig 与最终上传的 yml 失配。
+python - <<'PYEOF'
+import io, re
+p = "apps/desktop/dist/latest.yml"
+t = io.open(p, encoding="utf-8").read()
+t2 = re.sub(r"Septcats Setup (\d)", r"Septcats.Setup.\1", t)
+io.open(p, "w", encoding="utf-8", newline="\n").write(t2)
+print("latest.yml 归一化完成" if t2 != t else "latest.yml 已是点形式，无需归一化")
+PYEOF
 export SEPTCATS_FEED_KEY="${SEPTCATS_FEED_KEY:?需要 feed 私钥（离线备份在 E:\\密钥备份\\septcats-feed-keys）}"
 node apps/desktop/scripts/feed-sign.mjs sign --feed "${DIST}"
 node apps/desktop/scripts/feed-sign.mjs verify --feed "${DIST}" --pub apps/desktop/tmp/feed-keys/septcats-feed.pub
@@ -62,9 +72,8 @@ else
     --notes "自动更新 feed 通道：应用固定拉本 tag 的 latest.yml(.sig)。当前版本 ${VER}。" \
     "${ASSETS[@]}"
 fi
-# gh 归一化含空格文件名 -> 点（Septcats.Setup.0.1.4.exe）。latest.yml 由 electron-builder 生成用空格路径，
-# updater 会 URL-encode 为 %20 -> 404。故把上传的 latest.yml 重写成点文件名，匹配实际资产名。
-gh api repos/${USER}/${REPO}/contents/dist/latest.yml --jq .content | base64 -d > "${DIST}/latest.yml" 2>/dev/null || true
+# （末段归一化=幂等兜底：3.5 已在 sign 前完成，此处正常为 no-op；若仍发生变化，说明 3.5 漏跑，
+#  必须回到 3.5 重 sign + 重传——绝不允许「签名后 yml 再变」。）
 python - <<PYEOF
 import io, os, re
 p = "apps/desktop/dist/latest.yml"
