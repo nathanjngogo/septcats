@@ -1,42 +1,42 @@
 {
   "task": "T67-B1",
-  "ranAt": "2026-09-23T00:49:11.259Z",
+  "ranAt": "2026-09-24T00:56:15.206Z",
   "assertions": [
     {
       "step": "seed",
       "name": "S1 造靶页（带正文）",
       "ok": true,
-      "raw": "01M35VQPECAX9X3FY5PK4F1H1Y"
+      "raw": "01M38EHBDRB1VCV2S32CE8NWVQ"
     },
     {
       "step": "seed",
       "name": "S2 blocks.list 基线可读",
       "ok": true,
-      "raw": "len=315"
+      "raw": "len=341"
     },
     {
       "step": "L1|setPass",
       "name": "L1-a setPass 成功且回恢复码",
       "ok": true,
-      "raw": "err=undefined rcShape=5a94ad826e"
+      "raw": "err=undefined rcShape=299fe1d46e"
     },
     {
       "step": "L1|setPass",
       "name": "L1-b getStatus.locked=true",
       "ok": true,
-      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+      "raw": "{\"locked\":true,\"unlockedInSession\":false,\"failures\":0,\"lockedUntil\":null}"
     },
     {
       "step": "L1|setPass",
       "name": "L1-c 锁后明文块不可读（空/拒发/locked 三形态 + 零泄露）",
       "ok": true,
-      "raw": "[]"
+      "raw": "{\"blocks\":[],\"locked\":true}"
     },
     {
       "step": "L7|FTS 排除",
       "name": "L7-w 取到 workspaceId",
       "ok": true,
-      "raw": "01M35VQM0NT049R77PSF4AZ9ED"
+      "raw": "01M38EH967TM2SCPPQMNYE1QE2"
     },
     {
       "step": "L7|FTS 排除",
@@ -48,7 +48,7 @@
       "step": "L7|FTS 排除",
       "name": "L7-b 标题（明文）仍可搜到",
       "ok": true,
-      "raw": "{\"hits\":[{\"kind\":\"page\",\"id\":\"01M35VQPECAX9X3FY5PK4F1H1Y\",\"pageId\":\"01M35VQPECAX9X3FY5PK4F1H1Y\",\"title\":\"锁页靶标\",\"path\":[]"
+      "raw": "{\"hits\":[{\"kind\":\"page\",\"id\":\"01M38EHBDRB1VCV2S32CE8NWVQ\",\"pageId\":\"01M38EHBDRB1VCV2S32CE8NWVQ\",\"title\":\"锁页靶标\",\"path\":[]"
     },
     {
       "step": "L3|限速",
@@ -72,7 +72,7 @@
       "step": "L4|unlock 还原",
       "name": "L4-b 解锁后块字节=基线（B2 接线升级项）",
       "ok": null,
-      "raw": "canonical=7595eea92a listNow=4f53cda18c"
+      "raw": "canonical=032ca39018 listNow=032ca39018"
     },
     {
       "step": "L4|unlock 还原",
@@ -84,19 +84,19 @@
       "step": "L8|重启持久",
       "name": "L8-a 重启后锁仍在（page_lock 持久）",
       "ok": true,
-      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+      "raw": "{\"locked\":true,\"unlockedInSession\":false,\"failures\":0,\"lockedUntil\":null}"
     },
     {
       "step": "L8|重启持久",
       "name": "L8-b 限速计数重置持久（成功解锁归零语义 + 行跨重启在表）",
       "ok": true,
-      "raw": "{\"locked\":true,\"failures\":0,\"lockedUntil\":null}"
+      "raw": "{\"locked\":true,\"unlockedInSession\":false,\"failures\":0,\"lockedUntil\":null}"
     },
     {
       "step": "L5|恢复码一次性",
       "name": "L5-a 恢复码换口令成功",
       "ok": true,
-      "raw": "err=undefined rcHash=5a94ad826e"
+      "raw": "err=undefined rcHash=299fe1d46e"
     },
     {
       "step": "L5|恢复码一次性",
@@ -120,13 +120,13 @@
       "step": "L6|remove",
       "name": "L6-b remove 后 locked=false",
       "ok": true,
-      "raw": "{\"locked\":false,\"failures\":0,\"lockedUntil\":null}"
+      "raw": "{\"locked\":false,\"unlockedInSession\":false,\"failures\":0,\"lockedUntil\":null}"
     },
     {
       "step": "L6|remove",
       "name": "L6-c 明文永久回归（基线块全数还原 + FTS 重命中）",
       "ok": true,
-      "raw": "base=1 final=2 fts=true"
+      "raw": "base=1 final=1 fts=true"
     },
     {
       "step": "L9|删除无孤儿",
@@ -138,7 +138,7 @@
       "step": "L9|删除无孤儿",
       "name": "L9-b 删后 lock 状态无残留（getStatus 空/未锁）",
       "ok": true,
-      "raw": "{\"locked\":false,\"failures\":0,\"lockedUntil\":null}"
+      "raw": "{\"locked\":false,\"unlockedInSession\":false,\"failures\":0,\"lockedUntil\":null}"
     }
   ]
 }

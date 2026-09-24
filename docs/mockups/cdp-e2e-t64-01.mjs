@@ -339,6 +339,7 @@ async function main() {
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't64-01-results.json'), JSON.stringify({ task: 'T64-01', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T64-01：${pass} PASS / ${fail} FAIL =====`);
+    if (assertions.length < 20) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 20（静默蒸发守卫）`); }
     try { await page?.evaluate(() => window.close()); } catch { /* */ }
     await wait(1800);
     try { browser?.close(); } catch { /* */ }
@@ -347,7 +348,7 @@ async function main() {
     info('真实数据根未被触碰', `before=${String(rootBefore)} after=${String(rootAfter)} untouched=${String(rootBefore === rootAfter)}`);
     info('node 孤儿（结束-开跑差分）', `now=${String(nodeCount())} baseline=${String(nodesBefore)}`);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
-    process.exit(fail === 0 ? 0 : 1);
+    process.exit(fail === 0 && assertions.length >= 20 ? 0 : 1);
   }
 }
 main().catch((e) => {

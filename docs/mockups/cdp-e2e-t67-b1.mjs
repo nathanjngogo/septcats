@@ -238,11 +238,12 @@ async function main() {
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't67-b1-results.json'), JSON.stringify({ task: 'T67-B1', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T67-B1：${pass} PASS / ${fail} FAIL =====`);
+    if (assertions.length < 21) { console.log(`FATAL 断言条数 ${String(assertions.length)} < 21（静默蒸发守卫）`); }
     try { await page?.evaluate(() => window.close()); } catch { /* */ }
     await wait(1800);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
     check('T 真实数据根未被触碰', rootBefore === rootMtime(), `before=${String(rootBefore)}`);
-    process.exit(fail === 0 ? 0 : 1);
+    process.exit(fail === 0 && assertions.length >= 21 ? 0 : 1);
   }
 }
 main().catch((e) => {
