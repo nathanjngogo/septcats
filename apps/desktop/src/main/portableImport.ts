@@ -5,22 +5,30 @@
  * 覆盖度预检，零落盘）→ execute（confirm:true 才落库）→ 取消 = 零落盘**。
  *
  * execute = **换库三段式**（任务书 §1）：
- *   ① 备份现库：`checkpoint(TRUNCATE)` → 拷三件套为 `<db>.bak-portable-<ts>`；
+ *   ① 备份现库：`checkpoint(TRUNCATE)` → 拷三件套为 `<db>.bak-portable-<ts>`，
+ *      **并把 `data/sync/` 段目录快照到 `<备份名>-sync/`**（manifest + 段 + 快照，
+ *      不含 `quarantine/`；T80-06 H-10）；
  *      **备份不成即抛，绝不进入 ②（红线：禁静默覆盖现库，无备份不落库）**；
  *   ② 建新库重放：包内段解码 → 段数自检（== manifest.segments）→
  *      `rebuildFromSegments(json, 'replace')`（**显式 replace**，T82-01 H-04 硬要求；
  *      `REBUILD_CLEAR_SQL` 把 6 张表清空 = 「新库态」，不造第二套重建逻辑）；
- *   ③ 失败回滚：还原备份三件套（migrations 同款：先清 sidecar → 覆写主库字节），
+ *   ③ 失败回滚：还原备份三件套 + 段目录（migrations 同款：先清 sidecar → 覆写主库字节），
  *      逐字节还原后抛**结构化**错误码；还原本身失败 → `E_PORTABLE_ROLLBACK_FAILED`。
  *
+ * T80-06（H-10）：撤销承诺是「回到导入前」，而导入前建的**包外页**其 op 住在本地段文件里。
+ * 只还原主库三件套 → 重启后同步引擎按「账本 ∪ 本地段」再对齐 → 包外页复活（P5-3 红）。
+ * 故 `execute` 备份与 `revert`/失败回滚**必须连段目录一并快照与还原**，且复用
+ * `restorePairs` 的「调用前快照 + 失败整体回滚」原子性（库与段不会各自半成品）。
+ *
  * 停机边界：db 进程**不重启**（重放走既有 RPC，服务持有的 executor 全程有效）；
- * 同步运行时经注入的 `pauseSync` / `resumeSync` 停启（既有 `stop()` / `start()`）。
+ * 同步运行时经注入的 `pauseSync` / `resumeSync` 停启（既有 `stop()` / `start()`），
+ * 文件级还原前后经 `closeConnection` / `reopenConnection`（T80-04 语义，未改动）。
  *
  * 纪律：不 import electron（目录/文件对话框经 DI 注入）；zip 容器只在这里碰 fflate
  * （packages 侧保持纯逻辑）；不动 T80-01 已收口的导出面。
  */
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { decodeSegment, type Segment } from '@septcats/core';
 import { unzipSync } from 'fflate';
 import {
@@ -28,7 +36,10 @@ import {
   assertPortableImportEntryNames,
   assertPortableSegmentCount,
   classifyPortableEntry,
+  isManagedSyncFileName,
   isPortableEncrypted,
+  isSyncSegmentFileName,
+  localSegmentOpIds,
   parsePortableManifest,
   portableAttachmentNames,
   portableBackupPlan,
@@ -36,6 +47,7 @@ import {
   portableRestorePlan,
   portableSchemaCompatible,
   portableSegmentNames,
+  portableSyncBackupDir,
   verifyPortableChecksums,
   type PortableBackupFile,
   type PortableManifest,
@@ -158,6 +170,13 @@ export interface PortableImportIo {
   readFile(path: string): Uint8Array;
   exists(path: string): boolean;
   listFiles(dir: string): string[];
+  /** T80-06（H-10）：建目录（段目录备份落 `<备份名>-sync/`）。 */
+  mkdir(path: string): void;
+  /**
+   * T80-06（H-10）：删目录（**只用于清理失败备份的半成品**；还原路径从不整体删目录，
+   * 只逐文件增删）。递归，不存在不抛。
+   */
+  rmdir(path: string): void;
   writeFile(path: string, bytes: Uint8Array): void;
   remove(path: string): void;
 }
@@ -197,6 +216,13 @@ export interface PortableImportDb {
 export interface PortableImportServiceOptions {
   /** 主库文件绝对路径（备份三件套的源；重放目标）。 */
   readonly dbPath: string;
+  /**
+   * T80-06（H-10）：本地段目录（`<数据根>/sync`，`SyncRuntime` 的 rootDir）。
+   * 缺省由 `dbPath` 派生 `dirname(dbPath)/sync` —— 与 `main/index.ts` 的
+   * `join(ctx.layout.root, 'sync')` 逐字一致（dbPath = `<root>/septcats.db`）；
+   * 显式传入可覆盖（测试夹具 / 将来换根）。
+   */
+  readonly syncDir?: string;
   /** 数据库端口（DbServer 未就绪时整个服务为 null，IPC 统一回 E_INVARIANT）。 */
   readonly db: PortableImportDb;
   /** 当前 SQLite schema 版本（`PRAGMA user_version`）。 */
@@ -335,10 +361,17 @@ export function createPortableImportService(
    * `op_ledger`，旧实现只读账本会漏判 → run-A/run-B 同序列两次可见性不一致。
    * 并集后「缓冲有 op」在 plan 与 execute 两条路径都必被记为未覆盖（或 execute
    * 的前置封段先把它落账，等效覆盖）。
+   *
+   * T80-06（H-10）：再补**本地盘上段**（`data/sync/seg-*.jsonl`）这一面 = 「包内段 ∪
+   * 本地段」可比对。缺口场景：包外 op 已被 flush 成段、但账本被 replace 改写或被折叠进
+   * 快照而未回读，单看「账本 ∪ 缓冲」仍漏判；盘上段是同步引擎重启后**真正参与对齐**的
+   * 真相（`mergeRemote` 读的就是它），故必须计入。**快照不计入**（便携包明确排除
+   * `sync/snapshot-*.json`，计入会让折叠过段/快照种的库永久误拒，见报告 §0-②）。
    */
   async function coverage(zipPath: string, packageOpIds: ReadonlySet<string>): Promise<{
     readonly ledgerOps: number;
     readonly pendingOps: number;
+    readonly localSegmentOps: number;
     readonly uncovered: number;
   }> {
     const localOpIds = new Set(await options.db.listLedgerOpIds());
@@ -346,6 +379,17 @@ export function createPortableImportService(
     const buffered = options.pendingOpIds?.() ?? [];
     for (const opId of buffered) {
       localOpIds.add(opId);
+    }
+    const localSegments = readLocalSegmentTexts();
+    const decoded = localSegmentOpIds(localSegments);
+    for (const opId of decoded.opIds) {
+      localOpIds.add(opId);
+    }
+    if (decoded.undecodable > 0) {
+      // 解不开的段不计入「已覆盖」（解不开 ≠ 已覆盖），但绝不静默
+      log(
+        `portable:import 覆盖度预检：本地段目录有 ${String(decoded.undecodable)} 个段无法解码（已跳过，不视为覆盖）`,
+      );
     }
     let uncovered = 0;
     for (const opId of localOpIds) {
@@ -356,9 +400,33 @@ export function createPortableImportService(
     log(
       `portable:import 覆盖度预检 ${zipPath}：账本 ${String(ledgerOps)} 条 + 缓冲 ${String(
         buffered.length,
-      )} 条，未覆盖 ${String(uncovered)} 条`,
+      )} 条 + 本地段 ${String(decoded.opIds.size)} 条，未覆盖 ${String(uncovered)} 条`,
     );
-    return { ledgerOps, pendingOps: buffered.length, uncovered };
+    return {
+      ledgerOps,
+      pendingOps: buffered.length,
+      localSegmentOps: decoded.opIds.size,
+      uncovered,
+    };
+  }
+
+  /** 本地段目录里**段**文件的文本（明文 `seg-*.jsonl`；`.enc` 无 DEK 不可解、不读）。 */
+  function readLocalSegmentTexts(): string[] {
+    const dir = syncDirPath();
+    const texts: string[] = [];
+    for (const name of io.listFiles(dir).sort()) {
+      if (!isSyncSegmentFileName(name)) {
+        continue;
+      }
+      try {
+        texts.push(new TextDecoder().decode(io.readFile(join(dir, name))));
+      } catch (error) {
+        // 读不到与解不开同口径：不算覆盖，留痕由调用方（undecodable 计数不含此项，
+        // 这里单独记一行，避免静默）
+        log(`portable:import 覆盖度预检：本地段不可读 ${name}：${describeError(error)}`);
+      }
+    }
+    return texts;
   }
 
   function blockFor(pkg: OpenedPackage, current: number, uncovered: number): PortableImportPlan['blocked'] {
@@ -372,6 +440,16 @@ export function createPortableImportService(
   }
 
   // --- 三段式 ---------------------------------------------------------------
+
+  /** 本地段目录（`<数据根>/sync`）：显式注入优先，缺省由主库路径派生（与 index.ts 同口径）。 */
+  function syncDirPath(): string {
+    return options.syncDir ?? join(dirname(options.dbPath), 'sync');
+  }
+
+  /** 目录内受管文件名（manifest + 段 + 快照，**不含** quarantine/ 与非受管文件）。 */
+  function managedSyncNames(dir: string): string[] {
+    return io.listFiles(dir).filter((name) => isManagedSyncFileName(name)).sort();
+  }
 
   /** ① 备份：三件套；任一件写失败 → 清掉半成品并抛（无备份不落库）。 */
   function writeBackup(at: number): PortableBackupFile[] {
@@ -399,6 +477,119 @@ export function createPortableImportService(
       throw new PortableImportApiError('E_PORTABLE_BACKUP_FAILED', `主库不存在，无法备份：${options.dbPath}`);
     }
     return written;
+  }
+
+  /**
+   * T80-06（H-10）：段目录快照 —— 把 `data/sync/` 的**受管文件**（manifest.json +
+   * 全部段 + 全部快照）逐字节拷进 `<备份名>-sync/`。
+   *
+   * 与三件套备份同一把 `at` 时间戳 → 目录名可由 `backupPath` 反解
+   * （`portableSyncBackupDir`），**不需要新增备份元数据**（选型见报告 §2）。
+   * `quarantine/` 是子目录、`listFiles` 非递归 → 天然不入（任务书红线）。
+   * 失败与 `writeBackup` 同款：清掉本次已写的半成品再抛 `E_PORTABLE_BACKUP_FAILED`。
+   */
+  function writeSyncBackup(backupPath: string): string[] {
+    const dir = portableSyncBackupDir(backupPath);
+    const source = syncDirPath();
+    const written: string[] = [];
+    try {
+      io.mkdir(dir);
+      for (const name of managedSyncNames(source)) {
+        const to = join(dir, name);
+        io.writeFile(to, io.readFile(join(source, name)));
+        written.push(to);
+      }
+    } catch (error) {
+      // 半成品清理：已写的文件 + 目录本身（目录存在即「本备份含段快照」的判据，
+      // 留下空目录会让后续 revert 误以为可还原，见 syncRestorePairs 的兼容闸）。
+      for (const path of written) {
+        try {
+          io.remove(path);
+        } catch {
+          // 清理失败不致命：错误主体是备份失败
+        }
+      }
+      try {
+        io.rmdir(dir);
+      } catch {
+        // 同上
+      }
+      throw new PortableImportApiError(
+        'E_PORTABLE_BACKUP_FAILED',
+        `备份同步段目录失败（未做任何改动）${source}：${describeError(error)}`,
+      );
+    }
+    return written;
+  }
+
+  /**
+   * T80-06（H-10）：段目录还原计划（撤销/回滚共用）。
+   *
+   * 取「**备份目录受管文件 ∪ 现目录受管文件**」并集逐文件配对：
+   *  - 两边都有 → 逐字节回写（备份态）；
+   *  - 只在现目录（导入后才产出的段/快照）→ `from` 不存在 → 被 `restorePairs` 清除
+   *    （**这正是 H-10 的包外 op 段**）；
+   *  - 只在备份 → 写回（导入期间被折叠/删除的段）。
+   *
+   * **旧备份兼容（关键安全闸）**：`execute` 恒会 `mkdir` 段备份目录（哪怕 0 文件），
+   * 故「目录是否存在」即「本备份是否含段快照」的判据。目录不存在（T80-06 之前的老备份）
+   * → 返回空计划，**绝不**把现目录文件当「多出来」删掉（否则老备份 revert 会清空段目录，
+   * 那是比 H-10 更严重的数据损失）。
+   *
+   * 进入还原前若备份含文件，先确保目标目录存在（writeFile 需要父目录）；目录本身
+   * **永不整体删**（本机实证 `rmSync(dir,{force:true})` 抛 `ERR_FS_EISDIR`），只逐文件增删。
+   */
+  function syncRestorePairs(backupPath: string): PortableBackupFile[] {
+    const dir = portableSyncBackupDir(backupPath);
+    if (!io.exists(dir)) {
+      return []; // 老备份：无段快照，保持既有「不动段目录」语义
+    }
+    const source = syncDirPath();
+    const backedUp = managedSyncNames(dir);
+    const names = new Set<string>(backedUp);
+    for (const name of managedSyncNames(source)) {
+      names.add(name);
+    }
+    if (backedUp.length > 0) {
+      io.mkdir(source);
+    }
+    return [...names]
+      .sort()
+      .map((name) => ({ from: join(dir, name), to: join(source, name) }));
+  }
+
+  /** 备份总入口：三件套 + 段目录；任一失败 → 两者半成品一并清掉（无备份不落库）。 */
+  function writeAllBackups(at: number): {
+    readonly backupPath: string;
+    readonly backupFiles: readonly string[];
+    readonly syncBackupFiles: readonly string[];
+  } {
+    const backupFiles = writeBackup(at);
+    const backupPath = backupFiles[0]?.to ?? '';
+    let syncBackupFiles: string[];
+    try {
+      syncBackupFiles = writeSyncBackup(backupPath);
+    } catch (error) {
+      // 段目录快照失败 → 三件套备份也一并撤掉，不留半截备份（execute 此时零落库）
+      for (const file of backupFiles) {
+        try {
+          io.remove(file.to);
+        } catch {
+          // 同上：清理失败不掩盖首个错误
+        }
+      }
+      throw error;
+    }
+    return { backupPath, backupFiles: backupFiles.map((file) => file.to), syncBackupFiles };
+  }
+
+  /** 还原计划 = 三件套 + 段目录（撤销与导入失败回滚共用同一份组合）。 */
+  function fullRestorePairs(backupPath: string): PortableBackupFile[] {
+    const plan = portableRestorePlan(backupPath);
+    if (plan === null) {
+      throw new PortableImportApiError('E_MALFORMED', `不是便携包备份名（.bak-portable-<时间戳>）：${backupPath}`);
+    }
+    return [...plan, ...syncRestorePairs(backupPath)];
   }
 
   /**
@@ -596,11 +787,14 @@ export function createPortableImportService(
         if (covered.uncovered > 0) {
           throw new PortableImportApiError('E_PORTABLE_NOT_EMPTY', PORTABLE_IMPORT_EMPTY_MESSAGE);
         }
-        // ① checkpoint → 备份三件套（无备份即不落库）
+        // ① checkpoint → 备份三件套 + 段目录（无备份即不落库）
         await options.db.checkpoint();
-        const backupFiles = writeBackup(at);
-        const backupPath = backupFiles[0]?.to ?? '';
-        log(`portable:import 已备份 ${backupPath}（${String(backupFiles.length)} 件）`);
+        const backup = writeAllBackups(at);
+        log(
+          `portable:import 已备份 ${backup.backupPath}（${String(backup.backupFiles.length)} 件 + 段目录 ${String(
+            backup.syncBackupFiles.length,
+          )} 件）`,
+        );
         try {
           // ② 建新库重放：显式 replace（禁依赖 T82-01 的缺省 merge）
           const replay = await options.db.rebuildFromSegments(JSON.stringify(pkg.segments), 'replace');
@@ -610,8 +804,8 @@ export function createPortableImportService(
           const result: PortableImportResult = {
             ok: true,
             zipPath,
-            backupPath,
-            backupFiles: backupFiles.map((file) => file.to),
+            backupPath: backup.backupPath,
+            backupFiles: [...backup.backupFiles],
             replay: {
               segments: replay.segments,
               ops: replay.ops,
@@ -622,14 +816,15 @@ export function createPortableImportService(
           };
           return result;
         } catch (error) {
-          // ③ 失败回滚：逐字节还原，再抛原错误（结构化）。
-          // T80-04（H-09）：同一隐患——回滚时连接也活着，必须先释放句柄再还原。
+          // ③ 失败回滚：逐字节还原（三件套 + 段目录），再抛原错误（结构化）。
+          // T80-04（H-09）：回滚时连接也活着，必须先释放句柄再还原。
           const mapped = toPortableImportError(error);
           try {
+            const pairs = fullRestorePairs(backup.backupPath);
             await withConnectionClosed(() => {
-              restorePairs(backupFiles.map((file) => ({ from: file.to, to: file.from })));
+              restorePairs(pairs);
             });
-            log(`portable:import 重放失败已回滚 ${zipPath}：${mapped.code}`);
+            log(`portable:import 重放失败已回滚 ${zipPath}：${mapped.code}（含段目录）`);
             throw Object.assign(mapped, { rolledBack: true } satisfies PortableImportRollbackState);
           } catch (restoreError) {
             if (restoreError === mapped) {
@@ -663,14 +858,25 @@ export function createPortableImportService(
       if (!io.exists(plan[0]!.from)) {
         throw new PortableImportApiError('E_MALFORMED', `备份不存在：${input.backupPath}`);
       }
+      // T80-06（H-10）：还原面 = 三件套 + 段目录（`<备份名>-sync/`，manifest+段+快照）。
+      // 包外 op 住在本地段文件里，只还原主库会让它在重启后经「账本 ∪ 本地段」复活。
       await options.pauseSync?.();
       try {
+        // 还原计划在**停机之后**取：现目录清单要含同步运行时停机前刚产出的段，
+        // 否则那段会被当「不在并集里」而漏清（H-10 的窄窗口）。
+        const pairs = fullRestorePairs(input.backupPath);
         // T80-04（H-09）：先释放主库句柄再还原（Windows EBUSY 根因），完成后重建连接。
+        // 库与段在**同一个** restorePairs 调用内还原：任一失败按调用前快照整体回滚，
+        // 不留「库还原了、段没还原」的半成品。
         await withConnectionClosed(() => {
-          restorePairs(plan);
+          restorePairs(pairs);
         });
-        log(`portable:import 撤销导入：已还原 ${input.backupPath}`);
-        return { ok: true, backupPath: input.backupPath, restoredFiles: plan.map((file) => file.to) };
+        log(`portable:import 撤销导入：已还原 ${input.backupPath}（${String(pairs.length)} 件，含段目录）`);
+        return {
+          ok: true,
+          backupPath: input.backupPath,
+          restoredFiles: pairs.map((file) => file.to),
+        };
       } finally {
         await options.resumeSync?.();
       }
@@ -727,6 +933,12 @@ export const nodePortableImportIo: PortableImportIo = {
     } catch {
       return [];
     }
+  },
+  mkdir: (path) => {
+    mkdirSync(path, { recursive: true });
+  },
+  rmdir: (path) => {
+    rmSync(path, { recursive: true, force: true });
   },
   writeFile: (path, bytes) => {
     writeFileSync(path, bytes);

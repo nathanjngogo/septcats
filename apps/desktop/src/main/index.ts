@@ -632,6 +632,8 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // 停机边界：db 进程不重启（重放走既有 RPC），同步运行时走既有 stop()/start()。
       portableImport: createPortableImportService({
         dbPath: ctx.layout.db,
+        // T80-06（H-10）：段目录快照/还原面（与 SyncRuntime 的 rootDir、导出侧 syncDir 同源）。
+        syncDir: join(ctx.layout.root, 'sync'),
         db: {
           checkpoint: async () => {
             await handle.checkpoint();

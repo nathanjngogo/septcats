@@ -11,6 +11,7 @@
  * （T82-01 契约：显式 replace，禁依赖缺省 merge）。
  */
 
+import { decodeSegment, type Segment } from '@septcats/core';
 import { parseSegmentFileName } from './naming';
 import {
   PORTABLE_ATTACHMENT_PREFIX,
@@ -108,6 +109,90 @@ export function portableRestorePlan(backupPath: string): readonly PortableBackup
     files.push({ from: `${backupPath}${suffix}`, to: `${origin}${suffix}` });
   }
   return files;
+}
+
+// ---------------------------------------------------------------------------
+// T80-06（H-10）：本地段目录（`<数据根>/sync`）的快照 / 还原 / 覆盖度判据
+//
+// 布局真源 = `SyncRuntime`（`rootDir = <数据根>/sync`）：
+//   - `manifest.json`（明文；设备表/水位/快照号）——导出侧排除它，但**本地还原必须含**；
+//   - 段 `seg-<c_from:8hex>-<dev>-<n:6hex>[-<digest>].jsonl[.enc]`（含网盘副本 ` (N)`）；
+//   - 快照 `snapshot-<seq>.json[.enc]`（段的折叠形态）；
+//   - 子目录 `quarantine/`（坏段隔离）——**不备份、不还原**（任务书红线）。
+// `listFiles` 非递归 → `quarantine/` 只会以目录名出现，下面的判据天然落选。
+// ---------------------------------------------------------------------------
+
+/** 段目录里的同步清单名（与包内 `manifest-portable.json` 区分）。 */
+export const PORTABLE_SYNC_MANIFEST_NAME = 'manifest.json';
+
+/** 快照文件名（`snapshot-<seq>.json` 明文 / `.enc` 密文）。 */
+const SYNC_SNAPSHOT_RE = /^snapshot-\d+\.json(\.enc)?$/;
+
+/**
+ * 段目录快照的目录名：`<备份名>-sync`（与三件套备份同前缀）。
+ * `revert` 据它把「三件套 + 段目录」一次性定位（备份名来自 `backupPath`，无需新增元数据）。
+ */
+export function portableSyncBackupDir(backupPath: string): string {
+  return `${backupPath}-sync`;
+}
+
+/**
+ * 是否段目录里的**段**文件：`seg-*.jsonl`（明文）。
+ * 密文段（`.jsonl.enc`）不算——本侧无 DEK 不可解码，不纳入「段 op_id 比对」。
+ */
+export function isSyncSegmentFileName(name: string): boolean {
+  return !name.endsWith(PORTABLE_ENCRYPTED_SUFFIX) && parseSegmentFileName(name) !== null;
+}
+
+/** 是否段目录里的**快照**文件（`snapshot-<seq>.json[.enc]`）。 */
+export function isSyncSnapshotFileName(name: string): boolean {
+  return SYNC_SNAPSHOT_RE.test(name);
+}
+
+/**
+ * 是否属「段目录备份受管文件」：`manifest.json` + 全部段（含 `.jsonl.enc` 与网盘副本）
+ * + 全部快照。非受管文件（日志/临时件/子目录名）既不备份，也不在还原时被删。
+ */
+export function isManagedSyncFileName(name: string): boolean {
+  return (
+    name === PORTABLE_SYNC_MANIFEST_NAME ||
+    isSyncSnapshotFileName(name) ||
+    parseSegmentFileName(name) !== null
+  );
+}
+
+/** 段文本集合的解码结果：op_id 全集 + 解不开的段数（解不开不算「已覆盖」）。 */
+export interface LocalSegmentOpIds {
+  readonly opIds: ReadonlySet<string>;
+  /** 无法解码的段文本数（坏段/半截/未来 schema_ver）——留痕用，不静默。 */
+  readonly undecodable: number;
+}
+
+/**
+ * T80-06（H-10）：本地盘上段文本 → op_id 全集（覆盖度预检的「本地段」面）。
+ *
+ * 用途：包内段是 replace 的唯一真相，若**本地盘上段**里有包未覆盖的 op（典型：导入后
+ * 建的「包外页」段），而该 op 既不在账本也不在缓冲（或账本已被 replace 改写），单看
+ * 「账本 ∪ 缓冲」会漏判 → 重放后包外内容仍在盘上、重启即复活。
+ *
+ * 解不开的段**不计入** op_id 集（解不开 ≠ 已覆盖），只回报 `undecodable` 供调用方留痕。
+ */
+export function localSegmentOpIds(texts: readonly string[]): LocalSegmentOpIds {
+  const opIds = new Set<string>();
+  let undecodable = 0;
+  for (const text of texts) {
+    let segment: Segment;
+    try {
+      segment = decodeSegment(text);
+    } catch {
+      undecodable += 1;
+      continue;
+    }
+    for (const op of segment.ops) {
+      opIds.add(op.op_id);
+    }
+  }
+  return { opIds, undecodable };
 }
 
 /** 条目名 → 种类；不属于本格式（如 `logs/`、`sync/manifest.json`）→ null（导入侧忽略）。 */

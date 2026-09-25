@@ -10,7 +10,8 @@
  *    撤销还原 / dir 显式契约 / IPC 守卫。
  */
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { zipSync, unzipSync } from 'fflate';
 import {
@@ -30,10 +31,15 @@ import {
   type PortableEntryMeta,
 } from '@septcats/sync';
 import {
+  PORTABLE_SYNC_MANIFEST_NAME,
   assertPortableImportEntryNames,
   assertPortableSegmentCount,
   classifyPortableEntry,
+  isManagedSyncFileName,
   isPortableEncrypted,
+  isSyncSegmentFileName,
+  isSyncSnapshotFileName,
+  localSegmentOpIds,
   parsePortableManifest,
   portableAttachmentNames,
   portableBackupName,
@@ -42,10 +48,12 @@ import {
   portableRestorePlan,
   portableSchemaCompatible,
   portableSegmentNames,
+  portableSyncBackupDir,
   verifyPortableChecksums,
 } from '@septcats/sync';
 import {
   createPortableExportService,
+  nodePortableExportIo,
   type PortableExportIo,
 } from '../src/main/portable';
 import {
@@ -110,6 +118,24 @@ const SEG_TEXT = encodeSegment(SEG);
 const SEG_NAME = segmentFileName(SEG, SEG_TEXT);
 const SEG_OP_IDS = SEG.ops.map((op) => op.op_id);
 
+/** 段目录里的 manifest.json 夹具文本（明文，T80-01 的 `{"devices":{}}` 形态）。 */
+const SYNC_MANIFEST_TEXT = '{"schema_ver":10,"devices":{}}';
+
+// --- T80-06（H-10）：包外 op 段夹具 -----------------------------------------
+// 「包外页」op：不在包内段里，但**会被 flush 成盘上的段**（H-10 的真机形态）。
+// 撤销只还原主库时它留在盘上 → 重启后同步引擎按「账本 ∪ 本地段」对齐 → 页复活。
+const OUTSIDE_OP_IDS = ['op-outside-1', 'op-outside-2'];
+const OUTSIDE_SEG: Segment = buildSegment(
+  DEV,
+  [pageOp(OUTSIDE_OP_IDS[0]!, 50, '包外页'), pageOp(OUTSIDE_OP_IDS[1]!, 51, '包外页二')],
+  AT,
+);
+const OUTSIDE_TEXT = encodeSegment(OUTSIDE_SEG);
+const OUTSIDE_SEG_NAME = segmentFileName(OUTSIDE_SEG, OUTSIDE_TEXT);
+/** 折叠态快照名（导入后由运行时 publishSnapshot 产出；撤销必须把它一并清掉）。 */
+const SNAPSHOT_NAME = 'snapshot-000001.json';
+const SNAPSHOT_TEXT = '{"snapshot":true}';
+
 // ---------------------------------------------------------------------------
 // 内存 IO（导出侧与导入侧共用一套，便于真 roundtrip）
 // ---------------------------------------------------------------------------
@@ -150,6 +176,15 @@ class MemIo implements PortableImportIo, PortableExportIo {
 
   mkdir(path: string): void {
     this.dirs.add(path);
+  }
+
+  rmdir(path: string): void {
+    this.dirs.delete(path);
+    for (const key of [...this.files.keys()]) {
+      if (dirname(key) === path) {
+        this.files.delete(key);
+      }
+    }
   }
 
   writeFile(path: string, bytes: Uint8Array): void {
@@ -289,11 +324,17 @@ async function fixture(
     readonly localOpIds?: readonly string[];
     readonly flushSegments?: () => Promise<void>;
     readonly pendingOpIds?: () => readonly string[];
+    /** T80-06：段目录里的附加文件（相对名 → 文本），用来造「包外段」等形态。 */
+    readonly syncExtraFiles?: Readonly<Record<string, string>>;
+    /** T80-06：段目录里的非受管文件（如误落的日志）与 `quarantine/` 子目录。 */
+    readonly syncNoise?: readonly string[];
+    /** T80-06：显式覆盖 syncDir（默认 = `dirname(dbPath)/sync`）。 */
+    readonly syncDir?: string;
   } = {},
 ): Promise<Fixture> {
   const io = new MemIo();
   const root = join('T80-02', 'data').replace('T80-02', '/t80-root');
-  const syncDir = join(root, 'sync');
+  const syncDir = options.syncDir ?? join(root, 'sync');
   const attachmentsDir = join(root, 'attachments');
   const dbPath = join(root, 'septcats.db');
   const outDir = join(root, 'export');
@@ -303,7 +344,17 @@ async function fixture(
   io.files.set(`${dbPath}-wal`, WAL_BYTES);
   io.files.set(`${dbPath}-shm`, SHM_BYTES);
   io.files.set(join(syncDir, SEG_NAME), new TextEncoder().encode(SEG_TEXT));
-  io.files.set(join(syncDir, 'manifest.json'), new TextEncoder().encode('{"devices":{}}'));
+  io.files.set(join(syncDir, 'manifest.json'), new TextEncoder().encode(SYNC_MANIFEST_TEXT));
+  for (const [name, text] of Object.entries(options.syncExtraFiles ?? {})) {
+    io.files.set(join(syncDir, name), new TextEncoder().encode(text));
+  }
+  for (const name of options.syncNoise ?? []) {
+    if (name.endsWith('/')) {
+      io.mkdir(join(syncDir, name.replace(/\/$/, '')));
+    } else {
+      io.files.set(join(syncDir, name), new TextEncoder().encode('noise'));
+    }
+  }
   io.files.set(join(attachmentsDir, attachmentName), PNG_BYTES);
 
   // ① T80-01 导出侧产包（真 zip，真 checksums）
@@ -332,6 +383,7 @@ async function fixture(
   }
   const service = createPortableImportService({
     dbPath,
+    syncDir,
     db,
     schemaVersion: async () => SCHEMA_VERSION,
     pickArchive: async () => null,
@@ -362,8 +414,33 @@ function repackage(fx: Fixture, mutate: (entries: Record<string, Uint8Array>) =>
   fx.io.writeFile(fx.zipPath, zipSync(entries));
 }
 
-function backupFilesOf(io: MemIo): string[] {
-  return [...io.files.keys()].filter((path) => path.includes('.bak-portable-')).sort();
+/**
+ * 主库三件套备份文件（`.bak-portable-*`，**与主库同目录**）。
+ * T80-06（H-10）：段目录快照是**子目录** `<备份名>-sync/`，按 dirname 区分，
+ * 不计入三件套计数（否则旧断言的 `toHaveLength(3)` 全被段备份文件污染）。
+ */
+function backupFilesOf(fx: Fixture): string[] {
+  const root = dirname(fx.dbPath); // 与 join() 的归一化一致（fx.root 带前导 '/' 会不匹配）
+  return [...fx.io.files.keys()]
+    .filter((path) => dirname(path) === root && basename(path).includes('.bak-portable-'))
+    .sort();
+}
+
+/** T80-06（H-10）：某次备份的段目录快照文件名（`<备份名>-sync/` 下的受管文件）。 */
+function syncBackupNamesOf(fx: Fixture, backupPath: string): string[] {
+  const dir = `${backupPath}-sync`;
+  return [...fx.io.files.keys()]
+    .filter((path) => dirname(path) === dir)
+    .map((path) => basename(path))
+    .sort();
+}
+
+/** 现段目录里的受管文件名（manifest + 段 + 快照，不含 quarantine/ 与非受管文件）。 */
+function syncDirNames(fx: Fixture): string[] {
+  return fx.io
+    .listFiles(fx.syncDir)
+    .filter((name) => /^(manifest\.json|seg-.*\.jsonl(\.enc)?|snapshot-\d+\.json(\.enc)?)$/.test(name))
+    .sort();
 }
 
 function bytesOf(io: MemIo, path: string): Uint8Array | undefined {
@@ -503,6 +580,65 @@ describe('便携包读侧纯逻辑', () => {
     expect(portableSchemaCompatible(10, 10)).toBe(true);
     expect(portableSchemaCompatible(11, 10)).toBe(false);
   });
+
+  // --- T80-06（H-10）：段目录快照/还原的纯判据 -----------------------------
+
+  it('段目录快照目录名：<备份名>-sync，可由 backupPath 直接反解', () => {
+    const backupPath = '/data/septcats.db.bak-portable-20260925-171646';
+    const dir = portableSyncBackupDir(backupPath);
+    expect(dir).toBe('/data/septcats.db.bak-portable-20260925-171646-sync');
+    // 与三件套还原计划同源（from=备份，to=现库），二者拼起来就是完整还原面
+    expect(portableRestorePlan(backupPath)?.map((file) => file.to)).toEqual([
+      '/data/septcats.db',
+      '/data/septcats.db-wal',
+      '/data/septcats.db-shm',
+    ]);
+  });
+
+  it('段文件判据：只认明文 seg-*.jsonl（.enc 与网盘副本各按规则处理）', () => {
+    expect(isSyncSegmentFileName('seg-00000001-dev00001-000001-abcdef01.jsonl')).toBe(true);
+    // 旧命名（无摘要）与网盘副本仍被识别
+    expect(isSyncSegmentFileName('seg-00000001-dev00001-000001.jsonl')).toBe(true);
+    expect(isSyncSegmentFileName('seg-00000001-dev00001-000001-abcd1234 (1).jsonl')).toBe(true);
+    // 密文段：本侧无 DEK，不纳入「段 op_id 比对」
+    expect(isSyncSegmentFileName('seg-00000001-dev00001-000001-abcdef01.jsonl.enc')).toBe(false);
+    // 快照/manifest/非受管一律不是段
+    expect(isSyncSegmentFileName(SNAPSHOT_NAME)).toBe(false);
+    expect(isSyncSegmentFileName(PORTABLE_SYNC_MANIFEST_NAME)).toBe(false);
+    expect(isSyncSegmentFileName('sync.log')).toBe(false);
+  });
+
+  it('快照判据与受管判据：快照/密文段计入快照面，quarantine 与非受管一律出局', () => {
+    expect(isSyncSnapshotFileName('snapshot-000001.json')).toBe(true);
+    expect(isSyncSnapshotFileName('snapshot-000001.json.enc')).toBe(true);
+    expect(isSyncSnapshotFileName('snapshot-abc.json')).toBe(false);
+    // 受管 = manifest + 段（含 .enc/副本）+ 快照
+    for (const name of [
+      PORTABLE_SYNC_MANIFEST_NAME,
+      'seg-00000001-dev00001-000001-abcdef01.jsonl',
+      'seg-00000001-dev00001-000001-abcdef01.jsonl.enc',
+      'snapshot-000001.json',
+      'snapshot-000001.json.enc',
+    ]) {
+      expect(isManagedSyncFileName(name)).toBe(true);
+    }
+    // quarantine/ 是子目录（listFiles 非递归只回目录名）+ 非受管文件 → 绝不入备份
+    for (const name of ['quarantine', 'quarantine/', 'sync.log', 'manifest-portable.json', '.hidden']) {
+      expect(isManagedSyncFileName(name)).toBe(false);
+    }
+  });
+
+  it('本地段 op_id 全集：解码成功段取并集，解不开的段只计数不算覆盖', () => {
+    const good = localSegmentOpIds([SEG_TEXT, OUTSIDE_TEXT]);
+    expect([...good.opIds].sort()).toEqual([...SEG_OP_IDS, ...OUTSIDE_OP_IDS].sort());
+    expect(good.undecodable).toBe(0);
+
+    const mixed = localSegmentOpIds([SEG_TEXT, 'half-written']);
+    expect([...mixed.opIds].sort()).toEqual([...SEG_OP_IDS].sort());
+    expect(mixed.undecodable).toBe(1);
+
+    expect([...localSegmentOpIds([]).opIds]).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -545,7 +681,7 @@ describe('便携包导入服务', () => {
   it('三段式顺序：备份先于重放（重放时刻三件套已在），checkpoint 先于备份', async () => {
     const fx = await fixture();
     fx.db.probe = () => {
-      fx.db.backupFilesAtRebuild = backupFilesOf(fx.io).length;
+      fx.db.backupFilesAtRebuild = backupFilesOf(fx).length;
     };
     await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
     expect(fx.db.backupFilesAtRebuild).toBe(3); // 主库 + -wal + -shm
@@ -595,7 +731,7 @@ describe('便携包导入服务', () => {
       'E_PORTABLE_NOT_EMPTY',
     );
     expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
-    expect(backupFilesOf(fx.io)).toHaveLength(0); // 零落盘
+    expect(backupFilesOf(fx)).toHaveLength(0); // 零落盘
   });
 
   it('checksums 篡改：整包拒绝 E_PORTABLE_CHECKSUM，零落盘不建备份', async () => {
@@ -608,7 +744,7 @@ describe('便携包导入服务', () => {
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
       'E_PORTABLE_CHECKSUM',
     );
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
     expect(fx.db.calls).toEqual([]);
   });
 
@@ -624,7 +760,7 @@ describe('便携包导入服务', () => {
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
       'E_PORTABLE_SEGMENT_COUNT',
     );
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
     expect(fx.db.calls).toEqual([]);
   });
 
@@ -636,7 +772,7 @@ describe('便携包导入服务', () => {
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
       'E_PORTABLE_CHECKSUM',
     );
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
   });
 
   it('zip slip：包内上跳条目名 → E_ENTRY_NAME，零落盘', async () => {
@@ -644,7 +780,7 @@ describe('便携包导入服务', () => {
     fx.io.writeFile(fx.zipPath, zipSync({ '../evil.db': DB_BYTES } as Record<string, Uint8Array>));
     expect(await codeOf(() => fx.service.plan({ zipPath: fx.zipPath }))).toBe('E_ENTRY_NAME');
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe('E_ENTRY_NAME');
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
   });
 
   it('半截 zip：结构化 E_PORTABLE_BAD_ZIP（不是未捕获异常）', async () => {
@@ -670,7 +806,7 @@ describe('便携包导入服务', () => {
       code: 'E_PORTABLE_ENCRYPTED_UNSUPPORTED',
       message: PORTABLE_IMPORT_ENCRYPTED_MESSAGE,
     });
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
   });
 
   it('失败注入：重放中途抛错 → 原库三件套逐字节还原 + rolledBack 标记', async () => {
@@ -684,7 +820,7 @@ describe('便携包导入服务', () => {
     expect([...fx.io.readFile(`${fx.dbPath}-wal`)]).toEqual([...WAL_BYTES]);
     expect([...fx.io.readFile(`${fx.dbPath}-shm`)]).toEqual([...SHM_BYTES]);
     // 备份仍在（可人工/撤销入口复核）
-    expect(backupFilesOf(fx.io)).toHaveLength(3);
+    expect(backupFilesOf(fx)).toHaveLength(3);
   });
 
   it('无备份不落库：备份写失败 → E_PORTABLE_BACKUP_FAILED，重放从未被调用', async () => {
@@ -698,7 +834,7 @@ describe('便携包导入服务', () => {
       'E_PORTABLE_BACKUP_FAILED',
     );
     expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
-    expect(backupFilesOf(fx.io)).toHaveLength(0); // 半成品已清理
+    expect(backupFilesOf(fx)).toHaveLength(0); // 半成品已清理
     expect([...fx.io.readFile(fx.dbPath)]).toEqual([...DB_BYTES]);
   });
 
@@ -712,7 +848,12 @@ describe('便携包导入服务', () => {
     fx.io.writeFile(fx.dbPath, new TextEncoder().encode('changed-after-import'));
     const reverted = await fx.service.revert({ backupPath: done.backupPath, confirm: true });
     expect(reverted.ok).toBe(true);
-    expect(reverted.restoredFiles).toEqual([fx.dbPath, `${fx.dbPath}-wal`, `${fx.dbPath}-shm`]);
+    // T80-06（H-10）：还原面 = 主库三件套 **+ 段目录**（既有三件套语义/顺序不动，
+    // 段目录条目紧随其后）。旧断言只认三件套，会漏掉段目录的还原承诺。
+    expect(reverted.restoredFiles.slice(0, 3)).toEqual([fx.dbPath, `${fx.dbPath}-wal`, `${fx.dbPath}-shm`]);
+    expect(reverted.restoredFiles).toHaveLength(3 + syncDirNames(fx).length);
+    expect(reverted.restoredFiles.slice(3)).toContain(join(fx.syncDir, SEG_NAME));
+    expect(reverted.restoredFiles.slice(3)).toContain(join(fx.syncDir, PORTABLE_SYNC_MANIFEST_NAME));
     expect([...fx.io.readFile(fx.dbPath)]).toEqual([...DB_BYTES]);
     expect([...fx.io.readFile(`${fx.dbPath}-wal`)]).toEqual([...WAL_BYTES]);
     expect([...fx.io.readFile(`${fx.dbPath}-shm`)]).toEqual([...SHM_BYTES]);
@@ -793,7 +934,7 @@ describe('便携包覆盖度预检：未 flush 缓冲并集（T80-04 H-08）', (
     // 证明确实走过 flush（否则账本还是空的）
     expect(fx.db.ledgerOpIds.has(bufferedOpId)).toBe(true);
     // 零落盘：没建备份、没重放
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
     expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
   });
 
@@ -808,7 +949,7 @@ describe('便携包覆盖度预检：未 flush 缓冲并集（T80-04 H-08）', (
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
       'E_PORTABLE_NOT_EMPTY',
     );
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
   });
 
   it('缓冲 op 已被包覆盖（本机导出场景）：并集后 uncoverable=0，不误拒', async () => {
@@ -833,7 +974,7 @@ describe('便携包覆盖度预检：未 flush 缓冲并集（T80-04 H-08）', (
     expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
       'E_PORTABLE_FLUSH_FAILED',
     );
-    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(backupFilesOf(fx)).toHaveLength(0);
     expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
   });
 });
@@ -918,6 +1059,293 @@ describe('便携包还原原子性与连接释放（T80-04 H-09）', () => {
 });
 
 // ---------------------------------------------------------------------------
+// T80-06（H-10）：撤销/回滚必须连 `data/sync/` 段目录一并还原
+//
+// 缺陷：撤销只还原主库三件套 → 包外页 op 所在的段文件留在盘上 → 重启后同步引擎按
+// 「账本 ∪ 本地段」再对齐 → 包外页复活（P5-3 红），撤销承诺落空。
+// ---------------------------------------------------------------------------
+
+/** 把「包外页」flush 成盘上的段（H-10 真机形态：包外 op 在段里而不在包里）。 */
+function addOutsideSegment(fx: Fixture): void {
+  fx.io.writeFile(join(fx.syncDir, OUTSIDE_SEG_NAME), new TextEncoder().encode(OUTSIDE_TEXT));
+}
+
+describe('便携包段目录快照与还原（T80-06 H-10）', () => {
+  it('execute 备份：三件套 + 段目录快照（manifest/段/快照），quarantine 与非受管不入', async () => {
+    const fx = await fixture({
+      syncNoise: ['quarantine/', 'sync.log'],
+      syncExtraFiles: { [SNAPSHOT_NAME]: SNAPSHOT_TEXT },
+    });
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    // 段目录快照 = 备份时刻的受管文件集（与现目录受管文件逐名一致）
+    const expected = syncDirNames(fx);
+    expect(expected).toContain(PORTABLE_SYNC_MANIFEST_NAME);
+    expect(expected).toContain(SEG_NAME);
+    expect(expected).toContain(SNAPSHOT_NAME);
+    expect(syncBackupNamesOf(fx, done.backupPath)).toEqual(expected);
+    // 逐字节等于源（manifest 也在，红线要求）
+    for (const name of expected) {
+      expect([...fx.io.readFile(join(`${done.backupPath}-sync`, name))]).toEqual([
+        ...fx.io.readFile(join(fx.syncDir, name)),
+      ]);
+    }
+    // quarantine/ 与非受管文件既不备份、也不被删（不动非受管面）
+    expect(fx.io.exists(join(`${done.backupPath}-sync`, 'quarantine'))).toBe(false);
+    expect(fx.io.exists(join(`${done.backupPath}-sync`, 'sync.log'))).toBe(false);
+    expect(fx.io.exists(join(fx.syncDir, 'sync.log'))).toBe(true);
+  });
+
+  it('revert 后段目录逐文件 = 备份态（含 manifest）：包外段被清、旧段回写、快照不残留', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    const manifestBefore = [...fx.io.readFile(join(fx.syncDir, PORTABLE_SYNC_MANIFEST_NAME))];
+    // 导入后：包外页被 flush 成段 + 折叠出快照（H-10 真机形态）
+    addOutsideSegment(fx);
+    fx.io.writeFile(join(fx.syncDir, SNAPSHOT_NAME), new TextEncoder().encode(SNAPSHOT_TEXT));
+    // 既有的包内段也被改写（模拟导入后同步引擎合并改写）
+    fx.io.writeFile(join(fx.syncDir, SEG_NAME), new TextEncoder().encode('rewritten-after-import'));
+
+    const reverted = await fx.service.revert({ backupPath: done.backupPath, confirm: true });
+    expect(reverted.ok).toBe(true);
+    // 段目录回到备份时刻的**文件集**：包外段与导入后快照都不在，包内段逐字节回写
+    expect(syncDirNames(fx)).toEqual(syncBackupNamesOf(fx, done.backupPath));
+    expect(fx.io.exists(join(fx.syncDir, OUTSIDE_SEG_NAME))).toBe(false);
+    expect(fx.io.exists(join(fx.syncDir, SNAPSHOT_NAME))).toBe(false);
+    expect([...fx.io.readFile(join(fx.syncDir, SEG_NAME))]).toEqual([...new TextEncoder().encode(SEG_TEXT)]);
+    expect([...fx.io.readFile(join(fx.syncDir, PORTABLE_SYNC_MANIFEST_NAME))]).toEqual(manifestBefore);
+    // 主库三件套同时还原（既有语义不动）
+    expect([...fx.io.readFile(fx.dbPath)]).toEqual([...DB_BYTES]);
+    expect([...fx.io.readFile(`${fx.dbPath}-wal`)]).toEqual([...WAL_BYTES]);
+    expect([...fx.io.readFile(`${fx.dbPath}-shm`)]).toEqual([...SHM_BYTES]);
+  });
+
+  it('包外页 op 撤销后不再经本地段可见（重启对齐 = 账本 ∪ 本地段，P5-3 的机器判据）', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    addOutsideSegment(fx);
+    // 撤销前：重启对齐面（本地段 op_id 全集）含包外页 op
+    const beforeOps = localSegmentOpIds([new TextDecoder().decode(fx.io.readFile(join(fx.syncDir, OUTSIDE_SEG_NAME)))]);
+    expect([...beforeOps.opIds].sort()).toEqual([...OUTSIDE_OP_IDS].sort());
+
+    await fx.service.revert({ backupPath: done.backupPath, confirm: true });
+
+    // 撤销后：段目录里再没有任何段承载包外 op → 重启后同步引擎无从复活它
+    const afterTexts = syncDirNames(fx)
+      .filter((name) => name.endsWith('.jsonl'))
+      .map((name) => new TextDecoder().decode(fx.io.readFile(join(fx.syncDir, name))));
+    const afterOps = localSegmentOpIds(afterTexts);
+    for (const opId of OUTSIDE_OP_IDS) {
+      expect(afterOps.opIds.has(opId)).toBe(false);
+    }
+    expect(fx.io.exists(join(fx.syncDir, OUTSIDE_SEG_NAME))).toBe(false);
+  });
+
+  it('coverage 补「本地盘上段有而包里没有的 op_id」：包外段 → blocked E_PORTABLE_NOT_EMPTY', async () => {
+    const fx = await fixture();
+    // 账本为空、缓冲为空——只有**盘上段**里有包外 op（旧实现唯一盲区）
+    addOutsideSegment(fx);
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(OUTSIDE_OP_IDS.length);
+    expect(plan.target.willReplace).toBe(false);
+    expect(plan.blocked?.code).toBe('E_PORTABLE_NOT_EMPTY');
+    expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
+      'E_PORTABLE_NOT_EMPTY',
+    );
+    expect(backupFilesOf(fx)).toHaveLength(0); // 零落盘：没建备份、没重放
+    expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
+  });
+
+  it('coverage 不误拒：本地段 op 全在包内（本机导出常态）→ uncovered=0 放行', async () => {
+    const fx = await fixture();
+    // 默认段目录里就是包内那一段：盘上段与包内段同集 → 不得误判未覆盖
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(0);
+    expect(plan.blocked).toBeNull();
+  });
+
+  it('快照不参与覆盖度（便携包明确排除 snapshot-*.json）→ 折叠过段/快照的库不被永久误拒', async () => {
+    const fx = await fixture();
+    // 仅提高快照：若把快照 op 计入本机集合，任何折叠过的库都会 uncovered>0 永久拒导。
+    // 本夹具的快照是**不可解码**文本，正是最坏形态。
+    fx.io.writeFile(join(fx.syncDir, SNAPSHOT_NAME), new TextEncoder().encode(SNAPSHOT_TEXT));
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(0);
+    expect(plan.blocked).toBeNull();
+  });
+
+  it('execute 成功态：段目录仍 = 备份态 + 包内段（账本与段一致，无孤儿段）', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    // execute 不改写段目录（replace 只在 DB 投影层）：段目录 = 备份态；账本 = 包内段 op。
+    // 二者一致 → 重启后同步引擎首轮一致性校验不会触发毁灭性重建（T82-01 同构土壤）。
+    expect(syncDirNames(fx)).toEqual(syncBackupNamesOf(fx, done.backupPath));
+    const diskOps = localSegmentOpIds(
+      syncDirNames(fx)
+        .filter((name) => name.endsWith('.jsonl'))
+        .map((name) => new TextDecoder().decode(fx.io.readFile(join(fx.syncDir, name)))),
+    );
+    expect([...diskOps.opIds].sort()).toEqual([...SEG_OP_IDS].sort());
+    // 账本 = 包内段 op（FakeDb 的 replace 语义）→ 与盘上段逐 op_id 一致
+    expect([...fx.db.ledgerOpIds].sort()).toEqual([...diskOps.opIds].sort());
+  });
+
+  it('execute 失败回滚：段目录一并回到调用前（包外段仍在，删除的段被写回）', async () => {
+    const fx = await fixture();
+    const beforeNames = syncDirNames(fx);
+    const beforeSeg = [...fx.io.readFile(join(fx.syncDir, SEG_NAME))];
+    // 重放中途失败：回滚面必须同时覆盖三件套与段目录
+    fx.db.onRebuild = () => {
+      throw new Error('注入的重放失败（重放已部分落盘）');
+    };
+    // 重放副作用：段被删除 + 新增包外段（模拟同步运行时在导入窗口内的产出）
+    fx.db.probe = () => {
+      fx.io.remove(join(fx.syncDir, SEG_NAME));
+      addOutsideSegment(fx);
+    };
+    await expect(fx.service.execute({ zipPath: fx.zipPath, confirm: true })).rejects.toMatchObject({
+      rolledBack: true,
+    });
+    // 段目录逐文件回到调用前：被删的段写回、新产的包外段被清
+    expect(syncDirNames(fx)).toEqual(beforeNames);
+    expect([...fx.io.readFile(join(fx.syncDir, SEG_NAME))]).toEqual(beforeSeg);
+    expect(fx.io.exists(join(fx.syncDir, OUTSIDE_SEG_NAME))).toBe(false);
+  });
+
+  it('段目录还原失败（删到一半）→ 段目录逐文件回到调用前，库与段不留半成品', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    // 调用前状态：导入后 + 包外段（撤销的目标是回到这里，失败也必须停在这里）
+    addOutsideSegment(fx);
+    const before = syncDirNames(fx).map((name) => ({
+      name,
+      bytes: [...fx.io.readFile(join(fx.syncDir, name))],
+    }));
+    const beforeDb = [...fx.io.readFile(fx.dbPath)];
+    // 故障注入：删到段目录最后一个文件才失败（前半已被删）
+    const segmentPaths = before.filter((entry) => entry.name.endsWith('.jsonl')).map((entry) => join(fx.syncDir, entry.name));
+    const last = segmentPaths[segmentPaths.length - 1];
+    fx.io.removeGuard = (path) => {
+      if (path === last) {
+        throw new Error('注入的删除失败（模拟 EBUSY）');
+      }
+    };
+    await expect(fx.service.revert({ backupPath: done.backupPath, confirm: true })).rejects.toMatchObject({
+      code: 'E_PORTABLE_ROLLBACK_FAILED',
+    });
+    // 段目录逐文件回到调用前（不得停在被删一半）
+    expect(syncDirNames(fx)).toEqual(before.map((entry) => entry.name));
+    for (const entry of before) {
+      expect([...fx.io.readFile(join(fx.syncDir, entry.name))]).toEqual(entry.bytes);
+    }
+    // 主库也回到调用前（库与段同一原子面）
+    expect([...fx.io.readFile(fx.dbPath)]).toEqual(beforeDb);
+    expect(fx.db.connectionOpen).toBe(true);
+  });
+
+  it('还原计划在停机后取：pauseSync 之前刚产出的包外段也被清（窄窗口回归）', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    // pauseSync 的实现里「最后再产一段」——还原计划若在停机前取，这段就漏清了。
+    const service = createPortableImportService({
+      dbPath: fx.dbPath,
+      syncDir: fx.syncDir,
+      db: fx.db,
+      schemaVersion: async () => SCHEMA_VERSION,
+      pickArchive: async () => null,
+      pauseSync: async () => {
+        addOutsideSegment(fx); // 停机动作本身把最后一段落盘
+      },
+      now: () => FIXED_NOW,
+      io: fx.io,
+    });
+    await service.revert({ backupPath: done.backupPath, confirm: true });
+    expect(fx.io.exists(join(fx.syncDir, OUTSIDE_SEG_NAME))).toBe(false);
+  });
+
+  it('旧备份兼容：无 <备份名>-sync/ 目录 → 不动段目录（绝不把现目录当「多出来」清掉）', async () => {
+    const fx = await fixture();
+    // 手工构造一份 T80-06 之前形态的备份：只有三件套，没有段目录快照
+    const backupPath = `${fx.dbPath}.bak-portable-20260925-102030`;
+    fx.io.writeFile(backupPath, fx.io.readFile(fx.dbPath));
+    fx.io.writeFile(`${backupPath}-wal`, fx.io.readFile(`${fx.dbPath}-wal`));
+    fx.io.writeFile(`${backupPath}-shm`, fx.io.readFile(`${fx.dbPath}-shm`));
+    addOutsideSegment(fx);
+    const before = syncDirNames(fx);
+
+    const reverted = await fx.service.revert({ backupPath, confirm: true });
+    expect(reverted.ok).toBe(true);
+    // 段目录一字未动（老备份没有段快照 → 保持既有「只还原三件套」语义）
+    expect(syncDirNames(fx)).toEqual(before);
+    expect(fx.io.exists(join(fx.syncDir, OUTSIDE_SEG_NAME))).toBe(true);
+    expect(reverted.restoredFiles).toEqual([fx.dbPath, `${fx.dbPath}-wal`, `${fx.dbPath}-shm`]);
+  });
+
+  it('备份阶段失败：段目录快照失败 → E_PORTABLE_BACKUP_FAILED 且三件套半成品一并清掉', async () => {
+    const fx = await fixture();
+    fx.io.writeGuard = (path) => {
+      if (path.includes('-sync')) {
+        throw new Error('注入的段目录快照失败（磁盘满）');
+      }
+    };
+    expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
+      'E_PORTABLE_BACKUP_FAILED',
+    );
+    // 无备份不落库：三件套备份也被撤掉，段目录与主库一字未动
+    expect(backupFilesOf(fx)).toHaveLength(0);
+    expect(fx.io.exists(`${portableBackupName(fx.dbPath, FIXED_NOW)}-sync`)).toBe(false);
+    expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
+    expect([...fx.io.readFile(fx.dbPath)]).toEqual([...DB_BYTES]);
+  });
+
+  it('syncDir 缺省派生：不给 syncDir 时按 dirname(dbPath)/sync 定位（与 index.ts 同口径）', async () => {
+    const fx = await fixture();
+    const bare = createPortableImportService({
+      dbPath: fx.dbPath, // 故意不传 syncDir
+      db: fx.db,
+      schemaVersion: async () => SCHEMA_VERSION,
+      pickArchive: async () => null,
+      now: () => FIXED_NOW,
+      io: fx.io,
+    });
+    // 派生路径正好命中夹具的 syncDir：包外段因此可见 → blocked
+    addOutsideSegment(fx);
+    const plan = await bare.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(OUTSIDE_OP_IDS.length);
+    expect(plan.blocked?.code).toBe('E_PORTABLE_NOT_EMPTY');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // T80-04（H-09）真连接实证：better-sqlite3 打开的 .db 在 close 前不可删
 // ---------------------------------------------------------------------------
 
@@ -997,6 +1425,101 @@ describeDb('便携包还原：真实句柄 close/reopen（T80-04 H-09，better-s
     } finally {
       core.dispose();
       temp.cleanup();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T80-06（H-10）真 fs 实证：段目录快照/还原走 nodePortableImportIo（目录级语义）
+//
+// MemIo 证不了真磁盘的「建目录 / 目录不整体删 / 逐文件增删」语义，这里用真临时目录跑。
+// ---------------------------------------------------------------------------
+
+describe('便携包段目录真 fs 快照与还原（T80-06 H-10）', () => {
+  it('revert 真 fs：包外段被清、导入后快照被清、包内段逐字节回写，quarantine/ 与非受管纹丝不动', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'septcats-portable-realfs-'));
+    const root = join(dir, 'data');
+    const syncDir = join(root, 'sync');
+    const attachmentsDir = join(root, 'attachments');
+    const outDir = join(root, 'export');
+    for (const path of [syncDir, attachmentsDir, outDir]) {
+      mkdirSync(path, { recursive: true });
+    }
+    const dbPath = join(root, 'septcats.db');
+    try {
+      writeFileSync(dbPath, DB_BYTES);
+      writeFileSync(`${dbPath}-wal`, WAL_BYTES);
+      writeFileSync(`${dbPath}-shm`, SHM_BYTES);
+      writeFileSync(join(syncDir, SEG_NAME), SEG_TEXT);
+      writeFileSync(join(syncDir, 'manifest.json'), SYNC_MANIFEST_TEXT);
+      mkdirSync(join(syncDir, 'quarantine'), { recursive: true });
+      writeFileSync(join(syncDir, 'quarantine', 'bad.jsonl'), 'quarantined-bad-segment');
+      writeFileSync(join(syncDir, 'sync.log'), 'noise');
+      writeFileSync(join(attachmentsDir, 'a.png'), PNG_BYTES);
+
+      const exported = await createPortableExportService({
+        dbPath,
+        syncDir,
+        attachmentsDir,
+        libraryName: async () => LIBRARY,
+        appVersion: APP_VERSION,
+        schemaVersion: async () => SCHEMA_VERSION,
+        checkpoint: async () => undefined,
+        sealSegments: async () => 0,
+        encrypted: () => false,
+        pickDirectory: async () => outDir,
+        now: () => FIXED_NOW,
+        io: nodePortableExportIo,
+      }).confirm({});
+      if (exported.canceled) {
+        throw new Error('导出夹具意外取消');
+      }
+
+      const db = new FakeDb(dbPath);
+      const service = createPortableImportService({
+        dbPath,
+        syncDir,
+        db,
+        schemaVersion: async () => SCHEMA_VERSION,
+        pickArchive: async () => null,
+        now: () => FIXED_NOW,
+        io: nodePortableImportIo,
+      });
+
+      const done = await service.execute({ zipPath: exported.path, confirm: true });
+      if ('canceled' in done) {
+        throw new Error('unexpected cancel');
+      }
+      // 备份段目录真落盘，且含 manifest + 段（红线：sync 快照必须含 manifest.json）
+      const syncBak = `${done.backupPath}-sync`;
+      expect(existsSync(join(syncBak, 'manifest.json'))).toBe(true);
+      expect(existsSync(join(syncBak, SEG_NAME))).toBe(true);
+      // quarantine/ 绝不被备份（任务书红线）
+      expect(existsSync(join(syncBak, 'quarantine'))).toBe(false);
+      expect(existsSync(join(syncBak, 'sync.log'))).toBe(false);
+
+      // 导入后：包外段 + 折叠快照 + 包内段被改写（同步运行时在导入窗口内的产出）
+      writeFileSync(join(syncDir, OUTSIDE_SEG_NAME), OUTSIDE_TEXT);
+      writeFileSync(join(syncDir, SNAPSHOT_NAME), SNAPSHOT_TEXT);
+      writeFileSync(join(syncDir, SEG_NAME), 'rewritten-after-import');
+
+      const reverted = await service.revert({ backupPath: done.backupPath, confirm: true });
+      expect(reverted.ok).toBe(true);
+      // 包外段与导入后快照被清（H-10 修复本体）
+      expect(existsSync(join(syncDir, OUTSIDE_SEG_NAME))).toBe(false);
+      expect(existsSync(join(syncDir, SNAPSHOT_NAME))).toBe(false);
+      // 包内段 / manifest 逐字节回写
+      expect(readFileSync(join(syncDir, SEG_NAME), 'utf8')).toBe(SEG_TEXT);
+      expect(readFileSync(join(syncDir, 'manifest.json'), 'utf8')).toBe(SYNC_MANIFEST_TEXT);
+      // 主库三件套同时还原
+      expect([...readFileSync(dbPath)]).toEqual([...DB_BYTES]);
+      expect([...readFileSync(`${dbPath}-wal`)]).toEqual([...WAL_BYTES]);
+      expect([...readFileSync(`${dbPath}-shm`)]).toEqual([...SHM_BYTES]);
+      // quarantine/ 与非受管文件纹丝不动（还原面只管受管文件，不整体删目录）
+      expect(readFileSync(join(syncDir, 'quarantine', 'bad.jsonl'), 'utf8')).toBe('quarantined-bad-segment');
+      expect(readFileSync(join(syncDir, 'sync.log'), 'utf8')).toBe('noise');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });
