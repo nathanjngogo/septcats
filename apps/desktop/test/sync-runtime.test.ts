@@ -47,11 +47,32 @@ class MemoryLedger {
   /** T31-01：op_id → seg_id 标记（null = 未标记已发布）。 */
   readonly segIds = new Map<string, string | null>();
   rebuildCount = 0;
+  /** T82-01：最近一次重建的模式（自愈路径必须永远只出现 'merge'）。 */
+  lastRebuildMode: 'replace' | 'merge' | null = null;
+  /** T82-01 测试夹具：模拟「段已合并但入账失败」（batch 丢弃 opLedger.insert）。 */
+  dropLedgerInserts = false;
+  /**
+   * T82-01 测试夹具：模拟「本轮开始的账本快照之后、校验之前又有写入落账」
+   * （H-04 的假偏差来源：用户同期编辑/后台导入）。在下一次 batch 时插进去——
+   * 旧判据用早先的快照算 expectedTotal，必然算漏它 → 计数偏移 → 毁灭性重建。
+   */
+  midCycleOp: Op | null = null;
 
   async batch(stmts: readonly DbBatchStatement[]): Promise<BatchData> {
+    if (this.midCycleOp !== null) {
+      const op = this.midCycleOp;
+      this.midCycleOp = null;
+      if (!this.ops.has(op.op_id)) {
+        this.ops.set(op.op_id, op);
+        this.segIds.set(op.op_id, null);
+      }
+    }
     const results = stmts.map((stmt) => {
       if (stmt.sqlId === 'opLedger.insert') {
         const p = stmt.params as { op_json: string };
+        if (this.dropLedgerInserts) {
+          return { sqlId: stmt.sqlId, data: { changes: 0, lastInsertRowid: 0 } };
+        }
         const op = decodeOp(p.op_json);
         if (!this.ops.has(op.op_id)) {
           this.ops.set(op.op_id, op);
@@ -72,7 +93,12 @@ class MemoryLedger {
 
   async all(sqlId: string, _params?: unknown): Promise<AllData> {
     if (sqlId === 'opLedger.listAll') {
-      return { rows: [...this.ops.values()].map((op) => ({ op_json: encodeOp(op) })) };
+      return {
+        rows: [...this.ops.values()].map((op) => ({
+          op_json: encodeOp(op),
+          seg_id: this.segIds.get(op.op_id) ?? null,
+        })),
+      };
     }
     if (sqlId === 'opLedger.listUnpublished') {
       const rows = [...this.ops.values()]
@@ -97,13 +123,33 @@ class MemoryLedger {
     throw new Error(`unexpected get(${sqlId})`);
   }
 
-  async rebuildFromSegments(segmentsJson: string): Promise<{ segments: number; ops: number; entities: number }> {
+  /**
+   * T82-01：桩必须**区分**两种模式（旧桩无条件 `ops.clear()`，把「以段替换账本」
+   * 编码成唯一语义，掩盖了 H-04 的数据丢失面）。
+   * - `merge`（默认）：并集——段未覆盖的本机 op 一律保留；
+   * - `replace`：清表后仅重放段——**只有覆盖度守卫通过才允许**（H-04 真机 442→1 面）。
+   */
+  async rebuildFromSegments(
+    segmentsJson: string,
+    mode: 'replace' | 'merge' = 'merge',
+  ): Promise<{ segments: number; ops: number; entities: number }> {
     this.rebuildCount += 1;
+    this.lastRebuildMode = mode;
     const segs = JSON.parse(segmentsJson) as Segment[];
-    this.ops.clear();
+    const incoming = new Map<string, Op>();
     for (const seg of segs) {
       for (const op of seg.ops) {
-        this.ops.set(op.op_id, op);
+        incoming.set(op.op_id, op);
+      }
+    }
+    if (mode === 'replace') {
+      this.ops.clear();
+      this.segIds.clear();
+    }
+    for (const [opId, op] of incoming) {
+      this.ops.set(opId, op);
+      if (!this.segIds.has(opId)) {
+        this.segIds.set(opId, null);
       }
     }
     return { segments: segs.length, ops: this.ops.size, entities: this.ops.size };
@@ -727,6 +773,80 @@ describe('sync/runtime 双实例集成', () => {
     // ⑤ 水位推进到账本末尾（maxC=5）
     const manifest = decodeManifest(readFileSync(join(syncDir, 'manifest.json'), 'utf8'));
     expect(manifest?.segment_watermark).toBe(5);
+    b.runtime.stop();
+  });
+
+  // TASK-T82-01（H-04 · P0 数据丢失）红测：老板真实库 442 页 → 1 页的同构夹具。
+  //   本机账本 10 op（非本机 actor：对账按设计**不代发**他人 op，故段集永远覆盖不到）
+  //   + 同步目录里只有 1 条 op 的段；另有 1 条「快照之后才落账」的同期写入。
+  //   修前：计数判据用早先快照算 expectedTotal，必然算漏那条同期写入 → 判偏差
+  //   → rebuildFromSegments → 桩/真机 `ops.clear()` 后只重放段 → 账本 11 → 1
+  //   （真机 7384 → 2、442 页 → 1 页）。
+  it('N：账本多、段少 → 覆盖度守卫拒绝重建，账本零丢失 + 留痕 E_LEDGER_UNCOVERED_OPS', async () => {
+    const syncDir = tempDir('septcats-sync-t82-guard-');
+
+    // ① 同步目录：只有 1 个段、段里只有 1 条 op（他人设备所发）
+    const segOp = upsertOp('cccc0003', 'pg-seg', '段里的页', 1);
+    const seg = buildSegment('cccc0003', [segOp], 1_700_000_000_000);
+    writeFileSync(join(syncDir, `${seg.seg_id}.jsonl`), encodeSegment(seg), 'utf8');
+
+    // ② 本机账本 10 条 op（另一设备 actor：对账不代发 → 段集覆盖不到，同构于
+    //    「本机独有历史」；副作用是留痕 E_SYNC_FOREIGN_OP_UNPUBLISHED，与本单无关）
+    const shared = new MemoryLedger();
+    const localOps = Array.from({ length: 10 }, (_, i) =>
+      upsertOp('dddd0004', `pg-local-${String(i)}`, `本地页${String(i)}`, i + 1),
+    );
+    await shared.batch(
+      localOps.map((op) => ({ sqlId: 'opLedger.insert', params: { op_json: encodeOp(op) } })),
+    );
+    // ③ 同期写入（本轮快照之后才落账的一条）：旧判据算漏它 → 「计数偏移」→
+    //   以段重建 → 账本被清空只剩段里那 1 条（老板真机同构：7387 ≠ 7386）
+    shared.midCycleOp = upsertOp('dddd0004', 'pg-race', '同期编辑的页', 11);
+
+    const a = makeRuntime({ syncDir, actor: 'aaaa0001', db: shared });
+    await a.runtime.start();
+
+    // ④ 零重建：账本 = 11 本地 + 1 段内 = 12，一条都没被抹掉
+    expect(shared.ops.size, '修前此处为 1（段里那一条）——442→1 的复现点').toBe(12);
+    expect(shared.rebuildCount, '段集不完整时必须拒绝重建（H-04 数据丢失面）').toBe(0);
+    expect(shared.lastRebuildMode).toBeNull();
+
+    // ⑤ 留痕（消息含未覆盖 op 数 = 12 - 1 段内那条）
+    const uncovered = a.runtime.getStatus().errors.filter((e) => e.code === 'E_LEDGER_UNCOVERED_OPS');
+    expect(uncovered).toHaveLength(1);
+    expect(uncovered[0]!.message).toContain('11');
+    expect(uncovered[0]!.message).toContain('未覆盖');
+
+    // ⑥ 本机历史仍在投影里（数据面未被触碰）
+    const titles = replay([...shared.ops.values()])
+      .projection.entities()
+      .map((e) => (e.data as { title?: string }).title);
+    for (let i = 0; i < 10; i += 1) {
+      expect(titles).toContain(`本地页${String(i)}`);
+    }
+    expect(titles).toContain('同期编辑的页');
+    expect(titles).toContain('段里的页');
+    a.runtime.stop();
+  });
+
+  // TASK-T82-01 绿测：覆盖度守卫**通过**时的自愈仍然只走 merge（并集），
+  // 绝不用 replace。夹具：段已合并但入账失败（dropLedgerInserts）→ 账本缺段内 op。
+  it('O：覆盖完整但入账缺失 → 以 merge 重建补齐（绝不用 replace）', async () => {
+    const syncDir = tempDir('septcats-sync-t82-merge-');
+    const segOp = upsertOp('cccc0003', 'pg-seg', '段里的页', 1);
+    const seg = buildSegment('cccc0003', [segOp], 1_700_000_000_000);
+    writeFileSync(join(syncDir, `${seg.seg_id}.jsonl`), encodeSegment(seg), 'utf8');
+
+    const shared = new MemoryLedger();
+    shared.dropLedgerInserts = true; // 模拟「段已合并但 op_ledger 未落」→ 账本缺 1 条
+    const b = makeRuntime({ syncDir, actor: 'aaaa0001', db: shared });
+    await b.runtime.start();
+    shared.dropLedgerInserts = false;
+
+    expect(shared.rebuildCount).toBe(1);
+    expect(shared.lastRebuildMode, '自愈路径必须永远只走 merge').toBe('merge');
+    expect(shared.ops.size).toBe(1);
+    expect(b.runtime.getStatus().errors.some((e) => e.code === 'E_LEDGER_UNCOVERED_OPS')).toBe(false);
     b.runtime.stop();
   });
 });

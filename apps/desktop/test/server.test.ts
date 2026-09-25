@@ -342,7 +342,10 @@ describeDb('DbServer core 派发（better-sqlite3 直连）', (ctor) => {
       id: nextId('rebuild'),
       t: 'rebuildFromSegments',
       segmentsJson,
+      mode: 'replace', // T82-01：本用例断言的正是「清表 → 仅重放段」
     });
+    expect(rebuilt.mode).toBe('replace');
+    expect(rebuilt.keptOps).toBe(0);
     expect(rebuilt.segments).toBe(2);
     expect(rebuilt.ops).toBe(3);
     expect(rebuilt.entities).toBe(3);
@@ -373,7 +376,12 @@ describeDb('DbServer core 派发（better-sqlite3 直连）', (ctor) => {
     expect(fts.rows.some((row) => row.page_id === PAGE)).toBe(true);
 
     // 再次重建应幂等（清表后重建，不产生重复 op）
-    await requestOk<RebuildData>(core, { id: nextId('rebuild-again'), t: 'rebuildFromSegments', segmentsJson });
+    await requestOk<RebuildData>(core, {
+      id: nextId('rebuild-again'),
+      t: 'rebuildFromSegments',
+      segmentsJson,
+      mode: 'replace',
+    });
     const count2 = await requestOk<GetData>(core, {
       id: nextId('rb-count-2'),
       t: 'get',
@@ -381,6 +389,99 @@ describeDb('DbServer core 派发（better-sqlite3 直连）', (ctor) => {
       params: {},
     });
     expect((count2.row as { n: number }).n).toBe(3);
+  });
+
+  // TASK-T82-01（H-04 · P0）：mode 语义对照。同一份「只含 pg-1 页 + 1 块」的段，
+  // 打在已有 1 条本机独有 op 的库上：merge = 并集保留；replace = 抹掉（H-04 面，
+  // 故只允许在覆盖度守卫通过后使用）。
+  it('rebuildFromSegments mode：merge 并集保留段未覆盖的本机 op；replace 才清表重放', async () => {
+    // ① 本机账本先落一条段里没有的 op（= 段集未覆盖的本机历史）
+    const localPageOp = makeOp('op-t82-local', 1, 'page', 'pg-local', {
+      workspace_id: WS,
+      title: '本机独有页',
+      sort_key: 'A00000000',
+      alive: 1,
+    });
+    await requestOk(core, {
+      id: nextId('t82-local-op'),
+      t: 'run',
+      sqlId: 'opLedger.insert',
+      params: {
+        op_id: localPageOp.op_id,
+        seg_id: null,
+        lamport_c: 1,
+        lamport_d: DEV,
+        target_table: 'page',
+        target_id: 'pg-local',
+        op_json: JSON.stringify(localPageOp),
+        applied_at: AT,
+      },
+    });
+
+    // ② 段只含 pg-1（页 + 块），不含 pg-local
+    const segmentsJson = JSON.stringify([
+      buildSegment(DEV, [
+        makeOp('op-t82-page', 2, 'page', PAGE, {
+          workspace_id: WS,
+          title: '段里的页',
+          sort_key: 'A00000001',
+          alive: 1,
+        }),
+        makeOp('op-t82-block', 3, 'block', BLOCK, {
+          page_id: PAGE,
+          workspace_id: WS,
+          type: 'paragraph',
+          props: { title: '段里的块' },
+          sort_key: 'A00000000',
+          alive: 1,
+        }),
+      ], AT),
+    ]);
+
+    // ③ merge（默认）：并集 → 3 op / 3 实体，本机 op 保留（keptOps=1）
+    const merged = await requestOk<RebuildData>(core, {
+      id: nextId('t82-merge'),
+      t: 'rebuildFromSegments',
+      segmentsJson,
+    });
+    expect(merged.mode).toBe('merge');
+    expect(merged.keptOps).toBe(1);
+    expect(merged.ops).toBe(3);
+    expect(merged.entities).toBe(3);
+
+    const kept = await requestOk<GetData>(core, {
+      id: nextId('t82-kept'),
+      t: 'get',
+      sqlId: 'page.get',
+      params: { id: 'pg-local' },
+    });
+    expect(kept.row).not.toBeNull();
+    const keptFts = await requestOk<FtsSearchData>(core, {
+      id: nextId('t82-kept-fts'),
+      t: 'ftsSearch',
+      workspaceId: WS,
+      query: '本机独有页',
+      limit: 10,
+    });
+    expect(keptFts.rows.some((row) => row.page_id === 'pg-local')).toBe(true);
+
+    // ④ replace（显式）：只重放段 → 2 op，pg-local 被抹掉（= 守卫未通过时的灾难面）
+    const replaced = await requestOk<RebuildData>(core, {
+      id: nextId('t82-replace'),
+      t: 'rebuildFromSegments',
+      segmentsJson,
+      mode: 'replace',
+    });
+    expect(replaced.mode).toBe('replace');
+    expect(replaced.keptOps).toBe(0);
+    expect(replaced.ops).toBe(2);
+    const gone = await requestOk<GetData>(core, {
+      id: nextId('t82-gone'),
+      t: 'get',
+      sqlId: 'page.get',
+      params: { id: 'pg-local' },
+    });
+    expect(gone.row).toBeNull();
   });
 
   it('rebuildFromSegments：非法输入 → E_BAD_PARAMS', async () => {

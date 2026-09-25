@@ -29,6 +29,7 @@ import {
   type IntegrityCheckData,
   type MigrateData,
   type RebuildData,
+  type RebuildMode,
   type RunData,
 } from './rpc';
 
@@ -61,7 +62,11 @@ export interface DbHandle {
   batch(stmts: readonly DbBatchStatement[]): Promise<BatchData>;
   ftsSearch(workspaceId: string, query: string, limit?: number): Promise<FtsSearchData>;
   exportSnapshot(): Promise<ExportSnapshotData>;
-  rebuildFromSegments(segmentsJson: string): Promise<RebuildData>;
+  /**
+   * T82-01（H-04 P0）：`mode` 缺省 `merge`（并集，段未覆盖的本机 op 保留）。
+   * `'replace'`（清表后仅重放段）只允许在覆盖度守卫通过后使用。
+   */
+  rebuildFromSegments(segmentsJson: string, mode?: RebuildMode): Promise<RebuildData>;
   integrityCheck(): Promise<IntegrityCheckData>;
   /** R28（T80-01）：导出/备份前 checkpoint（wal 落回主库）。 */
   checkpoint(): Promise<CheckpointData>;
@@ -153,8 +158,8 @@ class DbClient extends EventEmitter implements DbHandle {
     return this.request<ExportSnapshotData>((id) => ({ id, t: 'exportSnapshot' }));
   }
 
-  rebuildFromSegments(segmentsJson: string): Promise<RebuildData> {
-    return this.request<RebuildData>((id) => ({ id, t: 'rebuildFromSegments', segmentsJson }));
+  rebuildFromSegments(segmentsJson: string, mode: RebuildMode = 'merge'): Promise<RebuildData> {
+    return this.request<RebuildData>((id) => ({ id, t: 'rebuildFromSegments', segmentsJson, mode }));
   }
 
   integrityCheck(): Promise<IntegrityCheckData> {

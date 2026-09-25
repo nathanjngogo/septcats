@@ -60,7 +60,7 @@ import {
 } from '@septcats/sync';
 import { NodeFs } from '@septcats/sync';
 import { commitOps, ledgerStatement } from '../commit';
-import type { AllData, BatchData, DbBatchStatement, GetData } from '../../db/rpc';
+import type { AllData, BatchData, DbBatchStatement, GetData, RebuildMode } from '../../db/rpc';
 import type { SyncStatusSnapshot, SyncDeviceEntry, SyncErrorEntry, SyncRuntimeState } from '../../shared/sync';
 import {
   E_KEY_ID_MISMATCH,
@@ -81,8 +81,12 @@ export interface SyncDbAdapter {
   all(sqlId: string, params?: unknown): Promise<AllData>;
   get(sqlId: string, params?: unknown): Promise<GetData>;
   batch(stmts: readonly DbBatchStatement[]): Promise<BatchData>;
-  /** 以段重建本地库（一致性校验失败时的自愈路径；缺省则只记日志）。 */
-  rebuildFromSegments?(segmentsJson: string): Promise<{ segments: number; ops: number; entities: number }>;
+  /**
+   * 以段重建本地库（一致性校验失败时的自愈路径；缺省则只记日志）。
+   * T82-01：`mode` 缺省为 `'merge'`（并集，保留段未覆盖的本机 op）；
+   * `'replace'`（清表后仅重放段）只有覆盖度守卫通过才允许使用。
+   */
+  rebuildFromSegments?(segmentsJson: string, mode?: RebuildMode): Promise<{ segments: number; ops: number; entities: number }>;
 }
 
 export interface SyncRuntimeOptions {
@@ -140,6 +144,11 @@ export const SYNC_RUNTIME_ERRORS = {
   FOREIGN_UNPUBLISHED: 'E_SYNC_FOREIGN_OP_UNPUBLISHED',
   MANIFEST_INVALID: SyncErrorCodes.MANIFEST_INVALID,
   PROJECTION_REBUILT: 'E_PROJECTION_REBUILT',
+  /**
+   * T82-01（H-04 P0）：段集未覆盖本机账本——重建必然抹掉这些 op，故**拒绝重建**、
+   * 只留痕、绝不动数据。消息含未覆盖 op 数。
+   */
+  LEDGER_UNCOVERED_OPS: 'E_LEDGER_UNCOVERED_OPS',
   KEY_MISMATCH: E_SYNC_KEY_MISMATCH,
   KEY_ID_MISMATCH: E_KEY_ID_MISMATCH,
   REENCRYPT_FAILED: 'E_SYNC_REENCRYPT_FAILED',
@@ -801,10 +810,10 @@ export class SyncRuntime {
     // 标记（不重发，杜绝同区间重复段），未发布的按策略补发，最后统一回写并记日志。
     await this.reconcileUnpublished();
 
-    // 首轮：ledger 计数一致性校验（不一致 → 以段重建，log E_PROJECTION_REBUILT）
+    // 首轮：账本一致性校验（T82-01：判据改为 op_id 集合一致性，不再用快照计数）
     if (!this.firstCycleDone) {
       this.firstCycleDone = true;
-      await this.verifyLedgerIntegrity(ledger.length + applied.length + crdtOps.length);
+      await this.verifyLedgerIntegrity();
     }
 
     // 快照折叠 + gc 计划（复用引擎；gc 真删需设置开启）
@@ -830,20 +839,26 @@ export class SyncRuntime {
     }
   }
 
-  private async loadLedgerOps(): Promise<Op[]> {
+  /** 账本全量读取（含 seg_id）。解码失败的行跳过并留痕（不进账本视图）。 */
+  private async loadLedgerRows(): Promise<Array<{ op: Op; segId: string | null }>> {
     const data = await this.db.all('opLedger.listAll', {});
-    const ops: Op[] = [];
+    const rows: Array<{ op: Op; segId: string | null }> = [];
     for (const row of data.rows) {
       const json = (row as { op_json?: unknown }).op_json;
+      const segId = (row as { seg_id?: unknown }).seg_id;
       if (typeof json === 'string') {
         try {
-          ops.push(decodeOp(json));
+          rows.push({ op: decodeOp(json), segId: typeof segId === 'string' ? segId : null });
         } catch (error) {
           this.recordError(SYNC_RUNTIME_ERRORS.CYCLE_FAILED, `op_ledger 存在非法 op：${describe(error)}`);
         }
       }
     }
-    return ops;
+    return rows;
+  }
+
+  private async loadLedgerOps(): Promise<Op[]> {
+    return (await this.loadLedgerRows()).map((row) => row.op);
   }
 
   /**
@@ -1109,22 +1124,70 @@ export class SyncRuntime {
     }
   }
 
-  /** 首轮 ledger 计数校验；不一致 → rebuildFromSegments 以段重建（不崩）。 */
-  private async verifyLedgerIntegrity(expectedTotal: number): Promise<void> {
+  /**
+   * 首轮账本一致性校验（T82-01 重写，替代旧的「过期快照计数」判据）。
+   *
+   * 判据 = **op_id 集合一致性**，且**检查时刻实时读数**（账本与段都在本方法内现取，
+   * 不再用 cycleBody 早先读的 ledger 快照）→ 无竞态窗口、无计数巧合误判。
+   *
+   * - `uncovered`（本机 op_id ∉ 段 op_id 集）：段集不完整 → **拒绝任何重建**，
+   *   只留痕 `E_LEDGER_UNCOVERED_OPS`（消息含未覆盖 op 数），**绝不动数据**
+   *   （H-04：442 页 → 1 页正是「计数假偏差 + 无覆盖度守卫」的产物）；
+   * - `missing`（段里有、本机没有，且按写入路径同款 lamport 过滤**本应**入账的 op）：
+   *   真不一致 → 以 `merge` 重建（并集：本机 op 全保留，只补齐缺失，零丢失风险）；
+   * - 两者皆 0 → 一致，不动。
+   */
+  private async verifyLedgerIntegrity(): Promise<void> {
     if (this.db.rebuildFromSegments === undefined) {
       return;
     }
-    const counted = await this.db.get('opLedger.count', {});
-    const n = (counted.row as { n?: unknown } | null)?.n;
-    if (typeof n === 'number' && n === expectedTotal) {
+    const rows = await this.loadLedgerRows();
+    const segs = await this.collectSegments();
+
+    const ledgerOpIds = new Set<string>();
+    for (const row of rows) {
+      ledgerOpIds.add(row.op.op_id);
+    }
+    const segOpIds = new Set<string>();
+    const segOps: Op[] = [];
+    for (const seg of segs) {
+      for (const op of seg.ops) {
+        segOpIds.add(op.op_id);
+        segOps.push(op);
+      }
+    }
+
+    // 覆盖度守卫：段集必须 ⊇ 本机账本（快照是段的折叠形态、本身即传播载体，
+    // T31-01 播种时已把快照名写进 seg_id，故快照承载的 op 视为已覆盖）。
+    const uncovered = rows.filter((row) => !segOpIds.has(row.op.op_id) && !isSnapshotCarrier(row.segId));
+    if (uncovered.length > 0) {
+      this.recordError(
+        SYNC_RUNTIME_ERRORS.LEDGER_UNCOVERED_OPS,
+        `段集未覆盖本机 ${String(uncovered.length)} 条 op（段 op=${String(segOpIds.size)}，本机账本=${String(
+          rows.length,
+        )}）：拒绝重建以免数据丢失（先补发本机 op 或导入完整段）`,
+      );
+      return;
+    }
+
+    // 缺失面：段里有、本机没有，且按写入路径同款 lamport 过滤本应入账的 op。
+    // crdt_update 在写入侧绕过该过滤（T19-05），这里同口径排除，避免把「设计上
+    // 不落账的 op」误判为缺失；被 lamport 过滤掉的实体 op 同理。
+    const ledgerOps = rows.map((row) => row.op);
+    const missing = filterAgainstLedger(
+      segOps.filter((op) => op.kind !== 'crdt_update' && !ledgerOpIds.has(op.op_id)),
+      ledgerOps,
+    );
+    if (missing.length === 0) {
       return;
     }
     this.log(
-      `E_PROJECTION_REBUILT op_ledger 计数偏移（${String(n)} ≠ ${String(expectedTotal)}），以合并后段重建`,
+      `E_PROJECTION_REBUILT 本机账本缺 ${String(missing.length)} 条段内 op（段 op=${String(
+        segOpIds.size,
+      )}，本机账本=${String(rows.length)}），以并集（merge）重建投影`,
     );
     try {
-      const segs = await this.collectSegments();
-      await this.db.rebuildFromSegments(JSON.stringify(segs));
+      await this.db.rebuildFromSegments(JSON.stringify(segs), 'merge');
     } catch (error) {
       this.recordError(SYNC_RUNTIME_ERRORS.CYCLE_FAILED, `段重建失败：${describe(error)}`);
     }
@@ -1265,6 +1328,15 @@ function markOpSegStatement(opId: string, segId: string): DbBatchStatement {
 
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * T82-01：seg_id 是否指向快照文件。快照是段的折叠形态、本身即传播载体
+ * （T31-01 播种时把快照名写进 seg_id），故快照承载的 op 在覆盖度守卫里
+ * 视为已覆盖——否则「从快照播种过的新设备」会永久误报未覆盖。
+ */
+function isSnapshotCarrier(segId: string | null): boolean {
+  return typeof segId === 'string' && /^snapshot-\d+\.json(\.enc)?$/.test(segId);
 }
 
 function seqOf(name: string): number {

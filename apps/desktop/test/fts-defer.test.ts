@@ -251,6 +251,7 @@ describeDb('FTS 触发器 defer 守卫（TASK-T15-01）', (ctor) => {
         id: nextId('rebuild'),
         t: 'rebuildFromSegments',
         segmentsJson,
+        mode: 'replace', // T82-01：本用例账本为空，验的是「清表 → 仅重放段」
       });
       // 还原 exec（连接还要给后面的断言用）
       (db as unknown as { exec: (sql: string) => void }).exec = originalExec;
@@ -301,6 +302,7 @@ describeDb('FTS 触发器 defer 守卫（TASK-T15-01）', (ctor) => {
         id: nextId('rebuild-ok'),
         t: 'rebuildFromSegments',
         segmentsJson,
+        mode: 'replace',
       });
       expect(rebuilt.entities).toBe(2);
       expect(await readFlag(core.activeDatabase())).toBe(0);

@@ -39,6 +39,7 @@ import {
   type FtsSearchRow,
   type GetData,
   type IntegrityCheckData,
+  type RebuildMode,
   type RunData,
 } from './rpc';
 
@@ -455,23 +456,32 @@ function parseSegments(segmentsJson: string): Segment[] {
 }
 
 function readLedgerOps(db: SqliteDatabase): Op[] {
+  return readLedgerRows(db).map((row) => row.op);
+}
+
+/**
+ * 账本全量读取（含 seg_id）。T82-01：merge 模式据此挑出「段未覆盖」的本机 op
+ * 并保留其原 seg_id（replace 模式不读）。
+ */
+function readLedgerRows(db: SqliteDatabase): Array<{ op: Op; segId: string | null }> {
   const data = executeStatement(db, 'opLedger.listAll', {}, 'all');
   if (!('rows' in data)) {
     throw new RpcFailure('E_INTERNAL', 'op_ledger 读取失败');
   }
-  const ops: Op[] = [];
+  const rows: Array<{ op: Op; segId: string | null }> = [];
   for (const row of data.rows) {
     const json = (row as { op_json?: unknown }).op_json;
+    const segId = (row as { seg_id?: unknown }).seg_id;
     if (typeof json !== 'string') {
       throw new RpcFailure('E_INTERNAL', 'op_ledger 行缺少 op_json');
     }
     try {
-      ops.push(decodeOp(json));
+      rows.push({ op: decodeOp(json), segId: typeof segId === 'string' ? segId : null });
     } catch (error) {
       throw new RpcFailure('E_INTERNAL', `op_ledger 中存在非法 op：${describeError(error)}`);
     }
   }
-  return ops;
+  return rows;
 }
 
 function toFtsPhrase(query: string): string {
@@ -569,14 +579,33 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
       }
       case 'rebuildFromSegments': {
         const segments = parseSegments(request.segmentsJson);
+        // T82-01（H-04 P0）：缺省 merge（安全侧）——并集重建，段未覆盖的本机 op
+        // 一律保留；只有显式 'replace' 才走「清表后仅重放段」的旧语义。
+        const mode: RebuildMode = request.mode === 'replace' ? 'replace' : 'merge';
         const ops: Op[] = [];
-        const segIdByOpId = new Map<string, string>();
+        const segIdByOpId = new Map<string, string | null>();
         for (const segment of segments) {
           for (const op of segment.ops) {
             ops.push(op);
             if (!segIdByOpId.has(op.op_id)) {
               segIdByOpId.set(op.op_id, segment.seg_id);
             }
+          }
+        }
+        // merge：本机账本里「段未覆盖」的 op 一并进重放集（保留其原 seg_id）。
+        // 这是 H-04 的数据保全面——同步刚开启时段集远小于账本，replace 会把
+        // 这些历史永久抹除（老板真实库 442 页 → 1 页）。
+        const keptOps: Array<{ op: Op; segId: string | null }> = [];
+        if (mode === 'merge') {
+          const segOpIds = new Set(ops.map((op) => op.op_id));
+          for (const row of readLedgerRows(current)) {
+            if (!segOpIds.has(row.op.op_id)) {
+              keptOps.push(row);
+              segIdByOpId.set(row.op.op_id, row.segId);
+            }
+          }
+          for (const row of keptOps) {
+            ops.push(row.op);
           }
         }
         const { projection } = replay(ops);
@@ -610,7 +639,13 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
           }
           current.exec(FTS_RESYNC_SQL);
           current.exec('UPDATE fts_defer SET flag = 0');
-          return { segments: segments.length, ops: ops.length, entities: entities.length };
+          return {
+            segments: segments.length,
+            ops: ops.length,
+            entities: entities.length,
+            mode,
+            keptOps: keptOps.length,
+          };
         });
         return dbOk(id, rebuild());
       }

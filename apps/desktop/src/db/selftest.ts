@@ -398,6 +398,9 @@ async function main(): Promise<void> {
     const rebuilt = await requestOk<RebuildData>(core, {
       id: nextId(),
       t: 'rebuildFromSegments',
+      // T82-01：显式 replace——此处库是空的，段即全量（默认 merge 更安全，
+      // 但自检要验的就是「清表后仅重放段」这条路径）。
+      mode: 'replace',
       segmentsJson,
     });
     check('rebuildFromSegments 应用 2 段', rebuilt.segments === 2 && rebuilt.ops === 3, JSON.stringify(rebuilt));

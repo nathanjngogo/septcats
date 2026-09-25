@@ -1,0 +1,144 @@
+{
+  "task": "T80-01",
+  "ranAt": "2026-09-25T05:59:17.123Z",
+  "assertions": [
+    {
+      "step": "P0|夹具",
+      "name": "P0-1 夹具页创建成功",
+      "ok": true,
+      "detail": "{\"id\":\"01M3BJB06GMQKQQPHBRWSRCZKJ\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
+    },
+    {
+      "step": "P0|夹具",
+      "name": "P0-2 portable API 就位（preview/confirm）",
+      "ok": true,
+      "detail": "{\"id\":\"01M3BJB06GMQKQQPHBRWSRCZKJ\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
+    },
+    {
+      "step": "P0|夹具",
+      "name": "P0-3 主库落在 scratch 数据根",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-e2e\\data\\septcats.db"
+    },
+    {
+      "step": "P1|preview",
+      "name": "P1-1 counts 正确（preview 只读不封段：db=1/附件=2/段=0/条目=3）",
+      "ok": true,
+      "detail": "{\"segments\":0,\"attachments\":2,\"db\":1,\"entries\":3}"
+    },
+    {
+      "step": "P1|preview",
+      "name": "P1-2 归档名含 portable + .zip",
+      "ok": true,
+      "detail": "septcats-portable-个人工作区-20260925-135914.zip"
+    },
+    {
+      "step": "P1|preview",
+      "name": "P1-3 段为空时 warning 在场（PRD 非阻断提示）",
+      "ok": true,
+      "detail": "[\"同步段为空（未启用同步或尚未产段）：包内只有主库与附件，导入侧重放将得到空库\"]"
+    },
+    {
+      "step": "P1|preview",
+      "name": "P1-5 清单含两份附件且字节正确",
+      "ok": true,
+      "detail": "[[\"db\",\"septcats.db\",4096],[\"attachment\",\"attachments/048cb3b6873739b907b7f2ea7eea43d4b45e3ba2b6bcc630bd75f8d160ad1c98.bin\",2048],[\"attachment\",\"attachments/3c134d70f9d1773e6ec1a089a0e99f5ddcd99d88794f5d3348aff3960ba6a765.png\",1024]]"
+    },
+    {
+      "step": "P1|preview",
+      "name": "P1-4 preview 零落盘（目标目录文件数不变）",
+      "ok": true,
+      "detail": "0 → 0"
+    },
+    {
+      "step": "P2|设置页入口",
+      "name": "P2-1 设置页存在便携包导出按钮",
+      "ok": true,
+      "detail": "{\"found\":true,\"panel\":true,\"meta\":\"条目 4 个 · 约 7.6 KB\",\"errs\":[],\"malformed\":false}"
+    },
+    {
+      "step": "P2|设置页入口",
+      "name": "P2-2 点击后预览面板出现（条目+字节文案）",
+      "ok": true,
+      "detail": "{\"panel\":true,\"meta\":\"条目 4 个 · 约 7.6 KB\",\"errs\":[]}"
+    },
+    {
+      "step": "P2|设置页入口",
+      "name": "P2-3 点击后无 IPC 错误（console/界面零 E_MALFORMED）",
+      "ok": true,
+      "detail": "{\"errs\":[],\"malformed\":false}"
+    },
+    {
+      "step": "P3|confirm",
+      "name": "P3-1 confirm 未取消且返回绝对路径",
+      "ok": true,
+      "detail": "\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-135917.zip\""
+    },
+    {
+      "step": "P3|confirm",
+      "name": "P3-2 zip 真实落盘且非空",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-e2e\\export-target\\septcats-portable-个人工作区-20260925-135917.zip 11996"
+    },
+    {
+      "step": "P3|confirm",
+      "name": "P3-3 重名不覆盖（renamed=true 且两份并存）",
+      "ok": true,
+      "detail": "{\"p1\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-135917.zip\",\"p2\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-135917-2.zip\",\"files\":[\"septcats-portable-个人工作区-20260925-135917-2.zip\",\"septcats-portable-个人工作区-20260925-135917.zip\"]}"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-1 含 manifest-portable.json",
+      "ok": true,
+      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3bjawwsvgs70sver8j4jyg9-000001-7b4fe28c.jsonl\",\"attachments/048cb3b6873739b907b7f2ea7eea43d4b45e3ba2b6bcc630bd75f8d160ad1c98.bin\",\"attachments/3c134d70f9d1773e6ec1a089a0e99f5ddcd99d88794f5d3348aff3960ba6a765.png\"]"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-2 含 septcats.db",
+      "ok": true,
+      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3bjawwsvgs70sver8j4jyg9-000001-7b4fe28c.jsonl\",\"attachments/048cb3b6873739b907b7f2ea7eea43d4b45e3ba2b6bcc630bd75f8d160ad1c98.bin\",\"attachments/3c134d70f9d1773e6ec1a089a0e99f5ddcd99d88794f5d3348aff3960ba6a765.png\"]"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-3 含段（sync/seg-*.jsonl ≥1）与两份附件（原命名）",
+      "ok": true,
+      "detail": "[\"sync/seg-00000001-01m3bjawwsvgs70sver8j4jyg9-000001-7b4fe28c.jsonl\",\"attachments/048cb3b6873739b907b7f2ea7eea43d4b45e3ba2b6bcc630bd75f8d160ad1c98.bin\",\"attachments/3c134d70f9d1773e6ec1a089a0e99f5ddcd99d88794f5d3348aff3960ba6a765.png\"]"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-4 条目数 = 4 素材 + manifest 自身",
+      "ok": true,
+      "detail": "5 vs 5"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-5 排除清单生效（logs/tmp/crashDumps/bak-/隐藏文件零泄漏）",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-6 附件字节级一致（sha256 相等）",
+      "ok": true,
+      "detail": "048cb3b6873739b9 vs 048cb3b6873739b9"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-7 manifest 逐条 sha256 可复算（自指排除）",
+      "ok": true,
+      "detail": "entries=4 bad=0 keys=[\"name\",\"kind\",\"bytes\",\"sha256\",\"stored\"]"
+    },
+    {
+      "step": "P4|包内核",
+      "name": "P4-8 压缩档分派：.png 附件 STORED(0)；.bin/db/段 DEFLATE(8)",
+      "ok": true,
+      "detail": "[[\"manifest-portable.json\",8],[\"septcats.db\",8],[\"sync/seg-00000001-01m3bjawwsvgs70sver8j4jyg9-000001-7b4fe28c.jsonl\",8],[\"attachments/048cb3b6873739b907b7f2ea7eea43d4b45e3ba2b6bcc630bd75f8d160ad1c98.bin\",8],[\"attachments/3c134d70f9d1773e6ec1a089a0e99f5ddcd99d88794f5d3348aff3960ba6a765.png\",0]]"
+    },
+    {
+      "step": "P9|存活",
+      "name": "P9-1 应用存活（导出后未崩）",
+      "ok": true,
+      "detail": "true"
+    }
+  ]
+}

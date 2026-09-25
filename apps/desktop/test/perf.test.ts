@@ -434,6 +434,7 @@ describeDb('perf：G4 §9.2 硬指标基线（TASK-T14-01）', (ctor) => {
         id: 'perf-rebuild-run',
         t: 'rebuildFromSegments',
         segmentsJson,
+        mode: 'replace', // T82-01：1 万页全量重建基线（段即全量）
       });
       const elapsed = performance.now() - started;
       if (!response.ok) {

@@ -65,7 +65,19 @@ export type DbRequest =
       readonly limit: number;
     }
   | { readonly id: string; readonly t: 'exportSnapshot' }
-  | { readonly id: string; readonly t: 'rebuildFromSegments'; readonly segmentsJson: string }
+  | {
+      readonly id: string;
+      readonly t: 'rebuildFromSegments';
+      readonly segmentsJson: string;
+      /**
+       * T82-01（H-04 P0）：重建模式。**缺省 `merge`**（安全侧）。
+       * - `merge`：op_ledger 取「本机现有 op ∪ 段 op」（按 op_id 去重）后重放重建投影，
+       *   段未覆盖的本机 op 一律保留 → 任何情况下都不会因段集不完整而丢数据；
+       * - `replace`：清表后**只**重放传入段（旧语义）。只允许在「段集 ⊇ 本机账本」
+       *   已被证明时使用（如 T80-02 便携包导入：包内段即全量）。
+       */
+      readonly mode?: RebuildMode;
+    }
   | { readonly id: string; readonly t: 'integrityCheck' }
   /** R28（T80-01）：便携包/备份前强制 `PRAGMA wal_checkpoint(TRUNCATE)`（先例 migrations.ts）。 */
   | { readonly id: string; readonly t: 'checkpoint' }
@@ -122,10 +134,20 @@ export interface ExportSnapshotData {
   readonly json: string;
 }
 
+/** T82-01（H-04 P0）：`rebuildFromSegments` 的重建模式。 */
+export type RebuildMode = 'replace' | 'merge';
+
 export interface RebuildData {
   readonly segments: number;
   readonly ops: number;
   readonly entities: number;
+  /** 实际生效的重建模式（回包回显，便于调用方/日志核对）。 */
+  readonly mode: RebuildMode;
+  /**
+   * `merge` 下「本机账本里段未覆盖、被并集保留」的 op 数（replace 恒为 0）。
+   * >0 即表示这次重建若走 replace 会丢这么多条 op。
+   */
+  readonly keptOps: number;
 }
 
 export interface IntegrityCheckData {
