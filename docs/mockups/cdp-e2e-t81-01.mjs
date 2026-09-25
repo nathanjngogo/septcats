@@ -23,13 +23,20 @@ const SHOTS = join(REPO, 'docs', 'mockups', 'screens-t81-01');
 const REAL_ROOT = 'C:\\Users\\Administrator\\.septcats';
 const PORT = 9250;
 const ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
+// 模式：--packed=打 dist/win-unpacked EXE（rc 终验，证「打的是本轮产物」）；默认=打 main 树 out/
+const PACKED = process.argv.includes('--packed');
+const WIN_UNPACKED = join(APPDIR, 'dist', 'win-unpacked');
+const LAUNCH_EXE = PACKED ? join(WIN_UNPACKED, 'Septcats.exe') : ELECTRON;
+const LAUNCH_CWD = PACKED ? WIN_UNPACKED : APPDIR;
+const LAUNCH_FIXED = PACKED ? [] : ['.'];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const waitSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 function killTree(pid) { try { execSync(`taskkill /PID ${String(pid)} /T /F`, { stdio: 'ignore' }); } catch { /* gone */ } }
 function realRootStamp() { try { return String(statSync(REAL_ROOT).mtimeMs); } catch { return '-1'; } }
 function killStaleApp() {
   try {
-    const out = execSync("wmic process where \"name='electron.exe'\" get processid,commandline /format:list", { encoding: 'utf8' });
+    const img = PACKED ? 'Septcats.exe' : 'electron.exe';
+    const out = execSync(`wmic process where "name='${img}'" get processid,commandline /format:list`, { encoding: 'utf8' });
     let cur = '';
     for (const line of out.split('\n')) {
       if (line.startsWith('CommandLine=')) cur = line;
@@ -42,7 +49,7 @@ async function poll(fn, pred, ms, every = 600) {
   for (;;) { const v = await fn(); if (pred(v)) return { ok: true, v, waited: Date.now() - t0 }; if (Date.now() - t0 > ms) return { ok: false, v, waited: Date.now() - t0 }; await wait(every); }
 }
 async function launch() {
-  const child = spawn(ELECTRON, ['.', `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: APPDIR, stdio: 'ignore' });
+  const child = spawn(LAUNCH_EXE, [...LAUNCH_FIXED, `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: LAUNCH_CWD, stdio: 'ignore' });
   let browser = null;
   for (let i = 0; i < 40; i += 1) { await wait(800); try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); break; } catch { /* retry */ } }
   if (browser === null) throw new Error('CDP 连不上');
