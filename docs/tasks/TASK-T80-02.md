@@ -25,3 +25,5 @@
 ## 红线
 
 启动零外联；op-log 零新增语义（重放=既有段格式）；不 import electron 于 packages 内；禁静默覆盖现库（无备份不落库）；UI token/禁词纪律同前；不动 T80-01 已收口的导出面（发现问题记 DEVIATION 不顺手改）。
+
+**T82-01 后新增硬要求（09-25，H-04 P0 教训）**：`rebuildFromSegments` 已增 `mode: 'replace' | 'merge'` 且缺省 merge——导入侧**必须显式传 `'replace'`**（包=权威全量），并在执行前自检包内段清单 ⊇ 预期（manifest.segments 数与实收段数一致，不符即拒），禁依赖缺省值；失败注入测试须断言回滚后原库逐字节还原。

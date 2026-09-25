@@ -23,11 +23,12 @@
 
 | # | 症状 | 根因 | 级别 | 处置 |
 | -- | -- | -- | -- | -- |
-| **H-04** | **老板真实库 442 页（含 424 个导入页）整批消失** | `sync/runtime.ts:1113 verifyLedgerIntegrity`：首轮拿**过期快照**算 `expectedTotal`（`ledger.length+applied+crdt`，而 `ledger` 在 line 749 早于本轮 commit 读取，用户同期编辑即产生 off-by-one 假偏差）→ 计数不符即 `collectSegments()`（**只收同步目录里的段**）→ `db.rebuildFromSegments()`（`REBUILD_CLEAR_SQL` **清空 op_ledger + 全部物化表 + FTS**，仅重放段）。同步刚开启时目录里段远少于本机账本 → 本地独有历史被整体抹除。**无任何覆盖度守卫** | **P0 数据丢失** | 立 T82-01（三项修法）→ 阻塞 0.6.0；救援方案见 §救援 |
+| **H-04** | **老板真实库 442 页（含 424 个导入页）整批消失** | `sync/runtime.ts:1113 verifyLedgerIntegrity`：首轮拿**过期快照**算 `expectedTotal`（`ledger.length+applied+crdt`，而 `ledger` 在 line 749 早于本轮 commit 读取，用户同期编辑即产生 off-by-one 假偏差）→ 计数不符即 `collectSegments()`（**只收同步目录里的段**）→ `db.rebuildFromSegments()`（`REBUILD_CLEAR_SQL` **清空 op_ledger + 全部物化表 + FTS**，仅重放段）。同步刚开启时目录里段远少于本机账本 → 本地独有历史被整体抹除。**无任何覆盖度守卫** | **P0 数据丢失** | ✅ **代码修复已收口（1f73317，T82-01）**：op_id 覆盖度守卫 + 去竞态 + mode replace\|merge（缺省 merge）；红测复现 442→1 同构场景验绿。**数据救援仍待老板授权**（bak-v5 在场，见 §救援） |
 | **H-05** | 导入过的文件夹**永远无法重导**：删页后重导入全部「已导入过」跳过 | `import_source` 是永久 `(path,hash)→page_id` 账（`importer.ts:521-533` 纯 Map 查表，**不校验目标页是否还存在**）+ 删除侧（purge/GC）从不清理该表。真实库 424/424 行指向不存在的页 | P1 功能 | 并入 T82-02（查表加页存活校验 + purge 清账） |
 | **H-01** | 删除 AI 供应商时密钥可能未真删（CredentialStore 留孤儿密钥） | `settings/AiSection.tsx:463` `await ...ai.clearKey(...).catch(() => {})` 吞掉失败：UI 已移除该项，密文仍在盘上。隐私优先设定下不可接受 | P2 隐私 | 攒入 T82-02（失败须显性报错 + 重试入口） |
 | **H-02** | `recent` 表残留指向已不存在页的行（1 行）+ 39 行指向回收站页 | 设备本地派生态无清理钩子；隔离段那页（`01M2VG9QD6Q0N8KK2CVQT2ZQNE`）的 upsert op 被封在 quarantine 从未物化，但 `recent.touch` 已落账 | P2 卫生 | 并入 T81-01 GC 范围（清 recent 悬挂行） |
 | **H-03** | 39 处跨行空 catch（全有降级注释）、7 个「声明了 main 无引用」通道 → **均为假阳/设计行为** | 逐一核过上下文：隐私模式降级、配额、后续补真实错误；通道走表驱动命名空间 | — | 不立案（记录以证排查面已覆盖） |
+| **H-06** | `page_link_index`/`mention` 不在 `REBUILD_CLEAR_SQL`：重建（两种模式）后双链索引可能与投影不一致 | 派生索引缺口（replace 时代就有）；`page_link_index` 有启动全量重建兜底、`mention` 无回填（schema.v2 注释口径） | P2 一致性 | 后续单收（重建事务尾部补 links 全量重建）；已记 T82-01 报告 §5.1 |
 
 ### H-04 证据链（三段互证，可复现）
 
