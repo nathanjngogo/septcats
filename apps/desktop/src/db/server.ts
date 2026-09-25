@@ -24,7 +24,13 @@ import {
   type Segment,
   type TargetTable,
 } from '@septcats/core';
-import { applyPragmaBaseline, loadSqliteConstructor, migrate, type SqliteDatabase } from './migrations';
+import {
+  applyPragmaBaseline,
+  loadSqliteConstructor,
+  migrate,
+  type SqliteConstructor,
+  type SqliteDatabase,
+} from './migrations';
 import { ftsPageBodyExpr } from './schema.v4';
 import { getStatement, type StatementDefinition, type StatementKind } from './statements';
 import {
@@ -33,6 +39,7 @@ import {
   isDbRequest,
   type AllData,
   type BatchStepData,
+  type ConnectionData,
   type DbErrorCode,
   type DbRequest,
   type DbResponse,
@@ -507,13 +514,31 @@ export interface DbServerCore {
   handleRequest(raw: unknown): Promise<DbResponse>;
   /** 启动自检：迁移 + 完整性检查（失败只记录，不阻断后续请求）。 */
   bootstrap(): Promise<void>;
-  /** 关闭连接（幂等）。 */
+  /** 关闭连接（幂等；含 `closeConnection` 释放后的连接）。 */
   dispose(): void;
+  /**
+   * T80-04（H-09）：释放主库文件句柄（进程不杀、RPC 句柄身份不变）。
+   * 文件级还原（revert / execute 回滚）前必须先调它，否则 Windows 下删除/覆写
+   * 主库撞 EBUSY。幂等；已释放时返回 `{open:false}`。
+   */
+  closeConnection(): Promise<ConnectionData>;
+  /**
+   * T80-04（H-09）：释放后按原库路径重建连接（照 `migrations.reopenDatabase`：
+   * new Database + `applyPragmaBaseline`）。未释放时为幂等（返回 `{open:true}`）。
+   */
+  reopenConnection(): Promise<ConnectionData>;
 }
 
-export function createDbServerCore(database: SqliteDatabase): DbServerCore {
+export function createDbServerCore(
+  database: SqliteDatabase,
+  dbPath: string = database.name,
+): DbServerCore {
   let current = database;
-  let closed = false;
+  const path = dbPath.length > 0 ? dbPath : database.name;
+  /** 进程级终态（dispose 置位，不可再开）。 */
+  let disposed = false;
+  /** 连接打开态：closeConnection 置 false，reopenConnection 置 true。 */
+  let connectionOpen = true;
 
   /** 服务器内部直接使用（等价于 run/get/all，但已带 kind 断言）。 */
   async function dispatch(request: DbRequest): Promise<DbResponse> {
@@ -688,6 +713,39 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
         await current.backup(destPath);
         return dbOk(id, { path: destPath });
       }
+      /**
+       * T80-04（H-09）：释放主库文件句柄。Windows 下 better-sqlite3 打开的 .db
+       * 不允许被删除/覆写（EBUSY），文件级还原前必须先关连接。幂等：已关则直接成功。
+       */
+      case 'closeConnection': {
+        if (connectionOpen) {
+          try {
+            current.close();
+          } catch (error) {
+            return dbFail(id, 'E_INTERNAL', `释放数据库连接失败：${describeError(error)}`);
+          }
+          connectionOpen = false;
+        }
+        return dbOk(id, { open: false } satisfies ConnectionData);
+      }
+      /**
+       * T80-04（H-09）：按原库路径重建连接（照 migrations.reopenDatabase：
+       * new Database + applyPragmaBaseline；旧连接已 close 不能复用）。幂等。
+       */
+      case 'reopenConnection': {
+        if (!connectionOpen) {
+          try {
+            const SqliteCtor: SqliteConstructor = await loadSqliteConstructor();
+            const next = new SqliteCtor(path);
+            applyPragmaBaseline(next);
+            current = next;
+            connectionOpen = true;
+          } catch (error) {
+            return dbFail(id, 'E_INTERNAL', `重建数据库连接失败：${describeError(error)}`);
+          }
+        }
+        return dbOk(id, { open: true } satisfies ConnectionData);
+      }
       default: {
         return dbFail(id, 'E_BAD_REQUEST', '未知请求类型');
       }
@@ -698,8 +756,13 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
     if (!isDbRequest(raw)) {
       return dbFail(extractRequestId(raw), 'E_BAD_REQUEST', '请求结构非法');
     }
-    if (closed) {
+    if (disposed) {
       return dbFail(raw.id, 'E_NOT_READY', '数据库连接已关闭');
+    }
+    // closeConnection 释放后只有 reopenConnection / closeConnection 可达（幂等），
+    // 其余请求按 E_NOT_READY 拒——避免在无连接态下 prepare 抛未捕获异常。
+    if (!connectionOpen && raw.t !== 'reopenConnection' && raw.t !== 'closeConnection') {
+      return dbFail(raw.id, 'E_NOT_READY', '数据库连接已释放（等待 reopenConnection）');
     }
     try {
       return await dispatch(raw);
@@ -709,6 +772,17 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
       }
       return dbFail(raw.id, 'E_INTERNAL', describeError(error));
     }
+  }
+
+  /** 维护类请求（close/reopen）走与 IPC 同一派发路径，保证回执形状一致。 */
+  async function runMaintenance(
+    t: 'closeConnection' | 'reopenConnection',
+  ): Promise<ConnectionData> {
+    const response = await handleRequest({ id: `__${t}__`, t });
+    if (!response.ok) {
+      throw new RpcFailure(response.error.code, response.error.message);
+    }
+    return response.data as ConnectionData;
   }
 
   return {
@@ -730,16 +804,22 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
       }
     },
     dispose: (): void => {
-      if (closed) {
+      if (disposed) {
         return;
       }
-      closed = true;
+      disposed = true;
+      if (!connectionOpen) {
+        return; // 已被 closeConnection 释放，无句柄可关
+      }
+      connectionOpen = false;
       try {
         current.close();
       } catch (error) {
         console.error(`[dbServer] 关闭数据库失败：${describeError(error)}`);
       }
     },
+    closeConnection: (): Promise<ConnectionData> => runMaintenance('closeConnection'),
+    reopenConnection: (): Promise<ConnectionData> => runMaintenance('reopenConnection'),
   };
 }
 
@@ -792,7 +872,7 @@ async function startAsUtilityProcess(port: ParentPortLike): Promise<void> {
   const db = new SqliteCtor(dbPath);
   applyPragmaBaseline(db);
 
-  const core = createDbServerCore(db);
+  const core = createDbServerCore(db, dbPath);
   await core.bootstrap();
 
   port.on('message', (event) => {

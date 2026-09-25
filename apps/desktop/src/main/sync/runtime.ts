@@ -277,6 +277,16 @@ export class SyncRuntime {
     };
   }
 
+  /**
+   * T80-04（H-08）：攒段缓冲里尚未落 `op_ledger` 的 op_id 只读视图（不 flush、
+   * 不改缓冲）。便携包导入的覆盖度预检把「账本 ∪ 本视图」当并集判覆盖，消除
+   * 「预检只读 op_ledger、看不见未 flush 缓冲」的时序盲区（run-A/run-B 同序列两次
+   * 可见性不一致的根因面）；execute 侧另有封段前置（route a），两者叠加覆盖全部时序。
+   */
+  pendingOpIds(): readonly string[] {
+    return this.builder.pendingOpIds();
+  }
+
   onState(listener: (status: SyncStatusSnapshot) => void): () => void {
     this.stateListeners.add(listener);
     return () => {

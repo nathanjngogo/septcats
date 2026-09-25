@@ -636,6 +636,14 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
           checkpoint: async () => {
             await handle.checkpoint();
           },
+          // T80-04（H-09）：文件级还原前释放主库句柄（进程不杀、句柄身份不变），
+          // 还原后按原路径重建连接。照 migrations.tryFileLevelRestore 的进程内形态。
+          closeConnection: async () => {
+            await handle.closeConnection();
+          },
+          reopenConnection: async () => {
+            await handle.reopenConnection();
+          },
           listLedgerOpIds: async () => {
             const data = await handle.all('opLedger.listAll', {});
             const ids: string[] = [];
@@ -676,6 +684,14 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         pauseSync: async () => {
           syncRuntime?.stop();
         },
+        // T80-04（H-08）：execute 覆盖度预检前强制封段（既有 flushAndPublish；
+        // 不新造 flush 通道、不新增跨模块 getter）。runtime 为 null = 无攒段器。
+        flushSegments: async () => {
+          await syncRuntime?.flushAndPublish();
+        },
+        // T80-04（H-08）：覆盖度预检并集面——plan 不 flush（保持只读零副作用），
+        // 改把「账本 ∪ 缓冲」当本机集合，故 plan 在未 flush 窗口也能正确 blocked。
+        pendingOpIds: () => syncRuntime?.pendingOpIds() ?? [],
         resumeSync: async () => {
           const runtime = syncRuntime;
           if (runtime === null) {

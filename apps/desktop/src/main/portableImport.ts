@@ -96,6 +96,15 @@ export type PortableImportErrorCode =
   | 'E_PORTABLE_ROLLBACK_FAILED'
   /** v1 硬闸：加密包不支持导入（DEK 机器绑定，跨机不可解）。 */
   | 'E_PORTABLE_ENCRYPTED_UNSUPPORTED'
+  /**
+   * T80-04（H-09）：文件级还原成功后**重建数据库连接失败**（数据面已还原，但
+   * 连接未恢复）。独立于 E_PORTABLE_ROLLBACK_FAILED（那是「还原本身失败」）。
+   */
+  | 'E_PORTABLE_REOPEN_FAILED'
+  /**
+   * T80-04（H-08）：execute 前的强制封段失败 → 无法确认缓冲已落账，拒绝导入。
+   */
+  | 'E_PORTABLE_FLUSH_FAILED'
   /** zip slip 同口径条目名（与导出侧 E_ENTRY_NAME 同源）。 */
   | 'E_ENTRY_NAME';
 
@@ -172,6 +181,13 @@ export interface PortableImportDb {
   listLedgerOpIds(): Promise<string[]>;
   /** T82-01：导入侧**必须**显式传 'replace'。 */
   rebuildFromSegments(segmentsJson: string, mode: 'replace'): Promise<PortableImportReplayData>;
+  /**
+   * T80-04（H-09）：释放主库文件句柄（DbServer 侧 `closeConnection`，进程不杀）。
+   * 文件级还原前必须调它，否则 Windows 下删除/覆写主库撞 EBUSY。
+   */
+  closeConnection(): Promise<void>;
+  /** T80-04（H-09）：还原后按原库路径重建连接（`reopenConnection`）。 */
+  reopenConnection(): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +206,19 @@ export interface PortableImportServiceOptions {
   /** 导入期间停机同步（既有 SyncRuntime.stop / start，不造第二套）。 */
   readonly pauseSync?: () => Promise<void>;
   readonly resumeSync?: () => Promise<void>;
+  /**
+   * T80-04（H-08）：execute 覆盖度预检**前**强制封段（既有
+   * `SyncRuntime.flushAndPublish`，照 T80-01 导出侧 `sealSegments` 注入面）。
+   * 把同步运行时缓冲里的 op 落进 `op_ledger`，消除「预检看不见未 flush op」的窗口。
+   * 未注入（同步未启用/测试）视为无缓冲。
+   */
+  readonly flushSegments?: () => Promise<void>;
+  /**
+   * T80-04（H-08）：同步运行时攒段缓冲里「未 flush 的 op_id」只读视图
+   * （`SyncRuntime.pendingOpIds`）。覆盖度预检据此把账本与缓冲取并集，
+   * 消除预检盲区。未注入视为无缓冲。
+   */
+  readonly pendingOpIds?: () => readonly string[];
   readonly now?: () => number;
   readonly io?: PortableImportIo;
   readonly log?: (line: string) => void;
@@ -298,20 +327,38 @@ export function createPortableImportService(
     return segments;
   }
 
-  /** 覆盖度预检：本机 op_id 是否全被包内段覆盖（报告 §0-③）。 */
+  /**
+   * 覆盖度预检：本机 op_id 是否全被包内段覆盖（报告 §0-③）。
+   *
+   * T80-04（H-08）：本机集合 = **账本 op_id ∪ 攒段缓冲未 flush op_id**
+   * （`options.pendingOpIds` 只读 getter；未注入视为空集）。缓冲里的 op 尚未落
+   * `op_ledger`，旧实现只读账本会漏判 → run-A/run-B 同序列两次可见性不一致。
+   * 并集后「缓冲有 op」在 plan 与 execute 两条路径都必被记为未覆盖（或 execute
+   * 的前置封段先把它落账，等效覆盖）。
+   */
   async function coverage(zipPath: string, packageOpIds: ReadonlySet<string>): Promise<{
     readonly ledgerOps: number;
+    readonly pendingOps: number;
     readonly uncovered: number;
   }> {
-    const ledgerOpIds = await options.db.listLedgerOpIds();
+    const localOpIds = new Set(await options.db.listLedgerOpIds());
+    const ledgerOps = localOpIds.size;
+    const buffered = options.pendingOpIds?.() ?? [];
+    for (const opId of buffered) {
+      localOpIds.add(opId);
+    }
     let uncovered = 0;
-    for (const opId of ledgerOpIds) {
+    for (const opId of localOpIds) {
       if (!packageOpIds.has(opId)) {
         uncovered += 1;
       }
     }
-    log(`portable:import 覆盖度预检 ${zipPath}：本机 ${String(ledgerOpIds.length)} 条，未覆盖 ${String(uncovered)} 条`);
-    return { ledgerOps: ledgerOpIds.length, uncovered };
+    log(
+      `portable:import 覆盖度预检 ${zipPath}：账本 ${String(ledgerOps)} 条 + 缓冲 ${String(
+        buffered.length,
+      )} 条，未覆盖 ${String(uncovered)} 条`,
+    );
+    return { ledgerOps, pendingOps: buffered.length, uncovered };
   }
 
   function blockFor(pkg: OpenedPackage, current: number, uncovered: number): PortableImportPlan['blocked'] {
@@ -358,14 +405,51 @@ export function createPortableImportService(
    * ③ 还原：先清目标三件套（避免「新主库 + 旧 wal」的混写窗口），再逐字节回写备份
    * （migrations.ts:375/419-423 同款顺序）。`from` 缺失的一件保持已清理状态
    * （= 原库本来就没有它）。
+   *
+   * T80-04（H-09）**原子性收口**：调用方必须**先经 `withConnectionClosed()` 释放主库
+   * 句柄**再进本函数（Windows EBUSY 根因）。本函数自身保证「失败不留半成品」——
+   * 进入前把每件 `to` 的**调用前字节快照**下来（不存在记 `null`），任一步失败时按快照
+   * 回滚：该在的逐字节写回、不该在的删掉，使三件套回到「调用前状态」，再抛
+   * `E_PORTABLE_ROLLBACK_FAILED`。快照只读现有文件（不新建文件、不改语义）。
    */
   function restorePairs(pairs: readonly PortableBackupFile[]): void {
+    // 调用前快照（逐字节）：exists=false 记 null，用于失败回滚时恢复原状。
+    const before = new Map<string, Uint8Array | null>();
+    for (const pair of pairs) {
+      try {
+        before.set(pair.to, io.exists(pair.to) ? io.readFile(pair.to) : null);
+      } catch (error) {
+        throw new PortableImportApiError(
+          'E_PORTABLE_ROLLBACK_FAILED',
+          `还原前无法读取现状（未动任何文件）${pair.to}：${describeError(error)}`,
+        );
+      }
+    }
+    /** 失败回滚：把三件套按快照恢复（尽力而为；失败项不掩盖首个错误）。 */
+    const rollbackToBefore = (): void => {
+      for (const pair of pairs) {
+        const snapshot = before.get(pair.to) ?? null;
+        try {
+          if (snapshot === null) {
+            if (io.exists(pair.to)) {
+              io.remove(pair.to);
+            }
+          } else {
+            io.writeFile(pair.to, snapshot);
+          }
+        } catch {
+          // 恢复动作本身失败：保留首个错误语义，不在此覆盖
+        }
+      }
+    };
+
     for (const pair of pairs) {
       try {
         if (io.exists(pair.to)) {
           io.remove(pair.to);
         }
       } catch (error) {
+        rollbackToBefore();
         throw new PortableImportApiError('E_PORTABLE_ROLLBACK_FAILED', `还原前清理失败 ${pair.to}：${describeError(error)}`);
       }
     }
@@ -376,8 +460,40 @@ export function createPortableImportService(
       try {
         io.writeFile(pair.to, io.readFile(pair.from));
       } catch (error) {
+        rollbackToBefore();
         throw new PortableImportApiError('E_PORTABLE_ROLLBACK_FAILED', `还原失败 ${pair.to}：${describeError(error)}`);
       }
+    }
+  }
+
+  /**
+   * T80-04（H-09）：文件级还原的**唯一入口**——先经 db 端口释放主库句柄（Windows
+   * 下 better-sqlite3 打开的 .db 不可删除/覆写），执行 `restore`，最后**无论成败**
+   * 都重建连接（`reopenConnection`，失败只留痕并结构化上报；绝不让「库已还原但
+   * 连接已关」的半态静默存在）。
+   */
+  async function withConnectionClosed(restore: () => void): Promise<void> {
+    await options.db.closeConnection();
+    let restoreError: unknown = null;
+    try {
+      restore();
+    } catch (error) {
+      restoreError = error;
+    }
+    try {
+      await options.db.reopenConnection();
+    } catch (error) {
+      const detail = describeError(error);
+      if (restoreError !== null) {
+        throw new PortableImportApiError(
+          'E_PORTABLE_ROLLBACK_FAILED',
+          `还原失败且连接重建失败（${describeError(restoreError)}）：${detail}`,
+        );
+      }
+      throw new PortableImportApiError('E_PORTABLE_REOPEN_FAILED', `还原后重建数据库连接失败：${detail}`);
+    }
+    if (restoreError !== null) {
+      throw restoreError;
     }
   }
 
@@ -462,6 +578,19 @@ export function createPortableImportService(
 
       await options.pauseSync?.();
       try {
+        // T80-04（H-08）：预检**前**强制封段（既有 flushAndPublish），把同步运行时
+        // 缓冲里的 op 落进 op_ledger——否则覆盖度只读账本，会放过「缓冲有 op」的库，
+        // replace 重放会抹掉这些用户编辑（H-04 同类形态）。flush 失败不静默：宁可拒导。
+        if (options.flushSegments !== undefined) {
+          try {
+            await options.flushSegments();
+          } catch (error) {
+            throw new PortableImportApiError(
+              'E_PORTABLE_FLUSH_FAILED',
+              `导入前封段失败（无法确认缓冲已落账，拒绝导入以免抹数据）：${describeError(error)}`,
+            );
+          }
+        }
         // 覆盖度复检（不信任 plan：两次调用之间本机可能又写了 op）
         const covered = await coverage(zipPath, pkg.packageOpIds);
         if (covered.uncovered > 0) {
@@ -493,10 +622,13 @@ export function createPortableImportService(
           };
           return result;
         } catch (error) {
-          // ③ 失败回滚：逐字节还原，再抛原错误（结构化）
+          // ③ 失败回滚：逐字节还原，再抛原错误（结构化）。
+          // T80-04（H-09）：同一隐患——回滚时连接也活着，必须先释放句柄再还原。
           const mapped = toPortableImportError(error);
           try {
-            restorePairs(backupFiles.map((file) => ({ from: file.to, to: file.from })));
+            await withConnectionClosed(() => {
+              restorePairs(backupFiles.map((file) => ({ from: file.to, to: file.from })));
+            });
             log(`portable:import 重放失败已回滚 ${zipPath}：${mapped.code}`);
             throw Object.assign(mapped, { rolledBack: true } satisfies PortableImportRollbackState);
           } catch (restoreError) {
@@ -533,7 +665,10 @@ export function createPortableImportService(
       }
       await options.pauseSync?.();
       try {
-        restorePairs(plan);
+        // T80-04（H-09）：先释放主库句柄再还原（Windows EBUSY 根因），完成后重建连接。
+        await withConnectionClosed(() => {
+          restorePairs(plan);
+        });
         log(`portable:import 撤销导入：已还原 ${input.backupPath}`);
         return { ok: true, backupPath: input.backupPath, restoredFiles: plan.map((file) => file.to) };
       } finally {

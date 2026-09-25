@@ -10,6 +10,7 @@
  *    撤销还原 / dir 显式契约 / IPC 守卫。
  */
 import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { zipSync, unzipSync } from 'fflate';
 import {
@@ -51,12 +52,15 @@ import {
   PORTABLE_IMPORT_CONFIRM_MESSAGE,
   PORTABLE_IMPORT_ENCRYPTED_MESSAGE,
   createPortableImportService,
+  nodePortableImportIo,
   registerPortableImportIpc,
   type PortableImportDb,
   type PortableImportIo,
   type PortableImportReplayData,
   type PortableImportService,
 } from '../src/main/portableImport';
+import { describeDb, makeCore, makeTempDb, requestOk } from './helpers';
+import type { MigrateData, RunData } from '../src/db/rpc';
 
 const FIXED_NOW = Date.UTC(2026, 8, 25, 10, 20, 30);
 const APP_VERSION = '0.5.0';
@@ -69,6 +73,10 @@ const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
 const DB_BYTES = new TextEncoder().encode('sqlite-main-db-bytes');
 /** 故障注入写的「半截库」字节（还原后必须消失）。 */
 const SMASHED_BYTES = new TextEncoder().encode('half-written-db');
+/** replace 重放后的「新库态」字节（撤销/回滚必须把它换回 DB_BYTES）。 */
+const REPLAY_BYTES = new TextEncoder().encode('rebuilt-from-segments-db');
+const REPLAY_WAL_BYTES = new TextEncoder().encode('rebuilt-wal');
+const REPLAY_SHM_BYTES = new TextEncoder().encode('rebuilt-shm');
 const WAL_BYTES = new TextEncoder().encode('wal-bytes');
 const SHM_BYTES = new TextEncoder().encode('shm-bytes');
 
@@ -113,6 +121,8 @@ class MemIo implements PortableImportIo, PortableExportIo {
   readonly renames: Array<{ from: string; to: string }> = [];
   /** 写拦截（造「备份失败」等故障注入）。 */
   writeGuard: ((path: string) => void) | null = null;
+  /** 删拦截（造「还原前清理失败 / EBUSY」等故障注入）。 */
+  removeGuard: ((path: string) => void) | null = null;
 
   listFiles(dir: string): string[] {
     return [...this.files.keys()].filter((path) => dirname(path) === dir).map((path) => basename(path));
@@ -159,6 +169,7 @@ class MemIo implements PortableImportIo, PortableExportIo {
   }
 
   remove(path: string): void {
+    this.removeGuard?.(path);
     this.files.delete(path);
   }
 }
@@ -174,6 +185,13 @@ class FakeDb implements PortableImportDb {
   /** 重放时刻的探针（如「此刻备份已落盘几件」）。 */
   probe: (() => void) | null = null;
   backupFilesAtRebuild = -1;
+  /** 重放成功时刻的探针（T80-04：造「重放把库写坏」的失败回滚场景）。 */
+  onRebuild: (() => void) | null = null;
+  /** T80-04（H-09）：连接存活断言——非 null 时 close/reopen 会校验真实文件句柄态。 */
+  connectionLiveness: (() => boolean) | null = null;
+  closeCalls = 0;
+  reopenCalls = 0;
+  connectionOpen = true;
 
   /**
    * @param dbPath 主库路径（故障注入时用来把库「写坏」——否则还原断言恒真）
@@ -191,6 +209,28 @@ class FakeDb implements PortableImportDb {
   async listLedgerOpIds(): Promise<string[]> {
     this.calls.push('list');
     return [...this.ledgerOpIds];
+  }
+
+  /** T80-04（H-09）：还原前释放句柄（存活夹具下校验「此刻文件确实空闲」）。 */
+  async closeConnection(): Promise<void> {
+    const live = this.connectionLiveness;
+    if (live !== null && live() !== true) {
+      throw new Error('closeConnection 调用时文件句柄并未存活（夹具违背前提）');
+    }
+    this.closeCalls += 1;
+    this.connectionOpen = false;
+    this.calls.push('close');
+  }
+
+  /** T80-04（H-09）：还原后重建连接（必须真的处于释放态）。 */
+  async reopenConnection(): Promise<void> {
+    const live = this.connectionLiveness;
+    if (live !== null && live() !== false) {
+      throw new Error('reopenConnection 调用时文件句柄仍存活（未真正释放）');
+    }
+    this.reopenCalls += 1;
+    this.connectionOpen = true;
+    this.calls.push('reopen');
   }
 
   async rebuildFromSegments(segmentsJson: string, mode: 'replace'): Promise<PortableImportReplayData> {
@@ -217,6 +257,11 @@ class FakeDb implements PortableImportDb {
         ops += 1;
       }
     }
+    this.onRebuild?.();
+    // 模拟 replace 后的「新库态」字节（让撤销/回滚断言不是恒真）
+    this.fsIo?.writeFile(this.dbPath, REPLAY_BYTES);
+    this.fsIo?.writeFile(`${this.dbPath}-wal`, REPLAY_WAL_BYTES);
+    this.fsIo?.writeFile(`${this.dbPath}-shm`, REPLAY_SHM_BYTES);
     this.ledgerOpIds = new Set(ids); // 模拟 replace：账本 = 包内段 op 全集
     return { segments: segments.length, ops, entities: ids.length, mode, keptOps: 0 };
   }
@@ -239,7 +284,13 @@ interface Fixture {
   service: PortableImportService;
 }
 
-async function fixture(options: { readonly localOpIds?: readonly string[] } = {}): Promise<Fixture> {
+async function fixture(
+  options: {
+    readonly localOpIds?: readonly string[];
+    readonly flushSegments?: () => Promise<void>;
+    readonly pendingOpIds?: () => readonly string[];
+  } = {},
+): Promise<Fixture> {
   const io = new MemIo();
   const root = join('T80-02', 'data').replace('T80-02', '/t80-root');
   const syncDir = join(root, 'sync');
@@ -284,6 +335,8 @@ async function fixture(options: { readonly localOpIds?: readonly string[] } = {}
     db,
     schemaVersion: async () => SCHEMA_VERSION,
     pickArchive: async () => null,
+    ...(options.flushSegments !== undefined ? { flushSegments: options.flushSegments } : {}),
+    ...(options.pendingOpIds !== undefined ? { pendingOpIds: options.pendingOpIds } : {}),
     now: () => FIXED_NOW,
     io,
   });
@@ -704,5 +757,246 @@ describe('便携包导入服务', () => {
     await expect(handlers.get('portable:import:revert')!({ backupPath: 'x' })).rejects.toThrow(/E_MALFORMED/);
     // 非对象入参 → E_MALFORMED（不信任 renderer）
     await expect(handlers.get('portable:import:plan')!(null)).rejects.toThrow(/E_MALFORMED/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T80-04（H-08）：plan/execute 覆盖度预检对「未 flush 的 op」不再盲区
+// ---------------------------------------------------------------------------
+
+describe('便携包覆盖度预检：未 flush 缓冲并集（T80-04 H-08）', () => {
+  it('时序 run-A（缓冲有 op、账本无）：plan 必 blocked；execute 强制 flush 后必 blocked', async () => {
+    // 模拟 SyncRuntime 攒段缓冲：新建页的 op_id 在缓冲里，尚未落 op_ledger。
+    const bufferedOpId = 'op-buffered-outside-1';
+    // 缓冲态真源 = FakeDb.ledgerOpIds（尚未有该 op）；flush = 把缓冲 op 落进账本
+    // （既有 flushAndPublish 的净效果）。闭包引用 fx 在创建后求值，无 TDZ 问题。
+    const fx = await fixture({
+      flushSegments: async () => {
+        fx.db.ledgerOpIds.add(bufferedOpId);
+      },
+      pendingOpIds: () => (fx.db.ledgerOpIds.has(bufferedOpId) ? [] : [bufferedOpId]),
+    });
+
+    // plan 不 flush（只读零副作用）：并集判据必须已看见缓冲 op → blocked。
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(1);
+    expect(plan.target.willReplace).toBe(false);
+    expect(plan.blocked?.code).toBe('E_PORTABLE_NOT_EMPTY');
+
+    // execute：入口强制 flush → 缓冲 op 落账 → 覆盖度复检仍 blocked（先 flush 再判）。
+    expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
+      'E_PORTABLE_NOT_EMPTY',
+    );
+    // 证明确实走过 flush（否则账本还是空的）
+    expect(fx.db.ledgerOpIds.has(bufferedOpId)).toBe(true);
+    // 零落盘：没建备份、没重放
+    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
+  });
+
+  it('时序 run-B（flush 后账本有 op）：plan 与 execute 都 blocked E_PORTABLE_NOT_EMPTY', async () => {
+    const fx = await fixture({ localOpIds: [...SEG_OP_IDS, 'op-local-only-1'] });
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target.uncovered).toBe(1);
+    expect(plan.blocked?.code).toBe('E_PORTABLE_NOT_EMPTY');
+    expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
+      'E_PORTABLE_NOT_EMPTY',
+    );
+    expect(backupFilesOf(fx.io)).toHaveLength(0);
+  });
+
+  it('缓冲 op 已被包覆盖（本机导出场景）：并集后 uncoverable=0，不误拒', async () => {
+    // 缓冲里的 op 恰是包内段 op（刚导出就导入）：并集不引入新未覆盖项 → 放行。
+    const fx = await fixture({
+      pendingOpIds: () => [...SEG_OP_IDS],
+    });
+    const plan = await fx.service.plan({ zipPath: fx.zipPath });
+    if ('canceled' in plan) {
+      throw new Error('unexpected cancel');
+    }
+    expect(plan.target).toEqual({ ledgerOps: 0, uncovered: 0, willReplace: true });
+    expect(plan.blocked).toBeNull();
+  });
+
+  it('execute 前封段失败 → E_PORTABLE_FLUSH_FAILED，零落盘（不静默放过盲区）', async () => {
+    const fx = await fixture({
+      flushSegments: async () => {
+        throw new Error('注入的封段失败');
+      },
+    });
+    expect(await codeOf(() => fx.service.execute({ zipPath: fx.zipPath, confirm: true }))).toBe(
+      'E_PORTABLE_FLUSH_FAILED',
+    );
+    expect(backupFilesOf(fx.io)).toHaveLength(0);
+    expect(fx.db.calls.some((call) => call.startsWith('rebuild'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T80-04（H-09）：revert / 回滚在**连接存活**时必须成功，且失败不留半成品
+// ---------------------------------------------------------------------------
+
+describe('便携包还原原子性与连接释放（T80-04 H-09）', () => {
+  it('execute 重放失败回滚：先关连接 → 还原 → 重开；三件套逐字节回调用前', async () => {
+    const fx = await fixture();
+    // 导入前（= 调用前）三件套字节；FakeDb 重放成功会写 REPLAY_*，失败注入写 SMASHED。
+    const before = {
+      db: [...fx.io.readFile(fx.dbPath)],
+      wal: [...fx.io.readFile(`${fx.dbPath}-wal`)],
+      shm: [...fx.io.readFile(`${fx.dbPath}-shm`)],
+    };
+    // 造「重放已把库写坏后才失败」的真实形态（否则还原断言恒真）。
+    fx.db.onRebuild = () => {
+      throw new Error('注入的重放失败（重放已部分落盘）');
+    };
+    await expect(fx.service.execute({ zipPath: fx.zipPath, confirm: true })).rejects.toMatchObject({
+      rolledBack: true,
+    });
+    // 三件套与调用前逐字节一致
+    expect([...fx.io.readFile(fx.dbPath)]).toEqual(before.db);
+    expect([...fx.io.readFile(`${fx.dbPath}-wal`)]).toEqual(before.wal);
+    expect([...fx.io.readFile(`${fx.dbPath}-shm`)]).toEqual(before.shm);
+    // 连接释放/重建确实发生，且顺序 = close → … → reopen
+    expect(fx.db.closeCalls).toBe(1);
+    expect(fx.db.reopenCalls).toBe(1);
+    const closeAt = fx.db.calls.indexOf('close');
+    const reopenAt = fx.db.calls.indexOf('reopen');
+    expect(closeAt).toBeGreaterThanOrEqual(0);
+    expect(reopenAt).toBeGreaterThan(closeAt);
+    expect(fx.db.connectionOpen).toBe(true);
+  });
+
+  it('revert 必败（删到一半失败）→ 三件套逐字节回到调用前，不留半成品', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    // 调用前状态 = 重放后的新库态（REPLAY_*）
+    const before = {
+      db: [...fx.io.readFile(fx.dbPath)],
+      wal: [...fx.io.readFile(`${fx.dbPath}-wal`)],
+      shm: [...fx.io.readFile(`${fx.dbPath}-shm`)],
+    };
+    // 故障注入：删到第三件（-shm）才失败 → 前两件已被删（原缺陷的「半成品」形态）。
+    fx.io.removeGuard = (path) => {
+      if (path === `${fx.dbPath}-shm`) {
+        throw new Error('注入的删除失败（模拟 EBUSY）');
+      }
+    };
+    await expect(fx.service.revert({ backupPath: done.backupPath, confirm: true })).rejects.toMatchObject({
+      code: 'E_PORTABLE_ROLLBACK_FAILED',
+    });
+    // 失败后必须逐字节回到调用前（-wal/-shm 不得停在被删态）
+    expect([...fx.io.readFile(fx.dbPath)]).toEqual(before.db);
+    expect([...fx.io.readFile(`${fx.dbPath}-wal`)]).toEqual(before.wal);
+    expect([...fx.io.readFile(`${fx.dbPath}-shm`)]).toEqual(before.shm);
+    // 连接仍被重建（不留「文件在、连接关」的半态）
+    expect(fx.db.connectionOpen).toBe(true);
+  });
+
+  it('revert 成功：先 close 释放句柄 → 还原 → reopen（撤销按钮真能点活）', async () => {
+    const fx = await fixture();
+    const done = await fx.service.execute({ zipPath: fx.zipPath, confirm: true });
+    if ('canceled' in done) {
+      throw new Error('unexpected cancel');
+    }
+    fx.db.calls.length = 0;
+    fx.db.closeCalls = 0;
+    fx.db.reopenCalls = 0;
+    const reverted = await fx.service.revert({ backupPath: done.backupPath, confirm: true });
+    expect(reverted.ok).toBe(true);
+    expect(fx.db.calls).toEqual(['close', 'reopen']);
+    expect(fx.db.connectionOpen).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T80-04（H-09）真连接实证：better-sqlite3 打开的 .db 在 close 前不可删
+// ---------------------------------------------------------------------------
+
+describeDb('便携包还原：真实句柄 close/reopen（T80-04 H-09，better-sqlite3 直连）', (ctor) => {
+  it('连接存活时 revert 成功：close 释放句柄 → 还原 → reopen 且数据可继续读', async () => {
+    const temp = makeTempDb('septcats-portable-live');
+    const core = makeCore(ctor, temp.path);
+    try {
+      await requestOk<MigrateData>(core, { id: 'migrate', t: 'migrate' });
+      await requestOk<RunData>(core, {
+        id: 'seed',
+        t: 'run',
+        sqlId: 'meta.set',
+        params: { key: 'seed-marker', value: 'before-revert' },
+      });
+      await requestOk(core, { id: 'cp', t: 'checkpoint' });
+      const before = readFileSync(temp.path);
+      const backupPath = `${temp.path}.bak-portable-20260925-102030`;
+      writeFileSync(backupPath, before);
+
+      const service = createPortableImportService({
+        dbPath: temp.path,
+        db: {
+          checkpoint: async () => {
+            await core.handleRequest({ id: 'cp2', t: 'checkpoint' });
+          },
+          listLedgerOpIds: async () => [],
+          rebuildFromSegments: async () => ({ segments: 0, ops: 0, entities: 0, mode: 'replace', keptOps: 0 }),
+          // 真连接：closeConnection 真关 better-sqlite3 句柄（否则 Windows EBUSY）
+          closeConnection: async () => {
+            await core.closeConnection();
+          },
+          reopenConnection: async () => {
+            await core.reopenConnection();
+          },
+        },
+        schemaVersion: async () => SCHEMA_VERSION,
+        io: nodePortableImportIo,
+      });
+
+      const reverted = await service.revert({ backupPath, confirm: true });
+      expect(reverted.ok).toBe(true);
+      expect([...readFileSync(temp.path)]).toEqual([...before]);
+      // 连接已重建：还能继续读（reopen 生效，不是「关了就算」）
+      const row = await core.handleRequest({
+        id: 'after',
+        t: 'get',
+        sqlId: 'meta.get',
+        params: { key: 'seed-marker' },
+      });
+      expect(row.ok).toBe(true);
+      expect((row as { data: { row: { value?: string } | null } }).data.row?.value).toBe('before-revert');
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
+  });
+
+  it('未 close 就删主库在 Windows 必失败（EBUSY 根因实证）；close 后可删', () => {
+    const temp = makeTempDb('septcats-portable-busy');
+    const core = makeCore(ctor, temp.path);
+    try {
+      // 连接打开着：Windows 下真删主库应抛 EBUSY/EPERM（H-09 根因）。
+      let openDeleteError: unknown = null;
+      try {
+        rmSync(temp.path, { force: true });
+      } catch (error) {
+        openDeleteError = error;
+      }
+      if (process.platform === 'win32') {
+        expect(openDeleteError).not.toBeNull();
+      }
+      // closeConnection 释放后：删除必须成功（证明 close/reopen 通道有效）。
+      core.dispose();
+      rmSync(temp.path, { force: true });
+      expect(existsSync(temp.path)).toBe(false);
+    } finally {
+      core.dispose();
+      temp.cleanup();
+    }
   });
 });

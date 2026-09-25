@@ -18,6 +18,7 @@ import {
   type BackupData,
   type BatchData,
   type CheckpointData,
+  type ConnectionData,
   type DbBatchStatement,
   type DbErrorCode,
   type DbRequest,
@@ -71,6 +72,14 @@ export interface DbHandle {
   /** R28（T80-01）：导出/备份前 checkpoint（wal 落回主库）。 */
   checkpoint(): Promise<CheckpointData>;
   backupTo(destPath: string): Promise<BackupData>;
+  /**
+   * T80-04（H-09）：释放 DbServer 侧主库文件句柄（**不杀进程**，本句柄仍可用）。
+   * 文件级还原（便携包 revert / execute 回滚）前必须先调它，否则 Windows 下
+   * 删除/覆写主库撞 EBUSY；还原完成后再 `reopenConnection()` 恢复。
+   */
+  closeConnection(): Promise<ConnectionData>;
+  /** T80-04（H-09）：释放后按原库路径重建连接（幂等；未释放时直接成功）。 */
+  reopenConnection(): Promise<ConnectionData>;
   dispose(): Promise<void>;
 
   on(event: 'dead', listener: (info: DbExitInfo) => void): this;
@@ -172,6 +181,14 @@ class DbClient extends EventEmitter implements DbHandle {
 
   backupTo(destPath: string): Promise<BackupData> {
     return this.request<BackupData>((id) => ({ id, t: 'backupTo', destPath }));
+  }
+
+  closeConnection(): Promise<ConnectionData> {
+    return this.request<ConnectionData>((id) => ({ id, t: 'closeConnection' }));
+  }
+
+  reopenConnection(): Promise<ConnectionData> {
+    return this.request<ConnectionData>((id) => ({ id, t: 'reopenConnection' }));
   }
 
   async dispose(): Promise<void> {

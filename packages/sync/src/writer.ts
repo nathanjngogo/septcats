@@ -167,6 +167,16 @@ export class SegmentBuilder {
   get pendingCount(): number {
     return this.ops.length;
   }
+
+  /**
+   * T80-04（H-08）：缓冲内 op_id 的只读视图（不 flush、不改缓冲）。
+   * 便携包导入的覆盖度预检把「账本 op_id ∪ 本视图」当并集判覆盖，消除
+   * 「预检只读 op_ledger、看不见未 flush 缓冲」的时序盲区（run-A/run-B 同序列
+   * 两次可见性不一致的根因面）。
+   */
+  pendingOpIds(): readonly string[] {
+    return this.ops.map((op) => op.op_id);
+  }
 }
 
 /** 段路径：`<prefix>/<segmentFileName>`（prefix 可为空）。 */

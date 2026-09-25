@@ -81,7 +81,16 @@ export type DbRequest =
   | { readonly id: string; readonly t: 'integrityCheck' }
   /** R28（T80-01）：便携包/备份前强制 `PRAGMA wal_checkpoint(TRUNCATE)`（先例 migrations.ts）。 */
   | { readonly id: string; readonly t: 'checkpoint' }
-  | { readonly id: string; readonly t: 'backupTo'; readonly destPath: string };
+  | { readonly id: string; readonly t: 'backupTo'; readonly destPath: string }
+  /**
+   * T80-04（H-09）：文件级还原前后的**释放 / 重建文件句柄**。
+   * Windows 下 better-sqlite3 打开的 .db 不允许删除/rename（EBUSY），故
+   * revert / execute 回滚必须先 close 连接（**进程不杀、RPC 句柄身份不变**）
+   * → 文件级还原 → reopen。语义照 `migrations.tryFileLevelRestore`（close →
+   * copyFile → 新连接）的进程内形态。
+   */
+  | { readonly id: string; readonly t: 'closeConnection' }
+  | { readonly id: string; readonly t: 'reopenConnection' };
 
 export type DbRequestType = DbRequest['t'];
 
@@ -166,6 +175,15 @@ export interface CheckpointData {
   readonly checkpointed: number;
 }
 
+/**
+ * T80-04（H-09）：`closeConnection` / `reopenConnection` 的回执。
+ * `open` = 请求处理完成后连接是否处于打开态（close 后 false，reopen 后 true），
+ * 供调用方在还原流程里断言「此刻文件句柄确实已释放」。
+ */
+export interface ConnectionData {
+  readonly open: boolean;
+}
+
 export type DbResponseData =
   | MigrateData
   | RunData
@@ -177,7 +195,8 @@ export type DbResponseData =
   | RebuildData
   | IntegrityCheckData
   | BackupData
-  | CheckpointData;
+  | CheckpointData
+  | ConnectionData;
 
 /** 应答联合体：ok=true 时必有 data，ok=false 时必有 error。 */
 export type DbResponse<T extends DbResponseData = DbResponseData> =
@@ -213,6 +232,8 @@ const REQUEST_TYPES: ReadonlySet<string> = new Set<DbRequestType>([
   'integrityCheck',
   'checkpoint',
   'backupTo',
+  'closeConnection',
+  'reopenConnection',
 ]);
 
 /** 运行时守卫：收到的消息是否形如合法请求（server 用于拒绝脏输入）。 */
