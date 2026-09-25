@@ -43,7 +43,7 @@ import {
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
 import type { MenuActionId } from '../shared/ipc';
-import { CLOSE_CHANNELS } from '../shared/ipc';
+import { CLOSE_CHANNELS, DBGC_CHANNELS } from '../shared/ipc';
 import { applyApplicationMenu } from './menu';
 import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
 import { createCloseGuard, parseCloseDecision, type CloseGuard } from './closeGuard';
@@ -119,6 +119,8 @@ import {
   registerPortableImportIpc,
   type PortableImportService,
 } from './portableImport';
+// T81-01：DB 面墓碑物理清除（planDbGc 在 @septcats/sync，执行面在本模块）
+import { createDbGcService, type DbGcService } from './dbgc';
 import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
@@ -403,6 +405,8 @@ interface DatabaseServices {
   portable: PortableExportService;
   /** R28（T80-02）：便携包导入（三段式换库：备份 → 重放 replace → 失败回滚）。 */
   portableImport: PortableImportService;
+  /** T81-01：DB 面墓碑物理清除（planDbGc 判据 + 分批 DELETE；op_ledger 不动）。 */
+  dbgc: DbGcService;
 }
 
 /** 本地账本 op_id 行里解不出的行 → 记为「未覆盖」（安全侧：宁可拒导，不可抹数据）。 */
@@ -556,6 +560,9 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // T44-01：双链服务——派生索引维护/回链查询；用裸 handle（派生态不进攒段器，
       // 与 search 同款：derived 写不触发同步发布）
       links: createLinksService({ executor: handle }),
+      // T81-01：DB 面墓碑物理清除——维护面写（白名单 DELETE 语句，不是 Op 路径），
+      // 故用裸 handle（同 links/lock：派生态不进攒段器，绝不伪造 op）；op_ledger 不动。
+      dbgc: createDbGcService({ executor: handle }),
       // R27（T79-01）：页面导出——**全只读消费**（读库 + 读附件目录），写盘只落用户选定
       // 导出目录；目录选择走系统对话框（取消 = 零落盘），reveal 走 shell.openPath。
       pageExport: createPageExportService({
@@ -1046,6 +1053,22 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerPortableExportIpc(services?.portable ?? null, dbViewRegistrar());
   // 便携包导入（R28 · T80-02）：portable:import:plan / execute / revert 三通道
   registerPortableImportIpc(services?.portableImport ?? null, dbViewRegistrar());
+  // DB 面墓碑物理清除（T81-01）：dbgc:preview（只读条数）/ dbgc:run（确认执行）。
+  // 缺失服务统一结构化拒绝（与其它通道同口径）；op_ledger 不动由服务层保证。
+  ipcMain.handle(DBGC_CHANNELS.preview, async () => {
+    const service = services?.dbgc ?? null;
+    if (service === null) {
+      throw new Error('E_DB_UNAVAILABLE: 数据库服务不可用');
+    }
+    return service.preview();
+  });
+  ipcMain.handle(DBGC_CHANNELS.run, async () => {
+    const service = services?.dbgc ?? null;
+    if (service === null) {
+      throw new Error('E_DB_UNAVAILABLE: 数据库服务不可用');
+    }
+    return service.run();
+  });
   // 外部链接（T73-01）：shell:openExternal 唯一出口——协议白名单（仅 http/https）+
   // 审计只记 host（URL 原文不进审计正文）。入口恒可用（不依赖 DbServer）。
   const shellLogger = ctx.logger.forModule('shell');
@@ -1269,6 +1292,35 @@ async function runStartupPortableImport(
   }
 }
 
+/**
+ * T81-01：启动时有界后台跑一次 DB 面墓碑物理清除。
+ *
+ * - 仅当 `settings.sync.gc` 开启才执行（关 = 启动路径不动库；干跑预览在设置页按需触发）；
+ * - fire-and-forget（不 await）：单次上限由 DB_GC_BATCH_PAGES 决定，不阻塞首屏；
+ * - 失败只记日志（下次启动重试），绝不阻断开窗——同 T44 双链索引重建纪律。
+ */
+function runStartupDbGc(ctx: PlatformContext, services: DatabaseServices | null): void {
+  const service = services?.dbgc ?? null;
+  if (service === null || !readSettings(ctx.userDataDir).sync.gc) {
+    return;
+  }
+  const logger = ctx.logger.forModule('dbgc');
+  void service
+    .run()
+    .then((result) => {
+      if (result.deletedPages === 0 && result.deletedBlocks === 0) {
+        return;
+      }
+      logger.info(
+        `墓碑 GC 完成：页 ${String(result.deletedPages)} 块 ${String(result.deletedBlocks)} ` +
+          `释放 ${String(result.bytesFreed)}B 批 ${String(result.batches)} 扣留 ${String(result.held)}`,
+      );
+    })
+    .catch((error: unknown) => {
+      logger.error(`墓碑 GC 失败（下次启动重试）：${describeError(error)}`);
+    });
+}
+
 async function bootstrapApplication(): Promise<void> {
   // 启动打点基点 = whenReady 兑现时刻（bootstrapApplication 由 whenReady().then 直接调用）
   if (PERF_TRACE) {
@@ -1298,6 +1350,9 @@ async function bootstrapApplication(): Promise<void> {
   protocol.handle(ATTACHMENT_SCHEME, assetHandler);
 
   createWindow();
+  // T81-01：按设置开关（settings.sync.gc）跑一次 DB 面墓碑物理清除——有界后台
+  // （分批事务、失败只记日志、不阻塞首屏；同 T44 双链索引重建的 fire-and-forget 纪律）。
+  runStartupDbGc(ctx, services);
   // T54-01：托盘（左键 toggle、右键「显示主窗口 / 退出」）；无窗口时进程不假死
   createTray({
     locale: toMenuLocale(readSettings(ctx.userDataDir).locale),

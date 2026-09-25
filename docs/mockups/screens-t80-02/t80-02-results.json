@@ -1,12 +1,12 @@
 {
   "task": "T80-02",
-  "ranAt": "2026-09-25T13:23:06.467Z",
+  "ranAt": "2026-09-25T14:41:27.515Z",
   "assertions": [
     {
       "step": "P1|导出夹具",
       "name": "P1-1 导出 zip 落盘非空",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugzqxxn\\pkg\\septcats-portable-个人工作区-20260925-212303.zip 8674B"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-muh2jpa2\\pkg\\septcats-portable-个人工作区-20260925-224124.zip 8659B"
     },
     {
       "step": "P1|导出夹具",
@@ -42,7 +42,7 @@
       "step": "P3|execute",
       "name": "P3-2 备份 bak-portable-<ts> 在场非空",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugzqxxn\\data\\septcats.db.bak-portable-20260925-212303"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-muh2jpa2\\data\\septcats.db.bak-portable-20260925-224124"
     },
     {
       "step": "P3|execute",
@@ -108,7 +108,7 @@
       "step": "P5|revert",
       "name": "P5-1 revert ok 且主库逐字节=备份文件",
       "ok": true,
-      "detail": "{\"ok\":true,\"backupPath\":\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugzqxxn/data/septcats.db.bak-portable-20260925-212303\",\"restoredFiles\":[\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugzqxxn/data/septcat"
+      "detail": "{\"ok\":true,\"backupPath\":\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-muh2jpa2/data/septcats.db.bak-portable-20260925-224124\",\"restoredFiles\":[\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-muh2jpa2/data/septcat"
     },
     {
       "step": "P5|revert",

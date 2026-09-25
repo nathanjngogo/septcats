@@ -555,6 +555,24 @@ export const PORTABLE_IMPORT_CHANNELS = {
 export type PortableImportChannel =
   (typeof PORTABLE_IMPORT_CHANNELS)[keyof typeof PORTABLE_IMPORT_CHANNELS];
 
+// ---------------------------------------------------------------------------
+// DB 面墓碑物理清除（T81-01）：两通道——preview 只读（条数/预估字节，零写）、
+// run 确认执行（同事务分批 DELETE；op_ledger 不动）。
+// 载荷形状见 shared/dbgc.ts（DbGc*），preload 只 import 通道名。
+// ---------------------------------------------------------------------------
+
+/** {} → DbGcPreview（只读：扫墓碑 + 应用 planDbGc 判据，零写）。 */
+export const CHANNEL_DBGC_PREVIEW = 'dbgc:preview';
+/** {} → DbGcRunResult（真删计划内页面；`sync.gc` 开关只影响启动后台，入口按钮显式确认即执行）。 */
+export const CHANNEL_DBGC_RUN = 'dbgc:run';
+
+export const DBGC_CHANNELS = {
+  preview: CHANNEL_DBGC_PREVIEW,
+  run: CHANNEL_DBGC_RUN,
+} as const;
+
+export type DbGcChannel = (typeof DBGC_CHANNELS)[keyof typeof DBGC_CHANNELS];
+
 /** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
 export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
 

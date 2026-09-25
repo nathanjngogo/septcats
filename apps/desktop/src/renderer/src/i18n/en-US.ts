@@ -564,6 +564,23 @@ export const enUS = {
       editorEntryDesc: 'Preset cards and every layout parameter (sidebar / body / AI panel / density / theme)',
       resetDone: 'Layout restored to defaults',
     },
+    // T81-01: physical sweep of tombstoned pages (db-side GC)
+    sync: {
+      title: 'Sync',
+      cleanup: 'Clean up deleted content',
+      cleanupDesc: 'Permanently remove pages past trash retention or already purged (batched in one transaction; ledger history is kept)',
+      gc: 'Automatic cleanup',
+      gcDesc: 'When on, cleanup runs at startup; when off this page only previews until you confirm',
+      previewTitle: 'Cleanup preview',
+      previewMeta: '{pages} pages · {blocks} blocks · about {bytes} to free',
+      previewEmpty: 'Nothing to clean up',
+      heldMeta: '{n} kept (not matured / has child pages / locked)',
+      retentionNote: 'Trash retention is {days} days; permanently deleted pages are not limited by it',
+      cancel: 'Cancel',
+      confirmCleanup: 'Confirm cleanup',
+      cleanupDone: 'Removed {pages} pages and {blocks} blocks, freed {bytes}',
+      cleanupFailed: 'Cleanup failed: {msg}',
+    },
     privacy: {
       title: 'Data & Privacy',
       syncPath: 'Sync Folder',

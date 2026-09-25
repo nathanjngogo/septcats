@@ -661,6 +661,90 @@ WHERE p.alive = 1 AND p.deleted_at IS NULL`,
     params: emptyParams,
   },
 
+  // ---- DB 面墓碑 GC（T81-01）----------------------------------------------
+  // `purgePage` 承诺的「物理清除归 GC」落地所需语句（只增不改）。
+  //
+  // 读侧 2 条（维护面，全局扫描，非按工作区切分——GC 跨工作区一次清完）：
+  //  - `dbgc.tombstones`：一行一墓碑，附「是否有锁行 / 块数与字节估算」两个相关子查询
+  //    （34 行量级，相关子查询代价可忽略）；**不查 favorite/recent**——它们是本地
+  //    派生态、对墓碑不可见，一律随页级联删而非参与放行判定（见 shared/dbgc.ts 说明）；
+  //  - `dbgc.pageParents`：全表的 (id → parent_id) 边，供 JS 侧建 childIds（子树完整性
+  //    判定用，见 @septcats/sync 的 planDbGc）——刻意不用 json_group_array，避免
+  //    「解析失败静默丢子页」导致误删父行的风险。
+  //
+  // 写侧 8 条：逐页级联 DELETE（同一事务内按固定序执行）。**不带 workspace_id 守卫**
+  // （表无该列或 id 即 ULID 全局唯一，同 lock.delete 的维护语句口径）；唯一入口是
+  // planDbGc 产出的 id 清单，且 `dbgc.deletePage` 额外以 `alive = 0` 自守（永不删活页）。
+  // **op_ledger 一行不动**：账本是真相层，物理删物化行不删账。
+  'dbgc.tombstones': {
+    kind: 'all',
+    sql: `SELECT
+  p.id AS id,
+  p.deleted_at AS deleted_at,
+  p.updated_at AS updated_at,
+  (SELECT COUNT(*) FROM page_lock l WHERE l.page_id = p.id)
+    + (SELECT COUNT(*) FROM block_cipher c WHERE c.page_id = p.id) AS lock_count,
+  (SELECT COUNT(*) FROM block b WHERE b.page_id = p.id) AS block_count,
+  COALESCE((
+    SELECT SUM(LENGTH(COALESCE(b.content_json, '')) + LENGTH(COALESCE(b.props_json, '')))
+    FROM block b WHERE b.page_id = p.id
+  ), 0) AS bytes
+FROM page p
+WHERE p.alive = 0
+ORDER BY p.id`,
+    params: emptyParams,
+  },
+  'dbgc.pageParents': {
+    kind: 'all',
+    sql: `SELECT id, parent_id FROM page WHERE parent_id IS NOT NULL ORDER BY id`,
+    params: emptyParams,
+  },
+  // 顺序敏感：record 经 collection 间接挂页 → 先 record 后 collection。
+  'dbgc.deleteRecords': {
+    kind: 'run',
+    sql: `DELETE FROM record WHERE collection_id IN (SELECT id FROM collection WHERE page_id = @page_id)`,
+    params: z.object({ page_id: idText }),
+  },
+  'dbgc.deleteCollections': {
+    kind: 'run',
+    sql: `DELETE FROM collection WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'dbgc.deleteBlocks': {
+    kind: 'run',
+    sql: `DELETE FROM block WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'dbgc.deleteFavorites': {
+    kind: 'run',
+    sql: `DELETE FROM favorite WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  'dbgc.deleteRecents': {
+    kind: 'run',
+    sql: `DELETE FROM recent WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  // 双链派生索引两侧都要清（源侧的出链 + 别页指向它的入链），否则回链面板留死引用。
+  'dbgc.deleteLinks': {
+    kind: 'run',
+    sql: `DELETE FROM page_link_index WHERE source_page_id = @page_id OR target_page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  // 导入幂等账本的同 (path,hash) 行：页已物理清除 → 指向死页的账本行无消费方
+  // （importSource.list 已按页码存活过滤），随页清掉防孤儿堆积。
+  'dbgc.deleteImportSources': {
+    kind: 'run',
+    sql: `DELETE FROM import_source WHERE page_id = @page_id`,
+    params: z.object({ page_id: idText }),
+  },
+  // 最后一步：`alive = 0` 自守是硬闸（即便清单被误喂活页 id 也 0 行受影响）。
+  'dbgc.deletePage': {
+    kind: 'run',
+    sql: `DELETE FROM page WHERE id = @id AND alive = 0`,
+    params: z.object({ id: idText }),
+  },
+
   // ---- op_ledger（真相层） -------------------------------------------------
   'opLedger.insert': {
     kind: 'run',

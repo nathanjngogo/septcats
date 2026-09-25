@@ -566,6 +566,23 @@ export const zhCN = {
       editorEntryDesc: '预设卡片与全部细项参数（侧栏 / 正文 / AI 面板 / 密度 / 主题）',
       resetDone: '已恢复默认布局',
     },
+    // T81-01：DB 面墓碑物理清除（「彻底删除」的内容由 GC 真正扫地出门）
+    sync: {
+      title: '同步',
+      cleanup: '清理已删除内容',
+      cleanupDesc: '物理清除回收站超期或已彻底删除的页面内容（同事务分批；账本历史不改写）',
+      gc: '自动清理',
+      gcDesc: '开启后启动时自动物理清除；关闭时本页只预览，点「确认清理」才执行',
+      previewTitle: '可清理内容预览',
+      previewMeta: '页面 {pages} 个 · 块 {blocks} 个 · 预计释放 {bytes}',
+      previewEmpty: '没有可清理的内容',
+      heldMeta: '另有 {n} 项保留（未到期 / 有子页 / 锁定）',
+      retentionNote: '回收站保留 {days} 天；已彻底删除的页面不受此限制',
+      cancel: '取消',
+      confirmCleanup: '确认清理',
+      cleanupDone: '已清理 {pages} 个页面、{blocks} 个块，释放 {bytes}',
+      cleanupFailed: '清理失败：{msg}',
+    },
     privacy: {
       title: '数据与隐私',
       syncPath: '同步路径',

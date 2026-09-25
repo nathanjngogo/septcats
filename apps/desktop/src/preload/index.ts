@@ -12,6 +12,7 @@ import {
   CLOSE_CHANNELS,
   COLLAB_CHANNELS,
   DB_CHANNELS,
+  DBGC_CHANNELS,
   DIAG_CHANNELS,
   FAVORITES_CHANNELS,
   IMPORT_CHANNELS,
@@ -308,6 +309,12 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(PORTABLE_IMPORT_CHANNELS.revert, input) as ReturnType<
         SeptcatsApi['portable']['importRevert']
       >,
+  },
+  // T81-01：DB 面墓碑物理清除（preview 只读条数 / run 确认执行）
+  dbgc: {
+    preview: () =>
+      ipcRenderer.invoke(DBGC_CHANNELS.preview, {}) as ReturnType<SeptcatsApi['dbgc']['preview']>,
+    run: () => ipcRenderer.invoke(DBGC_CHANNELS.run, {}) as ReturnType<SeptcatsApi['dbgc']['run']>,
   },
 };
 

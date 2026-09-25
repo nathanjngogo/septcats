@@ -36,6 +36,7 @@ import type {
   DiagConfirmResult,
   DiagExportResult,
 } from '../shared/settings';
+import type { DbGcPreview, DbGcRunResult } from '../shared/dbgc';
 import type {
   ImportPlanInput,
   ImportPlanPreview,
@@ -526,10 +527,20 @@ export interface SeptcatsPortableExportApi {
   importRevert(input: PortableImportRevertInput): Promise<PortableImportRevertResult>;
 }
 
+/**
+ * DB 面墓碑物理清除（T81-01）。通道与 `src/shared/ipc.ts` 的 DBGC_CHANNELS 一对一；
+ * 载荷形状见 `src/shared/dbgc.ts`。纪律同 R27/R28：preview 只读（零写）→ run 确认执行。
+ */
+export interface SeptcatsDbGcApi {
+  /** dry-run：扫墓碑 + 应用 planDbGc 判据，回条数/预估字节（零写）。 */
+  preview(): Promise<DbGcPreview>;
+  /** 确认执行：真删计划内页面（同事务分批；op_ledger 不动）。 */
+  run(): Promise<DbGcRunResult>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
-  ping(): Promise<string>;
-  /** 应用元信息（名称/版本/schema 版本）。 */
+  ping(): Promise<string>;  /** 应用元信息（名称/版本/schema 版本）。 */
   appMeta(): Promise<SeptcatsAppMeta>;
   /** 块数据通道（T21-01：main 侧已实现 list/commit；changed 本期不推送）。 */
   blocks: SeptcatsBlocksApi;
@@ -573,6 +584,8 @@ export interface SeptcatsApi {
   pageExport: SeptcatsPageExportApi;
   /** 便携包导出（R28 · T80-01）。 */
   portable: SeptcatsPortableExportApi;
+  /** DB 面墓碑物理清除（T81-01）。 */
+  dbgc: SeptcatsDbGcApi;
 }
 
 declare global {

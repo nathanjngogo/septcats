@@ -1,6 +1,6 @@
 {
   "task": "T79-01",
-  "ranAt": "2026-09-25T13:23:37.575Z",
+  "ranAt": "2026-09-25T14:42:07.413Z",
   "assertions": [
     {
       "step": "E1|建全块型页",
@@ -18,7 +18,7 @@
       "step": "E1|建全块型页",
       "name": "E1-b IPC 取到页 id",
       "ok": true,
-      "detail": "01M3CBQSX0D9B9CEY39YJ4AYNX"
+      "detail": "01M3CG7HBKGF46WVDDFZM3RBTQ"
     },
     {
       "step": "E1|建全块型页",
@@ -48,7 +48,7 @@
       "step": "E3|IPC dir 落盘取证",
       "name": "E3-a 单页导出 md 落盘",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t79-e2e\\export-target\\T79 导出页 mugzr1nu\\T79 导出页 mugzr1nu.md"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t79-e2e\\export-target\\T79 导出页 muh2jzsw\\T79 导出页 muh2jzsw.md"
     },
     {
       "step": "E3|IPC dir 落盘取证",
@@ -60,7 +60,7 @@
       "step": "E3|IPC dir 落盘取证",
       "name": "E3-c preview 契约回显（只预览不落盘）",
       "ok": true,
-      "detail": "{\"rootName\":\"T79 导出页 mugzr1nu\",\"pages\":[{\"pageId\":\"01M3CBQSX0D9B9CEY39YJ4AYNX\",\"title\":\"T79 导出页 mugzr1nu\",\"relPath\":\"T79"
+      "detail": "{\"rootName\":\"T79 导出页 muh2jzsw\",\"pages\":[{\"pageId\":\"01M3CG7HBKGF46WVDDFZM3RBTQ\",\"title\":\"T79 导出页 muh2jzsw\",\"relPath\":\"T79"
     },
     {
       "step": "E3-code|代码页",
@@ -90,7 +90,7 @@
       "step": "E4|子树 scope",
       "name": "E4-a 子树导出 ≥2 md 含层级",
       "ok": true,
-      "detail": "\\T79 导出页 mugzr1nu\\T79 子页 mugzr1nu\\T79 子页 mugzr1nu.md,\\T79 导出页 mugzr1nu\\T79 导出页 mugzr1nu.md"
+      "detail": "\\T79 导出页 muh2jzsw\\T79 子页 muh2jzsw\\T79 子页 muh2jzsw.md,\\T79 导出页 muh2jzsw\\T79 导出页 muh2jzsw.md"
     },
     {
       "step": "E5|存活",

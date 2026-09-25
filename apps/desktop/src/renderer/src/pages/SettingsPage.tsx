@@ -23,6 +23,7 @@ import type {
   PortableImportPlan,
   PortableImportResult,
 } from '../../../shared/portable';
+import type { DbGcPreview, DbGcRunResult } from '../../../shared/dbgc';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
@@ -153,6 +154,11 @@ export function SettingsPage() {
   const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
   const [updateBusy, setUpdateBusy] = useState(false);
 
+  // T81-01：DB 面墓碑物理清除（dry-run 预览 → 确认执行；op_ledger 不动）
+  const [dbGcPreview, setDbGcPreview] = useState<DbGcPreview | null>(null);
+  const [dbGcResult, setDbGcResult] = useState<DbGcRunResult | null>(null);
+  const [dbGcBusy, setDbGcBusy] = useState(false);
+
   // T17-01 D5：同步密钥三件套（一次性明文不落任何持久态；关窗即清）
   const [recExportOpen, setRecExportOpen] = useState(false);
   const [recCode, setRecCode] = useState<string | null>(null);
@@ -219,6 +225,39 @@ export function SettingsPage() {
   const handleTheme = (mode: ThemeMode): void => {
     setGlobalThemeMode(mode);
     void patch({ theme: mode });
+  };
+
+  // T81-01：同步区「自动清理」开关（settings.sync.gc；同时驱动段 GC 与 DB 面墓碑 GC）
+  const handleAutoCleanup = (on: boolean): void => {
+    void patch({ sync: { gc: on } });
+  };
+
+  /** dry-run 预览：只读条数/预估字节（零写；取消 = 零写）。 */
+  const handleDbGcPreview = async (): Promise<void> => {
+    setDbGcBusy(true);
+    setError(null);
+    setDbGcResult(null);
+    try {
+      setDbGcPreview(await window.septcats.dbgc.preview());
+    } catch (cause) {
+      setError(fillTemplate(t('settings.sync.cleanupFailed'), { msg: describeError(cause) }));
+    } finally {
+      setDbGcBusy(false);
+    }
+  };
+
+  /** 确认执行：真删计划内页面（main 侧同事务分批；被删页不可恢复）。 */
+  const handleDbGcRun = async (): Promise<void> => {
+    setDbGcBusy(true);
+    setError(null);
+    try {
+      setDbGcResult(await window.septcats.dbgc.run());
+      setDbGcPreview(null);
+    } catch (cause) {
+      setError(fillTemplate(t('settings.sync.cleanupFailed'), { msg: describeError(cause) }));
+    } finally {
+      setDbGcBusy(false);
+    }
   };
 
   // T25-01 §0.A：语言三选。「跟随系统」无法以 'system' 落 settings（platform schema
@@ -512,6 +551,97 @@ export function SettingsPage() {
           <fieldset className="settings-section">
             <legend className="settings-legend">{t('settings.layout.title')}</legend>
             <LayoutSection />
+          </fieldset>
+
+          {/* T81-01：同步区——自动清理开关（段 GC + DB 面墓碑 GC 共用）+ 清理已删除内容
+              （dry-run 预览条数/预估字节 → 确认执行；取消 = 零写） */}
+          <fieldset className="settings-section">
+            <legend className="settings-legend">{t('settings.sync.title')}</legend>
+            <SettingsRow
+              title={t('settings.sync.gc')}
+              desc={t('settings.sync.gcDesc')}
+              control={
+                <Switch
+                  checked={settings.sync.gc}
+                  label={t('settings.sync.gc')}
+                  disabled={saving}
+                  onCheckedChange={handleAutoCleanup}
+                />
+              }
+            />
+            <SettingsRow
+              title={t('settings.sync.cleanup')}
+              desc={t('settings.sync.cleanupDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={dbGcBusy}
+                  data-testid="settings-dbgc-preview"
+                  onClick={() => {
+                    void handleDbGcPreview();
+                  }}
+                >
+                  {t('settings.sync.cleanup')}
+                </Button>
+              }
+            />
+            {dbGcPreview === null ? null : (
+              <div className="settings-preview-wrap" data-testid="settings-dbgc-preview-panel">
+                <div className="settings-preview-title">{t('settings.sync.previewTitle')}</div>
+                <div className="settings-preview-title" data-testid="settings-dbgc-meta">
+                  {dbGcPreview.deletable === 0
+                    ? t('settings.sync.previewEmpty')
+                    : fillTemplate(t('settings.sync.previewMeta'), {
+                        pages: String(dbGcPreview.deletable),
+                        blocks: String(dbGcPreview.estimatedBlocks),
+                        bytes: formatBytes(dbGcPreview.estimatedBytes),
+                      })}
+                </div>
+                {dbGcPreview.held === 0 ? null : (
+                  <div className="settings-lab-d" data-testid="settings-dbgc-held">
+                    {fillTemplate(t('settings.sync.heldMeta'), { n: String(dbGcPreview.held) })}
+                  </div>
+                )}
+                <div className="settings-lab-d" data-testid="settings-dbgc-retention">
+                  {fillTemplate(t('settings.sync.retentionNote'), {
+                    days: String(dbGcPreview.retentionDays),
+                  })}
+                </div>
+                <div className="settings-preview-actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="settings-dbgc-cancel"
+                    onClick={() => {
+                      setDbGcPreview(null);
+                    }}
+                  >
+                    {t('settings.sync.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    loading={dbGcBusy}
+                    disabled={dbGcPreview.deletable === 0}
+                    data-testid="settings-dbgc-confirm"
+                    onClick={() => {
+                      void handleDbGcRun();
+                    }}
+                  >
+                    {t('settings.sync.confirmCleanup')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {dbGcResult === null ? null : (
+              <div className="settings-saved" data-testid="settings-dbgc-done">
+                {fillTemplate(t('settings.sync.cleanupDone'), {
+                  pages: String(dbGcResult.deletedPages),
+                  blocks: String(dbGcResult.deletedBlocks),
+                  bytes: formatBytes(dbGcResult.bytesFreed),
+                })}
+              </div>
+            )}
           </fieldset>
 
           {/* T54-01 §1②③：关闭行为（关窗询问框「记住我的选择」的落点，可改回「每次询问」） */}

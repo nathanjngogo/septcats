@@ -1,24 +1,24 @@
 {
   "task": "T82-02-A",
-  "ranAt": "2026-09-25T13:22:11.613Z",
+  "ranAt": "2026-09-25T14:42:58.215Z",
   "assertions": [
     {
       "step": "P1|首导",
       "name": "P1-1 首导 plan 判定为新页",
       "ok": true,
-      "detail": "new=1 {\"planId\":\"01M3CBNT4KB5S2S6GPQD5R6MMM\",\"source\":{\"kind\":\"md-dir\",\"rootName\":\"导入文档\"},\"items\":[{\"op\":\"page\",\"path\":\"H05夹具页-mugzpnas.md\",\"title\":\"H05夹具页-mugzpnas\",\"parentPath\":null,\"blockCount\":2}],\"totalItems\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"a"
+      "detail": "new=1 {\"planId\":\"01M3CG9Q5H8BWD79279F1NSJ52\",\"source\":{\"kind\":\"md-dir\",\"rootName\":\"导入文档\"},\"items\":[{\"op\":\"page\",\"path\":\"H05夹具页-muh2liyx.md\",\"title\":\"H05夹具页-muh2liyx\",\"parentPath\":null,\"blockCount\":2}],\"totalItems\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"a"
     },
     {
       "step": "P1|首导",
       "name": "P1-2 首导 execute 真入账",
       "ok": true,
-      "detail": "{\"planId\":\"01M3CBNT4KB5S2S6GPQD5R6MMM\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+      "detail": "{\"planId\":\"01M3CG9Q5H8BWD79279F1NSJ52\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
     },
     {
       "step": "P1|首导",
       "name": "P1-3 树里出现活页（导入落地）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-mugzpnas\"}]"
+      "detail": "[{\"id\":\"01M3CG9Q5MFQ4MRM45ZSM5BFAZ\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-muh2liyx\"}]"
     },
     {
       "step": "P2|活页幂等",
@@ -36,7 +36,7 @@
       "step": "P3|回收站态重导",
       "name": "P3-1 回收站态：alive=0 且 deletedAt>0（软删语义成立）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"}]"
+      "detail": "[{\"id\":\"01M3CG9Q5MFQ4MRM45ZSM5BFAZ\",\"alive\":0,\"deletedAt\":1790347370868,\"title\":\"H05夹具页-muh2liyx\"}]"
     },
     {
       "step": "P3|回收站态重导",
@@ -48,13 +48,13 @@
       "step": "P3|回收站态重导",
       "name": "P3-3 重导 execute 真入账",
       "ok": true,
-      "detail": "{\"planId\":\"01M3CBNWAC526P7T835ZXSPBEG\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+      "detail": "{\"planId\":\"01M3CG9SB6B3W4JKGCPRKFC21F\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
     },
     {
       "step": "P3|回收站态重导",
       "name": "P3-4 重导产生新活页（新 id，非复活回收站页）",
       "ok": true,
-      "detail": "alive=1 ids=01M3CBNWAEEV4JA77Q889NCNB1"
+      "detail": "alive=1 ids=01M3CG9SB7NVWN0QY9T3RWYWKC"
     },
     {
       "step": "P4|彻底删除态重导",
@@ -72,7 +72,7 @@
       "step": "P4|彻底删除态重导",
       "name": "P4-2 死引用态：alive=0 且 deletedAt=0",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNWAEEV4JA77Q889NCNB1\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-mugzpnas\"}]"
+      "detail": "[{\"id\":\"01M3CG9Q5MFQ4MRM45ZSM5BFAZ\",\"alive\":0,\"deletedAt\":1790347370868,\"title\":\"H05夹具页-muh2liyx\"},{\"id\":\"01M3CG9SB7NVWN0QY9T3RWYWKC\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-muh2liyx\"}]"
     },
     {
       "step": "P4|彻底删除态重导",
@@ -84,13 +84,13 @@
       "step": "P4|彻底删除态重导",
       "name": "P4-4 死引用态重导 execute 真入账",
       "ok": true,
-      "detail": "{\"planId\":\"01M3CBNYGBWMJTENXEK0DJN4Y1\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+      "detail": "{\"planId\":\"01M3CG9VGR2VBT61X3PSHT0P9W\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
     },
     {
       "step": "P5|重启持久",
       "name": "P5-1 重启后重导页仍在（真入账，非内存态）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNWAEEV4JA77Q889NCNB1\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNYGCWZB9V4SHNR6293A8\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-mugzpnas\"}]"
+      "detail": "[{\"id\":\"01M3CG9Q5MFQ4MRM45ZSM5BFAZ\",\"alive\":0,\"deletedAt\":1790347370868,\"title\":\"H05夹具页-muh2liyx\"},{\"id\":\"01M3CG9SB7NVWN0QY9T3RWYWKC\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-muh2liyx\"},{\"id\":\"01M3CG9VGSH6HGWQB8XK2Y3GRZ\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-muh2liyx\"}]"
     },
     {
       "step": "P6|隔离",

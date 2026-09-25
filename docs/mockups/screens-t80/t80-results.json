@@ -1,18 +1,18 @@
 {
   "task": "T80-01",
-  "ranAt": "2026-09-25T13:22:48.597Z",
+  "ranAt": "2026-09-25T14:41:35.141Z",
   "assertions": [
     {
       "step": "P0|夹具",
       "name": "P0-1 夹具页创建成功",
       "ok": true,
-      "detail": "{\"id\":\"01M3CBQ3YDJH48870ZP0WDJYHM\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
+      "detail": "{\"id\":\"01M3CG7BQ8SJ1QRF6SSZTGGCY7\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
     },
     {
       "step": "P0|夹具",
       "name": "P0-2 portable API 就位（preview/confirm）",
       "ok": true,
-      "detail": "{\"id\":\"01M3CBQ3YDJH48870ZP0WDJYHM\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
+      "detail": "{\"id\":\"01M3CG7BQ8SJ1QRF6SSZTGGCY7\",\"apiPortable\":\"function\",\"apiConfirm\":\"function\"}"
     },
     {
       "step": "P0|夹具",
@@ -30,7 +30,7 @@
       "step": "P1|preview",
       "name": "P1-2 归档名含 portable + .zip",
       "ok": true,
-      "detail": "septcats-portable-个人工作区-20260925-212245.zip"
+      "detail": "septcats-portable-个人工作区-20260925-224132.zip"
     },
     {
       "step": "P1|preview",
@@ -42,7 +42,7 @@
       "step": "P1|preview",
       "name": "P1-5 清单含两份附件且字节正确",
       "ok": true,
-      "detail": "[[\"db\",\"septcats.db\",4096],[\"attachment\",\"attachments/6218f350d7be50c783cca86f78c411ec3fd82bb88dcd2c4a685ffe5efdd77d67.png\",1024],[\"attachment\",\"attachments/7ff1bb7826b0af5371504b035df128d4d8b5ff8af9c6680aa9bb126c226df321.bin\",2048]]"
+      "detail": "[[\"db\",\"septcats.db\",4096],[\"attachment\",\"attachments/263d49ea7484065c01e3fb12bb70017cee25aa431889d0adaf85e257ab9056cb.bin\",2048],[\"attachment\",\"attachments/ebf3060fb01ad799400ac92526294d2048dfe37809355f30838a9784e57c8462.png\",1024]]"
     },
     {
       "step": "P1|preview",
@@ -72,37 +72,37 @@
       "step": "P3|confirm",
       "name": "P3-1 confirm 未取消且返回绝对路径",
       "ok": true,
-      "detail": "\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-212248.zip\""
+      "detail": "\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-224135.zip\""
     },
     {
       "step": "P3|confirm",
       "name": "P3-2 zip 真实落盘且非空",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-e2e\\export-target\\septcats-portable-个人工作区-20260925-212248.zip 11993"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-e2e\\export-target\\septcats-portable-个人工作区-20260925-224135.zip 11987"
     },
     {
       "step": "P3|confirm",
       "name": "P3-3 重名不覆盖（renamed=true 且两份并存）",
       "ok": true,
-      "detail": "{\"p1\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-212248.zip\",\"p2\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-212248-2.zip\",\"files\":[\"septcats-portable-个人工作区-20260925-212248-2.zip\",\"septcats-portable-个人工作区-20260925-212248.zip\"]}"
+      "detail": "{\"p1\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-224135.zip\",\"p2\":\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-e2e\\\\export-target\\\\septcats-portable-个人工作区-20260925-224135-2.zip\",\"files\":[\"septcats-portable-个人工作区-20260925-224135-2.zip\",\"septcats-portable-个人工作区-20260925-224135.zip\"]}"
     },
     {
       "step": "P4|包内核",
       "name": "P4-1 含 manifest-portable.json",
       "ok": true,
-      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3cbq0knka55ah104atb8zzt-000001-fb55e67c.jsonl\",\"attachments/6218f350d7be50c783cca86f78c411ec3fd82bb88dcd2c4a685ffe5efdd77d67.png\",\"attachments/7ff1bb7826b0af5371504b035df128d4d8b5ff8af9c6680aa9bb126c226df321.bin\"]"
+      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3cg78f202nsp3kvq14ccghp-000001-eba4c1fc.jsonl\",\"attachments/263d49ea7484065c01e3fb12bb70017cee25aa431889d0adaf85e257ab9056cb.bin\",\"attachments/ebf3060fb01ad799400ac92526294d2048dfe37809355f30838a9784e57c8462.png\"]"
     },
     {
       "step": "P4|包内核",
       "name": "P4-2 含 septcats.db",
       "ok": true,
-      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3cbq0knka55ah104atb8zzt-000001-fb55e67c.jsonl\",\"attachments/6218f350d7be50c783cca86f78c411ec3fd82bb88dcd2c4a685ffe5efdd77d67.png\",\"attachments/7ff1bb7826b0af5371504b035df128d4d8b5ff8af9c6680aa9bb126c226df321.bin\"]"
+      "detail": "[\"manifest-portable.json\",\"septcats.db\",\"sync/seg-00000001-01m3cg78f202nsp3kvq14ccghp-000001-eba4c1fc.jsonl\",\"attachments/263d49ea7484065c01e3fb12bb70017cee25aa431889d0adaf85e257ab9056cb.bin\",\"attachments/ebf3060fb01ad799400ac92526294d2048dfe37809355f30838a9784e57c8462.png\"]"
     },
     {
       "step": "P4|包内核",
       "name": "P4-3 含段（sync/seg-*.jsonl ≥1）与两份附件（原命名）",
       "ok": true,
-      "detail": "[\"sync/seg-00000001-01m3cbq0knka55ah104atb8zzt-000001-fb55e67c.jsonl\",\"attachments/6218f350d7be50c783cca86f78c411ec3fd82bb88dcd2c4a685ffe5efdd77d67.png\",\"attachments/7ff1bb7826b0af5371504b035df128d4d8b5ff8af9c6680aa9bb126c226df321.bin\"]"
+      "detail": "[\"sync/seg-00000001-01m3cg78f202nsp3kvq14ccghp-000001-eba4c1fc.jsonl\",\"attachments/263d49ea7484065c01e3fb12bb70017cee25aa431889d0adaf85e257ab9056cb.bin\",\"attachments/ebf3060fb01ad799400ac92526294d2048dfe37809355f30838a9784e57c8462.png\"]"
     },
     {
       "step": "P4|包内核",
@@ -120,7 +120,7 @@
       "step": "P4|包内核",
       "name": "P4-6 附件字节级一致（sha256 相等）",
       "ok": true,
-      "detail": "7ff1bb7826b0af53 vs 7ff1bb7826b0af53"
+      "detail": "263d49ea7484065c vs 263d49ea7484065c"
     },
     {
       "step": "P4|包内核",
@@ -132,7 +132,7 @@
       "step": "P4|包内核",
       "name": "P4-8 压缩档分派：.png 附件 STORED(0)；.bin/db/段 DEFLATE(8)",
       "ok": true,
-      "detail": "[[\"manifest-portable.json\",8],[\"septcats.db\",8],[\"sync/seg-00000001-01m3cbq0knka55ah104atb8zzt-000001-fb55e67c.jsonl\",8],[\"attachments/6218f350d7be50c783cca86f78c411ec3fd82bb88dcd2c4a685ffe5efdd77d67.png\",0],[\"attachments/7ff1bb7826b0af5371504b035df128d4d8b5ff8af9c6680aa9bb126c226df321.bin\",8]]"
+      "detail": "[[\"manifest-portable.json\",8],[\"septcats.db\",8],[\"sync/seg-00000001-01m3cg78f202nsp3kvq14ccghp-000001-eba4c1fc.jsonl\",8],[\"attachments/263d49ea7484065c01e3fb12bb70017cee25aa431889d0adaf85e257ab9056cb.bin\",8],[\"attachments/ebf3060fb01ad799400ac92526294d2048dfe37809355f30838a9784e57c8462.png\",0]]"
     },
     {
       "step": "P9|存活",

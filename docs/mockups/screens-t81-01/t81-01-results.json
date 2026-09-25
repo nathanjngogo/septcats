@@ -1,0 +1,102 @@
+{
+  "task": "T81-01",
+  "ranAt": "2026-09-25T14:41:22.746Z",
+  "assertions": [
+    {
+      "step": "P0|夹具",
+      "name": "P0-1 三类页就位（存活/回收站 deletedAt>0/彻底删 deletedAt=0）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568},{\"id\":\"01M3CG6V9EX10JG2W2YT5QAXMW\",\"alive\":0,\"deletedAt\":0}]"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-1 设置页「清理已删除内容」预览按钮在场",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-2 点预览出预览面板",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-3 预览放行条数 = 1（仅彻底删页；软删页被扣留）",
+      "ok": true,
+      "detail": "meta=页面 1 个 · 块 0 个 · 预计释放 0 B"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-4 扣留条数 = 1 且原因含 retention/未到期",
+      "ok": true,
+      "detail": "held=另有 1 项保留（未到期 / 有子页 / 锁定）"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-5 IPC 预览与 UI 对账：candidates=2 / deletable=1 / held=1(retention)",
+      "ok": true,
+      "detail": "{\"candidates\":2,\"deletable\":1,\"held\":1,\"heldByReason\":{\"unreachable\":0,\"retention\":1,\"locked\":0,\"has-children\":0},\"estimatedBlocks\":0,\"estimatedBytes\":0,\"retentionDays\":30}"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-6 保留天数 30 明示",
+      "ok": true,
+      "detail": "ret=回收站保留 30 天；已彻底删除的页面不受此限制"
+    },
+    {
+      "step": "P2|取消零写",
+      "name": "P2-1 取消后三类页原样在场（零写入）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568},{\"id\":\"01M3CG6V9EX10JG2W2YT5QAXMW\",\"alive\":0,\"deletedAt\":0}]"
+    },
+    {
+      "step": "P2|取消零写",
+      "name": "P2-2 取消后预览面板收起",
+      "ok": true,
+      "detail": "panel gone"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-1 确认后出「完成」反馈",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-2 放行的死引用页被真删（树里不再出现）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568}]"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-3 存活页未被误删",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568}]"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-4 回收站页按 retention 扣留仍在（未满 30 天不动）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568}]"
+    },
+    {
+      "step": "P4|重启持久",
+      "name": "P4-1 重启后真删仍生效（非内存态）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568}]"
+    },
+    {
+      "step": "P4|重启持久",
+      "name": "P4-2 重启后存活页与回收站页均在",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CG6V91NQWN1HBQWFC9AR46\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CG6V9A2EJ6FT5ES4ZG0MRW\",\"alive\":0,\"deletedAt\":1790347275568}]"
+    },
+    {
+      "step": "P5|隔离",
+      "name": "P5-1 真实根未被触碰（mtime 不变）",
+      "ok": true,
+      "detail": "before=1790329115817.0652 after=1790329115817.0652"
+    }
+  ]
+}

@@ -117,6 +117,7 @@ export interface PagesService {
   renamePage(input: { id: string; title: string }): Promise<{ id: string }>;
   movePage(input: MovePageInput): Promise<MovePageResult>;
   deletePage(input: { id: string }): Promise<{ deleted: number }>;
+  /** 恢复回收站页面；id 已被物理清除（T81-01 GC）→ 抛 E_NOT_FOUND。 */
   restorePage(input: { id: string }): Promise<{ restored: number }>;
   /** 「彻底删除」：从回收站即时移除（deleted_at=0），物理清除归 GC 任务。 */
   purgePage(input: { id: string }): Promise<{ purged: number }>;
@@ -674,7 +675,10 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
 
     async restorePage(input) {
       const workspaceId = await requireActiveWorkspace();
-      const plan = planRestore(await loadNodes(workspaceId), input.id, ctx());
+      // T81-01：墓碑被 GC 物理清除后该 id 已不在 page 表 → 显式 E_NOT_FOUND，
+      // 不再静默回 { restored: 0 }（那会把「已彻底清除」与「本就存活」两义混为一谈）。
+      const { all } = await requirePage(workspaceId, input.id, false);
+      const plan = planRestore(all, input.id, ctx());
       if (plan.reason === 'parent-gone') {
         throw new PagesApiError('E_PARENT_GONE', '父页面仍在回收站，先恢复父页面再恢复它');
       }

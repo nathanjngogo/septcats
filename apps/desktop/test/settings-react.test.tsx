@@ -36,6 +36,8 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
   rotateKey: ReturnType<typeof vi.fn>;
   listModels: ReturnType<typeof vi.fn>;
   setKey: ReturnType<typeof vi.fn>;
+  dbgcPreview: ReturnType<typeof vi.fn>;
+  dbgcRun: ReturnType<typeof vi.fn>;
 } {
   const patch = vi.fn(async (p: Partial<AppSettings>) => ({ ...defaultSettings(), ...p }));
   const exportDiag = vi.fn(async () => ({
@@ -70,6 +72,24 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
   }));
   const listModels = vi.fn(async () => ({ models: ['qwen-7b', 'deepseek-v3'], cached: false, fetchedAt: 1 }));
   const setKey = vi.fn(async () => ({ ok: true as const }));
+  // T81-01：DB 面墓碑 GC 桥（preview 只读条数 / run 确认执行）
+  const dbgcPreview = vi.fn(async () => ({
+    candidates: 39,
+    deletable: 35,
+    held: 4,
+    heldByReason: { unreachable: 0, retention: 1, locked: 1, 'has-children': 2 },
+    estimatedBlocks: 69,
+    estimatedBytes: 4096,
+    retentionDays: 30,
+  }));
+  const dbgcRun = vi.fn(async () => ({
+    deletedPages: 35,
+    deletedBlocks: 69,
+    bytesFreed: 4096,
+    batches: 1,
+    held: 4,
+    heldByReason: { unreachable: 0, retention: 1, locked: 1, 'has-children': 2 },
+  }));
   const bridge = {
     ping: vi.fn(),
     appMeta: vi.fn(async () => ({
@@ -121,10 +141,12 @@ function installBridge(overrides: Partial<SeptcatsApi> = {}): {
       setKey,
       clearKey: vi.fn(async () => ({ ok: true as const })),
     },
+    // T81-01：DB 面墓碑 GC 桥
+    dbgc: { preview: dbgcPreview, run: dbgcRun },
     ...overrides,
   };
   vi.stubGlobal('septcats', bridge as unknown as SeptcatsApi);
-  return { patch, exportDiag, exportRecovery, importRecovery, rotateKey, listModels, setKey };
+  return { patch, exportDiag, exportRecovery, importRecovery, rotateKey, listModels, setKey, dbgcPreview, dbgcRun };
 }
 
 beforeEach(() => {
@@ -186,8 +208,30 @@ describe('SettingsPage（三区块 + 无障碍）', () => {
     dispatchSpy.mockRestore();
   });
 
-  it('诊断包导出：点导出 → 显示脱敏预览 + 确认/取消', async () => {
-    const { exportDiag } = installBridge();
+  it('T81-01：同步区「自动清理」开关 patch sync.gc；「清理已删除内容」预览 → 确认执行 → 结果行', async () => {
+    const { patch, dbgcPreview, dbgcRun } = installBridge();
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    // 开关：patch({sync:{gc:true}})
+    fireEvent.click(screen.getByLabelText('自动清理'));
+    await waitFor(() => expect(patch).toHaveBeenCalledWith({ sync: { gc: true } }));
+
+    // dry-run 预览：只读条数（页面/块/预计释放 + 保留天数说明）
+    fireEvent.click(screen.getByTestId('settings-dbgc-preview'));
+    const meta = await screen.findByTestId('settings-dbgc-meta');
+    expect(dbgcPreview).toHaveBeenCalledTimes(1);
+    expect(meta.textContent).toContain('页面 35 个');
+    expect(screen.getByTestId('settings-dbgc-retention').textContent).toContain('30');
+
+    // 确认执行：run 被调 + 结果行
+    fireEvent.click(screen.getByTestId('settings-dbgc-confirm'));
+    const done = await screen.findByTestId('settings-dbgc-done');
+    expect(dbgcRun).toHaveBeenCalledTimes(1);
+    expect(done.textContent).toContain('35');
+  });
+
+  it('诊断包导出：点导出 → 显示脱敏预览 + 确认/取消', async () => {    const { exportDiag } = installBridge();
     render(<SettingsPage />);
     await screen.findByTestId('settings-page');
 
