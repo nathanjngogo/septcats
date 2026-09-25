@@ -1,0 +1,72 @@
+{
+  "task": "T80-05",
+  "ranAt": "2026-09-25T08:56:49.063Z",
+  "assertions": [
+    {
+      "step": "P0|夹具",
+      "name": "P0-1 导出 zip 夹具在场",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\pkg\\septcats-portable-个人工作区-20260925-165634.zip 8668B"
+    },
+    {
+      "step": "P1|对话框",
+      "name": "P1-1 「导入便携包」按钮在场可点",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P1|对话框",
+      "name": "P1-2 点按钮后文件对话框出现（没反应→此断言即判据）",
+      "ok": true,
+      "detail": "waited=1182ms delta=[{\"h\":789498,\"pid\":12848,\"title\":\"ѡ���Я��\",\"cls\":\"#32770\"},{\"h\":789408,\"pid\":12848,\"title\":\"stateBar\",\"cls\":\"BAIDU_CLASS_IME_87C946A9-47CC-4"
+    },
+    {
+      "step": "P2|预检面板",
+      "name": "P2-2 预检数据可取（plan 返回 plan 对象，非 canceled/blocked）",
+      "ok": true,
+      "detail": "{\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-165634.zip\",\"manifest\":{\"librar"
+    },
+    {
+      "step": "P2|预检面板",
+      "name": "P2-3 plan 面板字段在场（manifest/counts/blocked 契约）",
+      "ok": true,
+      "detail": "zipPath,manifest,counts,bytes,schema,target,warnings,blocked"
+    },
+    {
+      "step": "P3|执行链",
+      "name": "P3-1 execute 成功（ok+backupPath 契约）",
+      "ok": true,
+      "detail": "{\"ok\":true,\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-165634.zip\",\"backupPath\":\"E:\\\\Hermes Agen"
+    },
+    {
+      "step": "P3|执行链",
+      "name": "P3-2 备份路径名含 bak-portable",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\data\\septcats.db.bak-portable-20260925-165645"
+    },
+    {
+      "step": "P3|执行链",
+      "name": "P3-3 数据面：导入页仍在树",
+      "ok": true,
+      "detail": "srcId"
+    },
+    {
+      "step": "P4|错误码",
+      "name": "P4-1 篡改包返回结构化错误（blocked 或 E_PORTABLE 码）",
+      "ok": true,
+      "detail": "{\"ipcErr\":\"Error invoking remote method 'portable:import:plan': Error: E_PORTABLE_CHECKSUM:\"}"
+    },
+    {
+      "step": "P5|错误上屏",
+      "name": "P5-0 错误反馈 DOM 通道在场（describeError→setError 渲染位）",
+      "ok": true,
+      "detail": "cur="
+    },
+    {
+      "step": "P6|存活",
+      "name": "P6-1 应用存活（UI 全链走完后）",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

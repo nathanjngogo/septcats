@@ -1,0 +1,48 @@
+{
+  "task": "T80-05",
+  "ranAt": "2026-09-25T08:16:00.120Z",
+  "assertions": [
+    {
+      "step": "P0|夹具",
+      "name": "P0-1 导出 zip 夹具在场",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\pkg\\septcats-portable-个人工作区-20260925-161558.zip 8660B"
+    },
+    {
+      "step": "P1|触发面",
+      "name": "P1-1 设置页「导入便携包」按钮在场可点",
+      "ok": true,
+      "detail": "{\"found\":true}"
+    },
+    {
+      "step": "P1|触发面",
+      "name": "P1-2 篡改包预检结构化拒（不崩）",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:plan': Error: E_PORTABLE_CHECKSUM: 校验和不符，整包拒绝（不符 1 条 / 缺 0 条 / 多 0 "
+    },
+    {
+      "step": "P2|两段式",
+      "name": "P2-1 dir 契约取最新包=合法 plan",
+      "ok": true,
+      "detail": "\"E:\\\\Hermes Agent工作空间\\\\_scratch\\\\t80-05-e2e\\\\pkg\\\\septcats-portable-个人工作区-20260925-161558.zip\""
+    },
+    {
+      "step": "P2|两段式",
+      "name": "P2-2 dir 契约 execute 成功",
+      "ok": true,
+      "detail": "{\"segments\":1,\"ops\":2,\"entities\":1,\"mode\":\"replace\",\"keptOps\":0}"
+    },
+    {
+      "step": "P2|两段式",
+      "name": "P2-3 execute 成功返回备份路径",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\data\\septcats.db.bak-portable-20260925-161559"
+    },
+    {
+      "step": "P3|反馈",
+      "name": "P3-1 导入成功后可见反馈（文案或 toast）",
+      "ok": false,
+      "detail": "{\"bodyHas导入\":false,\"toasts\":[]}"
+    }
+  ]
+}

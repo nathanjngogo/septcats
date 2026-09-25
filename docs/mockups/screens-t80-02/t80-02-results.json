@@ -1,12 +1,12 @@
 {
   "task": "T80-02",
-  "ranAt": "2026-09-25T07:48:18.303Z",
+  "ranAt": "2026-09-25T10:32:13.201Z",
   "assertions": [
     {
       "step": "P1|导出夹具",
       "name": "P1-1 导出 zip 落盘非空",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugnsdtw\\pkg\\septcats-portable-个人工作区-20260925-154815.zip 8666B"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugtn6g9\\pkg\\septcats-portable-个人工作区-20260925-183210.zip 8666B"
     },
     {
       "step": "P1|导出夹具",
@@ -42,7 +42,7 @@
       "step": "P3|execute",
       "name": "P3-2 备份 bak-portable-<ts> 在场非空",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugnsdtw\\data\\septcats.db.bak-portable-20260925-154815"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugtn6g9\\data\\septcats.db.bak-portable-20260925-183210"
     },
     {
       "step": "P3|execute",
@@ -107,8 +107,8 @@
     {
       "step": "P5|revert",
       "name": "P5-1 revert ok 且主库逐字节=备份文件",
-      "ok": false,
-      "detail": "{\"__err\":\"Error: Error invoking remote method 'portable:import:revert': Error: E_PORTABLE_ROLLBACK_FAILED: 还原前清理失败 E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugnsdtw/data/septcats.db：EBUSY: resource bus"
+      "ok": true,
+      "detail": "{\"ok\":true,\"backupPath\":\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugtn6g9/data/septcats.db.bak-portable-20260925-183210\",\"restoredFiles\":[\"E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugtn6g9/data/septcat"
     },
     {
       "step": "P5|revert",
@@ -119,7 +119,7 @@
     {
       "step": "P5|revert",
       "name": "P5-3 包外页随 revert 消失（还原语义成立）",
-      "ok": false,
+      "ok": true,
       "detail": "包外页不在树"
     },
     {
