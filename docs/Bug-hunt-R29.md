@@ -29,6 +29,7 @@
 | **H-02** | `recent` 表残留指向已不存在页的行（1 行）+ 39 行指向回收站页 | 设备本地派生态无清理钩子；隔离段那页（`01M2VG9QD6Q0N8KK2CVQT2ZQNE`）的 upsert op 被封在 quarantine 从未物化，但 `recent.touch` 已落账 | P2 卫生 | 并入 T81-01 GC 范围（清 recent 悬挂行） |
 | **H-03** | 39 处跨行空 catch（全有降级注释）、7 个「声明了 main 无引用」通道 → **均为假阳/设计行为** | 逐一核过上下文：隐私模式降级、配额、后续补真实错误；通道走表驱动命名空间 | — | 不立案（记录以证排查面已覆盖） |
 | **H-06** | `page_link_index`/`mention` 不在 `REBUILD_CLEAR_SQL`：重建（两种模式）后双链索引可能与投影不一致 | 派生索引缺口（replace 时代就有）；`page_link_index` 有启动全量重建兜底、`mention` 无回填（schema.v2 注释口径） | P2 一致性 | 后续单收（重建事务尾部补 links 全量重建）；已记 T82-01 报告 §5.1 |
+| **H-07** | 工作台「最近页」卡片与模板市场种子**摘不到表格/折叠块的正文文字**（显示空摘要） | T79-02 挂账核实现仍成立：`workbench/cards.tsx:firstTextOfBlock` 与 `workbench/market.ts:extractPlainText` 只认 PM doc（`text`/`content` 嵌套），table 的 `{rows,header}`、toggle 的 `{title,body}` 结构化 content 抽不出 | P2 体验 | 攒 T82-02（两函数加结构化分支，口径照 `main/blocks.ts:blockContentOf` 单一实现，禁第三份复制） |
 
 ### H-04 证据链（三段互证，可复现）
 
