@@ -1,7 +1,12 @@
 # TASK-T81-01 · 墓碑物理清除（db 面 GC，兑现 purgePage 注释承诺）
 
 > 前置：`docs/MILESTONES.md` 欠账登记（09-24）+ `docs/PRD-R28-便携包.md` §4。基线=main。工作目录=主树。
-> 只 Write/Edit 落盘；禁碰 git。报告写 `docs/tasks/TASK-T81-01-report.md`。收尾打印 `CB-T81-01-EXIT=0`。
+> 只 Write/Edit 落盘；禁碰 git。报告写 `docs/tasks/TASK-T81-01-report.md`（**开工两步内先建骨架**）。收尾打印 `DSH-T81-01-EXIT=0`。
+> **沙箱已放开（09-25 晚）**：本次派发 overlay=`buddy-v41-nosbx.yml`，带管道 stdio 的子进程可用，
+> **必须原生跑测试**：`export PATH="/c/Users/Administrator/AppData/Local/hermes/node:$PATH"`（node 须 v22）
+> + `export TMPDIR=/TEMP/TMP="C:\Users\Administrator\AppData\Local\Temp"`（长路径；短路径 8.3 形态会触发
+> libuv `fs-event.c` 断言崩）→ `pnpm -C apps/desktop test`、`pnpm -C packages/<改过的包> test`。
+> **禁止再造进程内垫片/vitest 替身配置**（历史做法，本单起废止）；测试跑不起来=如实报 DEVIATION，交 PM 复跑。
 
 ## 背景（PM 已实锤，不必重复侦察）
 
