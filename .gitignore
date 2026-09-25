@@ -20,5 +20,8 @@ latest.yml.sig
 # PM/工程师诊断临时脚本区（永不入库）
 _scratch/
 
+# 本地发布演练的 feed/安装包暂存（tmp/pm-feed、tmp/demo-feed；永不入库）
+tmp/
+
 # 探针原始 net-log（含 Chromium 未脱敏请求头）不入库
 /docs/mockups/screens-*/**netlog*.json
