@@ -58,3 +58,6 @@
 - `septcats.db.bak-v5` **完整在场**（10,735,616 B，442 页全活 + 7384 ops，schema v5）→ 数据未灭失，可救。
 - 建议路径（**全程在拷贝上作业，不碰真实库**）：拷贝 `bak-v5` 为独立数据根 → 关同步启动（探针隔离双钉口径）→ 迁移链 v5→v10 → 以 R27 页面导出 / T80 便携包导出 → 导入当前库（或整体替换，两种口径出对比清单后再选）。
 - 恢复动作属**破坏性/外部变更**，待老板签字；签字前 PM 只在拷贝上演练并出可复现证据。
+
+## 路5 静态竞态扫描结论（09-25）
+异步 read-modify-write 面：runtime.ts 的 cycleRunning/cycleQueued 互斥+finally 补跑、reencrypting 双保险（495/532 前置检查）——审读均单线程事件循环下正确；其余（ai/service、crypto、provider）状态字段无跨 await 复合更新危险形。文件并发写面：export/import 为用户发起动作（main 串行）、段写=runCycle 单写者队列（时序问题即 H-08，已立案）。不新增案。
