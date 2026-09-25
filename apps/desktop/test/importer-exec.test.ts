@@ -367,4 +367,169 @@ describeDb('importer 执行器（真 SQLite · commitOps 同事务）', (ctor) =
       core.activeDatabase().prepare(`SELECT alive FROM page WHERE id='seed-ghost'`).get(),
     ).toMatchObject({ alive: 0 });
   });
+
+  // ---- T82-02 · H-05：import_source 判重加页存活校验 ---------------------------------
+  //
+  // 现状（修复前）：`importSource.list` 全量预载成 (path,hash)→page_id Map，**不校验
+  // page 是否还活着**；删除侧（deletePage/purgePage）从不清理该表 → 删页后同文件夹
+  // 永远无法重导（老板真机 424/424 行指向不存在页）。
+  // 修后：只回「指向活页」的账本行（LEFT JOIN page + alive=1 + deleted_at IS NULL），
+  // 死引用视作未导入；且落账改为 ON CONFLICT DO UPDATE（重导把 page_id 指向新活页），
+  // 使「导 → 删 → 重导 → 再重导」闭环幂等。
+
+  /** 直接改一页的删除态（软删 = deleted_at>0 进回收站；purge = deleted_at=0 彻底删除）。 */
+  async function setPageDeleted(id: string, deletedAt: number): Promise<void> {
+    const row = core
+      .activeDatabase()
+      .prepare(`SELECT version FROM page WHERE id = ?`)
+      .get(id) as { version: number } | undefined;
+    await requestOk<RunData>(core, {
+      id: `del-${id}`,
+      t: 'run',
+      sqlId: 'page.setDeleted',
+      params: {
+        id,
+        workspace_id: WORKSPACE_ID,
+        deleted_at: deletedAt,
+        version: (row?.version ?? 1) + 1,
+        updated_at: deletedAt,
+      },
+    });
+  }
+
+  /** 账本某 source_path 的 page_id（不在账本 → null）。 */
+  function ledgerPageId(sourcePath: string): string | null {
+    const row = core
+      .activeDatabase()
+      .prepare(`SELECT page_id FROM import_source WHERE source_path = ?`)
+      .get(sourcePath) as { page_id: string } | undefined;
+    return row?.page_id ?? null;
+  }
+
+  /** 某标题的全部 page 行（含 tombstone）。 */
+  function pagesByTitle(title: string): Array<{ id: string; alive: number; deleted_at: number | null }> {
+    return core
+      .activeDatabase()
+      .prepare(`SELECT id, alive, deleted_at FROM page WHERE title = ? ORDER BY id`)
+      .all(title) as Array<{ id: string; alive: number; deleted_at: number | null }>;
+  }
+
+  /** 活页 id 清单（alive=1 且 deleted_at IS NULL）——判重口径的「活页」定义。 */
+  function alivePageIdOf(title: string): string | null {
+    const row = core
+      .activeDatabase()
+      .prepare(`SELECT id FROM page WHERE title = ? AND alive = 1 AND deleted_at IS NULL`)
+      .get(title) as { id: string } | undefined;
+    return row?.id ?? null;
+  }
+
+  it('H-05 ①：导 → 软删（进回收站）→ 重导 = 真入账（非 skipped），账本指向新活页', async () => {
+    const first = await service.plan({ dirPath: 'src' });
+    const firstReport = await service.execute({ planId: first.planId, confirm: true });
+    expect(firstReport.status).toBe('done');
+    const originalId = ledgerPageId('p1.md');
+    expect(originalId).not.toBeNull();
+
+    // 软删「页一」（deleted_at > 0 = 回收站）
+    await setPageDeleted(originalId as string, clock);
+
+    // 重导：修复前这里 skippedDuplicate = 4（全量静默跳过）；修后应为 3
+    const second = await service.plan({ dirPath: 'src' });
+    expect(second.counts.skippedDuplicate).toBe(3);
+    expect(second.counts.pages).toBe(1); // 只有「页一」需要重导
+    const secondReport = await service.execute({ planId: second.planId, confirm: true });
+    expect(secondReport.status).toBe('done');
+
+    // 新活页入账：账本行数仍 4（PK 未变），page_id 改指新页
+    expect(rawCount('SELECT COUNT(*) AS n FROM import_source')).toBe(4);
+    const newId = ledgerPageId('p1.md');
+    expect(newId).not.toBe(originalId);
+    expect(alivePageIdOf('页一')).toBe(newId);
+
+    // 原回收站页仍在（本单不替用户做「恢复 or 清理」的选择）
+    const rows = pagesByTitle('页一');
+    expect(rows).toHaveLength(2);
+    expect(rows.some((row) => row.id === originalId && row.alive === 0)).toBe(true);
+    expect(rows.some((row) => row.id === newId && row.alive === 1)).toBe(true);
+  });
+
+  it('H-05 ②：导 → 彻底删除（purge，deleted_at=0）→ 重导 = 真入账（非 skipped）', async () => {
+    const first = await service.plan({ dirPath: 'src' });
+    await service.execute({ planId: first.planId, confirm: true });
+    const originalId = ledgerPageId('p3.md');
+
+    await setPageDeleted(originalId as string, 0); // 彻底删除标记
+
+    const second = await service.plan({ dirPath: 'src' });
+    expect(second.counts.skippedDuplicate).toBe(3);
+    expect(second.counts.pages).toBe(1);
+    const report = await service.execute({ planId: second.planId, confirm: true });
+    expect(report.status).toBe('done');
+    expect(ledgerPageId('p3.md')).not.toBe(originalId);
+    expect(alivePageIdOf('页三')).toBe(ledgerPageId('p3.md'));
+  });
+
+  it('H-05 ③：账本行指向不存在的页（死引用）→ 视作未导入，可重导', async () => {
+    const first = await service.plan({ dirPath: 'src' });
+    await service.execute({ planId: first.planId, confirm: true });
+
+    // 模拟老板真机形态：账本行指向 page 表里根本不存在的 id，且原页确实已不在
+    // （软删进回收站——「指向不存在的页」在生产里必然伴随页的消亡，否则是另一类脏数据）
+    const originalId = ledgerPageId('p4.md') as string;
+    await setPageDeleted(originalId, clock);
+    core
+      .activeDatabase()
+      .prepare(`UPDATE import_source SET page_id = 'pg-ghost-not-exist' WHERE source_path = 'p4.md'`)
+      .run();
+
+    const second = await service.plan({ dirPath: 'src' });
+    expect(second.counts.skippedDuplicate).toBe(3);
+    expect(second.counts.pages).toBe(1); // 只有「页四」重导
+    const report = await service.execute({ planId: second.planId, confirm: true });
+    expect(report.status).toBe('done');
+    expect(ledgerPageId('p4.md')).not.toBe('pg-ghost-not-exist');
+    // 活页恒唯一（一份原 tombstone + 一份新活页），账本指向新活页
+    expect(pagesByTitle('页四')).toHaveLength(2);
+    expect(alivePageIdOf('页四')).toBe(ledgerPageId('p4.md'));
+  });
+
+  it('H-05 ④：活页重复导仍 skipped（幂等不破）；导→删→重导→再重导闭环（不产第三份）', async () => {
+    const first = await service.plan({ dirPath: 'src' });
+    await service.execute({ planId: first.planId, confirm: true });
+
+    // 活页重导：4 条仍全部 skipped（原幂等语义逐字保持）
+    const live = await service.plan({ dirPath: 'src' });
+    expect(live.counts.skippedDuplicate).toBe(4);
+    expect(live.counts.pages).toBe(0);
+
+    // 删「页二」→ 重导入账
+    const softDeleted = ledgerPageId('p2.md');
+    await setPageDeleted(softDeleted as string, clock);
+    const second = await service.plan({ dirPath: 'src' });
+    expect(second.counts.skippedDuplicate).toBe(3);
+    await service.execute({ planId: second.planId, confirm: true });
+    const reimported = ledgerPageId('p2.md');
+    expect(reimported).not.toBe(softDeleted);
+
+    // 再重导：账本已指向活页 → 又回到全量 skipped（闭环幂等，不产第三份）
+    const third = await service.plan({ dirPath: 'src' });
+    expect(third.counts.skippedDuplicate).toBe(4);
+    expect(third.counts.pages).toBe(0);
+    expect(pagesByTitle('页二')).toHaveLength(2); // 原 tombstone + 一份新活页
+  });
+
+  it('H-05 ⑤：不清历史行（物理清账归 T81 GC）——死引用行仍在表里，只被判重过滤', async () => {
+    const first = await service.plan({ dirPath: 'src' });
+    await service.execute({ planId: first.planId, confirm: true });
+    const originalId = ledgerPageId('p1.md');
+    await setPageDeleted(originalId as string, clock);
+
+    const second = await service.plan({ dirPath: 'src' });
+    await service.execute({ planId: second.planId, confirm: true });
+
+    // 账本始终 4 行（PK 未变、无新增、无物理删除）；死引用的 page 行也仍在
+    expect(rawCount('SELECT COUNT(*) AS n FROM import_source')).toBe(4);
+    const ghostRow = pagesByTitle('页一').find((row) => row.id === originalId);
+    expect(ghostRow?.alive).toBe(0);
+  });
 });

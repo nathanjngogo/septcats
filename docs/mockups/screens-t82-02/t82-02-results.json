@@ -1,0 +1,102 @@
+{
+  "task": "T82-02-A",
+  "ranAt": "2026-09-25T13:22:11.613Z",
+  "assertions": [
+    {
+      "step": "P1|首导",
+      "name": "P1-1 首导 plan 判定为新页",
+      "ok": true,
+      "detail": "new=1 {\"planId\":\"01M3CBNT4KB5S2S6GPQD5R6MMM\",\"source\":{\"kind\":\"md-dir\",\"rootName\":\"导入文档\"},\"items\":[{\"op\":\"page\",\"path\":\"H05夹具页-mugzpnas.md\",\"title\":\"H05夹具页-mugzpnas\",\"parentPath\":null,\"blockCount\":2}],\"totalItems\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"a"
+    },
+    {
+      "step": "P1|首导",
+      "name": "P1-2 首导 execute 真入账",
+      "ok": true,
+      "detail": "{\"planId\":\"01M3CBNT4KB5S2S6GPQD5R6MMM\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+    },
+    {
+      "step": "P1|首导",
+      "name": "P1-3 树里出现活页（导入落地）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-mugzpnas\"}]"
+    },
+    {
+      "step": "P2|活页幂等",
+      "name": "P2-1 活页重复导 = skipped（H-05 修复不破坏幂等）",
+      "ok": true,
+      "detail": "new=0 skipped=1"
+    },
+    {
+      "step": "P3|回收站态重导",
+      "name": "P3-0 软删成功（进回收站）",
+      "ok": true,
+      "detail": "{\"deleted\":1}"
+    },
+    {
+      "step": "P3|回收站态重导",
+      "name": "P3-1 回收站态：alive=0 且 deletedAt>0（软删语义成立）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"}]"
+    },
+    {
+      "step": "P3|回收站态重导",
+      "name": "P3-2 H-05 核心：回收站态重导不再静默跳过（判定为新页）",
+      "ok": true,
+      "detail": "new=1 skipped=0"
+    },
+    {
+      "step": "P3|回收站态重导",
+      "name": "P3-3 重导 execute 真入账",
+      "ok": true,
+      "detail": "{\"planId\":\"01M3CBNWAC526P7T835ZXSPBEG\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+    },
+    {
+      "step": "P3|回收站态重导",
+      "name": "P3-4 重导产生新活页（新 id，非复活回收站页）",
+      "ok": true,
+      "detail": "alive=1 ids=01M3CBNWAEEV4JA77Q889NCNB1"
+    },
+    {
+      "step": "P4|彻底删除态重导",
+      "name": "P4-0 二次软删成功",
+      "ok": true,
+      "detail": "{\"deleted\":1}"
+    },
+    {
+      "step": "P4|彻底删除态重导",
+      "name": "P4-1 彻底删除成功（deleted_at=0 死引用态）",
+      "ok": true,
+      "detail": "{\"purged\":1}"
+    },
+    {
+      "step": "P4|彻底删除态重导",
+      "name": "P4-2 死引用态：alive=0 且 deletedAt=0",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNWAEEV4JA77Q889NCNB1\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-mugzpnas\"}]"
+    },
+    {
+      "step": "P4|彻底删除态重导",
+      "name": "P4-3 死引用态重导判定为新页（H-05）",
+      "ok": true,
+      "detail": "new=1 skipped=0"
+    },
+    {
+      "step": "P4|彻底删除态重导",
+      "name": "P4-4 死引用态重导 execute 真入账",
+      "ok": true,
+      "detail": "{\"planId\":\"01M3CBNYGBWMJTENXEK0DJN4Y1\",\"status\":\"done\",\"done\":1,\"total\":1,\"failedAt\":null,\"error\":null,\"opCount\":3,\"batchCount\":1,\"counts\":{\"pages\":1,\"collections\":0,\"records\":0,\"assets\":0,\"skippedDuplicate\":0,\"degraded\":0}}"
+    },
+    {
+      "step": "P5|重启持久",
+      "name": "P5-1 重启后重导页仍在（真入账，非内存态）",
+      "ok": true,
+      "detail": "[{\"id\":\"01M3CBNT4PEKY70YKT2RM4A0VN\",\"alive\":0,\"deletedAt\":1790342524250,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNWAEEV4JA77Q889NCNB1\",\"alive\":0,\"deletedAt\":0,\"title\":\"H05夹具页-mugzpnas\"},{\"id\":\"01M3CBNYGCWZB9V4SHNR6293A8\",\"alive\":1,\"deletedAt\":null,\"title\":\"H05夹具页-mugzpnas\"}]"
+    },
+    {
+      "step": "P6|隔离",
+      "name": "P6-1 真实根未被触碰（mtime 不变）",
+      "ok": true,
+      "detail": "before=1790329115817.0652 after=1790329115817.0652"
+    }
+  ]
+}

@@ -387,3 +387,101 @@ export function matchTableShorthand(text: string): TableContent | null {
   }
   return { rows: [cells], header: false };
 }
+
+// ---------------------------------------------------------------------------
+// 内容 → 纯文本行（T82-02 · H-07 的**唯一实现**）
+// ---------------------------------------------------------------------------
+
+/**
+ * 块 content（任意真相层形态）→ 纯文本行（按块级段落 / 表格单元 / 折叠行切分）。
+ *
+ * 覆盖 `model.ts` 的 `blockContentSchema` 全部形态：
+ * - 纯文本 string（code 块）→ 该串一行；
+ * - PM doc / 内联节点 → **块级子节点各成一行**（段落内联节点先拼成一行再上抛，
+ *   故「多段落 doc」与「段内多 text 节点」两种形态都稳定）；
+ * - 结构化 table `{rows, header}`（R25 冻结口径）→ **逐单元格一行**（阅读序）；
+ * - 结构化 toggle `{title, body}` → title 一行 + body 逐行；
+ * - divider / image / null / 非法形态 → 空数组（不产行，也不抛）。
+ *
+ * 【单一实现纪律】renderer 的「最近页摘抄」`firstTextOfBlock`、
+ * 「模板市场种子正文」`extractPlainText`、以及 main 的双链上下文片段
+ * `textOfBlockContent`（rules/wikilink.ts）**全部**经本函数取文本——T79 缺陷 A
+ * 的教训（同一分流写三份 → table/toggle 结构化正文在部分路径整片丢失）在此收口。
+ * 纯函数：不 import @tiptap/*、不 import react，main/renderer 两侧同源可测。
+ */
+export function blockContentTextLines(content: unknown): string[] {
+  return textLinesOf(content);
+}
+
+/** toggle 结构化形态判定（title 串 + body 串数组；PM 节点带 attrs 不命中）。 */
+function isToggleShape(record: Record<string, unknown>): boolean {
+  return (
+    typeof record['title'] === 'string' &&
+    Array.isArray(record['body']) &&
+    (record['body'] as unknown[]).every((line) => typeof line === 'string')
+  );
+}
+
+function pushNonEmpty(out: string[], value: string): void {
+  if (value.length > 0) {
+    out.push(value);
+  }
+}
+
+function textLinesOf(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return value.length > 0 ? [value] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => textLinesOf(item));
+  }
+  if (value === null || typeof value !== 'object') {
+    return [];
+  }
+  const record = value as Record<string, unknown>;
+
+  // 结构化 table：{rows: string[][], header, colWidths?}（判据用行网格，不看 header）
+  const rows = record['rows'];
+  if (isStringGrid(rows)) {
+    const out: string[] = [];
+    for (const row of rows) {
+      for (const cell of row) {
+        pushNonEmpty(out, cell);
+      }
+    }
+    return out;
+  }
+
+  // 结构化 toggle：{title, body}（与 table 同为「不是 PM doc」的真相层形态）
+  if (isToggleShape(record)) {
+    const out: string[] = [];
+    pushNonEmpty(out, record['title'] as string);
+    for (const line of record['body'] as string[]) {
+      pushNonEmpty(out, line);
+    }
+    return out;
+  }
+
+  // PM 形态：内联节点自带的 text 优先；有 content 时继续下钻。
+  const own: string[] = [];
+  if (typeof record['text'] === 'string') {
+    pushNonEmpty(own, record['text']);
+  }
+  const children = record['content'];
+  if (!Array.isArray(children)) {
+    return own;
+  }
+  if (own.length > 0) {
+    // 自带 text 又有子节点（罕见的内联容器）：自身文本在后、子节点续接。
+    return [...own, ...children.flatMap((child) => textLinesOf(child))];
+  }
+  // 块级容器（doc / paragraph 等）：**每个块级子节点合成一行**，保住段落边界。
+  const lines: string[] = [];
+  for (const child of children) {
+    const parts = textLinesOf(child);
+    if (parts.length > 0) {
+      lines.push(parts.join(''));
+    }
+  }
+  return lines;
+}

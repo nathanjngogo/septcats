@@ -13,6 +13,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { blockContentTextLines } from '@septcats/editor';
 import { CheckCircle, Circle, Clock, FolderSimple, Icon, Note, PixelTodoGlyph, Plus, Star, X } from '@septcats/ui';
 import { t } from '../i18n';
 import {
@@ -838,30 +839,17 @@ function HeatmapCardBody({ api }: { api: CardApi }) {
 
 // --- quote：引用摘抄（读最近 3 页首个 text 块，点击 openPage 定位） ---
 
-/** 纯函数：从 Block content（PM doc | string | null）取首个非空文本。 */
+/**
+ * 纯函数：从 Block content 取首个非空文本行。
+ *
+ * T82-02（H-07）：**不再自带递归抽取**（原先只认 PM doc 的 text/content 嵌套，
+ * table 的 `{rows,header}` 与 toggle 的 `{title,body}` 结构化正文一律抽不到 →
+ * 卡片显示空摘要）。改由 `@septcats/editor` 的 `blockContentTextLines` 单一实现
+ * 分流（main 的双链上下文片段同源共用），本函数只取首行。
+ */
 export function firstTextOfBlock(content: unknown): string | null {
-  const extract = (node: unknown): string | null => {
-    if (typeof node === 'string') {
-      return node.length > 0 ? node : null;
-    }
-    if (typeof node !== 'object' || node === null) {
-      return null;
-    }
-    const obj = node as { text?: unknown; content?: unknown };
-    if (typeof obj.text === 'string' && obj.text.length > 0) {
-      return obj.text;
-    }
-    if (Array.isArray(obj.content)) {
-      for (const child of obj.content) {
-        const found = extract(child);
-        if (found !== null) {
-          return found;
-        }
-      }
-    }
-    return null;
-  };
-  return extract(content);
+  const first = blockContentTextLines(content)[0];
+  return first === undefined ? null : first;
 }
 
 interface Quote {

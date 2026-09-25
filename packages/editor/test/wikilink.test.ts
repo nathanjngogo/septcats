@@ -24,6 +24,7 @@ import {
   type WikilinkHostRef,
   type WikilinkMenuState,
 } from '../src/rules/wikilink';
+import { blockContentTextLines } from '../src/content';
 
 const editors: TiptapEditor[] = [];
 
@@ -151,6 +152,49 @@ describe('wikilink 纯函数：块 content JSON 抽取（main 派生共用）', 
     expect(textOfBlockContent(doc)).toBe('前文');
     expect(textOfBlockContent('code 纯文本')).toBe('code 纯文本');
     expect(textOfBlockContent(null)).toBe('');
+  });
+
+  // T82-02（H-07）：单一实现 `blockContentTextLines` 的三形态覆盖。
+  // 修复前本函数自带 PM-doc-only 递归，table/toggle 结构化正文抽不到（空串）。
+  it('T82-02：结构化 table → 逐单元格一行（阅读序，空单元格不产行）', () => {
+    const table = { rows: [['格A', '', '格B'], ['', '格C', '']], header: true };
+    expect(blockContentTextLines(table)).toEqual(['格A', '格B', '格C']);
+    // 与旧口径的差别：修复前这里恒为空数组
+    expect(textOfBlockContent(table)).toBe('格A格B格C');
+  });
+
+  it('T82-02：结构化 toggle → title 一行 + body 逐行', () => {
+    const toggle = { title: '折叠标题Q', body: ['正文行R', '正文行S'] };
+    expect(blockContentTextLines(toggle)).toEqual(['折叠标题Q', '正文行R', '正文行S']);
+    expect(textOfBlockContent(toggle)).toBe('折叠标题Q正文行R正文行S');
+  });
+
+  it('T82-02：PM doc 多段 → 每段一行（段内多 text 节点合成一行）', () => {
+    const multi = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: '第一段' }, { type: 'text', text: '续' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: '第二段' }] },
+        { type: 'paragraph' },
+      ],
+    };
+    expect(blockContentTextLines(multi)).toEqual(['第一段续', '第二段']);
+    // 旧口径：join('') 后逐字等价（回归保护）
+    expect(textOfBlockContent(multi)).toBe('第一段续第二段');
+  });
+
+  it('T82-02：单段 doc / 字符串 / null 三形与旧口径逐字一致', () => {
+    expect(blockContentTextLines(doc)).toEqual(['前文']);
+    expect(blockContentTextLines('code 纯文本')).toEqual(['code 纯文本']);
+    expect(blockContentTextLines(null)).toEqual([]);
+    expect(blockContentTextLines([])).toEqual([]);
+    expect(blockContentTextLines(undefined)).toEqual([]);
+    expect(blockContentTextLines(42)).toEqual([]);
+  });
+
+  it('T82-02：divider/image 形态（无 text/content）不产行', () => {
+    expect(blockContentTextLines({ type: 'divider' })).toEqual([]);
+    expect(blockContentTextLines({ type: 'image', attrs: { src: 'asset://x' } })).toEqual([]);
   });
 });
 

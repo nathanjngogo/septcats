@@ -20,6 +20,7 @@ import {
   AI_MAX_OUTPUT_TOKENS_MIN,
 } from '../../../shared/ai';
 import { t } from '../i18n';
+import { pushToast } from '../state/pages';
 import './AiSection.css';
 
 /** 快照行 → patch 用的 provider 配置（剥掉 isLocal/hasKey 两个派生布尔）。 */
@@ -116,6 +117,12 @@ export function AiSection(): JSX.Element {
 
   // 删除确认弹窗
   const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
+  /**
+   * T82-02（H-01）：删除供应商时 `ai.clearKey` 失败的 providerId 集合。
+   * 失败即「密文仍在盘上」，必须让它**留在列表里可重删**（隐私红线：孤儿密钥
+   * 不可静默）；成功路径从集合移除，行为与旧版一致。
+   */
+  const [keyClearFailed, setKeyClearFailed] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -453,14 +460,50 @@ export function AiSection(): JSX.Element {
     }
   };
 
+  const setKeyClearFailedFor = (providerId: string, failed: boolean): void => {
+    setKeyClearFailed((prev) => {
+      const next = new Set(prev);
+      if (failed) {
+        next.add(providerId);
+      } else {
+        next.delete(providerId);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * 删除供应商（T82-02 · H-01 修复点）。
+   *
+   * 旧实现 `await clearKey(...).catch(() => {})` 吞掉失败：UI 已把该项摘掉，而
+   * CredentialStore 的密文仍在盘上（`packages/platform/src/credentials.ts` 的
+   * `delete` 在后端不可用时**抛 `CredentialUnavailableError`**、异常路径也原样 throw，
+   * 只有 ENOENT 回 false）——隐私红线不可接受。
+   *
+   * 新语义：
+   * - 清钥失败 → danger toast（「密钥未能从凭据库删除，请重试」）+ **该项保留在列表**
+   *   并标 error 态，用户可原地重删；此时**绝不**写 providers patch（避免「UI 没了
+   *   密钥还在」的不一致态）。
+   * - 清钥成功 → 与原行为逐字一致（移除项 + activeProviderId 悬空清理）。
+   */
   const confirmRemove = async (): Promise<void> => {
     if (removeConfirmId === null || aiState === null) {
       return;
     }
     const target = removeConfirmId;
     setRemoveConfirmId(null);
-    // 密钥顺带清除（尽力而为，失败不阻断删除）
-    await window.septcats.ai.clearKey({ providerId: target }).catch(() => {});
+    // 密钥顺带清除：失败必须显性（不吞错），且阻止该项被移除
+    try {
+      await window.septcats.ai.clearKey({ providerId: target });
+    } catch (cause) {
+      setKeyClearFailedFor(target, true);
+      pushToast(
+        fillTemplate(t('settings.ai.keyClearFailed'), { msg: describeAiError(cause) }),
+        'danger',
+      );
+      return;
+    }
+    setKeyClearFailedFor(target, false);
     const providers = toConfigs(aiState).filter((p) => p.id !== target);
     if (aiState.activeProviderId === target) {
       // 删掉的正是默认 provider：同一次 patch 里清空，避免 activeProviderId 悬空
@@ -633,7 +676,11 @@ export function AiSection(): JSX.Element {
         const rowResult = result[p.id];
         const modelBusy = busy[`model:${p.id}`] === true;
         return (
-          <div className="settings-ai-card" key={p.id}>
+          <div
+            className={`settings-ai-card${keyClearFailed.has(p.id) ? ' settings-ai-card--error' : ''}`}
+            key={p.id}
+            data-testid={`settings-ai-card-${p.id}`}
+          >
             <div className="settings-ai-card-head">
               <input
                 type="radio"
@@ -730,6 +777,15 @@ export function AiSection(): JSX.Element {
                 {rowResult.text}
               </p>
             )}
+            {keyClearFailed.has(p.id) ? (
+              <p
+                className="settings-ai-inline-error"
+                role="alert"
+                data-testid={`settings-ai-key-clear-failed-${p.id}`}
+              >
+                {t('settings.ai.keyClearFailedHint')}
+              </p>
+            ) : null}
             <div className="settings-ai-actions">
               <Button
                 variant="ghost"

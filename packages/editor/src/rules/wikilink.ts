@@ -15,6 +15,7 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import type { Editor as TiptapEditor } from '@tiptap/core';
 import { WIKILINK_NODE_NAME } from '../types/wikilink';
+import { blockContentTextLines } from '../content';
 
 // ---------------------------------------------------------------------------
 // 纯函数层
@@ -170,30 +171,16 @@ export function extractWikilinksFromContent(
   return found;
 }
 
-/** 块 content JSON 的纯文本（上下文片段用；code 纯文本与 PM doc 双形态都支持）。 */
+/**
+ * 块 content JSON 的纯文本（上下文片段用；code 纯文本与 PM doc 双形态都支持）。
+ *
+ * T82-02（H-07）：**委托 `content.ts` 的 `blockContentTextLines` 单一实现**——
+ * 原先本函数自带一份递归抽取（只认 text/content 嵌套），table 的 `{rows,header}`、
+ * toggle 的 `{title,body}` 结构化正文在派生索引侧同样抽不到。现改为共用同一分流，
+ * 行以 `''` 连接，与旧行为逐字等价（单段 doc → 单行；多段 → 原拼接序）。
+ */
 export function textOfBlockContent(content: unknown): string {
-  if (typeof content === 'string') {
-    return content;
-  }
-  const out: string[] = [];
-  const visit = (value: unknown): void => {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        visit(item);
-      }
-      return;
-    }
-    if (value === null || typeof value !== 'object') {
-      return;
-    }
-    const record = value as Record<string, unknown>;
-    if (typeof record['text'] === 'string') {
-      out.push(record['text']);
-    }
-    visit(record['content']);
-  };
-  visit(content);
-  return out.join('');
+  return blockContentTextLines(content).join('');
 }
 
 // ---------------------------------------------------------------------------

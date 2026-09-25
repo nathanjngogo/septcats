@@ -613,11 +613,22 @@ LIMIT 20`,
   // ---- import_source（v5 · M12 导入幂等账本）------------------------------
   // 表没有 workspace_id 列（设备本地「源 → 页」记账，口径同 favorite/recent 的
   // 本地派生态；但导入记账不与活动工作区绑定，故无 v2 式 EXISTS 守卫——见报告 §C-2）。
-  // OR IGNORE：同 (source_path, content_hash) 重跑/重放天然幂等。
+  //
+  // T82-02（H-05）：`OR IGNORE` → `ON CONFLICT DO UPDATE SET page_id`。原语义下
+  // 「同 (path,hash) 必 OR IGNORE」是幂等铁律，但页被删后重导会**新建页**（判重已按
+  // 存活校验放行），若此处仍 IGNORE，账本会永远停留在死 page_id 上 → 第二次重导又
+  // 新建一份（无限副本）。改为冲突即把 page_id 指向本次落库的活页，使
+  // 「导 → 删 → 重导 → 再重导」闭环幂等。
+  // **重跑/重放仍天然幂等**：计划期判重（活页命中即整条剔除）与执行期 pageIds 断点
+  // 跳过都发生在到达本条语句之前，故正常重跑根本不会执行到冲突分支；只有「死引用
+  // 真被重导」这一条路径会走 UPDATE，正是本项要修的语义。
   'importSource.insert': {
     kind: 'run',
-    sql: `INSERT OR IGNORE INTO import_source (source_path, content_hash, page_id, created_at)
-VALUES (@source_path, @content_hash, @page_id, @created_at)`,
+    sql: `INSERT INTO import_source (source_path, content_hash, page_id, created_at)
+VALUES (@source_path, @content_hash, @page_id, @created_at)
+ON CONFLICT(source_path, content_hash) DO UPDATE SET
+  page_id = excluded.page_id,
+  created_at = excluded.created_at`,
     params: z.object({
       source_path: z.string().min(1).max(1024),
       content_hash: z.string().regex(/^[0-9a-f]{64}$/),
@@ -635,9 +646,18 @@ VALUES (@source_path, @content_hash, @page_id, @created_at)`,
     }),
   },
   // 全量预载（计划期把账本装进内存 Map，供同步 ExistingLookup 查询）。
+  //
+  // T82-02（H-05）：**只回「指向活页」的账本行**——LEFT JOIN page 收口存活校验
+  // （`alive = 1 AND deleted_at IS NULL`）。删除侧（remove / purge / GC）从不清理
+  // import_source，死引用若不在此过滤，重导入会被全量静默跳过（老板真机 424/424 行
+  // 指向不存在页）。判据与 `db/schema.v2.ts` 的 deleted_at 取值约定一致：
+  // `NULL` = 存活（唯一算重复的形态）、`> 0` = 回收站、`0` = 彻底删除标记。
+  // 过滤在 SQL 内完成（一条 JOIN），**不做内存二次过滤**（大表纪律）。
   'importSource.list': {
     kind: 'all',
-    sql: `SELECT source_path, content_hash, page_id FROM import_source`,
+    sql: `SELECT i.source_path AS source_path, i.content_hash AS content_hash, i.page_id AS page_id
+FROM import_source i JOIN page p ON p.id = i.page_id
+WHERE p.alive = 1 AND p.deleted_at IS NULL`,
     params: emptyParams,
   },
 

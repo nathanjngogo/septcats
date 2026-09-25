@@ -31,6 +31,7 @@ import {
   firstTextOfBlock,
 } from '../src/renderer/src/workbench/cards';
 import { normalizeHeatmap, readActivityDays, bumpActivityToday } from '../src/renderer/src/workbench/activity';
+import { blockContentTextLines, textOfBlockContent } from '@septcats/editor';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -199,5 +200,43 @@ describe('T71-01 摘抄取首文本 firstTextOfBlock', () => {
     expect(firstTextOfBlock('纯文本块')).toBe('纯文本块');
     expect(firstTextOfBlock({ type: 'doc', content: [{ type: 'image' }] })).toBeNull();
     expect(firstTextOfBlock(null)).toBeNull();
+  });
+
+  // T82-02（H-07）：table/toggle 结构化 content 三形各钉。
+  // 修复前两形恒 null（卡片显示空摘要）。
+  it('T82-02：table 结构化 → 首个非空单元格（不是 null）', () => {
+    expect(firstTextOfBlock({ rows: [['格A', '格B'], ['格C', '格D']], header: true })).toBe('格A');
+    // 首格为空 → 取下一个非空格（阅读序）
+    expect(firstTextOfBlock({ rows: [['', '格B']], header: true })).toBe('格B');
+    // 全空表 → null（与旧口径的空摘要一致，不产假文本）
+    expect(firstTextOfBlock({ rows: [['', '']], header: true })).toBeNull();
+  });
+
+  it('T82-02：toggle 结构化 → title（title 为空则落到 body 首行）', () => {
+    expect(firstTextOfBlock({ title: '折叠标题Q', body: ['正文行R'] })).toBe('折叠标题Q');
+    expect(firstTextOfBlock({ title: '', body: ['正文行R'] })).toBe('正文行R');
+    expect(firstTextOfBlock({ title: '', body: [''] })).toBeNull();
+  });
+
+  // 防实现再次分叉（T79 缺陷 A 教训）：renderer 侧与 main 侧**同读一行**，
+  // 断言两侧文本一致——两侧都经 @septcats/editor 的 blockContentTextLines 单一实现。
+  it('T82-02：与 main 侧 textOfBlockContent 同源（同一实现，文本一致）', () => {
+    const shapes: unknown[] = [
+      { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '段落文' }] }] },
+      '纯文本块',
+      { rows: [['格A', '格B'], ['格C', '']], header: true },
+      { title: '折叠标题Q', body: ['正文行R'] },
+      null,
+      { type: 'divider' },
+    ];
+    for (const shape of shapes) {
+      const rendererText = firstTextOfBlock(shape) ?? '';
+      const mainText = textOfBlockContent(shape);
+      expect(rendererText, `形态 ${JSON.stringify(shape)} 两侧不一致`).toBe(
+        blockContentTextLines(shape)[0] ?? '',
+      );
+      // main 侧 join('') 与 renderer 首行：三形都来自同一分流，首行必是 main 文本的前缀
+      expect(mainText.startsWith(rendererText), `形态 ${JSON.stringify(shape)} 不同源`).toBe(true);
+    }
   });
 });

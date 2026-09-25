@@ -671,6 +671,8 @@ export const zhCN = {
       keyClearConfirmBody: '清除后该服务需重新输入密钥才能发起云端请求。确定清除？',
       keySaved: '密钥已保存',
       keyCleared: '密钥已清除',
+      keyClearFailed: '密钥未能从凭据库删除，请重试：{msg}',
+      keyClearFailedHint: '密钥仍在系统凭据库中，该项已保留。请重试删除。',
       removeConfirmTitle: '删除模型服务',
       removeConfirmBody: '删除「{name}」并同时清除其保存的密钥？',
       removeConfirm: '确认删除',

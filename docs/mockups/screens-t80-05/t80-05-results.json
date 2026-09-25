@@ -1,12 +1,12 @@
 {
   "task": "T80-05",
-  "ranAt": "2026-09-25T08:56:49.063Z",
+  "ranAt": "2026-09-25T13:24:18.159Z",
   "assertions": [
     {
       "step": "P0|夹具",
       "name": "P0-1 导出 zip 夹具在场",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\pkg\\septcats-portable-个人工作区-20260925-165634.zip 8668B"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\pkg\\septcats-portable-个人工作区-20260925-212403.zip 8661B"
     },
     {
       "step": "P1|对话框",
@@ -18,13 +18,13 @@
       "step": "P1|对话框",
       "name": "P1-2 点按钮后文件对话框出现（没反应→此断言即判据）",
       "ok": true,
-      "detail": "waited=1182ms delta=[{\"h\":789498,\"pid\":12848,\"title\":\"ѡ���Я��\",\"cls\":\"#32770\"},{\"h\":789408,\"pid\":12848,\"title\":\"stateBar\",\"cls\":\"BAIDU_CLASS_IME_87C946A9-47CC-4"
+      "detail": "waited=1219ms delta=[{\"h\":920552,\"pid\":25884,\"title\":\"ѡ���Я��\",\"cls\":\"#32770\"},{\"h\":199386,\"pid\":25884,\"title\":\"stateBar\",\"cls\":\"BAIDU_CLASS_IME_87C946A9-47CC-4"
     },
     {
       "step": "P2|预检面板",
       "name": "P2-2 预检数据可取（plan 返回 plan 对象，非 canceled/blocked）",
       "ok": true,
-      "detail": "{\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-165634.zip\",\"manifest\":{\"librar"
+      "detail": "{\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-212403.zip\",\"manifest\":{\"librar"
     },
     {
       "step": "P2|预检面板",
@@ -36,13 +36,13 @@
       "step": "P3|执行链",
       "name": "P3-1 execute 成功（ok+backupPath 契约）",
       "ok": true,
-      "detail": "{\"ok\":true,\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-165634.zip\",\"backupPath\":\"E:\\\\Hermes Agen"
+      "detail": "{\"ok\":true,\"zipPath\":\"E:/Hermes Agent工作空间/_scratch/t80-05-e2e/pkg/septcats-portable-个人工作区-20260925-212403.zip\",\"backupPath\":\"E:\\\\Hermes Agen"
     },
     {
       "step": "P3|执行链",
       "name": "P3-2 备份路径名含 bak-portable",
       "ok": true,
-      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\data\\septcats.db.bak-portable-20260925-165645"
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-05-e2e\\data\\septcats.db.bak-portable-20260925-212414"
     },
     {
       "step": "P3|执行链",

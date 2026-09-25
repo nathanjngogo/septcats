@@ -676,6 +676,8 @@ export const enUS = {
         'After clearing, this service needs the key re-entered before cloud requests. Clear it?',
       keySaved: 'API key saved',
       keyCleared: 'API key cleared',
+      keyClearFailed: 'The API key could not be deleted from the credential store. Please retry: {msg}',
+      keyClearFailedHint: 'The key is still in the system credential store, so this entry was kept. Please retry the removal.',
       removeConfirmTitle: 'Remove Model Service',
       removeConfirmBody: 'Remove "{name}" and also clear its stored key?',
       removeConfirm: 'Remove',

@@ -27,6 +27,7 @@ import {
 import {
   applyTemplateToWorkbench,
   backupCurrentLayout,
+  extractPlainText,
   normalizeLayout,
   parseWorkbenchTemplateText,
   readLayoutBackup,
@@ -34,6 +35,8 @@ import {
   toggleWorkbenchCard,
   writeLayoutBackup,
 } from '../src/renderer/src/workbench/market';
+import { firstTextOfBlock } from '../src/renderer/src/workbench/cards';
+import { blockContentTextLines, textOfBlockContent } from '@septcats/editor';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_DIR = join(here, '..', 'resources', 'workbench-templates');
@@ -260,5 +263,64 @@ describe('T72-02 备份兜底（LS 无记录 → store 当前布局）', () => {
     const state = workbenchStore.getState();
     expect(state.cardOrder).toEqual([...DEFAULT_CARD_ORDER]);
     expect(state.hiddenCards).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T82-02（H-07）：种子页正文抽取——table/toggle 结构化三形各钉
+// ---------------------------------------------------------------------------
+
+describe('T82-02 种子页正文抽取 extractPlainText（结构化三形）', () => {
+  it('PM doc 多段：逐段一行（回归保护，与旧口径逐字一致）', () => {
+    const blocks = [
+      { content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '第一段' }] }] } },
+      { content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '第二段' }] }] } },
+    ];
+    expect(extractPlainText(blocks)).toBe('第一段\n第二段');
+  });
+
+  it('table 结构化：逐单元格一行（修复前整片丢失 → 空正文）', () => {
+    const blocks = [{ content: { rows: [['格A', '', '格B'], ['格C', '']], header: true } }];
+    expect(extractPlainText(blocks)).toBe('格A\n格B\n格C');
+  });
+
+  it('toggle 结构化：title + body 逐行（修复前整片丢失 → 空正文）', () => {
+    const blocks = [{ content: { title: '折叠标题Q', body: ['正文行R', '正文行S'] } }];
+    expect(extractPlainText(blocks)).toBe('折叠标题Q\n正文行R\n正文行S');
+  });
+
+  it('code 纯文本串、divider/null：串原样、无内容不产行', () => {
+    expect(extractPlainText([{ content: 'const a = 1;' }])).toBe('const a = 1;');
+    expect(extractPlainText([{ content: null }, { content: { type: 'divider' } }])).toBe('');
+    expect(extractPlainText([])).toBe('');
+  });
+
+  it('三形混排：按块序拼接（table / toggle / doc 同源分流）', () => {
+    const blocks = [
+      { content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '引言' }] }] } },
+      { content: { rows: [['表头甲', '表头乙']], header: true } },
+      { content: { title: '折叠', body: ['折叠正文'] } },
+    ];
+    expect(extractPlainText(blocks)).toBe('引言\n表头甲\n表头乙\n折叠\n折叠正文');
+  });
+
+  // 防实现再次分叉（T79 缺陷 A 教训）：与 main 侧 textOfBlockContent / 摘抄侧
+  // firstTextOfBlock 同读一形，断言三处文本同源（同一实现，非三份复制）。
+  it('与 main 侧 textOfBlockContent 同源：三形逐字一致', () => {
+    const shapes: unknown[] = [
+      { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '段落文' }] }] },
+      '纯文本块',
+      { rows: [['格A', '格B']], header: true },
+      { title: '折叠标题Q', body: ['正文行R'] },
+    ];
+    for (const shape of shapes) {
+      const marketText = extractPlainText([{ content: shape }]);
+      expect(marketText.replace(/\n/g, ''), `形态 ${JSON.stringify(shape)} 两侧不一致`).toBe(
+        textOfBlockContent(shape),
+      );
+      expect(firstTextOfBlock(shape) ?? '', `形态 ${JSON.stringify(shape)} 首行不一致`).toBe(
+        blockContentTextLines(shape)[0] ?? '',
+      );
+    }
   });
 });

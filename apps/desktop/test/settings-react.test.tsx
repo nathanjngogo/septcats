@@ -13,6 +13,7 @@ import type { Mock } from 'vitest';
 import type { AppSettings } from '../src/shared/settings';
 import type { SeptcatsApi } from '../src/types/window';
 import { SettingsPage } from '../src/renderer/src/pages/SettingsPage';
+import { pagesStore } from '../src/renderer/src/state/pages';
 
 function defaultSettings(): AppSettings {
   return {
@@ -508,6 +509,82 @@ describe('设置页 · AI 助手（T18-02）', () => {
 
     const cloud = screen.getByRole('switch', { name: '允许云端模型' }) as HTMLButtonElement;
     expect(cloud.disabled).toBe(true);
+  });
+
+  // T82-02（H-01）：clearKey 失败不得吞错——danger toast + 该项保留（可重删）。
+  it('T82-02 H-01：clearKey reject → danger toast「密钥未能从凭据库删除」且项未移除', async () => {
+    const { patch } = installBridge({
+      ai: {
+        state: vi.fn(async () => ({
+          enabled: false,
+          cloudConsent: false,
+          activeProviderId: null,
+          chatTimeoutSec: 120,
+          maxOutputTokens: null,
+          providers: [
+            {
+              id: 'plocal1',
+              kind: 'lmstudio' as const,
+              name: 'LM Studio',
+              baseUrl: 'http://127.0.0.1:1234',
+              isLocal: true,
+              hasKey: true,
+              model: null,
+            },
+          ],
+        })),
+        listModels: vi.fn(),
+        chat: vi.fn(),
+        setKey: vi.fn(),
+        clearKey: vi.fn(async () => {
+          throw new Error('E_CRED_UNAVAILABLE：凭据后端不可用（windows-dpapi）');
+        }),
+      } as unknown as SeptcatsApi['ai'],
+    });
+    // SettingsPage 自身不挂 ToastViewport（全局视口在 App 根层）——按 store 断言 toast 载荷
+    pagesStore.setState((state) => ({ ...state, toasts: [] }));
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    fireEvent.click(await screen.findByRole('button', { name: '确认删除' }));
+
+    // 失败显性：danger toast 含重试指引与稳定码
+    await waitFor(() => {
+      const toasts = pagesStore.getState().toasts;
+      expect(toasts).toHaveLength(1);
+      expect(toasts[0]?.tone).toBe('danger');
+      expect(toasts[0]?.message).toContain('密钥未能从凭据库删除，请重试');
+      expect(toasts[0]?.message).toContain('E_CRED_UNAVAILABLE');
+    });
+
+    // 项保留在列表（未被摘掉），并带 error 态可重删
+    const card = screen.getByTestId('settings-ai-card-plocal1');
+    expect(card.className).toContain('settings-ai-card--error');
+    expect(screen.getByTestId('settings-ai-key-clear-failed-plocal1')).toBeDefined();
+
+    // 关键：绝不写 providers patch（避免「UI 没了密钥还在」的不一致态）
+    const wroteProviders = (patch as Mock).mock.calls.some((args: unknown[]) => {
+      const input = args[0] as { ai?: { providers?: unknown } };
+      return Array.isArray(input.ai?.providers);
+    });
+    expect(wroteProviders).toBe(false);
+  });
+
+  it('T82-02 H-01：clearKey resolve → 项移除且无失败提示（成功路径行为不变）', async () => {
+    const { patch } = installBridge();
+    pagesStore.setState((state) => ({ ...state, toasts: [] }));
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    fireEvent.click(await screen.findByRole('button', { name: '确认删除' }));
+
+    await waitFor(() => expect(patch).toHaveBeenCalled());
+    const providers = patchCallsWithProviders(patch as Mock);
+    expect(providers).toEqual([]); // 唯一 provider 被移除
+    expect(screen.queryByTestId('settings-ai-key-clear-failed-plocal1')).toBeNull();
+    expect(pagesStore.getState().toasts).toEqual([]);
   });
 });
 

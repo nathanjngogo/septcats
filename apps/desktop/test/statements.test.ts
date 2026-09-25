@@ -284,6 +284,31 @@ describe('v5 白名单（import_source）', () => {
       }
     }
   });
+
+  // T82-02（H-05）：判重加页存活校验，SQL 一条 LEFT JOIN 收口（禁内存二次过滤大表）。
+  it('importSource.list：JOIN page 收口存活校验（alive=1 且 deleted_at IS NULL）', () => {
+    const sql = getStatement('importSource.list')!.sql;
+    expect(sql).toContain('FROM import_source i JOIN page p ON p.id = i.page_id');
+    expect(sql).toContain('p.alive = 1');
+    expect(sql).toContain('p.deleted_at IS NULL');
+    expect(sql.includes(';')).toBe(false);
+    for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA']) {
+      expect(sql.toUpperCase().includes(forbidden)).toBe(false);
+    }
+    // 列名保持旧口径（调用方按 source_path/content_hash/page_id 读行）
+    for (const column of ['source_path', 'content_hash', 'page_id']) {
+      expect(sql).toContain(`i.${column} AS ${column}`);
+    }
+  });
+
+  // T82-02（H-05）：落账不再是 OR IGNORE——死引用重导须把 page_id 指向新活页。
+  it('importSource.insert：冲突时 DO UPDATE page_id（重导闭环幂等，非 OR IGNORE）', () => {
+    const sql = getStatement('importSource.insert')!.sql;
+    expect(sql).toContain('ON CONFLICT(source_path, content_hash) DO UPDATE SET');
+    expect(sql).toContain('page_id = excluded.page_id');
+    expect(sql.toUpperCase()).not.toContain('INSERT OR IGNORE');
+    expect(sql.includes(';')).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

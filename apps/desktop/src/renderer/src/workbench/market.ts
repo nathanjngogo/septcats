@@ -17,6 +17,7 @@
  */
 import { sortBetween, ulid } from '@septcats/core';
 import type { ActorId, Op } from '@septcats/core';
+import { blockContentTextLines } from '@septcats/editor';
 import { EDITOR_ACTOR } from '@septcats/editor/react';
 import type { SeptcatsApi } from '../../../types/window';
 import {
@@ -233,25 +234,20 @@ export function toggleWorkbenchCard(id: WorkbenchCardId, hidden: boolean): void 
 }
 
 /**
- * 从 ProseMirror 风格块树抽取纯文本（种子页正文落盘前）。折叠所有
- * text 节点的 text 并以换行连接；非文本块忽略。
+ * 从块 content 抽取纯文本（种子页正文落盘前）。
+ *
+ * T82-02（H-07）：**不再自带 PM-doc-only 的复制实现**（原先只往下认两层
+ * `content[].content[].text`，table 的 `{rows,header}` 与 toggle 的
+ * `{title,body}` 结构化正文整片丢失）。改由 `@septcats/editor` 的
+ * `blockContentTextLines` 单一实现分流（与「最近页摘抄」`firstTextOfBlock`、
+ * main 的双链上下文片段 `textOfBlockContent` 同源），行以 `\n` 连接。
  */
 export function extractPlainText(blocks: ReadonlyArray<{ content?: unknown }>): string {
   const lines: string[] = [];
   for (const block of blocks) {
-    const content = block.content;
-    if (content === null || typeof content !== 'object') {
-      continue;
-    }
-    const doc = content as { content?: Array<{ content?: Array<{ text?: string }> }> };
-    const paragraphs = Array.isArray(doc.content) ? doc.content : [];
-    for (const paragraph of paragraphs) {
-      const inline = Array.isArray(paragraph.content) ? paragraph.content : [];
-      const text = inline
-        .map((node) => (typeof node.text === 'string' ? node.text : ''))
-        .join('');
-      if (text.length > 0) {
-        lines.push(text);
+    for (const line of blockContentTextLines(block.content)) {
+      if (line.length > 0) {
+        lines.push(line);
       }
     }
   }

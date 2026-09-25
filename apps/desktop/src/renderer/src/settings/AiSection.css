@@ -12,6 +12,12 @@
   background: var(--sc-color-surface);
 }
 
+/* T82-02（H-01）：清钥失败态——密文仍在盘上，卡面标红提示可重删。 */
+.settings-ai-card--error {
+  border-color: var(--sc-color-danger);
+  background: var(--sc-color-danger-soft);
+}
+
 .settings-ai-card-head {
   display: flex;
   align-items: center;
