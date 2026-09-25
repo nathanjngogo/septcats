@@ -24,17 +24,19 @@
 | # | 症状 | 根因 | 级别 | 处置 |
 | -- | -- | -- | -- | -- |
 | **H-04** | **老板真实库 442 页（含 424 个导入页）整批消失** | `sync/runtime.ts:1113 verifyLedgerIntegrity`：首轮拿**过期快照**算 `expectedTotal`（`ledger.length+applied+crdt`，而 `ledger` 在 line 749 早于本轮 commit 读取，用户同期编辑即产生 off-by-one 假偏差）→ 计数不符即 `collectSegments()`（**只收同步目录里的段**）→ `db.rebuildFromSegments()`（`REBUILD_CLEAR_SQL` **清空 op_ledger + 全部物化表 + FTS**，仅重放段）。同步刚开启时目录里段远少于本机账本 → 本地独有历史被整体抹除。**无任何覆盖度守卫** | **P0 数据丢失** | ✅ **代码修复已收口（1f73317，T82-01）**：op_id 覆盖度守卫 + 去竞态 + mode replace\|merge（缺省 merge）；红测复现 442→1 同构场景验绿。**数据救援仍待老板授权**（bak-v5 在场，见 §救援） |
-| **H-05** | 导入过的文件夹**永远无法重导**：删页后重导入全部「已导入过」跳过 | `import_source` 是永久 `(path,hash)→page_id` 账（`importer.ts:521-533` 纯 Map 查表，**不校验目标页是否还存在**）+ 删除侧（purge/GC）从不清理该表。真实库 424/424 行指向不存在的页 | P1 功能 | 并入 T82-02（查表加页存活校验 + purge 清账） |
-| **H-01** | 删除 AI 供应商时密钥可能未真删（CredentialStore 留孤儿密钥） | `settings/AiSection.tsx:463` `await ...ai.clearKey(...).catch(() => {})` 吞掉失败：UI 已移除该项，密文仍在盘上。隐私优先设定下不可接受 | P2 隐私 | 攒入 T82-02（失败须显性报错 + 重试入口） |
+| **H-05** | 导入过的文件夹**永远无法重导**：删页后重导入全部「已导入过」跳过 | `import_source` 是永久 `(path,hash)→page_id` 账（`importer.ts:521-533` 纯 Map 查表，**不校验目标页是否还存在**）+ 删除侧（purge/GC）从不清理该表。真实库 424/424 行指向不存在的页 | P1 功能 | ✅ **已收口（T82-02 / e80d19d）**：判重改「活页才算已导入」（回收站/彻底删除页不再挡重导），并**连带**把 `insert` 从 `OR IGNORE` 改成 `ON CONFLICT DO UPDATE page_id`（只改前者会造成无限副本——DSH 自行发现的连带缺陷）；死行物理清账归 T81-01。真机 16/0 |
+| **H-01** | 删除 AI 供应商时密钥可能未真删（CredentialStore 留孤儿密钥） | `settings/AiSection.tsx:463` `await ...ai.clearKey(...).catch(() => {})` 吞掉失败：UI 已移除该项，密文仍在盘上。隐私优先设定下不可接受 | P2 隐私 | ✅ **已收口（T82-02 / e80d19d）**：失败保留条目 + danger 提示 + 卡片错误态（不写「已移除」）；成功路径行为不变 |
 | **H-02** | `recent` 表残留指向已不存在页的行（1 行）+ 39 行指向回收站页 | 设备本地派生态无清理钩子；隔离段那页（`01M2VG9QD6Q0N8KK2CVQT2ZQNE`）的 upsert op 被封在 quarantine 从未物化，但 `recent.touch` 已落账 | P2 卫生 | 并入 T81-01 GC 范围（清 recent 悬挂行） |
 | **H-03** | 39 处跨行空 catch（全有降级注释）、7 个「声明了 main 无引用」通道 → **均为假阳/设计行为** | 逐一核过上下文：隐私模式降级、配额、后续补真实错误；通道走表驱动命名空间 | — | 不立案（记录以证排查面已覆盖） |
-| **H-08** | 便携包 plan/execute 覆盖度预检对「未 flush op」盲区——同一操作序列两次实测 uncovered=0 vs 2（run-A/B 时序不一致），窗口内放行=重放抹掉缓冲里的用户编辑（H-04 同类形态） | 探针 P4-6a；SyncRuntime 攒段缓冲落 ledger 前，coverage() 只读 op_ledger 看不见 | P1 数据 | T80-04：execute 前强制 flush（或预检并入缓冲）+ 新测试钉两种时序 |
-| **H-09** | 「撤销导入」真机必失败且留半成品：进程存活时 io.remove(主库) 撞 Windows EBUSY；失败瞬间 -wal/-shm 已删 → 库非任何一致态（run-E P5-3 实证重启后包外页仍在） | 探针 P5-1；restorePairs 先清三件套再回写、无原子性；D-1 文件级还原未先关连接 | P1（产品承诺失效+破坏半径） | T80-04：先验可删/关连接再动文件；失败路径三件套回到调用前态；单测须持连接再还原 |
+| **H-08** | 便携包 plan/execute 覆盖度预检对「未 flush op」盲区——同一操作序列两次实测 uncovered=0 vs 2（run-A/B 时序不一致），窗口内放行=重放抹掉缓冲里的用户编辑（H-04 同类形态） | 探针 P4-6a；SyncRuntime 攒段缓冲落 ledger 前，coverage() 只读 op_ledger 看不见 | P1 数据 | ✅ **已收口（T80-04 / d256591）**：execute 前强制封段 + 覆盖度取「账本∪攒段缓冲∪本地盘上段」并集 + 新测试钉两种时序 |
+| **H-09** | 「撤销导入」真机必失败且留半成品：进程存活时 io.remove(主库) 撞 Windows EBUSY；失败瞬间 -wal/-shm 已删 → 库非任何一致态（run-E P5-3 实证重启后包外页仍在） | 探针 P5-1；restorePairs 先清三件套再回写、无原子性；D-1 文件级还原未先关连接 | P1（产品承诺失效+破坏半径） | ✅ **已收口（T80-04 / d256591）**：close/reopen 句柄通道 + 调用前快照 + 失败整体回滚（还原前先停连接）；单测持连接再还原 |
+| **H-06** | `page_link_index`/`mention` 不在 `REBUILD_CLEAR_SQL`：重建（两种模式）后双链索引可能与投影不一致 | 派生索引缺口（replace 时代就有）；`page_link_index` 有启动全量重建兜底、`mention` 无回填（schema.v2 注释口径） | P2 一致性 | 后续单收（重建事务尾部补 links 全量重建）；已记 T82-01 报告 §5.1 |
+| **H-07** | 工作台「最近页」卡片与模板市场种子**摘不到表格/折叠块的正文文字**（显示空摘要） | T79-02 挂账核实现仍成立：`workbench/cards.tsx:firstTextOfBlock` 与 `workbench/market.ts:extractPlainText` 只认 PM doc（`text`/`content` 嵌套），table 的 `{rows,header}`、toggle 的 `{title,body}` 结构化 content 抽不出 | P2 体验 | ✅ **已收口（T82-02 / e80d19d）**：`blockContentTextLines` 单一实现（@septcats/editor），卡片/市场/正文抽取/wikilink 全部改消费它，逐字等价回归钉死旧口径 |
+| **H-11** | macOS 上删除凭据失败可能被静默当成功 | `platform/credentials.ts:317-322` 只判 `code === 0`（`security delete-generic-password` 返回 false 时不分「不存在」与「真失败」）→ 非 Windows 路径下「钥匙串删除失败」会以 `{ok:true}` 通过 | P2 隐私（mac 面） | 📋 **待立案**（T82-02 §6 遗留②，DSH 侦察发现；Windows 主线不受影响） |
 
 
 ## 路4 日志审查结论（09-25）
-真实根 `~/.septcats/logs/{main,sync,db}.log` 聚合扫描：**09-20 之后零 ERROR/WARN**；历史 ERROR 仅两类——DbServer code=1（=ABI 态不对，非产品缺陷，探针前置纪律已覆盖）与 `Unsupported provider: undefined`（09-14/15 早期 dev feed 注入期，当前版本绝迹）。日志面不立案。| **H-06** | `page_link_index`/`mention` 不在 `REBUILD_CLEAR_SQL`：重建（两种模式）后双链索引可能与投影不一致 | 派生索引缺口（replace 时代就有）；`page_link_index` 有启动全量重建兜底、`mention` 无回填（schema.v2 注释口径） | P2 一致性 | 后续单收（重建事务尾部补 links 全量重建）；已记 T82-01 报告 §5.1 |
-| **H-07** | 工作台「最近页」卡片与模板市场种子**摘不到表格/折叠块的正文文字**（显示空摘要） | T79-02 挂账核实现仍成立：`workbench/cards.tsx:firstTextOfBlock` 与 `workbench/market.ts:extractPlainText` 只认 PM doc（`text`/`content` 嵌套），table 的 `{rows,header}`、toggle 的 `{title,body}` 结构化 content 抽不出 | P2 体验 | 攒 T82-02（两函数加结构化分支，口径照 `main/blocks.ts:blockContentOf` 单一实现，禁第三份复制） |
+真实根 `~/.septcats/logs/{main,sync,db}.log` 聚合扫描：**09-20 之后零 ERROR/WARN**；历史 ERROR 仅两类——DbServer code=1（=ABI 态不对，非产品缺陷，探针前置纪律已覆盖）与 `Unsupported provider: undefined`（09-14/15 早期 dev feed 注入期，当前版本绝迹）。日志面不立案。
 
 ### H-04 证据链（三段互证，可复现）
 
