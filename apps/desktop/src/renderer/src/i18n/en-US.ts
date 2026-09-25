@@ -572,6 +572,18 @@ export const enUS = {
       telemetryDesc: 'No telemetry data is collected in this release',
       linkPreviewOnType: 'Disable link previews while typing',
       linkPreviewOnTypeDesc: 'No network requests when typing links',
+      // R28 (T80-01): portable package export (wording: "library", never "database")
+      portable: {
+        export: 'Export Portable Package',
+        exportDesc: 'Pack everything in this library into one zip for moving to another device or backup',
+        previewTitle: 'Portable Package Preview',
+        confirmSave: 'Confirm Save',
+        cancel: 'Cancel',
+        savedTo: 'Saved to',
+        busy: 'Packing…',
+        entries: '{n} entries · about {bytes}',
+        warningTitle: 'Note',
+      },
     },
     diagnostic: {
       title: 'Diagnostics',

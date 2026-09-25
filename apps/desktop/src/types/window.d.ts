@@ -21,6 +21,11 @@ import type {
 } from '../shared/pageExport';
 import type { SearchInput, SearchResponse } from '../shared/search';
 import type {
+  PortableExportConfirmResponse,
+  PortableExportInput,
+  PortableExportPreview,
+} from '../shared/portable';
+import type {
   AppSettings,
   AppSettingsPatch,
   DiagConfirmResult,
@@ -492,6 +497,19 @@ export interface SeptcatsPageExportApi {
   reveal(input: { dir: string }): Promise<{ ok: true }>;
 }
 
+/**
+ * 便携包导出（R28 · TASK-T80-01）。通道与 `src/shared/ipc.ts` 的
+ * PORTABLE_EXPORT_CHANNELS 一对一；载荷形状见 `src/main/portable.ts`。
+ * 形状沿用 R27 纪律：preview 只回清单（零落盘）→ confirm（dir 显式）落盘 →
+ * 取消 = 零落盘。错误经 Error.message 透传（含 `E_PORTABLE_ENCRYPTED_UNSUPPORTED`）。
+ */
+export interface SeptcatsPortableExportApi {
+  /** 只读预览：列段/附件/主库条目与字节数（零盘写）。 */
+  preview(): Promise<PortableExportPreview>;
+  /** 落盘：单个 zip（原子写 tmp→rename）；dir 缺省时弹目录选择，取消 → `{canceled:true}`。 */
+  confirm(input: PortableExportInput): Promise<PortableExportConfirmResponse>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;
@@ -537,6 +555,8 @@ export interface SeptcatsApi {
   shell: SeptcatsShellApi;
   /** 页面导出 Markdown（R27 · T79-01）。 */
   pageExport: SeptcatsPageExportApi;
+  /** 便携包导出（R28 · T80-01）。 */
+  portable: SeptcatsPortableExportApi;
 }
 
 declare global {

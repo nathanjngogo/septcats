@@ -574,6 +574,18 @@ export const zhCN = {
       telemetryDesc: '一期不采集任何遥测数据',
       linkPreviewOnType: '打字时禁用外链预览',
       linkPreviewOnTypeDesc: '输入链接时不触发网络请求',
+      // R28（T80-01）：便携包导出（话术纪律：一律「便携包/库」，不提「数据库」）
+      portable: {
+        export: '导出便携包',
+        exportDesc: '把当前库的全部内容打包成一个 zip，用于换机或备份',
+        previewTitle: '便携包预览',
+        confirmSave: '确认保存',
+        cancel: '取消',
+        savedTo: '已保存到',
+        busy: '打包中…',
+        entries: '条目 {n} 个 · 约 {bytes}',
+        warningTitle: '提示',
+      },
     },
     diagnostic: {
       title: '诊断',

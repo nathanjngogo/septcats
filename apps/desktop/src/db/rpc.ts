@@ -67,6 +67,8 @@ export type DbRequest =
   | { readonly id: string; readonly t: 'exportSnapshot' }
   | { readonly id: string; readonly t: 'rebuildFromSegments'; readonly segmentsJson: string }
   | { readonly id: string; readonly t: 'integrityCheck' }
+  /** R28（T80-01）：便携包/备份前强制 `PRAGMA wal_checkpoint(TRUNCATE)`（先例 migrations.ts）。 */
+  | { readonly id: string; readonly t: 'checkpoint' }
   | { readonly id: string; readonly t: 'backupTo'; readonly destPath: string };
 
 export type DbRequestType = DbRequest['t'];
@@ -135,6 +137,13 @@ export interface BackupData {
   readonly path: string;
 }
 
+/** `PRAGMA wal_checkpoint(TRUNCATE)` 的结果（非 WAL 模式恒 0，不算失败）。 */
+export interface CheckpointData {
+  readonly busy: number;
+  readonly log: number;
+  readonly checkpointed: number;
+}
+
 export type DbResponseData =
   | MigrateData
   | RunData
@@ -145,7 +154,8 @@ export type DbResponseData =
   | ExportSnapshotData
   | RebuildData
   | IntegrityCheckData
-  | BackupData;
+  | BackupData
+  | CheckpointData;
 
 /** 应答联合体：ok=true 时必有 data，ok=false 时必有 error。 */
 export type DbResponse<T extends DbResponseData = DbResponseData> =
@@ -179,6 +189,7 @@ const REQUEST_TYPES: ReadonlySet<string> = new Set<DbRequestType>([
   'exportSnapshot',
   'rebuildFromSegments',
   'integrityCheck',
+  'checkpoint',
   'backupTo',
 ]);
 

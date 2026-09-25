@@ -18,6 +18,7 @@ import {
   MENU_CHANNELS,
   PAGE_EXPORT_CHANNELS,
   PAGES_CHANNELS,
+  PORTABLE_EXPORT_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
   SHELL_CHANNELS,
@@ -281,6 +282,17 @@ const api: SeptcatsApi = {
     reveal: (input) =>
       ipcRenderer.invoke(PAGE_EXPORT_CHANNELS.reveal, input) as ReturnType<
         SeptcatsApi['pageExport']['reveal']
+      >,
+  },
+  // R28（T80-01）：便携包导出（preview 只读清单元 / confirm 落单个 zip）
+  portable: {
+    preview: () =>
+      ipcRenderer.invoke(PORTABLE_EXPORT_CHANNELS.preview, {}) as ReturnType<
+        SeptcatsApi['portable']['preview']
+      >,
+    confirm: (input) =>
+      ipcRenderer.invoke(PORTABLE_EXPORT_CHANNELS.confirm, input) as ReturnType<
+        SeptcatsApi['portable']['confirm']
       >,
   },
 };

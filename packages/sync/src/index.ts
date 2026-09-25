@@ -17,3 +17,4 @@ export * from './snapshot';
 export * from './gc';
 export * from './dedupe';
 export * from './quarantine';
+export * from './portableZip';

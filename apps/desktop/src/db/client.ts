@@ -17,6 +17,7 @@ import {
   type AllData,
   type BackupData,
   type BatchData,
+  type CheckpointData,
   type DbBatchStatement,
   type DbErrorCode,
   type DbRequest,
@@ -62,6 +63,8 @@ export interface DbHandle {
   exportSnapshot(): Promise<ExportSnapshotData>;
   rebuildFromSegments(segmentsJson: string): Promise<RebuildData>;
   integrityCheck(): Promise<IntegrityCheckData>;
+  /** R28（T80-01）：导出/备份前 checkpoint（wal 落回主库）。 */
+  checkpoint(): Promise<CheckpointData>;
   backupTo(destPath: string): Promise<BackupData>;
   dispose(): Promise<void>;
 
@@ -156,6 +159,10 @@ class DbClient extends EventEmitter implements DbHandle {
 
   integrityCheck(): Promise<IntegrityCheckData> {
     return this.request<IntegrityCheckData>((id) => ({ id, t: 'integrityCheck' }));
+  }
+
+  checkpoint(): Promise<CheckpointData> {
+    return this.request<CheckpointData>((id) => ({ id, t: 'checkpoint' }));
   }
 
   backupTo(destPath: string): Promise<BackupData> {

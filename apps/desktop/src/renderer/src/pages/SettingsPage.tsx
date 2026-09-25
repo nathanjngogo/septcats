@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Checkbox, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
 import type { AppSettings, AppSettingsPatch, ThemeMode, TrayCloseMode } from '../../../shared/settings';
+import type { PortableExportPreview } from '../../../shared/portable';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
@@ -90,6 +91,20 @@ function describeError(error: unknown): string {
   return errorText(error);
 }
 
+/** 字节数 → 人话（KB/MB 两位以内；阈值与进制都是命名常量）。 */
+const BYTES_PER_KB = 1024;
+const BYTES_PER_MB = BYTES_PER_KB * 1024;
+
+function formatBytes(bytes: number): string {
+  if (bytes >= BYTES_PER_MB) {
+    return `${(bytes / BYTES_PER_MB).toFixed(1)} MB`;
+  }
+  if (bytes >= BYTES_PER_KB) {
+    return `${(bytes / BYTES_PER_KB).toFixed(1)} KB`;
+  }
+  return `${String(bytes)} B`;
+}
+
 interface SettingsRowProps {
   title: string;
   desc?: string | undefined;
@@ -117,6 +132,11 @@ export function SettingsPage() {
   const [diagPreview, setDiagPreview] = useState<string | null>(null);
   const [diagBusy, setDiagBusy] = useState(false);
   const [diagSavedPath, setDiagSavedPath] = useState<string | null>(null);
+
+  // R28（T80-01）：便携包导出（预览清单 → 确认 → main 侧弹目录选择；取消 = 零落盘）
+  const [portablePreview, setPortablePreview] = useState<PortableExportPreview | null>(null);
+  const [portableBusy, setPortableBusy] = useState(false);
+  const [portableSavedPath, setPortableSavedPath] = useState<string | null>(null);
 
   const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
@@ -238,6 +258,39 @@ export function SettingsPage() {
       setError(describeError(cause));
     } finally {
       setDiagBusy(false);
+    }
+  };
+
+  // R28（T80-01）①：只读预览——列条目 + 总字节，main 侧零落盘
+  const handlePortablePreview = async (): Promise<void> => {
+    setPortableBusy(true);
+    setError(null);
+    setPortableSavedPath(null);
+    try {
+      setPortablePreview(await window.septcats.portable.preview());
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setPortableBusy(false);
+    }
+  };
+
+  // R28（T80-01）②：确认 → 落单个 zip（main 侧原子写；目录选择取消 = 零落盘）
+  const handlePortableConfirm = async (): Promise<void> => {
+    setPortableBusy(true);
+    setError(null);
+    try {
+      const result = await window.septcats.portable.confirm({});
+      if (result.canceled) {
+        setPortablePreview(null);
+        return;
+      }
+      setPortableSavedPath(result.path);
+      setPortablePreview(null);
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setPortableBusy(false);
     }
   };
 
@@ -433,6 +486,70 @@ export function SettingsPage() {
                 />
               }
             />
+            {/* R28（T80-01）：便携包导出——预览（零落盘）→ 确认（main 侧选目录原子写） */}
+            <SettingsRow
+              title={t('settings.privacy.portable.export')}
+              desc={t('settings.privacy.portable.exportDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={portableBusy}
+                  data-testid="settings-portable-export"
+                  onClick={() => {
+                    void handlePortablePreview();
+                  }}
+                >
+                  {t('settings.privacy.portable.export')}
+                </Button>
+              }
+            />
+            {portablePreview === null ? null : (
+              <div className="settings-preview-wrap" data-testid="settings-portable-preview">
+                <div className="settings-preview-title">{t('settings.privacy.portable.previewTitle')}</div>
+                <div className="settings-preview-title" data-testid="settings-portable-meta">
+                  {fillTemplate(t('settings.privacy.portable.entries'), {
+                    n: String(portablePreview.counts.entries),
+                    bytes: formatBytes(portablePreview.totalBytes),
+                  })}
+                </div>
+                <pre className="settings-preview" aria-label={t('settings.privacy.portable.previewTitle')}>
+                  {portablePreview.files.map((file) => file.relPath).join('\n')}
+                </pre>
+                {portablePreview.warnings.length === 0 ? null : (
+                  <div className="settings-recovery-warn" data-testid="settings-portable-warn">
+                    {`${t('settings.privacy.portable.warningTitle')}: ${portablePreview.warnings.join(' / ')}`}
+                  </div>
+                )}
+                <div className="settings-preview-actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="settings-portable-cancel"
+                    onClick={() => {
+                      setPortablePreview(null);
+                    }}
+                  >
+                    {t('settings.privacy.portable.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    loading={portableBusy}
+                    data-testid="settings-portable-confirm"
+                    onClick={() => {
+                      void handlePortableConfirm();
+                    }}
+                  >
+                    {t('settings.privacy.portable.confirmSave')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {portableSavedPath === null ? null : (
+              <div className="settings-saved" data-testid="settings-portable-saved">
+                {t('settings.privacy.portable.savedTo')} {portableSavedPath}
+              </div>
+            )}
           </fieldset>
 
           <fieldset className="settings-section">

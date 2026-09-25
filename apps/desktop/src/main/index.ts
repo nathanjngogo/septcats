@@ -109,6 +109,11 @@ import {
   registerPageExportIpc,
   type PageExportService,
 } from './pageExport';
+import {
+  createPortableExportService,
+  registerPortableExportIpc,
+  type PortableExportService,
+} from './portable';
 import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
@@ -370,6 +375,8 @@ interface DatabaseServices {
   lock: LockService;
   /** R27（T79-01）：页面导出 Markdown（只读消费；写盘只落用户选定目录）。 */
   pageExport: PageExportService;
+  /** R28（T80-01）：便携包导出（zip；只读消费 + 原子写包本身）。 */
+  portable: PortableExportService;
 }
 
 /**
@@ -547,6 +554,48 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         },
         openPath: async (dir) => {
           await shell.openPath(dir);
+        },
+      }),
+      // R28（T80-01）：便携包导出——产物 = 单个 zip（主库 + 段 + 附件 + 清单）。
+      // 顺序固定：加密闸 → wal_checkpoint(TRUNCATE) → 封段 → 打包 → tmp→rename；
+      // 目录选择默认落在 `<数据根>/export`（PRD §1 产物位置），取消 = 零落盘。
+      portable: createPortableExportService({
+        dbPath: ctx.layout.db,
+        syncDir: join(ctx.layout.root, 'sync'),
+        attachmentsDir: ctx.layout.attachments,
+        libraryName: async () => {
+          const workspaces = await pages.listWorkspaces();
+          const active = workspaces.items.find((item) => item.id === workspaces.activeId);
+          return active?.name ?? basename(ctx.layout.root);
+        },
+        appVersion: app.getVersion(),
+        schemaVersion: async () => (await handle.migrate()).to,
+        checkpoint: async () => {
+          await handle.checkpoint();
+        },
+        sealSegments: async () => {
+          const runtime = syncRuntime;
+          if (runtime === null) {
+            return 0; // 同步未启用/启动失败：无攒段器即无未封段 op（段清单可能为空，manifest 留痕）
+          }
+          await runtime.flushAndPublish();
+          return runtime.getStatus().pendingOps;
+        },
+        encrypted: () => readSettings(ctx.userDataDir).sync.encrypt,
+        pickDirectory: async () => {
+          const defaultPath = join(ctx.layout.root, 'export');
+          const options = {
+            title: '选择便携包保存目录',
+            defaultPath,
+            properties: ['openDirectory', 'createDirectory'] as Array<'openDirectory' | 'createDirectory'>,
+          };
+          const window = mainWindow;
+          const result =
+            window === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(window, options);
+          if (result.canceled || result.filePaths.length === 0) {
+            return null;
+          }
+          return result.filePaths[0] ?? null;
         },
       }),
     };
@@ -882,6 +931,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerLinksIpc(services?.links ?? null, dbViewRegistrar());
   // 页面导出（R27 · T79-01）：page:export:preview / confirm / reveal 三通道
   registerPageExportIpc(services?.pageExport ?? null, dbViewRegistrar());
+  // 便携包导出（R28 · T80-01）：portable:export:preview / confirm 两通道
+  registerPortableExportIpc(services?.portable ?? null, dbViewRegistrar());
   // 外部链接（T73-01）：shell:openExternal 唯一出口——协议白名单（仅 http/https）+
   // 审计只记 host（URL 原文不进审计正文）。入口恒可用（不依赖 DbServer）。
   const shellLogger = ctx.logger.forModule('shell');

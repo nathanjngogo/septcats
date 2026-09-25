@@ -622,6 +622,21 @@ export function createDbServerCore(database: SqliteDatabase): DbServerCore {
         const ok = messages.every((message) => message === 'ok');
         return dbOk(id, { ok, messages: ok ? [] : messages });
       }
+      /**
+       * R28（TASK-T80-01）：便携包导出的第一步——`PRAGMA wal_checkpoint(TRUNCATE)`
+       * （同款先例 `db/migrations.ts` 备份前 checkpoint）。非 WAL / 空库时 pragma 不抛，
+       * 只返回全 0（调用方不因此失败）。
+       */
+      case 'checkpoint': {
+        const rows = current.pragma('wal_checkpoint(TRUNCATE)') as Array<Record<string, unknown>>;
+        const first = rows[0] ?? {};
+        const num = (value: unknown): number => (typeof value === 'number' ? value : 0);
+        return dbOk(id, {
+          busy: num(first['busy']),
+          log: num(first['log']),
+          checkpointed: num(first['checkpointed']),
+        });
+      }
       case 'backupTo': {
         const destPath = request.destPath;
         if (typeof destPath !== 'string' || destPath.length === 0) {

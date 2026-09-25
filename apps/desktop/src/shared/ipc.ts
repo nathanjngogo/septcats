@@ -513,6 +513,25 @@ export const PAGE_EXPORT_CHANNELS = {
 
 export type PageExportChannel = (typeof PAGE_EXPORT_CHANNELS)[keyof typeof PAGE_EXPORT_CHANNELS];
 
+// ---------------------------------------------------------------------------
+// 便携包导出（R28 · TASK-T80-01）：两通道——preview 只读预览（列条目+字节，不落盘）、
+// confirm（checkpoint → 封段 → 打包 → 原子写；dir 缺省时弹目录选择，取消 = 零落盘）。
+// 载荷形状见 main/portable.ts（PortableExport*），preload 只 import 通道名。
+// ---------------------------------------------------------------------------
+
+/** {} → PortableExportPreview（只读：列段/附件/主库大小，零盘写）。 */
+export const CHANNEL_PORTABLE_EXPORT_PREVIEW = 'portable:export:preview';
+/** {dir?} → PortableExportConfirmResponse（dir 缺省时弹目录选择；取消回 {canceled:true}）。 */
+export const CHANNEL_PORTABLE_EXPORT_CONFIRM = 'portable:export:confirm';
+
+export const PORTABLE_EXPORT_CHANNELS = {
+  preview: CHANNEL_PORTABLE_EXPORT_PREVIEW,
+  confirm: CHANNEL_PORTABLE_EXPORT_CONFIRM,
+} as const;
+
+export type PortableExportChannel =
+  (typeof PORTABLE_EXPORT_CHANNELS)[keyof typeof PORTABLE_EXPORT_CHANNELS];
+
 /** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
 export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
 
