@@ -24,6 +24,12 @@ const SHOTS = join(REPO, 'docs', 'mockups', 'screens-t80-05');
 const DLG_PS = join(REPO, 'docs', 'mockups', 'assets', 'win-dlg.ps1');
 const PORT = 9248;
 const ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
+// 模式：--packed=打 dist/win-unpacked EXE（rc 终验：证新功能确实在成品包里）；默认=打 main 树 out/
+const PACKED = process.argv.includes('--packed');
+const WIN_UNPACKED = join(APPDIR, 'dist', 'win-unpacked');
+const LAUNCH_EXE = PACKED ? join(WIN_UNPACKED, 'Septcats.exe') : ELECTRON;
+const LAUNCH_CWD = PACKED ? WIN_UNPACKED : APPDIR;
+const LAUNCH_FIXED = PACKED ? [] : ['.'];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const waitSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 function killTree(pid) { try { execSync(`taskkill /PID ${String(pid)} /T /F`, { stdio: 'ignore' }); } catch { /* gone */ } }
@@ -57,7 +63,8 @@ async function poll(fn, pred, ms, every = 700) {
 }
 function killStaleApp() {
   try {
-    const out = execSync("wmic process where \"name='electron.exe'\" get processid,commandline /format:list", { encoding: 'utf8' });
+    const img = PACKED ? 'Septcats.exe' : 'electron.exe';
+    const out = execSync(`wmic process where "name='${img}'" get processid,commandline /format:list`, { encoding: 'utf8' });
     let cur = '';
     for (const line of out.split('\n')) {
       if (line.startsWith('CommandLine=')) cur = line;
@@ -72,7 +79,7 @@ function seedFixtures() {
   writeFileSync(join(UD, 'septcats.settings.json'), JSON.stringify({ schema: 1, rootPath: ROOT.replace(/\\/g, '/') }));
 }
 async function launch() {
-  const child = spawn(ELECTRON, ['.', `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: APPDIR, stdio: 'ignore' });
+  const child = spawn(LAUNCH_EXE, [...LAUNCH_FIXED, `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: LAUNCH_CWD, stdio: 'ignore' });
   let browser = null;
   for (let i = 0; i < 40; i += 1) { await wait(800); try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); break; } catch { /* retry */ } }
   if (browser === null) throw new Error('CDP 连不上');
