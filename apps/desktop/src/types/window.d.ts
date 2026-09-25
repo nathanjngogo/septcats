@@ -24,6 +24,11 @@ import type {
   PortableExportConfirmResponse,
   PortableExportInput,
   PortableExportPreview,
+  PortableImportExecuteResponse,
+  PortableImportInput,
+  PortableImportPlanResponse,
+  PortableImportRevertInput,
+  PortableImportRevertResult,
 } from '../shared/portable';
 import type {
   AppSettings,
@@ -508,6 +513,17 @@ export interface SeptcatsPortableExportApi {
   preview(): Promise<PortableExportPreview>;
   /** 落盘：单个 zip（原子写 tmp→rename）；dir 缺省时弹目录选择，取消 → `{canceled:true}`。 */
   confirm(input: PortableExportInput): Promise<PortableExportConfirmResponse>;
+  /**
+   * 导入预检（R28 · T80-02）：清点 + checksums 全验 + 目标库覆盖度预检，**零落盘**。
+   * 选包取消 → `{canceled:true}`。
+   */
+  importPlan(input: PortableImportInput): Promise<PortableImportPlanResponse>;
+  /** 导入执行（confirm 必须 true）：备份 → 重放（显式 replace）→ 失败逐字节还原。 */
+  importExecute(
+    input: PortableImportInput & { readonly confirm: true },
+  ): Promise<PortableImportExecuteResponse>;
+  /** 撤销导入：还原指定备份三件套（confirm 必须 true）。 */
+  importRevert(input: PortableImportRevertInput): Promise<PortableImportRevertResult>;
 }
 
 export interface SeptcatsApi {

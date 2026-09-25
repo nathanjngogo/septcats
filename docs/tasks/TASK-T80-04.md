@@ -6,6 +6,7 @@
 
 ## 缺陷 1（H-09）：revert 在进程存活时必 EBUSY → 撤销承诺失效
 - **实证**：探针 P5-1——`importRevert({backupPath, confirm:true})` 在 app 正常运行中调用，`restorePairs` 第一步 `io.remove(pair.to)`（清理主库）撞 `EBUSY: resource busy or lock`（Windows 下 better-sqlite3 打开的 .db 不允许删除/rename）。**结构化拒绝没错，但结果是「撤销导入」按钮在真实使用场景（老板导错了想撤）里永远点不活**。
+- **连带破坏（run-E P5-3 实证，比「点不活」更严重）**：`restorePairs` 的「先清三件套再回写」不是原子动作——remove 主库 EBUSY 抛错时 `-wal/-shm` **已被删除**，探针随后的重启里库处于未定义态（包外页仍在、非任何一致快照）。撤销失败必须不留半成品：修法要求**先验证主库可删（或先关连接）再动任何一件**；失败路径也要保证三件套回到「调用前状态」。新增测试：构造 revert 必败场景 → 断言失败后库仍与调用前逐字节一致。
 - 根因口径：`revert` 走文件级还原（D-1 追认过），但**没有先关连接**。既有 close/reopen 通道（报告 §0-② 持有者清单）里 db 连接归 DbServer 子进程持有——还原前必须走该通道的「停库 → 还原 → 重建服务」，而不是假设文件空闲。
 - **修法（最小）**：revert（以及 execute 的失败回滚路径——同一隐患，失败时连接也在）先经 IPC 让 db 侧 `close()` 释放句柄 → `restorePairs` → `reopen`。若 close 通道语义不满足（如 renderer 还在发查询），方案改为：**Windows 下用 `MoveFileEx` 允许 busy-rename 的等价物不可行时，退化为「还原到暂存 + 请求应用重启生效」**——两种路线选一，报告里写明选型依据与真机证据。
 - 必加测试：在**连接存活**夹具上调 revert 断言成功（现有单测用临时文件、连接已关 → 假绿面恰在这里；测试必须先持有连接再还原）。

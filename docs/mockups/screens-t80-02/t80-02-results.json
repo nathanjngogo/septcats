@@ -1,0 +1,132 @@
+{
+  "task": "T80-02",
+  "ranAt": "2026-09-25T07:48:18.303Z",
+  "assertions": [
+    {
+      "step": "P1|导出夹具",
+      "name": "P1-1 导出 zip 落盘非空",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugnsdtw\\pkg\\septcats-portable-个人工作区-20260925-154815.zip 8666B"
+    },
+    {
+      "step": "P1|导出夹具",
+      "name": "P1-2 zip 的段 jsonl 内含源页标题（反解后）",
+      "ok": true,
+      "detail": "段内含标题"
+    },
+    {
+      "step": "P2|plan",
+      "name": "P2-1 plan 结构完整且 zipPath 解析正确",
+      "ok": true,
+      "detail": "[\"zipPath\",\"manifest\",\"counts\",\"bytes\",\"schema\",\"target\",\"warnings\",\"blocked\"]"
+    },
+    {
+      "step": "P2|plan",
+      "name": "P2-2 plan 无阻断（本库导出=全覆盖 uncovered=0）",
+      "ok": true,
+      "detail": "null uncovered=0"
+    },
+    {
+      "step": "P2|plan",
+      "name": "P2-3 schema 兼容（包≤当前）",
+      "ok": true,
+      "detail": "{\"package\":10,\"current\":10,\"compatible\":true}"
+    },
+    {
+      "step": "P3|execute",
+      "name": "P3-1 execute ok 且显式 replace",
+      "ok": true,
+      "detail": "{\"segments\":1,\"ops\":2,\"entities\":1,\"mode\":\"replace\",\"keptOps\":0}"
+    },
+    {
+      "step": "P3|execute",
+      "name": "P3-2 备份 bak-portable-<ts> 在场非空",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t80-02-e2e-mugnsdtw\\data\\septcats.db.bak-portable-20260925-154815"
+    },
+    {
+      "step": "P3|execute",
+      "name": "P3-3 重放有真实数据（ops/entities>0）",
+      "ok": true,
+      "detail": "ops=2 entities=1"
+    },
+    {
+      "step": "P3|execute",
+      "name": "P3-4 roundtrip：execute 后树含源页 id",
+      "ok": true,
+      "detail": "树含源页 id"
+    },
+    {
+      "step": "P3.5|幂等",
+      "name": "P3.5-1 同包二次 execute 同结果（ops/entities 逐值等）",
+      "ok": true,
+      "detail": "ops 2→2 entities 1→1"
+    },
+    {
+      "step": "P3.5|幂等",
+      "name": "P3.5-2 二次导入后源页仍在",
+      "ok": true,
+      "detail": "树含源页 id"
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-1 半截 zip → E_PORTABLE_BAD_ZIP 结构化拒",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:plan': Error: E_PORTABLE_BAD_ZIP: 便携包无法解包（半截 zip 或非 zip）：invalid zip data"
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-2 checksums 篡改 → E_PORTABLE_CHECKSUM 整体拒",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:plan': Error: E_PORTABLE_CHECKSUM: 校验和不符，整包拒绝（不符 1 条 / 缺 0 条 / 多 0 条）"
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-3 缺段 → SEGMENT_COUNT/BAD_SEGMENT/CHECKSUM 拒",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:plan': Error: E_PORTABLE_CHECKSUM: 校验和不符，整包拒绝（不符 0 条 / 缺 1 条 / 多 0 条）"
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-4 zip slip 条目 → 拒（不静默改写）",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:plan': Error: E_ENTRY_NAME: 包内条目名不安全（zip slip 口径）：\"../evil.txt\""
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-5 execute 缺 confirm:true → 拒",
+      "ok": true,
+      "detail": "Error: Error invoking remote method 'portable:import:execute': Error: E_MALFORMED: confirm 必须显式为 true"
+    },
+    {
+      "step": "P4|安全闸",
+      "name": "P4-6 重启 flush 后包外 op → blocked E_PORTABLE_NOT_EMPTY",
+      "ok": true,
+      "detail": "{\"code\":\"E_PORTABLE_NOT_EMPTY\",\"message\":\"当前库里有便携包未覆盖的内容，导入会覆盖它（导入不合并）。请先备份或改用空库导入\"}"
+    },
+    {
+      "step": "P5|revert",
+      "name": "P5-1 revert ok 且主库逐字节=备份文件",
+      "ok": false,
+      "detail": "{\"__err\":\"Error: Error invoking remote method 'portable:import:revert': Error: E_PORTABLE_ROLLBACK_FAILED: 还原前清理失败 E:/Hermes Agent工作空间/_scratch/t80-02-e2e-mugnsdtw/data/septcats.db：EBUSY: resource bus"
+    },
+    {
+      "step": "P5|revert",
+      "name": "P5-2 重启后源页仍在（还原=导入前态）",
+      "ok": true,
+      "detail": "重启树含源页 id"
+    },
+    {
+      "step": "P5|revert",
+      "name": "P5-3 包外页随 revert 消失（还原语义成立）",
+      "ok": false,
+      "detail": "包外页不在树"
+    },
+    {
+      "step": "P7|存活",
+      "name": "P7-1 应用存活（导入/撤销/重放后未崩）",
+      "ok": true,
+      "detail": "2"
+    }
+  ]
+}

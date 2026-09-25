@@ -532,6 +532,29 @@ export const PORTABLE_EXPORT_CHANNELS = {
 export type PortableExportChannel =
   (typeof PORTABLE_EXPORT_CHANNELS)[keyof typeof PORTABLE_EXPORT_CHANNELS];
 
+// ---------------------------------------------------------------------------
+// 便携包导入（R28 · TASK-T80-02）：三通道——plan 只读预检（清点 + checksums 全验 +
+// 目标库覆盖度预检，零落盘）、execute（confirm:true → 三段式换库：备份→重放→失败回滚）、
+// revert（还原指定备份，撤销入口；confirm:true）。
+// 载荷形状见 shared/portable.ts（PortableImport*），preload 只 import 通道名。
+// ---------------------------------------------------------------------------
+
+/** {zipPath?, dir?} → PortableImportPlan（只读；选包取消回 {canceled:true}）。 */
+export const CHANNEL_PORTABLE_IMPORT_PLAN = 'portable:import:plan';
+/** {zipPath?, dir?, confirm:true} → PortableImportResult（备份→重放；失败逐字节还原后抛结构化错误）。 */
+export const CHANNEL_PORTABLE_IMPORT_EXECUTE = 'portable:import:execute';
+/** {backupPath, confirm:true} → PortableImportRevertResult（还原本备份三件套）。 */
+export const CHANNEL_PORTABLE_IMPORT_REVERT = 'portable:import:revert';
+
+export const PORTABLE_IMPORT_CHANNELS = {
+  plan: CHANNEL_PORTABLE_IMPORT_PLAN,
+  execute: CHANNEL_PORTABLE_IMPORT_EXECUTE,
+  revert: CHANNEL_PORTABLE_IMPORT_REVERT,
+} as const;
+
+export type PortableImportChannel =
+  (typeof PORTABLE_IMPORT_CHANNELS)[keyof typeof PORTABLE_IMPORT_CHANNELS];
+
 /** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
 export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
 

@@ -19,6 +19,7 @@ import {
   PAGE_EXPORT_CHANNELS,
   PAGES_CHANNELS,
   PORTABLE_EXPORT_CHANNELS,
+  PORTABLE_IMPORT_CHANNELS,
   RECENT_CHANNELS,
   SETTINGS_CHANNELS,
   SHELL_CHANNELS,
@@ -293,6 +294,19 @@ const api: SeptcatsApi = {
     confirm: (input) =>
       ipcRenderer.invoke(PORTABLE_EXPORT_CHANNELS.confirm, input) as ReturnType<
         SeptcatsApi['portable']['confirm']
+      >,
+    // R28（T80-02）：便携包导入（plan 只读预检 / execute 三段式换库 / revert 撤销）
+    importPlan: (input) =>
+      ipcRenderer.invoke(PORTABLE_IMPORT_CHANNELS.plan, input) as ReturnType<
+        SeptcatsApi['portable']['importPlan']
+      >,
+    importExecute: (input) =>
+      ipcRenderer.invoke(PORTABLE_IMPORT_CHANNELS.execute, input) as ReturnType<
+        SeptcatsApi['portable']['importExecute']
+      >,
+    importRevert: (input) =>
+      ipcRenderer.invoke(PORTABLE_IMPORT_CHANNELS.revert, input) as ReturnType<
+        SeptcatsApi['portable']['importRevert']
       >,
   },
 };

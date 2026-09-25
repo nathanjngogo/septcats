@@ -18,3 +18,4 @@ export * from './gc';
 export * from './dedupe';
 export * from './quarantine';
 export * from './portableZip';
+export * from './portableImport';

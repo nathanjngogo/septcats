@@ -114,6 +114,11 @@ import {
   registerPortableExportIpc,
   type PortableExportService,
 } from './portable';
+import {
+  createPortableImportService,
+  registerPortableImportIpc,
+  type PortableImportService,
+} from './portableImport';
 import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
@@ -161,6 +166,25 @@ let quittingFlag = false;
 
 const PERF_TRACE = process.argv.includes('--perf-trace');
 let perfStartedAt = 0;
+
+/**
+ * 首启迁移工作流（R28 · T80-02 / PRD §2）：`--import-portable <zip>`
+ * （或 `--import-portable <dir>` —— 缺 zipPath 时按 dir 契约取目录内最新包）。
+ * 下一个 argv 必须以路径形态给出（不以 `--` 开头），否则视为缺参、忽略。
+ */
+const IMPORT_PORTABLE_FLAG = '--import-portable';
+
+function readImportPortableArg(argv: readonly string[]): string | null {
+  const index = argv.indexOf(IMPORT_PORTABLE_FLAG);
+  if (index < 0) {
+    return null;
+  }
+  const value = argv[index + 1];
+  if (typeof value !== 'string' || value.length === 0 || value.startsWith('--')) {
+    return null;
+  }
+  return value;
+}
 
 /**
  * 首窗 did-finish-load 时记录 whenReady→首窗加载完成的差值：
@@ -377,7 +401,12 @@ interface DatabaseServices {
   pageExport: PageExportService;
   /** R28（T80-01）：便携包导出（zip；只读消费 + 原子写包本身）。 */
   portable: PortableExportService;
+  /** R28（T80-02）：便携包导入（三段式换库：备份 → 重放 replace → 失败回滚）。 */
+  portableImport: PortableImportService;
 }
+
+/** 本地账本 op_id 行里解不出的行 → 记为「未覆盖」（安全侧：宁可拒导，不可抹数据）。 */
+const UNREADABLE_OP_ID_PREFIX = 'unparsable-op-row-';
 
 /**
  * 起 DbServer → 迁移 → 造 pagesApi + dbViewService + SyncRuntime。
@@ -596,6 +625,70 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
             return null;
           }
           return result.filePaths[0] ?? null;
+        },
+      }),
+      // R28（T80-02）：便携包导入——plan 只读预检 → execute 三段式换库
+      // （checkpoint → 备份 bak-portable-<ts> → rebuild replace → 失败逐字节还原）。
+      // 停机边界：db 进程不重启（重放走既有 RPC），同步运行时走既有 stop()/start()。
+      portableImport: createPortableImportService({
+        dbPath: ctx.layout.db,
+        db: {
+          checkpoint: async () => {
+            await handle.checkpoint();
+          },
+          listLedgerOpIds: async () => {
+            const data = await handle.all('opLedger.listAll', {});
+            const ids: string[] = [];
+            data.rows.forEach((row, index) => {
+              const json = (row as { op_json?: unknown }).op_json;
+              if (typeof json !== 'string') {
+                ids.push(`${UNREADABLE_OP_ID_PREFIX}${String(index)}`);
+                return;
+              }
+              try {
+                const opId = (JSON.parse(json) as { op_id?: unknown }).op_id;
+                ids.push(typeof opId === 'string' ? opId : `${UNREADABLE_OP_ID_PREFIX}${String(index)}`);
+              } catch {
+                ids.push(`${UNREADABLE_OP_ID_PREFIX}${String(index)}`);
+              }
+            });
+            return ids;
+          },
+          rebuildFromSegments: async (segmentsJson, mode) => handle.rebuildFromSegments(segmentsJson, mode),
+        },
+        schemaVersion: async () => (await handle.migrate()).to,
+        pickArchive: async () => {
+          const defaultPath = join(ctx.layout.root, 'export');
+          const options = {
+            title: '选择便携包',
+            defaultPath,
+            filters: [{ name: '便携包', extensions: ['zip'] }],
+            properties: ['openFile'] as Array<'openFile'>,
+          };
+          const window = mainWindow;
+          const result =
+            window === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(window, options);
+          if (result.canceled || result.filePaths.length === 0) {
+            return null;
+          }
+          return result.filePaths[0] ?? null;
+        },
+        pauseSync: async () => {
+          syncRuntime?.stop();
+        },
+        resumeSync: async () => {
+          const runtime = syncRuntime;
+          if (runtime === null) {
+            return;
+          }
+          try {
+            await runtime.start();
+          } catch (error) {
+            syncLogger.error(`导入后同步重启失败（同步停用）：${describeError(error)}`);
+          }
+        },
+        log: (line) => {
+          logger.info(line);
         },
       }),
     };
@@ -933,6 +1026,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerPageExportIpc(services?.pageExport ?? null, dbViewRegistrar());
   // 便携包导出（R28 · T80-01）：portable:export:preview / confirm 两通道
   registerPortableExportIpc(services?.portable ?? null, dbViewRegistrar());
+  // 便携包导入（R28 · T80-02）：portable:import:plan / execute / revert 三通道
+  registerPortableImportIpc(services?.portableImport ?? null, dbViewRegistrar());
   // 外部链接（T73-01）：shell:openExternal 唯一出口——协议白名单（仅 http/https）+
   // 审计只记 host（URL 原文不进审计正文）。入口恒可用（不依赖 DbServer）。
   const shellLogger = ctx.logger.forModule('shell');
@@ -1111,6 +1206,51 @@ function registerImporterIpc(service: ImporterService | null): void {
 
 // --- 生命周期 ---------------------------------------------------------------
 
+/** `--import-portable` 的目标：`.zip` 结尾按包路径，其余按 dir 契约（目录内取最新包）。 */
+function importPortableInputOf(target: string): { readonly zipPath?: string; readonly dir?: string } {
+  return target.toLowerCase().endsWith('.zip') ? { zipPath: target } : { dir: target };
+}
+
+/**
+ * 首启导入（PRD §2 迁移工作流）：**开窗之前**跑完，保证首屏看到的就是导入后的库。
+ * 失败只留日志（不阻断启动）：包坏 / 预检被拒 / 重放失败（已自动回滚）都在这里收口。
+ */
+async function runStartupPortableImport(
+  ctx: PlatformContext,
+  services: DatabaseServices | null,
+  target: string,
+): Promise<void> {
+  const logger = ctx.logger.forModule('main');
+  const service = services?.portableImport ?? null;
+  if (service === null) {
+    logger.error(`--import-portable 跳过：数据库服务不可用（启动失败，见日志）`);
+    return;
+  }
+  try {
+    const planned = await service.plan(importPortableInputOf(target));
+    if ('canceled' in planned) {
+      logger.info('--import-portable 已取消（零落盘）');
+      return;
+    }
+    if (planned.blocked !== null) {
+      logger.error(`--import-portable 被预检拒绝：${planned.blocked.code} ${planned.blocked.message}`);
+      return;
+    }
+    const executed = await service.execute({ zipPath: planned.zipPath, confirm: true });
+    if ('canceled' in executed) {
+      logger.info('--import-portable 已取消（零落盘）');
+      return;
+    }
+    logger.info(
+      `--import-portable 完成：包=${executed.zipPath} 段=${String(executed.replay.segments)} op=${String(
+        executed.replay.ops,
+      )} 实体=${String(executed.replay.entities)} 备份=${executed.backupPath}`,
+    );
+  } catch (error) {
+    logger.error(`--import-portable 失败（数据面未改动或已回滚）：${describeError(error)}`);
+  }
+}
+
 async function bootstrapApplication(): Promise<void> {
   // 启动打点基点 = whenReady 兑现时刻（bootstrapApplication 由 whenReady().then 直接调用）
   if (PERF_TRACE) {
@@ -1124,6 +1264,12 @@ async function bootstrapApplication(): Promise<void> {
 
   const services = await bootstrapDatabase(ctx);
   registerIpcHandlers(ctx, services);
+
+  // R28（T80-02）：`--import-portable <zip|dir>` 首启迁移工作流（开窗前跑完）
+  const importPortableTarget = readImportPortableArg(process.argv);
+  if (importPortableTarget !== null) {
+    await runStartupPortableImport(ctx, services, importPortableTarget);
+  }
 
   // T54-01：关窗拦截器（须在 createWindow 之前装配——首窗的 close 事件立即用得上）
   closeGuard = installCloseGuard(ctx);

@@ -18,7 +18,11 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Checkbox, Dialog, ErrorPanel, RadioGroup, Switch, setGlobalThemeMode } from '@septcats/ui';
 import type { AppSettings, AppSettingsPatch, ThemeMode, TrayCloseMode } from '../../../shared/settings';
-import type { PortableExportPreview } from '../../../shared/portable';
+import type {
+  PortableExportPreview,
+  PortableImportPlan,
+  PortableImportResult,
+} from '../../../shared/portable';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
@@ -137,6 +141,13 @@ export function SettingsPage() {
   const [portablePreview, setPortablePreview] = useState<PortableExportPreview | null>(null);
   const [portableBusy, setPortableBusy] = useState(false);
   const [portableSavedPath, setPortableSavedPath] = useState<string | null>(null);
+
+  // R28（T80-02）：便携包导入（plan 预检零落盘 → execute 三段式换库 → 可撤销）
+  const [importPlan, setImportPlan] = useState<PortableImportPlan | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importResult, setImportResult] = useState<PortableImportResult | null>(null);
+  const [importUndoOpen, setImportUndoOpen] = useState(false);
+  const [importUndoBusy, setImportUndoBusy] = useState(false);
 
   const [updateState, setUpdateState] = useState<UpdateState | null>(null);
   const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
@@ -291,6 +302,70 @@ export function SettingsPage() {
       setError(describeError(cause));
     } finally {
       setPortableBusy(false);
+    }
+  };
+
+  // R28（T80-02）①：选包 → 只读预检（清点 + 校验和 + 目标库覆盖度，零落盘）
+  const handleImportPlan = async (): Promise<void> => {
+    setImportBusy(true);
+    setError(null);
+    setImportResult(null);
+    try {
+      const planned = await window.septcats.portable.importPlan({});
+      if ('canceled' in planned) {
+        setImportPlan(null);
+        return;
+      }
+      setImportPlan(planned);
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+  // R28（T80-02）②：确认 → 三段式换库（备份 → 重放 → 失败自动逐字节还原）
+  const handleImportExecute = async (): Promise<void> => {
+    const planned = importPlan;
+    if (planned === null) {
+      return;
+    }
+    setImportBusy(true);
+    setError(null);
+    try {
+      const executed = await window.septcats.portable.importExecute({
+        zipPath: planned.zipPath,
+        confirm: true,
+      });
+      if ('canceled' in executed) {
+        setImportPlan(null);
+        return;
+      }
+      setImportResult(executed);
+      setImportPlan(null);
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+  // R28（T80-02）③：撤销入口（同恢复码的「显式确认」对话框骨架）
+  const handleImportUndo = async (): Promise<void> => {
+    const done = importResult;
+    if (done === null) {
+      return;
+    }
+    setImportUndoBusy(true);
+    setError(null);
+    try {
+      await window.septcats.portable.importRevert({ backupPath: done.backupPath, confirm: true });
+      setImportResult(null);
+      setImportUndoOpen(false);
+    } catch (cause) {
+      setError(describeError(cause));
+    } finally {
+      setImportUndoBusy(false);
     }
   };
 
@@ -550,6 +625,104 @@ export function SettingsPage() {
                 {t('settings.privacy.portable.savedTo')} {portableSavedPath}
               </div>
             )}
+            {/* R28（T80-02）：便携包导入——选包预检（零落盘）→ 确认换库 → 可撤销 */}
+            <SettingsRow
+              title={t('settings.privacy.portable.import')}
+              desc={t('settings.privacy.portable.importDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={importBusy}
+                  data-testid="settings-portable-import"
+                  onClick={() => {
+                    void handleImportPlan();
+                  }}
+                >
+                  {t('settings.privacy.portable.import')}
+                </Button>
+              }
+            />
+            {importPlan === null ? null : (
+              <div className="settings-preview-wrap" data-testid="settings-import-preview">
+                <div className="settings-preview-title">{t('settings.privacy.portable.importTitle')}</div>
+                <div className="settings-preview-title" data-testid="settings-import-meta">
+                  {fillTemplate(t('settings.privacy.portable.importMeta'), {
+                    n: String(importPlan.counts.entries),
+                    segments: String(importPlan.counts.segments),
+                    bytes: formatBytes(importPlan.bytes),
+                  })}
+                </div>
+                <div className="settings-preview-title" data-testid="settings-import-from">
+                  {fillTemplate(t('settings.privacy.portable.importFrom'), {
+                    library: importPlan.manifest.library,
+                    version: importPlan.manifest.appVersion,
+                  })}
+                </div>
+                {importPlan.blocked === null ? null : (
+                  <div className="settings-recovery-warn" data-testid="settings-import-blocked" role="alert">
+                    {fillTemplate(t('settings.privacy.portable.importBlocked'), {
+                      message: importPlan.blocked.message,
+                    })}
+                  </div>
+                )}
+                {importPlan.target.uncovered === 0 ? null : (
+                  <div className="settings-recovery-warn" data-testid="settings-import-target">
+                    {fillTemplate(t('settings.privacy.portable.importTarget'), {
+                      uncovered: String(importPlan.target.uncovered),
+                    })}
+                  </div>
+                )}
+                {importPlan.warnings.length === 0 ? null : (
+                  <div className="settings-recovery-warn" data-testid="settings-import-warn">
+                    {`${t('settings.privacy.portable.warningTitle')}: ${importPlan.warnings.join(' / ')}`}
+                  </div>
+                )}
+                <div className="settings-preview-actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="settings-import-cancel"
+                    onClick={() => {
+                      setImportPlan(null);
+                    }}
+                  >
+                    {t('settings.privacy.portable.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    loading={importBusy}
+                    disabled={importPlan.blocked !== null}
+                    data-testid="settings-import-confirm"
+                    onClick={() => {
+                      void handleImportExecute();
+                    }}
+                  >
+                    {t('settings.privacy.portable.confirmImport')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {importResult === null ? null : (
+              <div className="settings-preview-wrap" data-testid="settings-import-done">
+                <div className="settings-preview-title">{t('settings.privacy.portable.importDone')}</div>
+                <div className="settings-saved" data-testid="settings-import-backup">
+                  {`${t('settings.privacy.portable.backupTo')} ${importResult.backupPath}`}
+                </div>
+                <div className="settings-preview-actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="settings-import-undo"
+                    onClick={() => {
+                      setImportUndoOpen(true);
+                    }}
+                  >
+                    {t('settings.privacy.portable.undo')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </fieldset>
 
           <fieldset className="settings-section">
@@ -752,6 +925,40 @@ export function SettingsPage() {
           })}
         </p>
         <p className="settings-update-rollback">{t('settings.about.rollback')}</p>
+      </Dialog>
+
+      {/* R28（T80-02）：撤销导入的显式确认（骨架同恢复码三件套：取消 / 确认还原） */}
+      <Dialog
+        open={importUndoOpen}
+        onClose={() => {
+          setImportUndoOpen(false);
+        }}
+        title={t('settings.privacy.portable.undoTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setImportUndoOpen(false);
+              }}
+            >
+              {t('settings.privacy.portable.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              loading={importUndoBusy}
+              data-testid="settings-import-undo-confirm"
+              onClick={() => {
+                void handleImportUndo();
+              }}
+            >
+              {t('settings.privacy.portable.undo')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="settings-update-confirm-body">{t('settings.privacy.portable.undoDesc')}</p>
       </Dialog>
 
       <Dialog
