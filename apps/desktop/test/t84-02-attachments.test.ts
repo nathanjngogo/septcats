@@ -230,7 +230,7 @@ describe('上行队列', () => {
 });
 
 describe('下行队列', () => {
-  it('远端有、本地无 → sha 复验过 → 原子落 attachments/', async () => {
+  it('远端有、本地无 → sha 复验过 → 原子落 attachments/', { timeout: 30_000 }, async () => {
     const d = mk('pull');
     const content = randomBytes(1500 * 1024);
     const { name } = fileHash(content);

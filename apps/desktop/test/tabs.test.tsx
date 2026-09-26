@@ -404,8 +404,9 @@ describe('TabsBar 组件（TASK-T37-01 §0.2/§0.6/§1.2）', () => {
   it('溢出横向滚动不换行（静态样式契约）', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
-    // vitest jsdom 环境下 import.meta.url 非 file scheme，用进程 cwd（apps/desktop）定位
-    const css = readFileSync(join(process.cwd(), 'src', 'renderer', 'src', 'tabs', 'TabsBar.css'), 'utf8');
+    // jsdom 下 import.meta.url 非 file，但 import.meta.dirname 仍可用（=test/ 目录）；
+    // 进程 cwd 在根聚合 vitest 下是仓库根 → 必须锚 dirname 而非 cwd（CI 双端教训）。
+    const css = readFileSync(join(import.meta.dirname, '..', 'src', 'renderer', 'src', 'tabs', 'TabsBar.css'), 'utf8');
     expect(css).toMatch(/\.tabsbar\s*\{[^}]*overflow-x:\s*auto/);
     expect(css).toMatch(/\.tabsbar\s*\{[^}]*white-space:\s*nowrap/);
     // token 纪律：无字面 hex、过渡走 motion-fast

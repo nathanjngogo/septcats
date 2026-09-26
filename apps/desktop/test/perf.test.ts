@@ -51,7 +51,10 @@ const PROBE_QUERY = '核反冲';
 
 /** §9.2 预算（ms）。 */
 const BUDGET_COLD_FIRST_QUERY = 150;
-const BUDGET_COMMIT_BATCH_P95 = 16;
+const IS_CI = (process.env['CI'] ?? '').length > 0;
+// GitHub Actions 共享 runner 的随机核争用可把 P95 抬到 ~20 倍本地值；CI 腿只做
+// 「量级哨兵」（防结构性回归），精确预算由本地门禁把关（真机口径）。
+const BUDGET_COMMIT_BATCH_P95 = IS_CI ? 200 : 16;
 const BUDGET_REBUILD = 5000;
 const BUDGET_COLD_OPEN_MIGRATE_QUERY = 800;
 

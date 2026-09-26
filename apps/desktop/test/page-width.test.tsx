@@ -268,7 +268,7 @@ describe('PageView 接线（data-measure 属性 + 静态 CSS 契约）', () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const css = readFileSync(
-      join(process.cwd(), 'src', 'renderer', 'src', 'pages', 'PageView.css'),
+      join(import.meta.dirname, '..', 'src', 'renderer', 'src', 'pages', 'PageView.css'),
       'utf8',
     ).replace(/\/\*[\s\S]*?\*\//g, '');
     // T63-01 新口径：全宽作用域内同时解除正文列、内层编辑器外壳、标题行的 max-width

@@ -9,4 +9,5 @@
 *.ts text eol=lf
 *.tsx text eol=lf
 
-# 许可文本随包分发，须逐字节保真（OFL 4388B 断言）：*.txt text eol=lf
+# 许可文本随包分发，须逐字节保真（OFL 4388B 断言）——runner checkout 禁转 CRLF
+*.txt text eol=lf
