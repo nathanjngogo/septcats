@@ -4,7 +4,7 @@
  * ③electron 在位判定=标记+存在性（node 进程不验证 electron ABI） ④备份无残留不吞文件。
  */
 import { describe, expect, it } from 'vitest';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -25,14 +25,14 @@ describe('T83-01 备份/回填（硬不变量：重建失败后二进制绝不�
     writeFileSync(bin, payload);
     const bak = backupBinary(bin, join(dir, 'safe'));
     expect(bak).not.toBeNull();
-    expect(readFileSync(bak)).toEqual(payload);
+    expect(readFileSync(bak!)).toEqual(payload);
     // 模拟 pnpm rebuild 失败摧毁 build/Release：
     rmSync(bin);
     expect(existsSync(bin)).toBe(false);
-    const restored = restoreBackup(bin, bak);
+    const restored = restoreBackup(bin, bak!);
     expect(restored).toBe(true);
     expect(readFileSync(bin)).toEqual(payload); // 逐字节回填
-    expect(existsSync(bak)).toBe(false); // 回填后不留孤儿备份
+    expect(existsSync(bak!)).toBe(false); // 回填后不留孤儿备份
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -63,8 +63,8 @@ describe('T83-01 备份/回填（硬不变量：重建失败后二进制绝不�
     writeFileSync(nested, Buffer.from('NESTED'));
     const bak = backupBinary(nested, join(dir, 'safe')); // 备份放独立目录（=脚本里的 .abi-cache）
     rmSync(join(dir, 'build'), { recursive: true, force: true }); // 整个 build/ 没
-    expect(existsSync(bak)).toBe(true); // 备份幸存
-    expect(restoreBackup(nested, bak)).toBe(true);
+    expect(existsSync(bak!)).toBe(true); // 备份幸存
+    expect(restoreBackup(nested, bak!)).toBe(true);
     expect(readFileSync(nested, 'utf8')).toBe('NESTED');
     rmSync(dir, { recursive: true, force: true });
   });
@@ -79,7 +79,7 @@ describe('T83-01 URL/定位推导（确定性，不依赖网络）', () => {
   it('bs3Version 从安装树读出真实版本；垃圾路径退到 fallback', () => {
     const found = findBs3Bin();
     expect(found).not.toBeNull();
-    expect(bs3Version(found)).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(bs3Version(found!)).toMatch(/^\d+\.\d+\.\d+$/);
     expect(bs3Version(join(tmpdir(), 'ghost', 'build', 'Release', 'x.node'), '9.9.9')).toBe('9.9.9');
   });
 
