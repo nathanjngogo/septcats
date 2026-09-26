@@ -29,7 +29,7 @@
   gap: var(--sc-space-lg);
   padding: var(--sc-space-sm) var(--sc-space-xl);
   background: var(--sc-color-surface);
-  border-bottom: 2px solid var(--sc-color-ink-edge);
+  border-bottom: var(--sc-border-edge);
 }
 
 .wb-title {
@@ -56,7 +56,7 @@
   padding: var(--sc-space-xs);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-out);
 }
@@ -118,7 +118,7 @@
 
 .wb-card {
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-out);
 }
@@ -134,7 +134,7 @@
   justify-content: space-between;
   gap: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
-  border-bottom: 2px solid var(--sc-color-ink-edge); /* T62 纪律：框轮廓=黑线 */
+  border-bottom: var(--sc-border-edge); /* T62 纪律：框轮廓=黑线 */
 }
 
 .wb-card__title {
@@ -184,7 +184,7 @@
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }
@@ -272,7 +272,7 @@
   font: var(--sc-text-ui-md);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   padding: var(--sc-space-xs) var(--sc-space-sm);
 }
@@ -377,7 +377,7 @@
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }
@@ -400,7 +400,7 @@
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }
@@ -416,7 +416,7 @@
 }
 
 .wb-slot--drop {
-  outline: 2px dashed var(--sc-color-ink-edge);
+  outline: var(--sc-border-edge-dashed);
   outline-offset: var(--sc-space-xxs);
 }
 
@@ -443,7 +443,7 @@
 .wb-add-card {
   position: relative;
   display: flex;
-  border: 2px dashed var(--sc-color-ink-edge);
+  border: var(--sc-border-edge-dashed);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   min-height: 64px;
@@ -494,7 +494,7 @@
   font: var(--sc-text-ui-md);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   padding: var(--sc-space-xs) var(--sc-space-sm);
 }
@@ -505,7 +505,7 @@
   gap: var(--sc-space-xs);
   margin-top: var(--sc-space-xs);
   padding: var(--sc-space-xs);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface);
 }
@@ -514,7 +514,7 @@
   font: var(--sc-text-ui-md);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   padding: var(--sc-space-xs) var(--sc-space-sm);
 }
@@ -572,7 +572,7 @@
 
 .wb-heat {
   aspect-ratio: 1 / 1;
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
 }
 
@@ -641,7 +641,7 @@
   align-items: center;
   gap: var(--sc-space-xxs);
   padding: var(--sc-space-sm);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface);
 }

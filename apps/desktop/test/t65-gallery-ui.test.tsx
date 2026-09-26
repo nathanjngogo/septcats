@@ -37,7 +37,9 @@ function fullDeps(overrides: Record<string, unknown> = {}) {
 }
 
 function currentCardTestId(): string | null {
-  return document.querySelector('[data-current="true"]')?.getAttribute('data-testid') ?? null;
+  // T85-01：画廊新增质感行（data-look 卡）——当前卡查询限定配色卡（data-palette），
+  // 避免与质感卡的 data-current 撞名。
+  return document.querySelector('[data-current="true"][data-palette]')?.getAttribute('data-testid') ?? null;
 }
 
 describe('主题画廊 UI', () => {
@@ -52,9 +54,9 @@ describe('主题画廊 UI', () => {
     cleanup();
   });
 
-  it('六张派系卡都在', () => {
+  it('六张派系卡都在（T85-01 后：画廊 = 6 配色卡 + 3 质感卡，此处限定 data-palette）', () => {
     render(<ThemeGallery open resolvedTheme="dark" onClose={noop} />);
-    const cards = document.querySelectorAll('[data-testid^="theme-gallery-card-"]');
+    const cards = document.querySelectorAll('[data-testid^="theme-gallery-card-"][data-palette]');
     expect(cards.length).toBe(6);
   });
 

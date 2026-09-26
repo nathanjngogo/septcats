@@ -15,6 +15,7 @@
 import { t } from '../i18n';
 import type { AiBlockAction } from '../../../shared/aiPrompts';
 import { PALETTE_IDS, type PaletteId } from '../theme/paletteState';
+import { LOOK_IDS, type LookId } from '../theme/lookState';
 
 export interface PaletteCommandDef {
   readonly id: string;
@@ -113,6 +114,8 @@ export interface CommandDeps {
    * → 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
   setThemePalette?(id: PaletteId): void;
+  /** T85-01：命令面板切质感派系（App 恒注入 → 恒出现）。 */
+  setThemeLook?(id: LookId): void;
   /**
    * T67-01-B2-01 范围4：加锁命令（仅当前选中且未锁页出现）。与 removeLock 互斥——
    * App 按 lockedIds 二选一注入（未注入 = 无选中页，configurePaletteCommands 摘除）。
@@ -257,6 +260,22 @@ const PALETTE_SWITCH_ALIASES: Record<PaletteId, readonly string[]> = {
   slate: ['shimo', 'shimoohui', 'slate', 'graphite'],
   moss: ['taiqing', 'moss'],
 };
+
+/** T85-01：三条「切到 X 质感」命令（与配色切换同门）。 */
+const LOOK_SWITCH_ALIASES: Record<LookId, readonly string[]> = {
+  pixel: ['xiangsu', 'pixel', 'ps'],
+  linear: ['linear', 'xianxing', 'lx'],
+  glass: ['maoboli', 'glass', 'boli', 'mb'],
+};
+
+export function themeLookSwitchDef(id: LookId): PaletteCommandDef {
+  return {
+    id: `theme.look.${id}`,
+    label: t('commands.theme.switchLook'),
+    hint: t('commandHints.theme.switchLook'),
+    aliases: LOOK_SWITCH_ALIASES[id],
+  };
+}
 
 /** 派系 id → 命令 def（label/hint 在绑定时经 t() 现取，见 bindPaletteCommands）。 */
 export function themeSwitchDef(id: PaletteId): PaletteCommandDef {
@@ -443,6 +462,20 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
         hint: t('commandHints.theme.switch').replace('{name}', name),
         run: (): void => {
           deps.setThemePalette?.(id);
+        },
+      });
+    }
+  }
+  // T85-01：三条「切到 X 质感」命令（App 恒注入 → 恒出现）。
+  if (deps.setThemeLook !== undefined) {
+    for (const id of LOOK_IDS) {
+      const name = t(`settings.appearance.lookNames.${id}`);
+      commands.push({
+        ...themeLookSwitchDef(id),
+        label: t('commands.theme.switchLook').replace('{name}', name),
+        hint: t('commandHints.theme.switchLook').replace('{name}', name),
+        run: (): void => {
+          deps.setThemeLook?.(id);
         },
       });
     }

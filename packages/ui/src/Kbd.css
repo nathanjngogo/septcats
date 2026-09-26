@@ -3,7 +3,7 @@
 .sc-kbd {
   display: inline-block;
   padding: 1px 5px;
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);

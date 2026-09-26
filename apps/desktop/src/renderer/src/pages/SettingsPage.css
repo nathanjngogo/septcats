@@ -109,7 +109,7 @@
   margin: 0;
   padding: var(--sc-space-md);
   /* T62-01 §1.1：预览代码盒外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   max-height: 320px;
@@ -153,7 +153,7 @@
   display: block;
   padding: var(--sc-space-md);
   /* T62-01 §1.1：恢复码盒外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   font: var(--sc-text-code);
@@ -180,7 +180,7 @@
   margin-top: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
   /* T62-01 §1.1：恢复码导入输入框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   font: var(--sc-text-code);
   color: var(--sc-color-ink);

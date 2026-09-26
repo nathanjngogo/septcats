@@ -45,7 +45,7 @@
 }
 
 .ws-type-card--active {
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   padding: calc(var(--sc-space-sm) - 1px);
   box-shadow: var(--sc-bevel-inset, 0 0 0 1px var(--sc-color-ink-edge));
 }

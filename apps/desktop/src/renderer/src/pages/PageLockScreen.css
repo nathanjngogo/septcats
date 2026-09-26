@@ -12,7 +12,7 @@
   width: min(92%, var(--sc-space-editor-measure));
   margin: var(--sc-space-xl) auto;
   padding: var(--sc-space-lg);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface-raised);
   box-shadow: var(--sc-shadow-modal);
@@ -67,7 +67,7 @@
 .lock-input {
   width: 100%;
   padding: var(--sc-space-sm);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -103,7 +103,7 @@
 
 .lock-submit {
   padding: var(--sc-space-sm) var(--sc-space-lg);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-ink);
   color: var(--sc-color-surface-raised);
@@ -128,7 +128,7 @@
 
 .lock-recovery-box {
   padding: var(--sc-space-md);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-canvas);
   text-align: center;

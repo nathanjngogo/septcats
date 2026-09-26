@@ -21,7 +21,7 @@
   margin: 0 0 var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
   /* T62-01 §1.1：AI 提示卡外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-accent-soft);
   font: var(--sc-text-ui-xs);

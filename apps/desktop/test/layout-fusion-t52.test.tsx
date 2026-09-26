@@ -274,7 +274,7 @@ describe('T52-01 ③ 标签条并入编辑区（无整行分隔线 + 活动标�
 describe('T59-01 追加：正文顶边描边 + 活动标签骑缝融合（T52 红线延续）', () => {
   it('正文顶边 = `.pv-root` 的 border-top 2px ink-edge；标签条与行宿主不得再画（只画一次）', () => {
     const pvRoot = ruleBody(appCss, '.app-editor-col .pv-root');
-    expect(pvRoot, '正文顶边缺 2px ink-edge').toContain('border-top: 2px solid var(--sc-color-ink-edge)');
+    expect(pvRoot, '正文顶边缺 2px ink-edge').toContain('border-top: var(--sc-border-edge)');
     expect(ruleBody(tabsCss, '.app-tabrow'), '行宿主补了下描边 → 与正文顶边叠成 4px').not.toContain('border-bottom');
     expect(ruleBody(tabsCss, '.tabsbar'), '标签条补了下描边 → 破「无整行分隔线」').not.toContain('border-bottom');
   });
@@ -288,8 +288,8 @@ describe('T59-01 追加：正文顶边描边 + 活动标签骑缝融合（T52 �
     expect(tabsCss).toMatch(
       /\.tabsbar-tab--active[^{]*\{[^}]*margin-bottom:\s*calc\(var\(--sc-space-xxs\) \* -1\)/,
     );
-    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-top:\s*2px solid var\(--sc-color-ink-edge\)/);
-    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-right:\s*2px solid var\(--sc-color-ink-edge\)/);
+    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-top:\s*var\(--sc-border-edge\)/);
+    expect(tabsCss).toMatch(/\.tabsbar-tab--active[^{]*\{[^}]*border-right:\s*var\(--sc-border-edge\)/);
     expect(tabsCss, '活动标签下缘必须留空（下缘无缝）').not.toMatch(
       /\.tabsbar-tab--active[^{]*\{[^}]*border-bottom:/,
     );
@@ -297,7 +297,7 @@ describe('T59-01 追加：正文顶边描边 + 活动标签骑缝融合（T52 �
 
   it('非活动标签只吃左描边（相邻两枚之间恰好 2px，不叠成 4px 粗缝）', () => {
     const tab = ruleBody(tabsCss, '.tabsbar-tab');
-    expect(tab).toContain('border-left: 2px solid var(--sc-color-ink-edge)');
+    expect(tab).toContain('border-left: var(--sc-border-edge)');
     expect(tab).not.toMatch(/border-right:\s*[1-9]/);
   });
 });

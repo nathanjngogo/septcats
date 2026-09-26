@@ -1,0 +1,96 @@
+/*
+ * looks.css —— 主题画廊·质感派系（TASK-T85-01，老板 09-26 令：「目前只有像素风的主题，
+ * 我需要增加 Linear 风格的主题，以及毛玻璃风格的主题。放入主题市场。」）
+ *
+ * 架构定位：主题 = theme（明暗基底）× palette（配色派系，themes.css）× look（质感派系，本文件）。
+ * palette 只碰中性色阶；look 与之正交，只覆写**质感 token**（边框宽度谱 --sc-border-edge*、
+ * 圆角阶 --sc-radius-*、立体斜角/硬投影 --sc-bevel-*、--sc-pixel-*、柔影 --sc-shadow-modal）；
+ * glass 额外给浮层加半透明 + backdrop-blur。任何 look 都不碰 --sc-color-* 色阶 token。
+ *
+ * 机制（零组件结构改动的关键）：全库框线自 T85-01 起统一吃 var(--sc-border-edge)（默认
+ * = 2px solid ink-edge，与 T59/T62 像素纪律逐字等值）；圆角/投影本就 token 化。于是
+ * look 只改 token 值即可整仓换骨：linear = 1px 细边 + 连续圆角 + 柔影；glass = linear
+ * 骨架 + 浮层磨砂。选择器用 [data-look='x']（不限 :root）→ 画廊预览卡同口径生效。
+ * 注意：全仓无 CSS @layer 体系（themes.css 同款裸选择器）——本文件不得使用 @layer，
+ * 否则覆写输给非 layer 样式；加载顺序 tokens → themes → looks（main.tsx），同特异度后者胜。
+ *
+ * 本文件纪律：只写自定义属性与背景/模糊/宽度，**不写任何 border*: / outline*: 直声明**
+ * （pixel-borders.test.ts 扫描面对本文件零命中；边框宽度全部走 token）。
+ * 默认（无 data-look 属性 = React 挂载前/旧存档）与 pixel 块逐字一致 → 零回归。
+ */
+
+/* ===== 默认 = pixel（属性缺席时的兜底，与 [data-look='pixel'] 同值） ===== */
+:root {
+  --sc-border-edge: 2px solid var(--sc-color-ink-edge);
+  --sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);
+}
+
+/* ===== pixel（现状默认；显式属性 = 画廊选中态与探针锚点） ===== */
+[data-look='pixel'] {
+  --sc-border-edge: 2px solid var(--sc-color-ink-edge);
+  --sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);
+  --sc-radius-xs: 0;
+  --sc-radius-sm: 0;
+  --sc-radius-md: 0;
+  --sc-radius-lg: 0;
+}
+
+/* ===== linear（Linear 风：1px 细边、连续圆角、硬斜角退役为柔影分层） ===== */
+[data-look='linear'] {
+  --sc-border-edge: 1px solid var(--sc-color-ink-edge);
+  --sc-border-edge-dashed: 1px dashed var(--sc-color-ink-edge);
+  /* 输入类「内凹感」= 极浅内晕（替代 2px 硬斜角；focus-ring 引用同 token 自然跟随） */
+  --sc-bevel-in: inset 0 1px 2px 0 rgba(28, 30, 33, 0.06);
+  /* 凸起/浮起投影语义复用为柔影（Button/Card/Dialog/Select 全部引用这组 token） */
+  --sc-bevel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel);
+  --sc-pixel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel), 0 1px 6px -2px var(--sc-color-shadow-pixel);
+  --sc-pixel-flat: 0 1px 2px 0 var(--sc-color-shadow-pixel);
+  --sc-shadow-modal: 0 12px 32px -8px rgba(28, 30, 33, 0.22), 0 2px 8px rgba(28, 30, 33, 0.08);
+  --sc-radius-xs: 2px;
+  --sc-radius-sm: 4px;
+  --sc-radius-md: 6px;
+  --sc-radius-lg: 8px;
+}
+
+/* ===== glass（毛玻璃：linear 骨架 + 浮层半透明磨砂；正文面保持实心 = 可读性铁律） ===== */
+[data-look='glass'] {
+  --sc-border-edge: 1px solid var(--sc-color-ink-edge);
+  --sc-border-edge-dashed: 1px dashed var(--sc-color-ink-edge);
+  --sc-bevel-in: inset 0 1px 2px 0 rgba(28, 30, 33, 0.05);
+  --sc-bevel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel);
+  --sc-pixel-out: 0 4px 16px -4px rgba(28, 30, 33, 0.18);
+  --sc-pixel-flat: 0 2px 8px -2px rgba(28, 30, 33, 0.14);
+  --sc-shadow-modal: 0 16px 40px -8px rgba(28, 30, 33, 0.28), 0 2px 10px rgba(28, 30, 33, 0.1);
+  --sc-radius-xs: 4px;
+  --sc-radius-sm: 8px;
+  --sc-radius-md: 12px;
+  --sc-radius-lg: 16px;
+}
+/* 浮层玻璃化（只写背景/模糊，不写 border —— 宽度已随 token 收细为 1px）。
+   Electron 渲染器内 backdrop 采样窗口内层叠元素，观感成立（真机 frame-check 核）。 */
+[data-look='glass'] .sc-dialog,
+[data-look='glass'] .sc-menu,
+[data-look='glass'] .sc-popover__panel,
+[data-look='glass'] .sc-toast__item,
+[data-look='glass'] .sc-select__listbox,
+[data-look='glass'] .sc-tooltip__bubble,
+[data-look='glass'] .palette,
+[data-look='glass'] .theme-gallery {
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+/* 顶栏/侧栏 chrome 轻玻璃（84% 实心，文字可读优先） */
+[data-look='glass'] .sc-shell__topbar,
+[data-look='glass'] .sc-shell__sidebar {
+  background: color-mix(in srgb, var(--sc-color-canvas) 84%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）
+   随质感收细为 1px（像素态保持 2px = T59 锚定不动）===== */
+[data-look='linear'] .sc-shell__sidebar::after,
+[data-look='glass'] .sc-shell__sidebar::after {
+  width: 1px;
+}

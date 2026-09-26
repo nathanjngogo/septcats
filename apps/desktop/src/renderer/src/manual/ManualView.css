@@ -30,7 +30,7 @@
   padding: var(--sc-space-sm) var(--sc-space-lg);
   background: var(--sc-color-surface);
   /* T62-01 §1.1：说明书顶栏下沿 = 2px ink-edge（原 hairline-strong） */
-  border-bottom: 2px solid var(--sc-color-ink-edge);
+  border-bottom: var(--sc-border-edge);
 }
 
 .manual-view__bar-title {
@@ -66,7 +66,7 @@
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：顶栏钮外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-out);
 }
@@ -101,7 +101,7 @@
   padding: var(--sc-space-lg) var(--sc-space-sm);
   background: var(--sc-color-surface);
   /* T62-01 §1.1：章表列右缘接缝 = 2px ink-edge */
-  border-right: 2px solid var(--sc-color-ink-edge);
+  border-right: var(--sc-border-edge);
 }
 
 /* 折叠 = 完全收起（不占位），展开钮仍在顶栏可达。 */
@@ -156,7 +156,7 @@
   font: var(--sc-text-h2);
   letter-spacing: var(--sc-tracking-h2);
   /* T62-01：h2 标题下横线 = 2px ink-edge（本视图既有 2px 语法，只换色源） */
-  border-bottom: 2px solid var(--sc-color-ink-edge);
+  border-bottom: var(--sc-border-edge);
 }
 
 .manual-view__h3 {
@@ -204,7 +204,7 @@
   overflow: auto;
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：代码块外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }

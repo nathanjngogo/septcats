@@ -6,7 +6,7 @@
   /* T62-01 §1.1：开关轨外框 = 2px ink-edge。
    * 几何联动：border-box 下 2px 框把内区压到 32×16，滑块 inset 必须归零
    * 才能恰好嵌在内区（原 2px inset 会让 16px 滑块压到框线上）。 */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-hairline-strong);
   /* T53-01 像素风：轨是凹槽 */

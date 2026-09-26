@@ -13,7 +13,7 @@
   height: var(--sc-size-control-md);
   padding: 0 var(--sc-space-md);
   /* T62-01 §1.1：输入控件外框 = 2px ink-edge（原 1px hairline 灰线退役） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

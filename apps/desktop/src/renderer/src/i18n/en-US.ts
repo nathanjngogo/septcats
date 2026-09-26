@@ -495,6 +495,14 @@ export const enUS = {
         slate: 'Graphite',
         moss: 'Moss',
       },
+      // T85-01: texture looks (pixel / linear / glass), orthogonal to palette
+      look: 'Texture',
+      lookDesc: 'Pixel / Linear minimal / Frosted glass — live restyle',
+      lookNames: {
+        pixel: 'Pixel',
+        linear: 'Linear Minimal',
+        glass: 'Frosted Glass',
+      },
     },
     // T54-01: closing behavior — what the window close button does (the dialog's
     // "Remember my choice" writes here; changeable back to Ask every time)
@@ -956,6 +964,7 @@ export const enUS = {
       system: 'Switch Theme: System',
       palette: 'Theme gallery',
       switch: 'Switch to {name} palette',
+      switchLook: 'Switch to {name} texture',
     },
     ai: {
       continue: 'AI Continue Writing',
@@ -996,6 +1005,7 @@ export const enUS = {
       system: 'Interface theme',
       palette: 'Open the theme gallery; preview six palettes live',
       switch: 'Switch to the {name} palette and remember it',
+      switchLook: 'Switch to the {name} texture and remember it',
     },
     ai: {
       continue: 'Keep writing based on the selection or current block',

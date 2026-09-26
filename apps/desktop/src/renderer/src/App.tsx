@@ -44,6 +44,7 @@ import { workbenchActions, useWorkbench } from './workbench/state';
 import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import { paletteActions as themePaletteActions, OPEN_THEME_GALLERY_EVENT } from './theme/paletteState';
+import { lookActions } from './theme/lookState';
 import { ThemeGallery } from './theme/ThemeGallery';
 import { ThemePaletteButton } from './theme/ThemePaletteButton';
 import './App.css';
@@ -107,6 +108,10 @@ function useCommandWiring(
             },
             setThemePalette: (id): void => {
               themePaletteActions.setPalette(id);
+            },
+            // T85-01：命令面板「切到 X 质感」三条（与配色切换同通道）
+            setThemeLook: (id): void => {
+              lookActions.setLook(id);
             },
             runAiAction: (action): void => {
               // T18-03：命令面板不 import PageView 内部——经窗口事件解耦（照 sync-open 先例）
@@ -261,6 +266,11 @@ export function App() {
   // 与 layoutActions.init 同款管线（theme 层 data-theme 由 ThemeProvider 管，palette 自管）。
   useEffect(() => {
     themePaletteActions.init();
+  }, []);
+
+  // T85-01：挂载时初始化质感派系（读存储 + 挂根属性 data-look；pixel 缺省 = 现状）。
+  useEffect(() => {
+    lookActions.init();
   }, []);
 
   // T65-01 §1.2：监听「打开主题画廊」事件（设置页入口钮 / 命令面板同通道解耦），路由仍在 App。

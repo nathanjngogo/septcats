@@ -24,7 +24,7 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-on-accent);

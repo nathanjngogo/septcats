@@ -4,7 +4,7 @@
   /* T62-01 §1.4：指示环的线条统一为像素黑（ink-edge）；
    * 旋转的「动段」改用 hairline-strong —— 环已占最强明度档，动段退为弱档才看得见
    * （浅色主题=浅灰缺在黑环上 / 深色主题=深灰缺在亮环上）。 */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-top-color: var(--sc-color-hairline-strong);
   border-radius: var(--sc-radius-full);
   animation: sc-spin 1.2s linear infinite;

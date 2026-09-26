@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-lg);
   box-shadow: var(--sc-shadow-modal);
   overflow: hidden;
@@ -160,7 +160,7 @@
   margin-top: var(--sc-space-sm);
   padding: var(--sc-space-sm) var(--sc-space-md);
   /* T62-01 §1.4：虚线占位钮 —— 线型保留、色升 ink-edge、宽度归 2px 谱 */
-  border: 2px dashed var(--sc-color-ink-edge);
+  border: var(--sc-border-edge-dashed);
   border-radius: var(--sc-radius-sm);
   background: transparent;
   font: var(--sc-text-ui-xs);

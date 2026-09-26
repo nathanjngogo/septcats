@@ -63,7 +63,7 @@
   padding: 0 var(--sc-space-xs) 0 var(--sc-space-sm);
   /* T59-01 像素边框：标签之间以 2px ink-edge **左**描边分隔（只画一次：下一个标签的左描边
      就是上一标签的右分界；若每个标签左右都画，相邻两枚会叠成 4px 粗缝）。 */
-  border-left: 2px solid var(--sc-color-ink-edge);
+  border-left: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm) var(--sc-radius-sm) 0 0;
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
@@ -111,8 +111,8 @@
   z-index: 1;
   height: calc(var(--sc-size-control-sm) + var(--sc-space-xxs));
   margin-bottom: calc(var(--sc-space-xxs) * -1);
-  border-top: 2px solid var(--sc-color-ink-edge);
-  border-right: 2px solid var(--sc-color-ink-edge);
+  border-top: var(--sc-border-edge);
+  border-right: var(--sc-border-edge);
 }
 
 .tabsbar-title {

@@ -63,7 +63,7 @@ h3.sc-block--heading {
   margin: 0;
   padding-left: var(--sc-space-md);
   /* T62-01 §1.1：块左缘竖线 = 2px ink-edge（原 hairline-strong 灰线退役） */
-  border-left: 2px solid var(--sc-color-ink-edge);
+  border-left: var(--sc-border-edge);
   color: var(--sc-color-ink-secondary);
 }
 
@@ -77,7 +77,7 @@ h3.sc-block--heading {
   font: var(--sc-text-code);
   background: var(--sc-color-surface);
   /* T62-01 §1.1：代码块外框 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   padding: var(--sc-space-md);
   white-space: pre;
@@ -117,7 +117,7 @@ h3.sc-block--heading {
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }
@@ -141,7 +141,7 @@ h3.sc-block--heading {
   overflow-y: auto;
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -239,7 +239,7 @@ h3.sc-block--heading {
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }
@@ -335,7 +335,7 @@ h3.sc-block--heading {
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：块菜单浮层外轮廓 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -400,7 +400,7 @@ h3.sc-block--heading {
   padding: var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：斜杠菜单浮层外轮廓 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -451,7 +451,7 @@ h3.sc-block--heading {
   padding: 0 var(--sc-space-xs);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：选区浮动工具条外轮廓 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }
@@ -501,7 +501,7 @@ h3.sc-block--heading {
   padding: var(--sc-space-xxs);
   background: var(--sc-color-surface-raised);
   /* 块外框 = 2px ink-edge（与 code 块同一档） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   overflow-x: auto;
 }
@@ -611,7 +611,7 @@ h3.sc-block--heading {
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   box-shadow: var(--sc-pixel-flat);
 }

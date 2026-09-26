@@ -54,7 +54,7 @@
 .layout-editor__preview {
   padding: var(--sc-space-md);
   /* T62-01 §1.1：大预览面板外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
 }
@@ -71,7 +71,7 @@
   gap: var(--sc-space-md);
   padding: var(--sc-space-sm);
   /* T62-01 §1.1：预设卡外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-content);
   color: var(--sc-color-ink);
@@ -194,7 +194,7 @@
 .layout-editor__range::-webkit-slider-runnable-track {
   height: var(--sc-space-sm);
   /* T62-01 §1.1：滑杆轨道外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface);
   box-shadow: var(--sc-bevel-in);
@@ -208,7 +208,7 @@
   height: var(--sc-space-lg);
   margin-top: calc(-1 * var(--sc-space-xs));
   /* T62-01 §1.1：滑杆方钮外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-content);
   box-shadow: var(--sc-pixel-flat);
@@ -237,7 +237,7 @@
   box-sizing: border-box;
   padding: var(--sc-space-sm);
   /* T62-01 §1.1：JSON 编辑域 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface);
   font: var(--sc-text-ui-xs);

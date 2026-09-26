@@ -19,7 +19,7 @@
   min-width: 120px;
   padding: 0 var(--sc-space-sm);
   /* T62-01 §1.1：触发器外框 = 2px ink-edge（原 1px hairline-strong） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -67,7 +67,7 @@
   list-style: none;
   background: var(--sc-color-surface-raised);
   /* T59-01 浮层族统一：下拉浮层轮廓 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   box-shadow: var(--sc-shadow-popover);
 }

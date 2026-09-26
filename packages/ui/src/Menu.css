@@ -4,7 +4,7 @@
   min-width: 210px;
   padding: var(--sc-space-xxs);
   /* T59-01 浮层族统一：菜单轮廓 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface-raised);
   box-shadow: var(--sc-shadow-popover);

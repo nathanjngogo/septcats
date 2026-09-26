@@ -22,10 +22,11 @@ const SRC_DIRS = [
   resolve(REPO_ROOT, 'packages/editor/src'),
   resolve(REPO_ROOT, 'packages/dbview/src'), // 不存在则跳过
 ];
-// 豁免：tokens.css 是 DESIGN.md 的生成产物；themes.css 是配色派系层
-// （T65-01 §3 红线：派系色板的定义即字面色值，同 tokens.css 之于 DESIGN.md，
-// 消费端一律 var(--sc-*)），其文件头已声明为本纪律豁免成员。
-const EXEMPT_FILES = new Set(['tokens.css', 'themes.css']);
+// 豁免：tokens.css 是 DESIGN.md 的生成产物；themes.css 是配色派系层；looks.css 是质感派系层
+// （T65-01 §3 红线：派系色板的定义即字面色值，同 tokens.css 之于 DESIGN.md；
+// T85-01：looks.css 的圆角/柔影定义即字面 px，与 themes.css 同类，消费端一律 var(--sc-*)），
+// 其文件头已声明为本纪律豁免成员。
+const EXEMPT_FILES = new Set(['tokens.css', 'themes.css', 'looks.css']);
 
 const HEX_RE = /#[0-9a-fA-F]{3,8}\b/g;
 const PX_RE = /(-?\d+(?:\.\d+)?)px/g;

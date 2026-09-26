@@ -6,6 +6,8 @@ import './styles/fonts.css';
 import '@septcats/ui/tokens.css';
 // T65-01 §1.2：配色派系层（下游覆写，必须跟在 tokens.css 之后；具体派系块见 themes.css 文件头纪律）
 import '@septcats/ui/themes.css';
+// T85-01：质感派系层（pixel/linear/glass；与 palette 正交，覆写边框/圆角/投影 token）
+import '@septcats/ui/looks.css';
 import { App } from './App';
 import { initLocale } from './i18n';
 import { syncAllCollab } from './collab/collabClient';

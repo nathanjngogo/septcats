@@ -3,7 +3,7 @@
  *
  * 老板 09-22：「整个程序的所有框的线条都做成像素风的黑线条」。本测试把口径钉成可回归的断言：
  *
- *  §1.1 外框轮廓 → `2px solid var(--sc-color-ink-edge)`
+ *  §1.1 外框轮廓 → `var(--sc-border-edge)`（T85-01 起；展开 = 2px solid ink-edge，pixel 态逐字等值）
  *  §1.2 内部网格/分隔线 → `1px solid var(--sc-color-ink-edge)`
  *  §1.3 focus/active → 黑线（恒 ink-edge），禁彩色光晕
  *  §1.4 装饰性虚线/点线 → 线型保留、色升 ink-edge、宽度归 2px 谱
@@ -69,6 +69,9 @@ const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, 
 const DECL_RE =
   /(?:^|[;{\s])(border(?:-(?:top|right|bottom|left))?(?:-(?:color|width|style))?)\s*:\s*([^;}]+)/g;
 
+/** T85-01：token 化后的边框值同样是合法落点（pixel 块展开 = 2px solid ink-edge）。 */
+const BORDER_TOKEN_RE = /^\s*var\(--sc-border-edge(?:-dashed)?\)\s*$/;
+
 type Decl = { file: string; prop: string; value: string };
 type Verdict = { decl: Decl; reason: string };
 
@@ -104,7 +107,7 @@ for (const rel of SCAN_DIRS) {
       if (prop === undefined || rawValue === undefined) continue; // 正则两捕获组都是必配，防御性收窄
       const decl: Decl = { file, prop, value: rawValue.trim() };
       scanned.push(decl);
-      if (decl.value.includes('ink-edge')) {
+      if (decl.value.includes('ink-edge') || BORDER_TOKEN_RE.test(decl.value)) {
         inkEdge.push(decl);
         continue;
       }
@@ -181,23 +184,23 @@ describe('T62-01 §1/§2.3 全局框线纪律（产品 CSS 全量扫描）', () 
 describe('T59-01 既有 17 处落点未被改回（回归护栏）', () => {
   /** T59-01 立下的「主区域边界 + 浮层」落点：文件 → 必须仍含的 2px ink-edge 声明。 */
   const T59_ANCHORS: ReadonlyArray<readonly [string, string]> = [
-    ['packages/ui/src/AppShell.css', 'border-bottom: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/ui/src/AppShell.css', 'border-bottom: var(--sc-border-edge)'],
     ['packages/ui/src/AppShell.css', 'background: var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Dialog.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Menu.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Popover.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Tooltip.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Toast.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Select.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/App.css', 'border-top: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/ai/AiChatPanel.css', 'border-left: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-left: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-top: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-right: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/palette/CommandPalette.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/sync/SyncStatus.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/close/CloseAskDialog.css', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['apps/desktop/src/renderer/src/layout/LayoutPicker.css', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/ui/src/Dialog.css', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Menu.css', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Popover.css', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Tooltip.css', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Toast.css', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Select.css', 'border: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/App.css', 'border-top: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/ai/AiChatPanel.css', 'border-left: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-left: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-top: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/tabs/TabsBar.css', 'border-right: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/palette/CommandPalette.css', 'border: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/sync/SyncStatus.css', 'border: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/close/CloseAskDialog.css', 'border: var(--sc-border-edge)'],
+    ['apps/desktop/src/renderer/src/layout/LayoutPicker.css', 'border: var(--sc-border-edge)'],
     ['apps/desktop/src/renderer/src/layout/ResizeHandle.css', 'background: var(--sc-color-ink-edge)'],
   ];
 
@@ -220,48 +223,48 @@ describe('T59-01 既有 17 处落点未被改回（回归护栏）', () => {
 describe('T62-01 §1.1/§1.2 代表落点逐条钉（按包装箱）', () => {
   const CASES: ReadonlyArray<readonly [string, string, string]> = [
     // packages/ui
-    ['packages/ui/src/Input.css', '.sc-field__control', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/ui/src/Input.css', '.sc-field__control', 'border: var(--sc-border-edge)'],
     ['packages/ui/src/Button.css', '.sc-btn--secondary', 'border-color: var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Checkbox.css', '.sc-cbx__box', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Tag.css', '.sc-tag', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Kbd.css', '.sc-kbd', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Switch.css', '.sc-switch', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/RadioGroup.css', '.sc-radio-group', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/ErrorPanel.css', '.sc-error', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/EmptyState.css', '.sc-empty__art', 'border: 2px dashed var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Spinner.css', '.sc-spinner', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/ui/src/Select.css', '.sc-select__trigger', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/ui/src/Checkbox.css', '.sc-cbx__box', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Tag.css', '.sc-tag', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Kbd.css', '.sc-kbd', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Switch.css', '.sc-switch', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/RadioGroup.css', '.sc-radio-group', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/ErrorPanel.css', '.sc-error', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/EmptyState.css', '.sc-empty__art', 'border: var(--sc-border-edge-dashed)'],
+    ['packages/ui/src/Spinner.css', '.sc-spinner', 'border: var(--sc-border-edge)'],
+    ['packages/ui/src/Select.css', '.sc-select__trigger', 'border: var(--sc-border-edge)'],
     // packages/dbview（仅 CSS）
-    ['packages/dbview/src/react/DbView.css', '.sc-dbgrid__header', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/dbview/src/react/DbView.css', '.sc-dbgrid__body', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/dbview/src/react/DbView.css', '.sc-dbgrid__header', 'border: var(--sc-border-edge)'],
+    ['packages/dbview/src/react/DbView.css', '.sc-dbgrid__body', 'border: var(--sc-border-edge)'],
     ['packages/dbview/src/react/DbView.css', '.sc-dbhead__cell', 'border-right: 1px solid var(--sc-color-ink-edge)'],
     ['packages/dbview/src/react/DbView.css', '.sc-dbcell', 'border-right: 1px solid var(--sc-color-ink-edge)'],
-    ['packages/dbview/src/react/DbView.css', '.sc-dbc-input', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/dbview/src/react/DbView.css', '.sc-dbtag--neutral', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/dbview/src/react/DbView.css', '.sc-dbc-picker', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/dbview/src/react/DbView.css', '.sc-dbc-input', 'border: var(--sc-border-edge)'],
+    ['packages/dbview/src/react/DbView.css', '.sc-dbtag--neutral', 'border: var(--sc-border-edge)'],
+    ['packages/dbview/src/react/DbView.css', '.sc-dbc-picker', 'border: var(--sc-border-edge)'],
     // packages/editor（仅 CSS）
-    ['packages/editor/src/react/editor.css', '.sc-block--code', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/editor/src/react/editor.css', '.sc-block--code', 'border: var(--sc-border-edge)'],
     ['packages/editor/src/react/editor.css', '.sc-block--divider', 'border-top: 1px solid var(--sc-color-ink-edge)'],
-    ['packages/editor/src/react/editor.css', '.sc-blockcontrol__menu', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/editor/src/react/editor.css', '.sc-slashmenu', 'border: 2px solid var(--sc-color-ink-edge)'],
-    ['packages/editor/src/react/editor.css', '.sc-selectiontoolbar', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['packages/editor/src/react/editor.css', '.sc-blockcontrol__menu', 'border: var(--sc-border-edge)'],
+    ['packages/editor/src/react/editor.css', '.sc-slashmenu', 'border: var(--sc-border-edge)'],
+    ['packages/editor/src/react/editor.css', '.sc-selectiontoolbar', 'border: var(--sc-border-edge)'],
     // apps/desktop
-    ['apps/desktop/src/renderer/src/App.css', '.app-nav-input', 'border: 2px solid var(--sc-color-ink-edge)'],
+    ['apps/desktop/src/renderer/src/App.css', '.app-nav-input', 'border: var(--sc-border-edge)'],
     ['apps/desktop/src/renderer/src/App.css', '.app-side-foot', 'border-top: 1px solid var(--sc-color-ink-edge)'],
     [
       'apps/desktop/src/renderer/src/ai/AiChatPanel.css',
       '.ai-chat__input',
-      'border: 2px solid var(--sc-color-ink-edge)',
+      'border: var(--sc-border-edge)',
     ],
     [
       'apps/desktop/src/renderer/src/pages/SettingsPage.css',
       '.settings-recovery-input',
-      'border: 2px solid var(--sc-color-ink-edge)',
+      'border: var(--sc-border-edge)',
     ],
     [
       'apps/desktop/src/renderer/src/pages/ImportWizard.css',
       '.wiz-drop',
-      'border: 2px dashed var(--sc-color-ink-edge)',
+      'border: var(--sc-border-edge-dashed)',
     ],
     [
       'apps/desktop/src/renderer/src/manual/ManualView.css',
@@ -271,7 +274,7 @@ describe('T62-01 §1.1/§1.2 代表落点逐条钉（按包装箱）', () => {
     [
       'apps/desktop/src/renderer/src/layout/LayoutEditorPage.css',
       '.layout-editor__card',
-      'border: 2px solid var(--sc-color-ink-edge)',
+      'border: var(--sc-border-edge)',
     ],
   ];
 

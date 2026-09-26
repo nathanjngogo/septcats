@@ -29,7 +29,7 @@
   aspect-ratio: 1;
   border-radius: var(--sc-radius-full);
   /* T62-01 §1.1：步骤节点环 = 2px ink-edge（原 1.5px 混谱值退役） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   display: grid;
   place-items: center;
   font: var(--sc-text-ui-xs);
@@ -98,7 +98,7 @@
   gap: var(--sc-space-md);
   padding: var(--sc-space-xxl);
   /* T62-01 §1.4：拖放占位框 —— 线型（dashed）保留、色升 ink-edge，宽度归 2px 谱 */
-  border: 2px dashed var(--sc-color-ink-edge);
+  border: var(--sc-border-edge-dashed);
   border-radius: var(--sc-radius-lg);
   background: transparent;
   color: var(--sc-color-ink-secondary);
@@ -135,7 +135,7 @@
   padding: var(--sc-space-md) var(--sc-space-lg);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：报告条外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   margin-bottom: var(--sc-space-md);
 }
@@ -168,7 +168,7 @@
 
 .wiz-tree {
   /* T62-01 §1.1：导入树面板外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface-raised);
   padding: var(--sc-space-sm);
@@ -257,7 +257,7 @@
   margin: 0 0 var(--sc-space-lg);
   padding: var(--sc-space-md);
   /* T62-01 §1.1：导入报告代码盒 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-surface);
   max-height: 320px;

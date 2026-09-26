@@ -124,7 +124,7 @@
   max-height: 70vh;
   overflow-y: auto;
   padding: var(--sc-space-lg);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-lg);
   background: var(--sc-color-surface-raised);
   box-shadow: var(--sc-shadow-popover);
@@ -203,7 +203,7 @@
   height: var(--sc-size-control-sm);
   padding: 0 var(--sc-space-md);
   /* T62-01 §1.1：面板内按钮外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);

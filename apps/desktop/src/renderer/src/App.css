@@ -49,7 +49,7 @@ html, body {
   border-left: 0;
   /* T59-01 像素边框：AI 面板置底时，编辑列↔AI 面板的接缝转为横向 = 本元素 border-top，2px ink-edge
      （右侧布局时同一条接缝由 .ai-chat 的 border-left 承担，二者互斥、同一处边界只画一次）。 */
-  border-top: 2px solid var(--sc-color-ink-edge);
+  border-top: var(--sc-border-edge);
 }
 
 /*
@@ -89,7 +89,7 @@ html, body {
      标签条/行宿主不得再画（双拼即 4px）。**活动标签下沉 2px 压住它** → 接缝在活动标签处
      断开，兑现 T52「标签与正文连通、无隔离带」红线（TabsBar.css 同主题改动）。
      左/右不补：左接缝归 .sc-shell__sidebar 的 border-right，右接缝归 .ai-chat 的 border-left。 */
-  border-top: 2px solid var(--sc-color-ink-edge);
+  border-top: var(--sc-border-edge);
 }
 
 /*
@@ -278,7 +278,7 @@ html, body {
   font: var(--sc-text-ui-sm);
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   outline: none;
   padding: 0 var(--sc-space-xxs);

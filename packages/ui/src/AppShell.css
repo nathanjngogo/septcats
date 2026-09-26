@@ -29,7 +29,7 @@
   padding: 0 var(--sc-space-md);
   /* T59-01 像素边框：顶栏↔主区接缝（横向）= 本元素绘制，2px ink-edge。
      接缝归属表见 DESIGN.md「Pixel Borders」——相邻边只画一次，禁与主区侧拼出 4px 粗缝。 */
-  border-bottom: 2px solid var(--sc-color-ink-edge);
+  border-bottom: var(--sc-border-edge);
   /* T34-01：顶栏与侧栏同底色（canvas = Notion 采样 chrome 面），不再用内容区白 */
   background: var(--sc-color-canvas);
 }

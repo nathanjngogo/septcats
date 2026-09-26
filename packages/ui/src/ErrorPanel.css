@@ -4,7 +4,7 @@
   gap: var(--sc-space-md);
   padding: var(--sc-space-md) var(--sc-space-lg);
   /* T62-01 §1.1：面板外框 = 2px ink-edge（原 1px hairline 灰线退役） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-danger-soft);
   color: var(--sc-color-danger);

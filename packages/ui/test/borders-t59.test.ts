@@ -70,7 +70,7 @@ describe('T59-01 §1.1 token：ink-edge 双主题锚定', () => {
 describe('T59-01 §1.2 主区域边界（AppShell.css）', () => {
   it('顶栏下沿 = border-bottom 2px ink-edge（原 1px hairline 退役）', () => {
     const topbar = ruleBody(appShellCss, '.sc-shell__topbar');
-    expect(topbar).toContain('border-bottom: 2px solid var(--sc-color-ink-edge)');
+    expect(topbar).toContain('border-bottom: var(--sc-border-edge)');
     expect(topbar).not.toContain('border-bottom: 1px solid var(--sc-color-hairline)');
   });
 
@@ -85,8 +85,13 @@ describe('T59-01 §1.2 主区域边界（AppShell.css）', () => {
   });
 
   it('§1.5 不动清单：AppShell 只加这两条结构描边，控件面（同文件无 ink-edge 其它落点）', () => {
-    const uses = appShellCss.match(/--sc-color-ink-edge/g) ?? [];
-    expect(uses.length, 'AppShell.css 里 ink-edge 只应出现在顶栏/侧栏两处边界').toBe(2);
+    // T85-01 token 化后口径：顶栏边框吃 var(--sc-border-edge)（pixel 展开 = 2px solid ink-edge，
+    // 语义等价）；字面 --sc-color-ink-edge 仅剩侧栏接缝条 background 一处。断言改为
+    // 「结构描边落点仍恰为两处」：border-edge 引用 + 接缝条字面各一。
+    const edgeToken = appShellCss.match(/var\(--sc-border-edge\)/g) ?? [];
+    const literal = appShellCss.match(/--sc-color-ink-edge/g) ?? [];
+    expect(edgeToken.length, 'AppShell 顶栏边框应恰一处吃 --sc-border-edge').toBe(1);
+    expect(literal.length, 'AppShell 字面 ink-edge 只应剩侧栏接缝条 background 一处').toBe(1);
   });
 });
 
@@ -96,7 +101,7 @@ describe('T59-01 §1.4 浮层族统一（ui 侧六个浮层）', () => {
     for (const [selector, rel] of FLOATING) {
       const body = ruleBody(read(rel), selector);
       const border = /border:\s*([^;]+);/.exec(body)?.[1]?.trim() ?? '<缺 border>';
-      if (border !== '2px solid var(--sc-color-ink-edge)') wrong.push(`${rel} ${selector} → ${border}`);
+      if (border !== 'var(--sc-border-edge)') wrong.push(`${rel} ${selector} → ${border}`);
     }
     expect(wrong, '浮层族未统一为 2px ink-edge').toEqual([]);
   });
@@ -112,7 +117,12 @@ describe('T59-01 §1.4 浮层族统一（ui 侧六个浮层）', () => {
 
   it('T62-01 反超 §1.5：控件文件（Button/Input/Checkbox/Switch）的框轮廓已统一吃 ink-edge', () => {
     for (const rel of CONTROL_FILES) {
-      expect(read(rel), `${rel} 自 T62-01 起框线应统一为 ink-edge`).toContain('--sc-color-ink-edge');
+      // T85-01：框线统一为边框 token（pixel 展开 = 2px solid ink-edge，语义等价）
+      const src = read(rel);
+      expect(
+        src.includes('--sc-border-edge') || src.includes('--sc-color-ink-edge'),
+        `${rel} 自 T62-01 起框线应统一为 ink-edge（T85-01 起经 --sc-border-edge token）`,
+      ).toBe(true);
     }
   });
 });

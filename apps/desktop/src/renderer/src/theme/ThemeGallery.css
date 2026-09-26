@@ -20,7 +20,7 @@
   max-width: calc(100vw - var(--sc-space-gutter));
   padding: var(--sc-space-xl);
   /* T62-01 §1.1：模态轮廓 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -50,7 +50,7 @@
   gap: var(--sc-space-xs);
   padding: var(--sc-space-sm);
   /* T62-01 §1.1：卡外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   background: var(--sc-color-content);
   color: var(--sc-color-ink);

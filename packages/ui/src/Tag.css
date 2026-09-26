@@ -4,7 +4,7 @@
   height: 20px;
   padding: 0 var(--sc-space-sm);
   /* T62-01 §1.1：标签外框 = 2px ink-edge（原 1px hairline） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-full);
   background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);

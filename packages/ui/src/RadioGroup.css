@@ -4,7 +4,7 @@
   padding: var(--sc-space-xxs);
   background: var(--sc-color-surface);
   /* T62-01 §1.1：分段控件底座外框 = 2px ink-edge（原 1px hairline-strong） */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   /* T53-01 像素风：分段控件底座 = 凹槽 */
   box-shadow: var(--sc-bevel-in);

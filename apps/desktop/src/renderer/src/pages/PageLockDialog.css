@@ -31,7 +31,7 @@
 .lock-input {
   width: 100%;
   padding: var(--sc-space-sm);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-surface-raised);
   color: var(--sc-color-ink);
@@ -80,7 +80,7 @@
 
 .lock-recovery-box {
   padding: var(--sc-space-md);
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   background: var(--sc-color-canvas);
   text-align: center;

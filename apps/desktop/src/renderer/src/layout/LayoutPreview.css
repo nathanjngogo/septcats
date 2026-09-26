@@ -11,7 +11,7 @@
   flex-direction: column;
   overflow: hidden;
   /* T62-01 §1.1：缩略图外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   background: var(--sc-color-canvas);
 }

@@ -498,6 +498,14 @@ export const zhCN = {
         slate: '石墨',
         moss: '苔青',
       },
+      // T85-01：质感派系（三选，与配色/明暗正交；Linear 风 + 毛玻璃风入画廊）
+      look: '质感风格',
+      lookDesc: '像素 / Linear 极简 / 毛玻璃，整窗即时换肤',
+      lookNames: {
+        pixel: '像素',
+        linear: 'Linear 极简',
+        glass: '毛玻璃',
+      },
     },
     // T54-01：关闭行为——点窗口关闭按钮时的动作（询问框「记住我的选择」写这里，可改回）
     close: {
@@ -944,6 +952,7 @@ export const zhCN = {
       // T65-01 §1：主题画廊（六派系迷你预览）；{name} = 派系名（settings.appearance.paletteNames）
       palette: '主题画廊',
       switch: '切到 {name} 配色',
+      switchLook: '切到 {name} 质感',
     },
     ai: {
       continue: 'AI 续写',
@@ -984,6 +993,7 @@ export const zhCN = {
       system: '界面主题',
       palette: '打开主题画廊，六派系迷你预览即时切换',
       switch: '切到 {name} 配色派系并记住',
+      switchLook: '切到 {name} 质感派系并记住',
     },
     ai: {
       continue: '基于选中文本或当前块继续写',

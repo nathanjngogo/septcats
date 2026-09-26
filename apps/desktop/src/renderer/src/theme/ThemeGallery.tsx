@@ -28,6 +28,7 @@ import {
   usePaletteId,
   type PaletteId,
 } from './paletteState';
+import { LOOK_IDS, lookActions, useLookId, type LookId } from './lookState';
 import './ThemeGallery.css';
 
 const FOCUSABLE_SELECTOR =
@@ -47,6 +48,7 @@ export interface ThemeGalleryProps {
 
 export function ThemeGallery({ open, resolvedTheme, onClose }: ThemeGalleryProps) {
   const current = usePaletteId();
+  const currentLook = useLookId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
 
@@ -124,6 +126,48 @@ export function ThemeGallery({ open, resolvedTheme, onClose }: ThemeGalleryProps
           {t('commands.theme.palette')}
         </h2>
         <p className="theme-gallery__hint">{t('settings.appearance.paletteDesc')}</p>
+
+        {/* T85-01：质感派系行（pixel/linear/glass 三选一；卡内同时挂 data-look，
+            与配色六卡同口径——预览子树即时呈现该质感 token 覆写） */}
+        <div
+          className="theme-gallery__cards theme-gallery__cards--look"
+          role="group"
+          aria-label={t('settings.appearance.look')}
+        >
+          {LOOK_IDS.map((id: LookId) => {
+            const isCurrent = currentLook === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`theme-gallery__card${isCurrent ? ' theme-gallery__card--current' : ''}`}
+                aria-pressed={isCurrent}
+                data-testid={`theme-gallery-card-${id}`}
+                data-look={id}
+                data-current={isCurrent ? 'true' : 'false'}
+                onClick={() => {
+                  lookActions.setLook(id);
+                }}
+              >
+                <span className="theme-gallery__card-name">
+                  {t(`settings.appearance.lookNames.${id}`)}
+                  {isCurrent ? (
+                    <span className="theme-gallery__badge" data-testid="theme-gallery-look-current">
+                      {t('settings.appearance.paletteCurrent')}
+                    </span>
+                  ) : null}
+                </span>
+                {/* 迷你预览：同配色卡构图；质感差异（边框粗细/圆角/磨砂）由卡内 data-look 驱动 */}
+                <span className="theme-gallery__preview" aria-hidden="true">
+                  <span className="theme-gallery__preview-title" />
+                  <span className="theme-gallery__preview-line" />
+                  <span className="theme-gallery__preview-line" />
+                  <span className="theme-gallery__preview-btn" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="theme-gallery__cards" role="group" aria-label={t('settings.appearance.palette')}>
           {PALETTE_IDS.map((id: PaletteId) => {

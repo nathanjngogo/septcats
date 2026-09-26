@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./themes.css": "./src/themes.css",
+    "./looks.css": "./src/looks.css",
     "./tokens": "./src/tokens.ts"
   },
   "scripts": {

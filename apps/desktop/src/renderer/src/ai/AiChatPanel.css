@@ -18,7 +18,7 @@
   /* T59-01 像素边框：编辑列↔AI 面板接缝（纵向，侧栏式布局）= 本元素 border-left，2px ink-edge。
      编辑列侧（.pv-root）不补右描边 —— 同一处接缝只画一次（否则叠出 4px 粗缝）。
      面板置底时这条纵向接缝转为 .app-main-row--ai-bottom 的 border-top（App.css），二者互斥。 */
-  border-left: 2px solid var(--sc-color-ink-edge);
+  border-left: var(--sc-border-edge);
   background: var(--sc-color-content);
 }
 
@@ -195,7 +195,7 @@
   color: var(--sc-color-ink);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：输入框外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-md);
   padding: var(--sc-space-sm);
   outline: none;
@@ -219,7 +219,7 @@
   color: var(--sc-color-ink-secondary);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.4：提示块左缘竖线 = 2px ink-edge */
-  border-left: 2px solid var(--sc-color-ink-edge);
+  border-left: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   padding: var(--sc-space-xxs) var(--sc-space-xs);
   margin-top: var(--sc-space-xxs);
@@ -236,7 +236,7 @@
   color: var(--sc-color-accent);
   background: var(--sc-color-accent-soft);
   /* T62-01 §1.1：展开开关外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-xs);
   padding: var(--sc-space-xxs) var(--sc-space-xs);
   cursor: pointer;
@@ -256,7 +256,7 @@
   color: var(--sc-color-ink-secondary);
   background: var(--sc-color-surface-raised);
   /* T62-01 §1.1：推理正文折叠区外框 = 2px ink-edge */
-  border: 2px solid var(--sc-color-ink-edge);
+  border: var(--sc-border-edge);
   border-radius: var(--sc-radius-sm);
   padding: var(--sc-space-xs);
   margin: var(--sc-space-xxs) 0 0;
