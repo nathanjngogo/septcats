@@ -25,7 +25,8 @@ function rules(text: string): Array<{ sel: string; body: string }> {
   const out: Array<{ sel: string; body: string }> = [];
   const re = /([^{}]+)\{([^{}]*)\}/g;
   for (let m = re.exec(stripped); m !== null; m = re.exec(stripped)) {
-    out.push({ sel: m[1].trim().replace(/\s+/g, ' '), body: m[2] });
+    const sel = m[1] ?? '';
+    out.push({ sel: sel.trim().replace(/\s+/g, ' '), body: m[2] ?? '' });
   }
   return out;
 }
