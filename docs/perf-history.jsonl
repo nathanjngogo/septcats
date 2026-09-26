@@ -1403,3 +1403,15 @@
 {"date":"2026-09-26","git_rev":"6d78abf","metric":"commit_batch_200_blocks_p95","value_ms":12.6,"budget_ms":16,"pass":true}
 {"date":"2026-09-26","git_rev":"6d78abf","metric":"rebuild_from_segments_10k_pages","value_ms":1565.2,"budget_ms":5000,"pass":true}
 {"date":"2026-09-26","git_rev":"6d78abf","metric":"cold_open_migrate_first_query_10k_pages","value_ms":45.4,"budget_ms":800,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_first_query_10k_pages","value_ms":41.7,"budget_ms":150,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"commit_batch_200_blocks_p95","value_ms":16.3,"budget_ms":16,"pass":false}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"rebuild_from_segments_10k_pages","value_ms":1569.5,"budget_ms":5000,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_open_migrate_first_query_10k_pages","value_ms":45.4,"budget_ms":800,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_first_query_10k_pages","value_ms":42.7,"budget_ms":150,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"commit_batch_200_blocks_p95","value_ms":12.6,"budget_ms":16,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"rebuild_from_segments_10k_pages","value_ms":1580.2,"budget_ms":5000,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_open_migrate_first_query_10k_pages","value_ms":47.1,"budget_ms":800,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_first_query_10k_pages","value_ms":42,"budget_ms":150,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"commit_batch_200_blocks_p95","value_ms":12.5,"budget_ms":16,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"rebuild_from_segments_10k_pages","value_ms":1702.9,"budget_ms":5000,"pass":true}
+{"date":"2026-09-26","git_rev":"3e5d67d","metric":"cold_open_migrate_first_query_10k_pages","value_ms":45.7,"budget_ms":800,"pass":true}
