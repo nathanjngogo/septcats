@@ -110,7 +110,7 @@ function defaultSettings(): AppSettings {
     editor: { defaultEditMode: 'rich', spellcheck: true },
     trayClose: 'ask',
     data: { note: '~/.septcats' },
-    sync: { enabled: true, encrypt: false, gc: false },
+    sync: { enabled: true, encrypt: false, gc: false, folder: '' },
     ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
   };
 }

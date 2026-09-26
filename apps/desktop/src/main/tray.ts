@@ -20,13 +20,24 @@ import { join } from 'node:path';
 import { app, Menu, nativeImage, Tray } from 'electron';
 import type { BrowserWindow } from 'electron';
 import type { MenuLocale } from './menuTemplate';
-import { buildTrayMenuTemplate, type TrayMenuActions } from './trayTemplate';
+import { buildTrayMenuTemplate, type TrayMenuActions, type TraySyncStatus } from './trayTemplate';
 import { iconCandidatePaths, pickFirstExisting, TRAY_ICON_NAMES } from './iconAssets';
 
 /** 进程内唯一托盘实例（真机探针经 main inspector 取它做窗口级取证）。 */
 let currentTray: Tray | null = null;
-/** 托盘右键菜单实例（语言切换即重建；探针取证口 getTrayMenu 读它）。 */
+/** 当前右键菜单实例（探针取真实构建结果用）。 */
 let currentMenu: Menu | null = null;
+/** T84-01：同步状态行数据源（createTray 注入；refreshTrayMenu 重建时复用）。 */
+let currentSyncStatus: (() => TraySyncStatus | null) | null = null;
+
+/** 安全读取同步状态（数据源抛错 = 状态行回 null「未开启」，绝不让托盘炸）。 */
+function readTraySyncStatus(): TraySyncStatus | null {
+  try {
+    return currentSyncStatus?.() ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface CreateTrayOptions {
   locale: MenuLocale;
@@ -34,6 +45,11 @@ export interface CreateTrayOptions {
   getWindow(): BrowserWindow | null;
   actions: TrayMenuActions;
   log: (message: string) => void;
+  /**
+   * T84-01：托盘菜单顶部同步状态行的数据源（每次重建菜单时拉一次；
+   * runtime 不可用回 null = 「未开启」态）。
+   */
+  getSyncStatus?: () => TraySyncStatus | null;
 }
 
 /**
@@ -59,7 +75,10 @@ export function createTray(options: CreateTrayOptions): Tray {
   const image = iconPath === null ? nativeImage.createEmpty() : nativeImage.createFromPath(iconPath);
   const tray = new Tray(image);
   tray.setToolTip('Septcats');
-  currentMenu = Menu.buildFromTemplate(buildTrayMenuTemplate(options.locale, options.actions));
+  currentSyncStatus = options.getSyncStatus ?? null;
+  currentMenu = Menu.buildFromTemplate(
+    buildTrayMenuTemplate(options.locale, options.actions, readTraySyncStatus()),
+  );
   tray.setContextMenu(currentMenu);
   // 左键 = 显隐 toggle（Notion/Slack 式手感；右键 → 上面那份 context menu）
   tray.on('click', () => {
@@ -90,9 +109,9 @@ export function getTrayMenu(): Menu | null {
   return currentMenu;
 }
 
-/** 语言切换后重建右键菜单（label 走 i18n，须即时生效）。 */
+/** 语言切换后重建右键菜单（label 走 i18n，须即时生效；状态行经数据源同步刷新）。 */
 export function refreshTrayMenu(locale: MenuLocale, actions: TrayMenuActions): void {
-  currentMenu = Menu.buildFromTemplate(buildTrayMenuTemplate(locale, actions));
+  currentMenu = Menu.buildFromTemplate(buildTrayMenuTemplate(locale, actions, readTraySyncStatus()));
   currentTray?.setContextMenu(currentMenu);
 }
 
@@ -101,4 +120,5 @@ export function destroyTray(): void {
   currentTray?.destroy();
   currentTray = null;
   currentMenu = null;
+  currentSyncStatus = null;
 }

@@ -236,6 +236,14 @@ export const zhCN = {
     // T54-01：托盘右键菜单（main/trayTemplate.ts 与 renderer 同源读取本字典）
     trayShow: '显示主窗口',
     trayQuit: '退出',
+    // T84-01 托盘同步状态行（不可点，展示用）
+    traySync: '同步',
+    traySyncOff: '未开启',
+    traySyncIdleOk: '已同步',
+    traySyncPending: '待传',
+    traySyncActive: '同步中',
+    traySyncError: '出错',
+    traySyncDegraded: '文件夹不可访问',
   },
   // T54-01：关窗询问框（renderer 自绘像素模态；禁系统弹框）与设置页「关闭行为」区块
   closeAsk: {
@@ -597,7 +605,17 @@ export const zhCN = {
     privacy: {
       title: '数据与隐私',
       syncPath: '同步路径',
-      syncPathDesc: '同步文件夹路径，仅展示（改路径归后续里程碑）',
+      syncPathDesc: '同步文件夹的绝对路径（指向夸克/百度网盘客户端的同步目录即可开同步）',
+      // T84-01：同步文件夹向导（网盘客户端分步引导的产品入口）
+      syncPathChange: '更改…',
+      folderDialogTitle: '更改同步文件夹',
+      folderDialogTo: '新位置：',
+      folderDialogConfirm: '确认更改',
+      folderDialogWarn: '同步文件夹要指向网盘（夸克/百度等）客户端的同步目录，由网盘负责跨设备传输。注意：更换后本机数据不会搬移，新文件夹将从「首设备」重新开始同步；旧文件夹内容请自行清理。',
+      folderRestartTitle: '重启以生效',
+      folderRestartBody: '新同步文件夹已保存。重启 Septcats 后同步运行时按新位置启动。',
+      folderRestartNow: '立即重启',
+      folderRestartLater: '稍后手动重启',
       telemetry: '使用情况遥测',
       telemetryDesc: '一期不采集任何遥测数据',
       linkPreviewOnType: '打字时禁用外链预览',

@@ -37,11 +37,15 @@ export interface AppSettings {
     /** 同步文件夹路径（仅展示不可改，改路径归 M8b）。 */
     note: string;
   };
-  /** 同步运行时开关（M8b · TASK-T13-01）：enabled/encrypt/gc，默认 true/false/false。 */
+  /**
+   * 同步运行时开关（M8b · TASK-T13-01）：enabled/encrypt/gc；
+   * folder=同步文件夹绝对路径（T84-01；'' = 默认 `<数据根>/sync`，改路径重启生效）。
+   */
   sync: {
     enabled: boolean;
     encrypt: boolean;
     gc: boolean;
+    folder: string;
   };
   /**
    * AI（M11 · TASK-T18-01 §2.2）：enabled/cloudConsent 默认全关（云端调用需显式同意）；

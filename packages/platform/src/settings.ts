@@ -81,6 +81,12 @@ export const appSettingsSchema = z.object({
     encrypt: z.boolean(),
     /** gc 真删开关（false = dry-run 只计数）。 */
     gc: z.boolean(),
+    /**
+     * 同步文件夹绝对路径（T84-01 向导；'' = 默认 `<数据根>/sync`）。
+     * 指向网盘客户端同步目录即开同步（§3.2 传输层=D1 决议）；改路径=新文件夹
+     * 从首设备起步（引导文案里明说）。非法绝对性在 setFolder 通道校验（拒相对路径）。
+     */
+    folder: z.string(),
   }),
   /**
    * AI（M11 · TASK-T18-01 §2.1）：总开关与云端开关默认全关（隐私不变量：
@@ -118,7 +124,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   editor: { defaultEditMode: 'rich', spellcheck: true },
   trayClose: 'ask',
   data: { note: '' },
-  sync: { enabled: true, encrypt: false, gc: false },
+  sync: { enabled: true, encrypt: false, gc: false, folder: '' },
   ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
 };
 

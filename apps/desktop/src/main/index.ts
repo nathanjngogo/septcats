@@ -165,6 +165,9 @@ let closeGuard: CloseGuard | null = null;
  */
 let quittingFlag = false;
 
+/** T84-01：app:restart 去重标记（folder 变更后重启链只排一次）。 */
+let restartPending = false;
+
 // --- 启动打点（TASK-T14-01 §2：--perf-trace 门，默认关 = 零开销） --------------
 
 const PERF_TRACE = process.argv.includes('--perf-trace');
@@ -421,6 +424,12 @@ const UNREADABLE_OP_ID_PREFIX = 'unparsable-op-row-';
  * M8b：BatchExecutor 经 withSyncHook 装饰（不动 commit.ts）——commitOps 成功后把
  * 新 op 喂给 SyncRuntime 攒段发布；运行时自身 apply 远端 op 用未装饰的 raw handle。
  */
+/** T84-01：同步文件夹解析口（settings.sync.folder 为空 = 默认 `<数据根>/sync`）。 */
+function syncFolderFor(ctx: PlatformContext): string {
+  const folder = readSettings(ctx.userDataDir).sync.folder.trim();
+  return folder.length > 0 ? folder : join(ctx.layout.root, 'sync');
+}
+
 async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices | null> {
   const logger = ctx.logger.forModule('db');
   try {
@@ -438,7 +447,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     let executor: StatementExecutor = handle;
     try {
       const runtime = new SyncRuntime({
-        rootDir: join(ctx.layout.root, 'sync'),
+        rootDir: syncFolderFor(ctx),
         db: handle,
         actor,
         enabled: readSettings(ctx.userDataDir).sync.enabled,
@@ -464,6 +473,8 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         for (const window of BrowserWindow.getAllWindows()) {
           window.webContents.send(CHANNEL_SYNC_STATE, status);
         }
+        // T84-01：托盘状态行随跃迁即时刷新（低频事件；数据源经 currentSyncStatus 拉最新）
+        refreshTrayMenu(menuLocale, TRAY_MENU_ACTIONS);
       });
       executor = withSyncHook(handle, (ops) => {
         syncRuntime?.onLocalCommit(ops);
@@ -611,7 +622,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // 目录选择默认落在 `<数据根>/export`（PRD §1 产物位置），取消 = 零落盘。
       portable: createPortableExportService({
         dbPath: ctx.layout.db,
-        syncDir: join(ctx.layout.root, 'sync'),
+        syncDir: syncFolderFor(ctx),
         attachmentsDir: ctx.layout.attachments,
         libraryName: async () => {
           const workspaces = await pages.listWorkspaces();
@@ -654,7 +665,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       portableImport: createPortableImportService({
         dbPath: ctx.layout.db,
         // T80-06（H-10）：段目录快照/还原面（与 SyncRuntime 的 rootDir、导出侧 syncDir 同源）。
-        syncDir: join(ctx.layout.root, 'sync'),
+        syncDir: syncFolderFor(ctx),
         db: {
           checkpoint: async () => {
             await handle.checkpoint();
@@ -982,7 +993,7 @@ async function gatherDiagnosticPackage(ctx: PlatformContext): Promise<{ path: st
     userVersion,
     dbFilePath: ctx.layout.db,
     logsDir: ctx.layout.logs,
-    syncDir: ctx.layout.root,
+    syncDir: syncFolderFor(ctx),
     homeDir: ctx.homeDir,
     settings: readSettings(ctx.userDataDir),
   });
@@ -1010,9 +1021,9 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   }));
 
   // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份
-  ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, ctx.layout.root));
+  ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, syncFolderFor(ctx)));
   ipcMain.handle(CHANNEL_SETTINGS_PATCH, (_event: unknown, raw: unknown) => {
-    const settings = patchAppSettings(ctx.userDataDir, ctx.layout.root, raw);
+    const settings = patchAppSettings(ctx.userDataDir, syncFolderFor(ctx), raw);
     // T51-01：语言（或任何设置）落盘后按新 locale 即时重建原生菜单
     installApplicationMenu(settings.locale);
     return settings;
@@ -1120,6 +1131,33 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       // writeSettings 只收整份 SeptcatsSettings：读当前 → 只改 sync.enabled → 回写
       const current = readSettings(ctx.userDataDir);
       writeSettings(ctx.userDataDir, { ...current, sync: { ...current.sync, enabled: on } });
+    },
+    // T84-01 向导：目录选择器（同 pickArchive 范式；默认落在当前同步文件夹）
+    pickFolder: async () => {
+      const current = readSettings(ctx.userDataDir).sync.folder.trim();
+      const options = {
+        title: '选择同步文件夹',
+        defaultPath: current.length > 0 ? current : ctx.layout.root,
+        properties: ['openDirectory', 'createDirectory'] as Array<'openDirectory' | 'createDirectory'>,
+      };
+      const window = mainWindow;
+      const result =
+        window === null ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(window, options);
+      if (result.canceled || result.filePaths.length === 0) {
+        return null;
+      }
+      return result.filePaths[0] ?? null;
+    },
+    // T84-01 向导：重启生效（改 folder 后重建 SyncRuntime）。relaunch 在进程
+    // 退出后拉起；quittingFlag 经 before-quit 正常置位，走冲刷放行链不弹询问框。
+    requestRestart: async () => {
+      if (!restartPending) {
+        restartPending = true;
+        logger.info('app:restart 收到（T84-01 同步文件夹变更），relaunch 排队');
+        app.relaunch();
+        app.quit();
+      }
+      return { ok: true as const };
     },
   });
 
@@ -1387,6 +1425,11 @@ async function bootstrapApplication(): Promise<void> {
     locale: toMenuLocale(readSettings(ctx.userDataDir).locale),
     getWindow: () => mainWindow,
     actions: TRAY_MENU_ACTIONS,
+    // T84-01：托盘菜单顶部同步状态行（runtime 不可用 = null「未开启」态）
+    getSyncStatus: () => {
+      const snapshot = syncRuntime?.getStatus() ?? null;
+      return snapshot === null ? null : { enabled: snapshot.enabled, state: snapshot.state, pendingSegs: snapshot.pendingSegs };
+    },
     log: (message) => {
       logger.info(`[tray] ${message}`);
     },

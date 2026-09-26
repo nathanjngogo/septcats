@@ -235,6 +235,14 @@ export const enUS = {
     // T54-01: tray context menu (main/trayTemplate.ts reads the same dictionary)
     trayShow: 'Show Main Window',
     trayQuit: 'Quit',
+    // T84-01 tray sync status line (display-only, disabled item)
+    traySync: 'Sync',
+    traySyncOff: 'Off',
+    traySyncIdleOk: 'Up to date',
+    traySyncPending: 'Pending',
+    traySyncActive: 'Syncing',
+    traySyncError: 'Error',
+    traySyncDegraded: 'Folder unavailable',
   },
   // T54-01: close-confirmation dialog (renderer-drawn pixel modal) + Settings "Closing" section
   closeAsk: {
@@ -595,7 +603,17 @@ export const enUS = {
     privacy: {
       title: 'Data & Privacy',
       syncPath: 'Sync Folder',
-      syncPathDesc: 'Sync folder path, display only (changing it comes in a later milestone)',
+      syncPathDesc: 'Absolute path of the sync folder (point it at your cloud-drive client folder to enable sync)',
+      // T84-01: sync folder wizard (entry point of the cloud-drive setup guide)
+      syncPathChange: 'Change…',
+      folderDialogTitle: 'Change Sync Folder',
+      folderDialogTo: 'New location:',
+      folderDialogConfirm: 'Confirm',
+      folderDialogWarn: 'The sync folder should point to the synced directory of a cloud-drive client (Quark, Baidu Disk, etc.), which carries files between devices. Note: changing this does NOT move local data — the new folder will start from this device as the first one; clean up the old folder yourself.',
+      folderRestartTitle: 'Restart to Apply',
+      folderRestartBody: 'New sync folder saved. Restart Septcats so the sync runtime starts from the new location.',
+      folderRestartNow: 'Restart now',
+      folderRestartLater: 'Restart later',
       telemetry: 'Usage Telemetry',
       telemetryDesc: 'No telemetry data is collected in this release',
       linkPreviewOnType: 'Disable link previews while typing',

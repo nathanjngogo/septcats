@@ -250,6 +250,12 @@ export const CHANNEL_SYNC_EXPORT_RECOVERY = 'sync:exportRecovery';
 export const CHANNEL_SYNC_IMPORT_RECOVERY = 'sync:importRecovery';
 /** 轮换钥匙：→ {startedAt}（异步启动后台重加密，进度走 sync:state；D3/D4）。 */
 export const CHANNEL_SYNC_ROTATE_KEY = 'sync:rotateKey';
+/**
+ * T84-01 同步文件夹向导：弹目录选择器回绝对路径（取消=null；不落盘，
+ * 由渲染器确认后走 settings patch）+ 请求重启（置 restartPending 后 app.quit）。
+ */
+export const CHANNEL_SYNC_PICK_FOLDER = 'sync:pickFolder';
+export const CHANNEL_APP_RESTART = 'app:restart';
 
 export const SYNC_CHANNELS = {
   status: CHANNEL_SYNC_STATUS,
@@ -259,6 +265,8 @@ export const SYNC_CHANNELS = {
   exportRecovery: CHANNEL_SYNC_EXPORT_RECOVERY,
   importRecovery: CHANNEL_SYNC_IMPORT_RECOVERY,
   rotateKey: CHANNEL_SYNC_ROTATE_KEY,
+  pickFolder: CHANNEL_SYNC_PICK_FOLDER,
+  restart: CHANNEL_APP_RESTART,
 } as const;
 
 export type SyncChannel = (typeof SYNC_CHANNELS)[keyof typeof SYNC_CHANNELS];

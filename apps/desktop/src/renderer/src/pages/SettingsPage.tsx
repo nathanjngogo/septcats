@@ -179,6 +179,11 @@ export function SettingsPage() {
   const [recRotateBusy, setRecRotateBusy] = useState(false);
   const [recRotateError, setRecRotateError] = useState<string | null>(null);
   const [recRotateMsg, setRecRotateMsg] = useState<string | null>(null);
+  // T84-01 同步文件夹向导：step = null 关 | 'pick' 选完待确认落盘 | 'restart' 已落盘待重启
+  const [folderStep, setFolderStep] = useState<null | 'pick' | 'restart'>(null);
+  const [folderPicked, setFolderPicked] = useState<string | null>(null);
+  const [folderBusy, setFolderBusy] = useState(false);
+  const [folderError, setFolderError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -532,6 +537,60 @@ export function SettingsPage() {
     }
   };
 
+  // T84-01：同步文件夹向导（选择 → 确认落盘 → 提示重启生效）
+  const openFolderWizard = (): void => {
+    void (async () => {
+      try {
+        const picked = await window.septcats.sync.pickFolder();
+        if (picked === null) {
+          return; // 用户取消原生选择器 = 向导不出现
+        }
+        setFolderPicked(picked);
+        setFolderError(null);
+        setFolderStep('pick');
+      } catch (cause) {
+        setError(describeError(cause));
+      }
+    })();
+  };
+
+  const closeFolderWizard = (): void => {
+    setFolderStep(null);
+    setFolderPicked(null);
+    setFolderBusy(false);
+    setFolderError(null);
+  };
+
+  /** 第二步确认：patch 落盘 sync.folder → 进「重启生效」步（SyncRuntime 在启动时读 folder）。 */
+  const confirmFolderPick = async (): Promise<void> => {
+    if (folderPicked === null) {
+      return;
+    }
+    setFolderBusy(true);
+    setFolderError(null);
+    try {
+      await patch({ sync: { folder: folderPicked } });
+      setFolderStep('restart');
+    } catch (cause) {
+      setFolderError(describeError(cause));
+    } finally {
+      setFolderBusy(false);
+    }
+  };
+
+  const applyFolderRestart = (): void => {
+    setFolderBusy(true);
+    void (async () => {
+      try {
+        await window.septcats.sync.restart();
+        // 重启后进程即换；无需清理状态
+      } catch (cause) {
+        setFolderError(describeError(cause));
+        setFolderBusy(false);
+      }
+    })();
+  };
+
   return (
     <div className="settings-page" data-testid="settings-page">
       <h2 className="settings-title">{t('settings.title')}</h2>
@@ -779,9 +838,21 @@ export function SettingsPage() {
               title={t('settings.privacy.syncPath')}
               desc={t('settings.privacy.syncPathDesc')}
               control={
-                <span className="settings-path" title={settings.data.note}>
-                  {settings.data.note}
-                </span>
+                <div className="settings-sync-path-row">
+                  <span className="settings-path" title={settings.data.note}>
+                    {settings.data.note}
+                  </span>
+                  {/* T84-01 向导入口：选择网盘同步目录 → 确认落盘 → 重启生效 */}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={saving}
+                    onClick={openFolderWizard}
+                    data-testid="sync-folder-change"
+                  >
+                    {t('settings.privacy.syncPathChange')}
+                  </Button>
+                </div>
               }
             />
             <SettingsRow
@@ -1319,6 +1390,71 @@ export function SettingsPage() {
         {recRotateError === null ? null : (
           <p className="settings-recovery-error" role="alert">
             {recRotateError}
+          </p>
+        )}
+      </Dialog>
+
+      {/* T84-01 向导·第二步：确认把同步文件夹改到所选目录（含风险与首设备提示） */}
+      <Dialog
+        open={folderStep === 'pick'}
+        onClose={closeFolderWizard}
+        title={t('settings.privacy.folderDialogTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button variant="secondary" size="sm" onClick={closeFolderWizard}>
+              {t('settings.recovery.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={folderBusy}
+              onClick={() => {
+                void confirmFolderPick();
+              }}
+            >
+              {t('settings.privacy.folderDialogConfirm')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="settings-recovery-muted">
+          {t('settings.privacy.folderDialogTo')}{' '}
+          <code className="settings-path" title={folderPicked ?? ''}>{folderPicked}</code>
+        </p>
+        <p className="settings-recovery-warn">{t('settings.privacy.folderDialogWarn')}</p>
+        {folderError === null ? null : (
+          <p className="settings-recovery-error" role="alert">
+            {folderError}
+          </p>
+        )}
+      </Dialog>
+
+      {/* T84-01 向导·第三步：已落盘，重启后新同步文件夹生效 */}
+      <Dialog
+        open={folderStep === 'restart'}
+        onClose={closeFolderWizard}
+        title={t('settings.privacy.folderRestartTitle')}
+        footer={
+          <div className="settings-preview-actions">
+            <Button variant="secondary" size="sm" onClick={closeFolderWizard}>
+              {t('settings.privacy.folderRestartLater')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={folderBusy}
+              onClick={applyFolderRestart}
+              data-testid="sync-folder-restart"
+            >
+              {t('settings.privacy.folderRestartNow')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="settings-recovery-muted">{t('settings.privacy.folderRestartBody')}</p>
+        {folderError === null ? null : (
+          <p className="settings-recovery-error" role="alert">
+            {folderError}
           </p>
         )}
       </Dialog>

@@ -68,6 +68,14 @@
   flex: none;
 }
 
+/* T84-01：同步路径行（路径展示 + 更改按钮并排） */
+.settings-sync-path-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  flex-wrap: wrap;
+}
+
 .settings-path {
   display: inline-block;
   max-width: 360px;

@@ -10,7 +10,18 @@
  */
 
 import { mergeSettingsPatch, readSettings, writeSettings } from '@septcats/platform';
+import { isAbsolute } from 'node:path';
 import type { AppSettings } from '../shared/settings';
+
+/**
+ * T84-01：sync.folder 合法性守卫（'' = 默认目录；其余必须是绝对路径——
+ * 相对路径会让 SyncRuntime 落到不可预期的 cwd，直接拒）。
+ */
+function assertSyncFolderValid(folder: string): void {
+  if (folder.length > 0 && !isAbsolute(folder)) {
+    throw new Error('E_SETTINGS_INVALID: sync.folder 必须是绝对路径（或空=默认）');
+  }
+}
 
 /** 读设置 → 渲染器面 AppSettings（data.note = 同步目录绝对路径；sync 段透传）。 */
 export function readAppSettings(userDataDir: string, syncDir: string): AppSettings {
@@ -38,6 +49,7 @@ export function patchAppSettings(
 ): AppSettings {
   const current = readSettings(userDataDir);
   const merged = mergeSettingsPatch(current, patch);
+  assertSyncFolderValid(merged.sync.folder);
   writeSettings(userDataDir, merged);
   return {
     theme: merged.theme,

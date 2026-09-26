@@ -337,21 +337,39 @@ describe('closeGuard 状态机（T54-01 §2）', () => {
 });
 
 describe('托盘菜单模板（T54-01 §1③）', () => {
-  it('两项：显示主窗口 / 退出；label 全取自 i18n menu 字典（zh 中 / en 英）', () => {
+  it('同步状态行（T84-01 新增）+ 两项动作：显示主窗口 / 退出；label 全取自 i18n menu 字典（zh 中 / en 英）', () => {
     const zh = buildTrayMenuTemplate('zh-CN', { show: () => undefined, quit: () => undefined });
     const en = buildTrayMenuTemplate('en-US', { show: () => undefined, quit: () => undefined });
     expect(zh.map((item) => item.label ?? item.type)).toEqual([
+      `${zhCN.menu.traySync}：${zhCN.menu.traySyncOff}`,
+      'separator',
       zhCN.menu.trayShow,
       'separator',
       zhCN.menu.trayQuit,
     ]);
     expect(en.map((item) => item.label ?? item.type)).toEqual([
+      `${enUS.menu.traySync}: ${enUS.menu.traySyncOff}`, // en 用半角冒号（traySyncLabel 按 locale 分支）
+      'separator',
       enUS.menu.trayShow,
       'separator',
       enUS.menu.trayQuit,
     ]);
     expect(trayText('zh-CN', 'trayShow')).toBe(zhCN.menu.trayShow);
     expect(trayText('en-US', 'trayQuit')).toBe(enUS.menu.trayQuit);
+    // 状态行不可点（enabled:false），动作项可点
+    expect(zh[0]?.enabled).toBe(false);
+  });
+
+  it('状态行随同步态变化：待传计数 / 同步中 / 出错 / 文件夹不可访问', () => {
+    const label = (status: Parameters<typeof buildTrayMenuTemplate>[2]): string =>
+      String(buildTrayMenuTemplate('zh-CN', { show: () => undefined, quit: () => undefined }, status)[0]?.label);
+    expect(label({ enabled: true, state: 'idle', pendingSegs: 0 })).toBe(`同步：${zhCN.menu.traySyncIdleOk}`);
+    expect(label({ enabled: true, state: 'ok', pendingSegs: 3 })).toBe(`同步：${zhCN.menu.traySyncPending} (3)`);
+    expect(label({ enabled: true, state: 'syncing', pendingSegs: 2 })).toBe(`同步：${zhCN.menu.traySyncActive} (2)`);
+    expect(label({ enabled: true, state: 'error', pendingSegs: 0 })).toBe(`同步：${zhCN.menu.traySyncError}`);
+    expect(label({ enabled: true, state: 'key_mismatch', pendingSegs: 0 })).toBe(`同步：${zhCN.menu.traySyncError}`);
+    expect(label({ enabled: true, state: 'degraded', pendingSegs: 0 })).toBe(`同步：${zhCN.menu.traySyncDegraded}`);
+    expect(label({ enabled: false, state: 'ok', pendingSegs: 9 })).toBe(`同步：${zhCN.menu.traySyncOff}`);
   });
 
   it('点击派发到注入的动作（show / quit 各自独立）', () => {

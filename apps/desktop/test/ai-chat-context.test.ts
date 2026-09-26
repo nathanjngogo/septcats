@@ -240,7 +240,7 @@ function cloudSettings(): AppSettings {
     editor: { defaultEditMode: 'rich', spellcheck: true },
     trayClose: 'ask',
     data: { note: '' },
-    sync: { enabled: false, encrypt: false, gc: false },
+    sync: { enabled: false, encrypt: false, gc: false, folder: '' },
     ai: {
       enabled: true,
       cloudConsent: false,

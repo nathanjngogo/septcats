@@ -16,9 +16,11 @@
 import { PagesApiError } from '../pages';
 import type { SyncStatusSnapshot } from '../../shared/sync';
 import {
+  CHANNEL_APP_RESTART,
   CHANNEL_SYNC_EXPORT_RECOVERY,
   CHANNEL_SYNC_IMPORT_RECOVERY,
   CHANNEL_SYNC_NOW,
+  CHANNEL_SYNC_PICK_FOLDER,
   CHANNEL_SYNC_ROTATE_KEY,
   CHANNEL_SYNC_SET_ENABLED,
   CHANNEL_SYNC_STATUS,
@@ -38,6 +40,16 @@ export interface SyncIpcOptions {
   getRuntime: () => SyncRuntime | null;
   /** setEnabled 的设置持久化（main 侧写 settings.json 的 sync.enabled）。 */
   persistEnabled: (on: boolean) => void;
+  /**
+   * T84-01 向导：弹原生目录选择器（main 注入 dialog 实现；取消回 null）。
+   * 不在此落盘——渲染器确认后经 settings patch 写 sync.folder。
+   */
+  pickFolder: () => Promise<string | null>;
+  /**
+   * T84-01 向导：请求重启（main 注入 app.relaunch + quit；folder 改路径后
+   * 重建 SyncRuntime 用）。幂等：重复调用由 main 侧 restartPending 去重。
+   */
+  requestRestart: () => Promise<{ ok: true }>;
 }
 
 function readOn(raw: unknown): boolean {
@@ -111,5 +123,15 @@ export function registerSyncIpc(options: SyncIpcOptions): void {
       }
       throw error;
     }
+  });
+
+  // T84-01：目录选择器（不需要 runtime——设置面与运行时解耦）
+  options.registrar.handle(CHANNEL_SYNC_PICK_FOLDER, async (): Promise<string | null> => {
+    return options.pickFolder();
+  });
+
+  // T84-01：重启请求（folder 改路径后生效 SyncRuntime；main 侧 relaunch+quit）
+  options.registrar.handle(CHANNEL_APP_RESTART, async (): Promise<{ ok: true }> => {
+    return options.requestRestart();
   });
 }

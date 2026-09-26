@@ -118,7 +118,7 @@ function baseSettings(): Omit<AppSettings, 'ai'> {
     editor: { defaultEditMode: 'rich', spellcheck: true },
     trayClose: 'ask',
     data: { note: '' },
-    sync: { enabled: true, encrypt: false, gc: false },
+    sync: { enabled: true, encrypt: false, gc: false, folder: '' },
   };
 }
 

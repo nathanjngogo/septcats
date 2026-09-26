@@ -735,10 +735,12 @@ try {
     JSON.stringify(trayInfo),
   );
   check(
-    'G3-5 托盘菜单模板（原始 label/type JSON）：显示主窗口 / 分隔线 / 退出（双语言）',
+    'G3-5 托盘菜单模板（原始 label/type JSON）：同步状态行 / 分隔线 / 显示主窗口 / 分隔线 / 退出（双语言；T84-01 起含状态行）',
     Array.isArray(trayInfo.zh) &&
-      JSON.stringify(trayInfo.zh.map((i) => i.label ?? i.type)) === JSON.stringify(['显示主窗口', 'separator', '退出']) &&
-      JSON.stringify(trayInfo.en.map((i) => i.label ?? i.type)) === JSON.stringify(['Show Main Window', 'separator', 'Quit']),
+      JSON.stringify(trayInfo.zh.map((i) => i.label ?? i.type)) ===
+        JSON.stringify(['同步：未开启', 'separator', '显示主窗口', 'separator', '退出']) &&
+      JSON.stringify(trayInfo.en.map((i) => i.label ?? i.type)) ===
+        JSON.stringify(['Sync: Off', 'separator', 'Show Main Window', 'separator', 'Quit']),
     `zh=${JSON.stringify(trayInfo.zh)} en=${JSON.stringify(trayInfo.en)}`,
   );
   const bounds = (await winState()).bounds ?? { x: 100, y: 100, width: 1200, height: 800 };

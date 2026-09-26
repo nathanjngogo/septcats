@@ -117,6 +117,13 @@ export interface SeptcatsSyncApi {
   importRecovery(input: { code: string }): Promise<{ ok: true; keyId: string }>;
   /** 轮换钥匙：立即回 {startedAt}；后台重加密进度经 onState（sync:state）推送。 */
   rotateKey(): Promise<{ startedAt: number }>;
+  /**
+   * T84-01 向导：弹目录选择器回所选绝对路径（取消回 null；不写设置，
+   * 确认后面由渲染器 settings patch 持久化 sync.folder）。
+   */
+  pickFolder(): Promise<string | null>;
+  /** T84-01 向导：请求重启应用（folder 改路径后重建同步运行时；回 ok 后即退出）。 */
+  restart(): Promise<{ ok: true }>;
   /** 订阅状态机跃迁推送，返回退订函数。 */
   onState(listener: (status: SyncStatusSnapshot) => void): () => void;
 }

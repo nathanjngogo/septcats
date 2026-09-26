@@ -81,7 +81,7 @@ describe('diag 导出整体', () => {
       editor: { defaultEditMode: 'rich', spellcheck: true },
       trayClose: 'ask',
       data: { note: syncDir },
-      sync: { enabled: true, encrypt: false, gc: false },
+      sync: { enabled: true, encrypt: false, gc: false, folder: '' },
       ai: { enabled: false, cloudConsent: false, activeProviderId: null, providers: [] },
       rootPath: syncDir,
       apiKey: 'sk-fake-secret-999',

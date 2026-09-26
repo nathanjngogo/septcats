@@ -50,6 +50,20 @@ describe('main/settings（settings:get / settings:patch）', () => {
     );
   });
 
+  // T84-01：同步文件夹向导的 main 侧守卫
+  it('patch sync.folder：绝对路径持久化 roundtrip；相对路径被拒', () => {
+    const userData = tempDir('septcats-main-settings-folder-');
+    const target = join(tmpdir(), 'septcats-sync-target');
+    const next = patchAppSettings(userData, target, { sync: { folder: target } });
+    expect(next.sync.folder).toBe(target);
+    expect(readAppSettings(userData, target).sync.folder).toBe(target);
+    expect(() => patchAppSettings(userData, target, { sync: { folder: 'relative/nope' } })).toThrow(
+      /E_SETTINGS_INVALID/,
+    );
+    // 空串 = 回默认（合法）
+    expect(patchAppSettings(userData, target, { sync: { folder: '' } }).sync.folder).toBe('');
+  });
+
   it('patch roundtrip：ai 段 providers 持久化并可读回（TASK-T18-01 §3）', () => {
     const userData = tempDir('septcats-main-settings-ai-');
     const syncDir = join(tmpdir(), 'septcats-sync-dir');

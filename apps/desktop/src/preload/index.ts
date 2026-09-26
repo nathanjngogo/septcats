@@ -175,6 +175,9 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(SYNC_CHANNELS.importRecovery, input) as ReturnType<SeptcatsApi['sync']['importRecovery']>,
     rotateKey: () =>
       ipcRenderer.invoke(SYNC_CHANNELS.rotateKey) as ReturnType<SeptcatsApi['sync']['rotateKey']>,
+    pickFolder: () =>
+      ipcRenderer.invoke(SYNC_CHANNELS.pickFolder) as ReturnType<SeptcatsApi['sync']['pickFolder']>,
+    restart: () => ipcRenderer.invoke(SYNC_CHANNELS.restart) as ReturnType<SeptcatsApi['sync']['restart']>,
     onState: (listener) => subscribe(SYNC_CHANNELS.state, listener),
   },
   ai: {
