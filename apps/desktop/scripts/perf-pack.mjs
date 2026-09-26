@@ -36,7 +36,10 @@ const HISTORY_PATH = join(repoRoot, 'docs', 'perf-history.jsonl');
 
 const BUDGET_STARTUP_MS = 1500;
 const BUDGET_MEMORY_MB = 350;
-const BUDGET_INSTALLER_MB = 90;
+// 老板 09-26 裁决：**安装包体积不设上限**（思源黑体自托管 +17.7MB 撞原 ≤90MB 预算，
+// 全局字体铁律优先）。体积仍**如实并报**进 perf-history（观测不裁决）；
+// 哨兵值 99999（不用 Infinity——JSON.stringify 会把它落成 null 污染台账）。
+const BUDGET_INSTALLER_MB = 99999;
 const MEM_SAMPLES = 3;
 const MEM_SAMPLE_INTERVAL_MS = 2000;
 const STARTUP_TIMEOUT_MS = 60_000;

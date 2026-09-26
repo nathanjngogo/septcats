@@ -66,11 +66,15 @@ nsis:
   # 固定形态：Septcats Setup 0.1.0.exe（任务书 §0.3）
   artifactName: ${productName} Setup ${version}.${ext}
 
-# —— mac：配置就绪待 CI（DMG 需 macOS；Q2 一期未签名决议 → identity: null）。Windows 本机不构建 ——
+# —— mac：本机不构建；老板把仓库拷到 mac 后 `pnpm install && pnpm dist:mac`（make-icon 先跑，
+#     icns 归入 VCS 前由 mac 首建提交或构建现场生成）。Q2 一期未签名决议 → identity: null。
+#     artifactName 钉「点形式」：与 win 同款纪律（0.4.2 教训——空格名经 gh 归一化会令
+#     yml path 与资产名失配；DMG 名直写 Septcats-0.6.0.dmg 无空格，双保险）。
 mac:
   icon: build/icon.icns   # 由 make-icon.mjs darwin 分支经 iconutil 生成（仅 macOS 可执行）
   identity: null
   category: public.app-category.productivity
+  artifactName: ${productName}-${version}.${ext}
   target:
     - dmg
 

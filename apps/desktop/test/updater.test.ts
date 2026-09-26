@@ -16,6 +16,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import {
   assertFeedUrlAllowed,
   createUpdaterStateMachine,
+  feedYmlName,
   isLocalFeedUrl,
   parseFeedUrlFromYml,
   registerUpdaterIpc,
@@ -118,6 +119,12 @@ describe('dev-feed 门（生产拒本地源）', () => {
     expect(isLocalFeedUrl('http://localhost/')).toBe(true);
     expect(isLocalFeedUrl('file:///septcats-feed/stable')).toBe(false);
     expect(isLocalFeedUrl('not a url')).toBe(false);
+  });
+
+  it('feedYmlName 按平台分化：darwin→latest-mac.yml，win32/linux→latest.yml（electron-updater 契约，混用=mac 永远查不到更新）', () => {
+    expect(feedYmlName('darwin')).toBe('latest-mac.yml');
+    expect(feedYmlName('win32')).toBe('latest.yml');
+    expect(feedYmlName('linux')).toBe('latest.yml');
   });
 });
 

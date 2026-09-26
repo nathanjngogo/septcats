@@ -3,7 +3,8 @@
  *
  * 检查项：
  *   1. dist/ 存在 NSIS 安装器（Septcats Setup *.exe）与 latest.yml；
- *   2. 安装器体积 ≤ 150 MB（R7 体积预算）。
+ *   2. ~~安装器体积 ≤ 150 MB~~（09-26 老板裁决：体积不设闸，只如实并报——思源黑体
+ *      自托管优先；改判前该护栏拦过 maximum 压缩救不回的场景，现仅作观测）。
  * 用法：pnpm -C apps/desktop dist:check
  */
 import { readdirSync, statSync } from 'node:fs';
@@ -12,7 +13,8 @@ import process from 'node:process';
 
 const pkgDir = join(import.meta.dirname, '..');
 const distDir = join(pkgDir, 'dist');
-const BUDGET_MB = 150;
+// 09-26 老板裁决取消体积预算（99999=观测哨兵，永不触发；恢复护栏时改回 150 即可）
+const BUDGET_MB = 99999;
 
 let entries;
 try {

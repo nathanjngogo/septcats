@@ -248,6 +248,16 @@ export function parseFeedUrlFromYml(text: string): string | null {
   return m?.[1] !== undefined && m[1].length > 0 ? m[1] : null;
 }
 
+/**
+ * 更新元数据文件名按平台分化（electron-updater 契约：mac 读 `latest-mac.yml`，
+ * win 读 `latest.yml`；linux=latest-linux.yml 暂无产品线）。混用会让 mac 客户端
+ * 永远查不到更新（拉的是 win 的 yml，files 里的 .exe mac 装不了）。签名文件同后缀
+ * 规则（`<yml>.sig`），我方 feed 自签链不受影响。
+ */
+export function feedYmlName(platform: NodeJS.Platform = process.platform): string {
+  return platform === 'darwin' ? 'latest-mac.yml' : 'latest.yml';
+}
+
 /** fetch 响应最小面（真实 net.fetch 的 Response 由 main/index.ts 适配）。 */
 export interface FetchResponseLike {
   ok: boolean;
@@ -358,9 +368,11 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
       try {
         // dev-feed 门对 http(s) 源统一生效（含注入与 app-update.yml 配置的源）
         assertFeedUrlAllowed(feedUrl, devFeedEnabled);
+        // 平台分化：mac 拉 latest-mac.yml(.sig)、win 拉 latest.yml(.sig)
+        const ymlName = feedYmlName();
         const [ymlRes, sigRes] = await Promise.all([
-          deps.fetch(new URL('latest.yml', feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),
-          deps.fetch(new URL('latest.yml.sig', feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),
+          deps.fetch(new URL(ymlName, feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),
+          deps.fetch(new URL(`${ymlName}.sig`, feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),
         ]);
         if (!ymlRes.ok || !sigRes.ok) {
           throw new UpdaterError(
