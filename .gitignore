@@ -25,3 +25,4 @@ tmp/
 
 # 探针原始 net-log（含 Chromium 未脱敏请求头）不入库
 /docs/mockups/screens-*/**netlog*.json
+apps/desktop/.abi-cache
