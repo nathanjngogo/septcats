@@ -43,7 +43,7 @@ import {
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
 import type { MenuActionId } from '../shared/ipc';
-import { CLOSE_CHANNELS, DBGC_CHANNELS } from '../shared/ipc';
+import { ASSETGC_CHANNELS, CLOSE_CHANNELS, DBGC_CHANNELS } from '../shared/ipc';
 import { applyApplicationMenu } from './menu';
 import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
 import { createCloseGuard, parseCloseDecision, type CloseGuard } from './closeGuard';
@@ -121,6 +121,7 @@ import {
 } from './portableImport';
 // T81-01：DB 面墓碑物理清除（planDbGc 在 @septcats/sync，执行面在本模块）
 import { createDbGcService, type DbGcService } from './dbgc';
+import { createAssetGcService, type AssetGcService } from './assetGc';
 import { createShellService, registerShellIpc } from './shell';
 import {
   createImporterService,
@@ -407,6 +408,7 @@ interface DatabaseServices {
   portableImport: PortableImportService;
   /** T81-01：DB 面墓碑物理清除（planDbGc 判据 + 分批 DELETE；op_ledger 不动）。 */
   dbgc: DbGcService;
+  assetgc: AssetGcService;
 }
 
 /** 本地账本 op_id 行里解不出的行 → 记为「未覆盖」（安全侧：宁可拒导，不可抹数据）。 */
@@ -563,6 +565,18 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
       // T81-01：DB 面墓碑物理清除——维护面写（白名单 DELETE 语句，不是 Op 路径），
       // 故用裸 handle（同 links/lock：派生态不进攒段器，绝不伪造 op）；op_ledger 不动。
       dbgc: createDbGcService({ executor: handle }),
+      // T83-02：附件目录孤儿回收——引用枚举走裸 handle 只读 SELECT（六路语句），
+      // 真删只动 attachments/ 的 fs（不进攒段器、不造 op）；启动后台不跑，仅入口按钮。
+      assetgc: createAssetGcService({
+        executor: handle,
+        attachmentsDir: ctx.layout.attachments,
+        onPlan: (names, bytes) => {
+          logger.info(
+            `附件 GC 清单（${String(names.length)} 个 / ${String(bytes)}B）：` +
+              names.slice(0, 50).join(',') + (names.length > 50 ? ',…' : ''),
+          );
+        },
+      }),
       // R27（T79-01）：页面导出——**全只读消费**（读库 + 读附件目录），写盘只落用户选定
       // 导出目录；目录选择走系统对话框（取消 = 零落盘），reveal 走 shell.openPath。
       pageExport: createPageExportService({
@@ -1064,6 +1078,21 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   });
   ipcMain.handle(DBGC_CHANNELS.run, async () => {
     const service = services?.dbgc ?? null;
+    if (service === null) {
+      throw new Error('E_DB_UNAVAILABLE: 数据库服务不可用');
+    }
+    return service.run();
+  });
+  // 附件目录孤儿回收对账（T83-02）：assetgc:preview（只读零写）/ assetgc:run（确认执行）。
+  ipcMain.handle(ASSETGC_CHANNELS.preview, async () => {
+    const service = services?.assetgc ?? null;
+    if (service === null) {
+      throw new Error('E_DB_UNAVAILABLE: 数据库服务不可用');
+    }
+    return service.preview();
+  });
+  ipcMain.handle(ASSETGC_CHANNELS.run, async () => {
+    const service = services?.assetgc ?? null;
     if (service === null) {
       throw new Error('E_DB_UNAVAILABLE: 数据库服务不可用');
     }

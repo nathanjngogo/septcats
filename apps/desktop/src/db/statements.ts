@@ -745,6 +745,53 @@ ORDER BY p.id`,
     params: z.object({ id: idText }),
   },
 
+  // ---- 附件孤儿回收对账（T83-02 · 全部只读 SELECT） --------------------------
+  // 设计（PM 接手重做 CB 半成品，planAssetGc 契约在 @septcats/sync）：
+  //  - 引用面 = 块明文 content/props（含墓碑页——回收站页 restore 要用附件，
+  //    已 purge 页的块行已由 dbgc 级联删）+ 页面 cover/icon + collection/record 的 JSON
+  //    列（数据库行可存附件字段，LIKE 粗筛后 JS 侧正则抽哈希，宁多勿漏）；
+  //  - 失明面 = block_cipher：锁页内容加密 → 明文扫描看不见其引用 → 一旦存在，
+  //    未命中引用的文件一律扣留（planAssetGc.referencesComplete=false 分支）。
+  //  - 磁盘列举/删除是 fs 操作不进 SQL 白名单；本组语句只产「引用哈希」与「失明计数」。
+  'assetgc.blockRefs': {
+    kind: 'all',
+    sql: `SELECT content_json AS json FROM block
+WHERE content_json LIKE '%attachment://%' OR content_json LIKE '%asset://%'
+   OR props_json LIKE '%attachment://%' OR props_json LIKE '%asset://%'`,
+    params: emptyParams,
+  },
+  'assetgc.pageCoverRefs': {
+    kind: 'all',
+    sql: `SELECT cover AS json, icon AS icon FROM page
+WHERE (cover IS NOT NULL AND cover LIKE '%asset%') OR (icon IS NOT NULL AND icon LIKE '%asset%')`,
+    params: emptyParams,
+  },
+  'assetgc.collectionRefs': {
+    kind: 'all',
+    sql: `SELECT schema_json AS json FROM collection
+WHERE schema_json LIKE '%attachment://%' OR schema_json LIKE '%asset://%'`,
+    params: emptyParams,
+  },
+  'assetgc.recordRefs': {
+    kind: 'all',
+    sql: `SELECT values_json AS json FROM record
+WHERE values_json LIKE '%attachment://%' OR values_json LIKE '%asset://%'`,
+    params: emptyParams,
+  },
+  // op_ledger 历史行的附件引用：段重放会重建块 → 若账本里引用了附件而该块尚未物化，
+  // 删附件会造成重放后死链。全表扫 LIKE（账本量级=万行，可接受；宁多勿漏）。
+  'assetgc.ledgerRefs': {
+    kind: 'all',
+    sql: `SELECT op_json AS json FROM op_ledger
+WHERE op_json LIKE '%attachment://%' OR op_json LIKE '%asset://%'`,
+    params: emptyParams,
+  },
+  'assetgc.blindCount': {
+    kind: 'get',
+    sql: `SELECT COUNT(*) AS n FROM block_cipher`,
+    params: emptyParams,
+  },
+
   // ---- op_ledger（真相层） -------------------------------------------------
   'opLedger.insert': {
     kind: 'run',

@@ -573,6 +573,19 @@ export const DBGC_CHANNELS = {
 
 export type DbGcChannel = (typeof DBGC_CHANNELS)[keyof typeof DBGC_CHANNELS];
 
+// ---- T83-02：附件目录孤儿回收对账（assets.ts 内容寻址文件；dbgc 只管库行）----
+/** {} → AssetGcPreview（dry-run：引用哈希集对账磁盘列举，零写）。 */
+export const CHANNEL_ASSETGC_PREVIEW = 'assetgc:preview';
+/** {} → AssetGcRunResult（真删计划内文件；两拍 rename→remove；清单先落日志）。 */
+export const CHANNEL_ASSETGC_RUN = 'assetgc:run';
+
+export const ASSETGC_CHANNELS = {
+  preview: CHANNEL_ASSETGC_PREVIEW,
+  run: CHANNEL_ASSETGC_RUN,
+} as const;
+
+export type AssetGcChannel = (typeof ASSETGC_CHANNELS)[keyof typeof ASSETGC_CHANNELS];
+
 /** 结构化拒绝码：协议不在白名单 / 空串 / 参数形状非法 / 系统打开失败。 */
 export type ShellErrorCode = 'E_PROTOCOL' | 'E_EMPTY' | 'E_MALFORMED' | 'E_OPEN_FAILED';
 

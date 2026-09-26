@@ -24,6 +24,7 @@ import type {
   PortableImportResult,
 } from '../../../shared/portable';
 import type { DbGcPreview, DbGcRunResult } from '../../../shared/dbgc';
+import type { AssetGcPreview, AssetGcRunResult } from '../../../shared/assetGc';
 import type { UpdateState } from '../../../shared/updater';
 import type { SeptcatsAppMeta } from '../../../types/window';
 import { errorText, getLocalePref, setLocalePref, systemLocale, t } from '../i18n';
@@ -158,6 +159,10 @@ export function SettingsPage() {
   const [dbGcPreview, setDbGcPreview] = useState<DbGcPreview | null>(null);
   const [dbGcResult, setDbGcResult] = useState<DbGcRunResult | null>(null);
   const [dbGcBusy, setDbGcBusy] = useState(false);
+  // T83-02：附件孤儿回收对账（预览→确认；启动后台不跑，仅此显式入口）
+  const [assetGcPreview, setAssetGcPreview] = useState<AssetGcPreview | null>(null);
+  const [assetGcResult, setAssetGcResult] = useState<AssetGcRunResult | null>(null);
+  const [assetGcBusy, setAssetGcBusy] = useState(false);
 
   // T17-01 D5：同步密钥三件套（一次性明文不落任何持久态；关窗即清）
   const [recExportOpen, setRecExportOpen] = useState(false);
@@ -257,6 +262,34 @@ export function SettingsPage() {
       setError(fillTemplate(t('settings.sync.cleanupFailed'), { msg: describeError(cause) }));
     } finally {
       setDbGcBusy(false);
+    }
+  };
+
+  /** T83-02 dry-run：附件目录 vs 库内引用集对账（只读，零删除）。 */
+  const handleAssetGcPreview = async (): Promise<void> => {
+    setAssetGcBusy(true);
+    setError(null);
+    setAssetGcResult(null);
+    try {
+      setAssetGcPreview(await window.septcats.assetgc.preview());
+    } catch (cause) {
+      setError(fillTemplate(t('settings.sync.assetCleanupFailed'), { msg: describeError(cause) }));
+    } finally {
+      setAssetGcBusy(false);
+    }
+  };
+
+  /** T83-02 确认执行：真删计划内孤儿附件（main 侧两拍 rename→remove）。 */
+  const handleAssetGcRun = async (): Promise<void> => {
+    setAssetGcBusy(true);
+    setError(null);
+    try {
+      setAssetGcResult(await window.septcats.assetgc.run());
+      setAssetGcPreview(null);
+    } catch (cause) {
+      setError(fillTemplate(t('settings.sync.assetCleanupFailed'), { msg: describeError(cause) }));
+    } finally {
+      setAssetGcBusy(false);
     }
   };
 
@@ -639,6 +672,83 @@ export function SettingsPage() {
                   pages: String(dbGcResult.deletedPages),
                   blocks: String(dbGcResult.deletedBlocks),
                   bytes: formatBytes(dbGcResult.bytesFreed),
+                })}
+              </div>
+            )}
+            {/* T83-02：附件目录孤儿回收对账（预览→确认；与 dbgc 同区块并列，互不依赖） */}
+            <SettingsRow
+              title={t('settings.sync.assetCleanup')}
+              desc={t('settings.sync.assetCleanupDesc')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={assetGcBusy}
+                  data-testid="settings-assetgc-preview"
+                  onClick={() => {
+                    void handleAssetGcPreview();
+                  }}
+                >
+                  {t('settings.sync.assetCleanup')}
+                </Button>
+              }
+            />
+            {assetGcPreview === null ? null : (
+              <div className="settings-preview-wrap" data-testid="settings-assetgc-preview-panel">
+                <div className="settings-preview-title">{t('settings.sync.assetPreviewTitle')}</div>
+                <div className="settings-preview-title" data-testid="settings-assetgc-meta">
+                  {assetGcPreview.deletable === 0
+                    ? t('settings.sync.assetPreviewEmpty')
+                    : fillTemplate(t('settings.sync.assetPreviewMeta'), {
+                        files: String(assetGcPreview.deletable),
+                        bytes: formatBytes(assetGcPreview.estimatedBytes),
+                      })}
+                </div>
+                {assetGcPreview.held === 0 ? null : (
+                  <div className="settings-lab-d" data-testid="settings-assetgc-held">
+                    {fillTemplate(t('settings.sync.assetHeldMeta'), { n: String(assetGcPreview.held) })}
+                  </div>
+                )}
+                {assetGcPreview.referencesComplete ? null : (
+                  <div className="settings-lab-d" data-testid="settings-assetgc-blind">
+                    {t('settings.sync.assetBlindNote')}
+                  </div>
+                )}
+                <div className="settings-lab-d" data-testid="settings-assetgc-retention">
+                  {fillTemplate(t('settings.sync.assetRetentionNote'), {
+                    days: String(assetGcPreview.retentionDays),
+                  })}
+                </div>
+                <div className="settings-preview-actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="settings-assetgc-cancel"
+                    onClick={() => {
+                      setAssetGcPreview(null);
+                    }}
+                  >
+                    {t('settings.sync.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    loading={assetGcBusy}
+                    disabled={assetGcPreview.deletable === 0}
+                    data-testid="settings-assetgc-confirm"
+                    onClick={() => {
+                      void handleAssetGcRun();
+                    }}
+                  >
+                    {t('settings.sync.assetConfirmCleanup')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {assetGcResult === null ? null : (
+              <div className="settings-saved" data-testid="settings-assetgc-done">
+                {fillTemplate(t('settings.sync.assetCleanupDone'), {
+                  files: String(assetGcResult.deletedFiles),
+                  bytes: formatBytes(assetGcResult.bytesFreed),
                 })}
               </div>
             )}

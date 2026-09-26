@@ -45,8 +45,13 @@ describe('语句白名单', () => {
       // prepare() 只接受单条语句；出现分号说明有人写了多语句
       expect(definition.sql.includes(';'), `${id} 不应包含分号`).toBe(false);
       const upper = definition.sql.toUpperCase();
+      // 词边界匹配：`attachment://` 里的 ATTACH 是字符串字面量，不是 SQL 关键字
+      // （T83-02 assetgc.* 的 LIKE 模式踩到过——includes 会误报）。
       for (const forbidden of ['DROP', 'ALTER', 'ATTACH', 'PRAGMA']) {
-        expect(upper.includes(forbidden), `${id} 含危险 SQL 片段 ${forbidden}`).toBe(false);
+        expect(
+          new RegExp(`\\b${forbidden}\\b`).test(upper),
+          `${id} 含危险 SQL 关键字 ${forbidden}`,
+        ).toBe(false);
       }
     }
   });
@@ -240,13 +245,13 @@ const IMPORT_SOURCE_HAPPY: Readonly<Record<string, Record<string, unknown>>> = {
 };
 
 describe('v5 白名单（import_source）', () => {
-  it('三条语句齐全，预算同步（79 条含 v6 defer 开关、T20-01 <3 字兜底语句、T21-01 block.patch/setSort、T23-01 template.* 五条、T31-01 opLedger 对账两条、T44-01 双链 link.*/links.* 六条，以及 T67-01 lock.*/lock_cipher.* 六条 + block.deleteByPage、T81-01 dbgc.* 十条，仍 < 100）', () => {
+  it('三条语句齐全，预算同步（95 条含 v6 defer 开关、T20-01 <3 字兜底语句、T21-01 block.patch/setSort、T23-01 template.* 五条、T31-01 opLedger 对账两条、T44-01 双链 link.*/links.* 六条，以及 T67-01 lock.*/lock_cipher.* 六条 + block.deleteByPage、T81-01 dbgc.* 十条、T83-02 assetgc.* 六条，仍 < 100）', () => {
     for (const id of Object.keys(IMPORT_SOURCE_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(89);
+    expect(SQL_IDS.length).toBe(95); // 89 + T83-02 assetgc.* 六条
     expect(SQL_IDS.length).toBeLessThan(100);
   });
 

@@ -13,6 +13,7 @@ import {
   COLLAB_CHANNELS,
   DB_CHANNELS,
   DBGC_CHANNELS,
+  ASSETGC_CHANNELS,
   DIAG_CHANNELS,
   FAVORITES_CHANNELS,
   IMPORT_CHANNELS,
@@ -315,6 +316,12 @@ const api: SeptcatsApi = {
     preview: () =>
       ipcRenderer.invoke(DBGC_CHANNELS.preview, {}) as ReturnType<SeptcatsApi['dbgc']['preview']>,
     run: () => ipcRenderer.invoke(DBGC_CHANNELS.run, {}) as ReturnType<SeptcatsApi['dbgc']['run']>,
+  },
+  // T83-02：附件目录孤儿回收对账（preview 零写 / run 真删两拍）
+  assetgc: {
+    preview: () =>
+      ipcRenderer.invoke(ASSETGC_CHANNELS.preview, {}) as ReturnType<SeptcatsApi['assetgc']['preview']>,
+    run: () => ipcRenderer.invoke(ASSETGC_CHANNELS.run, {}) as ReturnType<SeptcatsApi['assetgc']['run']>,
   },
 };
 

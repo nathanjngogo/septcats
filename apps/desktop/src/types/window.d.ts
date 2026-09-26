@@ -37,6 +37,7 @@ import type {
   DiagExportResult,
 } from '../shared/settings';
 import type { DbGcPreview, DbGcRunResult } from '../shared/dbgc';
+import type { AssetGcPreview, AssetGcRunResult } from '../shared/assetGc';
 import type {
   ImportPlanInput,
   ImportPlanPreview,
@@ -538,6 +539,18 @@ export interface SeptcatsDbGcApi {
   run(): Promise<DbGcRunResult>;
 }
 
+/**
+ * 附件目录孤儿回收对账（T83-02）。通道与 `src/shared/ipc.ts` 的 ASSETGC_CHANNELS
+ * 一对一；载荷见 `src/shared/assetGc.ts`。纪律：preview 只读（零写）→ run 确认执行；
+ * 启动后台不跑（附件删除半径大于库行，仅显式按钮触发）。
+ */
+export interface SeptcatsAssetGcApi {
+  /** dry-run：库内引用哈希集 vs 磁盘列举对账，回条数/预估释放字节（零写）。 */
+  preview(): Promise<AssetGcPreview>;
+  /** 确认执行：真删计划内孤儿附件（两拍 rename→remove；清单已落日志）。 */
+  run(): Promise<AssetGcRunResult>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;  /** 应用元信息（名称/版本/schema 版本）。 */
@@ -586,6 +599,8 @@ export interface SeptcatsApi {
   portable: SeptcatsPortableExportApi;
   /** DB 面墓碑物理清除（T81-01）。 */
   dbgc: SeptcatsDbGcApi;
+  /** 附件目录孤儿回收对账（T83-02：预览→确认，取消=零删除）。 */
+  assetgc: SeptcatsAssetGcApi;
 }
 
 declare global {

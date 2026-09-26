@@ -1,0 +1,132 @@
+{
+  "task": "T83-02",
+  "ranAt": "2026-09-26T08:05:34.730Z",
+  "assertions": [
+    {
+      "step": "P0|夹具",
+      "name": "P0-0 附件夹具 5 个就位",
+      "ok": true,
+      "detail": "E:\\Hermes Agent工作空间\\_scratch\\t83-02-e2e\\data\\attachments"
+    },
+    {
+      "step": "P0|夹具",
+      "name": "P0-1 造页+提交引用块（2 op 落库）",
+      "ok": true,
+      "detail": "{\"pageLock\":\"01M3EBYXTAN2DX4GG609HD570R\",\"pageB\":\"01M3EBYXTHJVQKDBM5KTKT5KN3\",\"committed\":2}"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-1 设置页「清理未引用附件」按钮在场",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-2 点预览出预览面板",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-3 面板放行条数=2（仅孤儿；1.3KB 合计）",
+      "ok": true,
+      "detail": "meta=文件 2 个 · 预计释放 1.3 KB"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-4 保护期 30 天 + 非寻址名保留明示",
+      "ok": true,
+      "detail": "ret=新写入 30 天内的附件不回收；文件名不是内容寻址形态的文件不回收"
+    },
+    {
+      "step": "P1|预览",
+      "name": "P1-5 IPC 预览对账：cands=5 del=2 held=3(ref=3) refs=3 blind=false bytes=1300",
+      "ok": true,
+      "detail": "{\"candidates\":5,\"deletable\":2,\"held\":3,\"heldByReason\":{\"referenced\":3,\"blind\":0,\"unknown\":0,\"recent\":0},\"estimatedBytes\":1300,\"referencedHashes\":3,\"referencesComplete\":true,\"retentionDays\":30}"
+    },
+    {
+      "step": "P2|取消零删",
+      "name": "P2-1 取消后 5 个文件全在（零删除）",
+      "ok": true,
+      "detail": "all present"
+    },
+    {
+      "step": "P2|取消零删",
+      "name": "P2-2 取消后面板收起",
+      "ok": true,
+      "detail": "panel gone"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-1 确认后出「完成」反馈",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-2 两个孤儿文件已真删",
+      "ok": true,
+      "detail": "a6aaed47=false d1e9a7ad=false"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-3 被引用 3 文件逐字节完好（含 .png 变体名）",
+      "ok": true,
+      "detail": "bytes match"
+    },
+    {
+      "step": "P3|确认真删",
+      "name": "P3-4 删后再预览=空（del=0 held=3）",
+      "ok": true,
+      "detail": "{\"candidates\":3,\"deletable\":0,\"held\":3,\"heldByReason\":{\"referenced\":3,\"blind\":0,\"unknown\":0,\"recent\":0},\"estimatedBytes\":0,\"referencedHashes\":3,\"referencesComplete\":true,\"retentionDays\":30}"
+    },
+    {
+      "step": "P4|失明面",
+      "name": "P4-1 锁页成功（setPass 返回恢复码）",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "step": "P4|失明面",
+      "name": "P4-2 锁页后 preview：del=0 新孤儿被 blind 扣留（blind=1）",
+      "ok": true,
+      "detail": "{\"candidates\":4,\"deletable\":0,\"held\":4,\"heldByReason\":{\"referenced\":3,\"blind\":1,\"unknown\":0,\"recent\":0},\"estimatedBytes\":0,\"referencedHashes\":3,\"referencesComplete\":false,\"retentionDays\":30}"
+    },
+    {
+      "step": "P4|失明面",
+      "name": "P4-3 面板失明警示在场",
+      "ok": true,
+      "detail": "blind note"
+    },
+    {
+      "step": "P4|失明面",
+      "name": "P4-4 可删=0 时确认钮禁用",
+      "ok": true,
+      "detail": "disabled"
+    },
+    {
+      "step": "P4|失明面",
+      "name": "P4-5 失明态 run 也零删除（IPC 直调仍守）",
+      "ok": true,
+      "detail": "{\"deletedFiles\":0,\"bytesFreed\":0,\"failed\":0,\"held\":4,\"heldByReason\":{\"referenced\":3,\"blind\":1,\"unknown\":0,\"recent\":0}}"
+    },
+    {
+      "step": "P5|解锁复原",
+      "name": "P5-1 解锁后引用面复原 + 新孤儿恢复可删（refs=3 del=1）",
+      "ok": true,
+      "detail": "{\"candidates\":4,\"deletable\":1,\"held\":3,\"heldByReason\":{\"referenced\":3,\"blind\":0,\"unknown\":0,\"recent\":0},\"estimatedBytes\":500,\"referencedHashes\":3,\"referencesComplete\":true,\"retentionDays\":30}"
+    },
+    {
+      "step": "P5|解锁复原",
+      "name": "P5-2 run 删掉恢复放行的孤儿（del=1，其余 3 引用完好）",
+      "ok": true,
+      "detail": "{\"deletedFiles\":1,\"bytesFreed\":500,\"failed\":0,\"held\":3,\"heldByReason\":{\"referenced\":3,\"blind\":0,\"unknown\":0,\"recent\":0}}"
+    },
+    {
+      "step": "P6|隔离",
+      "name": "P6-1 真实根未被触碰（mtime 不变）",
+      "ok": true,
+      "detail": "before=1790329115817.0652 after=1790329115817.0652"
+    }
+  ]
+}

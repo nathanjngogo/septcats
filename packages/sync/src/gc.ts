@@ -223,3 +223,133 @@ export function planDbGc<T extends DbGcTombstone>(
   }
   return { deletable, held };
 }
+
+// ---------------------------------------------------------------------------
+// 附件孤儿回收（T83-02）：`layout.attachments/` 目录的物理清除计划
+//
+// T81-01 的 DB 面 GC 只清墓碑行，**盘上附件文件从未对账** → 页面被彻底删除后其独占
+// 附件（不再被任何行引用）永久占盘。本函数补上这一面。
+//
+// 与 planDbGc 同区同纪律：**本函数只产出「可删清单」，绝不真删**（真删归 main/assetGc.ts）。
+// 差别只在判据：DB 面是「墓碑满期 + 无子页悬空」；附件面是「盘上文件的内容哈希不再被
+// 库里任何一行引用」——引用面由调用方（main）查库装配成 `referencedHashes` 传入。
+//
+// **铁律：任何有引用的文件绝不删。** 文件名 → 哈希的解析口径**必须逐字复刻**
+// `apps/desktop/src/main/assets.ts` 的 `findHashFile`（精确 `<hash>` → 前缀 `<hash>.<ext>`），
+// 否则扩展名变体命中的引用会被误删——这是本单最大的误删风险点。
+// ---------------------------------------------------------------------------
+
+/** 磁盘附件条目（脱敏描述子；本函数零 IO，由调用方列举目录后传入）。 */
+export interface AssetDiskFile {
+  /** 文件名（内容寻址：`<hash>` 或 `<hash>.<ext>`）。 */
+  readonly name: string;
+  /** 字节数（仅报告用，不参与判定）。 */
+  readonly bytes: number;
+  /** mtime（ms）：保护期判定锚。 */
+  readonly mtimeMs: number;
+}
+
+/**
+ * 不放行原因。同一文件只报**第一条**命中的原因，按此**优先级**：
+ * `referenced` > `blind` > `unknown` > `recent`。
+ */
+export type AssetGcHoldReason =
+  /** 文件名哈希仍被库里某行引用（含墓碑页引用、扩展名变体命中）。 */
+  | 'referenced'
+  /** 库里存在密文块（锁页正文）→ 明文扫描看不到其引用面 → 一律不放行。 */
+  | 'blind'
+  /** 文件名不是内容寻址形态（无法判归属）→ 保守不放行。 */
+  | 'unknown'
+  /** mtime 在保护期内（刚写入、可能尚未落块被引用）→ 本次不放行。 */
+  | 'recent';
+
+export interface AssetGcHeld<T extends AssetDiskFile = AssetDiskFile> {
+  readonly file: T;
+  readonly reason: AssetGcHoldReason;
+}
+
+export interface AssetGcPlan<T extends AssetDiskFile = AssetDiskFile> {
+  /** 放行（可物理删除）的文件，保持入参顺序（确定性）。 */
+  readonly deletable: readonly T[];
+  /** 扣留的文件 + 原因，保持入参顺序。 */
+  readonly held: readonly AssetGcHeld<T>[];
+}
+
+export interface AssetGcOptions {
+  /**
+   * 保护期天数：mtime 距今 < `retentionDays * 24h` → 扣留 `recent`。
+   * `<= 0` = 不设保护期。缺省值由调用方决定（与 DB 面回收站保留同值 30）。
+   */
+  readonly retentionDays: number;
+  /**
+   * 引用面是否完整可枚举（缺省 true）。库里存在 `block_cipher` 行（锁页正文密文）时为
+   * false：明文扫描看不到锁页的附件引用，此时**除已确认被引用的之外一律扣留**——宁可留，
+   * 绝不可误删。
+   */
+  readonly referencesComplete?: boolean;
+}
+
+/**
+ * 内容寻址文件名 → 内容哈希；非该形态回 `null`。
+ *
+ * 口径 = `main/assets.ts` 的 `findHashFile`：精确 `<hash>`（64 位小写 hex）或
+ * 前缀 `<hash>.`（`attachment://` 按前缀取唯一命中）。大小写敏感——与 handler 一致
+ * （`url.host` 已 toLowerCase），故大写/畸形名解析不出哈希 → 落 `unknown` 扣留（安全侧）。
+ */
+function hashOfName(name: string): string | null {
+  if (/^[0-9a-f]{64}$/.test(name)) {
+    return name;
+  }
+  const match = /^([0-9a-f]{64})\./.exec(name);
+  return match === null ? null : (match[1] ?? null);
+}
+
+/**
+ * 计算附件孤儿回收计划：`{ deletable, held }`。
+ *
+ * 逐文件按优先级判定（第一条命中即扣留）：
+ * 1) 解析出的哈希在 `referencedHashes` 里 → `referenced`（**唯一无条件的守卫**：
+ *    即便引用面不完整、即便文件很新，只要有引用就绝不删）；
+ * 2) `referencesComplete === false` → `blind`（锁页密文使扫描失明，无法证明孤儿）；
+ * 3) 文件名解析不出哈希 → `unknown`（非内容寻址形态，无法判归属）；
+ * 4) mtime 在保护期内 → `recent`（刚写入、可能尚未落块被引用）；
+ * 5) 其余 → 放行。
+ *
+ * 未知/畸形输入一律保守（扣留），绝不因数据形态异常放行物理删除。
+ */
+export function planAssetGc<T extends AssetDiskFile>(
+  referencedHashes: ReadonlySet<string>,
+  diskFiles: readonly T[],
+  now: number,
+  opts: AssetGcOptions,
+): AssetGcPlan<T> {
+  const referencesComplete = opts.referencesComplete ?? true;
+  const retentionMs = Math.max(0, opts.retentionDays) * DAY_MS;
+
+  const deletable: T[] = [];
+  const held: AssetGcHeld<T>[] = [];
+
+  for (const file of diskFiles) {
+    const hash = hashOfName(file.name);
+    if (hash !== null && referencedHashes.has(hash)) {
+      held.push({ file, reason: 'referenced' });
+      continue;
+    }
+    if (!referencesComplete) {
+      held.push({ file, reason: 'blind' });
+      continue;
+    }
+    if (hash === null) {
+      held.push({ file, reason: 'unknown' });
+      continue;
+    }
+    // mtime 在未来（时钟回拨/跨机复制）→ 差值为负 < retentionMs → 同样扣留（安全侧）。
+    if (retentionMs > 0 && now - file.mtimeMs < retentionMs) {
+      held.push({ file, reason: 'recent' });
+      continue;
+    }
+    deletable.push(file);
+  }
+
+  return { deletable, held };
+}
