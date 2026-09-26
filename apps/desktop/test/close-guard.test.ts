@@ -223,7 +223,9 @@ describe('closeGuard 状态机（T54-01 §2）', () => {
     h.guard.resolveAsk({ action: 'cancel', remember: false });
     await waitFor(() => h.guard.trace !== null, 1000, '决议落地');
     expect(h.guard.trace?.acked).toBe(false);
-    expect(h.guard.trace?.waitedMs).toBeGreaterThanOrEqual(40);
+    // 计时器容差：CI 共享 runner 上 setTimeout(40) 可因时钟取整提前 ~1ms 触发
+    // （mac 腿实测 waited=39）；「超时才继续」的语义用 ≥timeout-5 判定。
+    expect(h.guard.trace?.waitedMs).toBeGreaterThanOrEqual(35);
     expect(h.guard.trace?.decision).toBe('cancel');
   });
 
