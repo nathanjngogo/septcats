@@ -1,12 +1,12 @@
 {
   "task": "T81-01",
-  "ranAt": "2026-09-25T14:46:46.278Z",
+  "ranAt": "2026-09-26T07:17:25.677Z",
   "assertions": [
     {
       "step": "P0|夹具",
       "name": "P0-1 三类页就位（存活/回收站 deletedAt>0/彻底删 deletedAt=0）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094},{\"id\":\"01M3CGGQ7MPGB7VRENR31MW64H\",\"alive\":0,\"deletedAt\":0}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472},{\"id\":\"01M3E96NG651MZXZ3D2Z33SMYT\",\"alive\":0,\"deletedAt\":0}]"
     },
     {
       "step": "P1|预览",
@@ -48,7 +48,7 @@
       "step": "P2|取消零写",
       "name": "P2-1 取消后三类页原样在场（零写入）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094},{\"id\":\"01M3CGGQ7MPGB7VRENR31MW64H\",\"alive\":0,\"deletedAt\":0}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472},{\"id\":\"01M3E96NG651MZXZ3D2Z33SMYT\",\"alive\":0,\"deletedAt\":0}]"
     },
     {
       "step": "P2|取消零写",
@@ -66,31 +66,31 @@
       "step": "P3|确认真删",
       "name": "P3-2 放行的死引用页被真删（树里不再出现）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472}]"
     },
     {
       "step": "P3|确认真删",
       "name": "P3-3 存活页未被误删",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472}]"
     },
     {
       "step": "P3|确认真删",
       "name": "P3-4 回收站页按 retention 扣留仍在（未满 30 天不动）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472}]"
     },
     {
       "step": "P4|重启持久",
       "name": "P4-1 重启后真删仍生效（非内存态）",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472}]"
     },
     {
       "step": "P4|重启持久",
       "name": "P4-2 重启后存活页与回收站页均在",
       "ok": true,
-      "detail": "[{\"id\":\"01M3CGGQ7A4989EE21ASE4QCET\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3CGGQ7GGK0AHFZM62MN9TAY\",\"alive\":0,\"deletedAt\":1790347599094}]"
+      "detail": "[{\"id\":\"01M3E96NFXKECSGYNXKHMRM6FY\",\"alive\":1,\"deletedAt\":null},{\"id\":\"01M3E96NG3BWB9B8GX6E3AS88A\",\"alive\":0,\"deletedAt\":1790407038472}]"
     },
     {
       "step": "P5|隔离",
