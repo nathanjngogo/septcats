@@ -71,6 +71,22 @@ Note: changing the sync folder does **not** move old data; the new folder starts
 from this device as the first one. Clean up the old folder yourself. While syncing, the
 tray menu's top line shows the live state (pending N / syncing / up to date / error).
 
+### Images & attachments come along too
+
+With sync enabled, images / files referenced by pages (attachments) sync in the
+background through the `files/` folder inside the sync directory — the other device
+sees them once it catches up, no manual steps. Guardrails built in: large files
+stream in chunks (never pins RAM), transfers defer when the disk runs low, failures
+back off and retry automatically, and the policy is **add-only** (attachments are
+never deleted from the cloud drive just because a page was deleted — reclaim space
+with Settings → Data & Privacy → "Clean unreferenced attachments"). The tray status
+line and the sync panel's "pending / synced attachments" counts include attachments.
+
+Turn on "Encrypt sync segments" and attachments are chunk-encrypted into `files/`
+as well; flipping the toggle mid-stream re-pushes affected files in the new form,
+and pre-existing plaintext files from a mixed-history setup are still accepted
+(content is verified by checksum, so nothing gets less safe).
+
 ### End-to-end encryption & recovery code
 
 Settings → Sync offers "Encrypt sync segments": everything in the sync folder is written
@@ -113,7 +129,7 @@ a SQLite database, an attachments directory and logs — no hidden state.
 
 Open via the gear button in the top bar. Four sections:
 
-- **Appearance**: theme (light / dark / system) and language (简体中文 / English / system). Language switches instantly and the native menu bar is translated too.
+- **Appearance**: theme (light / dark / system), palette (six neutral colourways), **texture** (Pixel / Linear minimal / Frosted glass — orthogonal to palette and light/dark, restyles the whole window instantly) and language (简体中文 / English / system). Languages switch instantly and the native menu bar is translated too. Palettes and textures both live in "Open gallery" — click a card, done.
 - **Layout**: see the next chapter.
 - **AI**: endpoint, model name, key (stored in the credential vault), cloud toggle.
 - **About**: version, check for updates (in-app auto-update from official sources), roll back to the previous version.
