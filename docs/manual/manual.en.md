@@ -1,6 +1,6 @@
 # Septcats User Manual
 
-Applies to 0.3.x ｜ A local-first notes app
+Applies to 0.6.x ｜ A local-first notes app
 
 ## Getting Started
 
@@ -51,6 +51,57 @@ Insert a **Db View** block to manage child pages as a table:
 ## Sync (optional)
 
 Fully **offline by default**. Enable it yourself under Settings → Sync to sync one workspace across devices (end-to-end; credentials stay in your local secret store). The top-bar sync button shows six states: off / idle / syncing / synced / offline / error.
+
+### Hook sync up to a cloud drive (step by step)
+
+Septcats **never transfers over the network itself** — the cloud-drive client does the
+cross-device carrying. Three steps:
+
+1. Install any cloud-drive client (Quark, Baidu Disk, etc.), sign in, and make sure its
+   sync folder is live (e.g. `D:\BaiduSyncdisk\`).
+2. In Septcats go to Settings → Data & Privacy → "Sync Folder" and press **Change…**,
+   pick the cloud-drive folder (create a dedicated subfolder such as
+   `BaiduSyncdisk\Septcats` rather than pointing at the drive root). Confirm the dialog,
+   then **restart Septcats** when prompted to apply.
+3. On the second device, install the same cloud drive, sign in, sync the same subfolder,
+   then point Septcats' sync folder at it and flip the sync switch — the two devices
+   quietly align through the drive without ever knowing each other's address.
+
+Note: changing the sync folder does **not** move old data; the new folder starts fresh
+from this device as the first one. Clean up the old folder yourself. While syncing, the
+tray menu's top line shows the live state (pending N / syncing / up to date / error).
+
+### End-to-end encryption & recovery code
+
+Settings → Sync offers "Encrypt sync segments": everything in the sync folder is written
+as AES-256-GCM ciphertext — the cloud drive and any middleman see only encrypted blobs.
+The key lives solely in this machine's OS credential vault.
+
+- **Recovery code**: after enabling encryption, use Settings → Sync → "Export recovery
+  code" and store it somewhere **offline** and safe (password manager / paper).
+  "Import recovery code" restores sync capability after a reinstall or on a new device.
+- **⚠️ Key-loss warning**: the recovery code is the only backup. **Lose it and the
+  history in the sync folder is permanently unreadable** — local data stays fine, but it
+  can no longer merge with new devices. Store it immediately after exporting.
+- "Rotate key" voids the old code and generates a new one (background re-encryption;
+  re-export and save the new code afterwards).
+
+## Data & Storage Maintenance
+
+Everything lives in one **data folder** (default `C:\Users\<you>\.septcats`, relocatable):
+a SQLite database, an attachments directory and logs — no hidden state.
+
+- **Moving to a new PC (recommended: portable package)**: old machine,
+  Settings → Data & Privacy → "Export portable package" yields a single zip (database +
+  sync segments + attachments). On the new machine double-click the zip or use
+  "Import portable package" — a byte-faithful migration including backlinks, locked
+  pages and attachments. Markdown export remains for content-only moves.
+- **Reclaiming space**: Settings provides "Database tombstone cleanup" (purges history
+  left by deleted pages) and "Clean unreferenced attachments" — preview first (read-only,
+  deletes nothing), then confirm. Files under 30 days and anything in locked-page blind
+  spots are always withheld; over-safe by design.
+- **Backup**: quit Septcats, then copy the whole data folder (WAL files included —
+  never copy `septcats.db` alone).
 
 ## AI Assistant (optional)
 
