@@ -63,9 +63,13 @@ function resolveFeedDir(feedPath) {
   return abs;
 }
 
-function readPrivateKeyPem(options) {
+function readPrivateKeyPem(argv) {
   const fromEnv = process.env['SEPTCATS_FEED_KEY'];
-  const keyPath = fromEnv !== undefined && fromEnv.length > 0 ? fromEnv : options['key'];
+  // 私钥路径优先取环境变量，其次 `--key <路径>`（与 cmdVerify 的 `--pub` 同款数组解析；
+  // 0925 修：此处原按对象取 options['key']，而调用方传的是 argv 数组 → 该参数永远无效）
+  const keyIndex = argv.indexOf('--key');
+  const cliKey = keyIndex >= 0 ? argv[keyIndex + 1] : undefined;
+  const keyPath = fromEnv !== undefined && fromEnv.length > 0 ? fromEnv : cliKey;
   if (keyPath === undefined || keyPath.length === 0) {
     fail('sign 需要 --key <私钥路径> 或环境变量 SEPTCATS_FEED_KEY');
   }
@@ -114,8 +118,15 @@ function cmdVerify(argv) {
   }
   const dir = resolveFeedDir(argv[feedIndex + 1]);
   const pubIndex = argv.indexOf('--pub');
-  const publicPem =
-    pubIndex >= 0 ? readFileSync(argv[pubIndex + 1], 'utf8') : readFileSync(join(dir, PUBLIC_FILE), 'utf8');
+  const pubArg = pubIndex >= 0 ? argv[pubIndex + 1] : undefined;
+  if (pubIndex >= 0 && pubArg === undefined) {
+    fail('verify 的 --pub 缺少路径参数');
+  }
+  const pubPath = pubArg ?? join(dir, PUBLIC_FILE);
+  if (!existsSync(pubPath)) {
+    fail(`缺少公钥文件 ${pubPath}（用 --pub <路径> 指定，或把 ${PUBLIC_FILE} 与 latest.yml 同目录发布）`);
+  }
+  const publicPem = readFileSync(pubPath, 'utf8');
   const sigPath = join(dir, SIG_FILE);
   if (!existsSync(sigPath)) {
     fail(`缺少签名文件 ${sigPath}（拒绝发布）`);
