@@ -95,7 +95,9 @@ jobs:
 
       - name: "Package (mac DMG, identity: null)"
         if: runner.os == 'macOS'
-        run: pnpm -C apps/desktop exec electron-builder --mac --config electron-builder.yml
+        # dist:mac = pnpm build + make-icon + electron-builder --mac（裸 builder
+        # 会因 out/ 不存在报 index.js corrupted——CI 首跑实证）
+        run: pnpm -C apps/desktop dist:mac
 
       - name: Size guard (R7 ≤ 150 MB)
         if: runner.os == 'Windows'
