@@ -38,6 +38,13 @@ export interface SyncStatusSnapshot {
   pendingSegs: number;
   /** 累计观测到的 LWW 冲突数（conflict 报告素材）。 */
   conflicts: number;
+  /** T84-02：附件同步队列状态（未接线引擎时为 null）。 */
+  attachments: {
+    pending: number;
+    active: number;
+    bytes: number;
+    failed: number;
+  } | null;
   /** 最近错误（时间升序，最多 10 条）。 */
   errors: SyncErrorEntry[];
 }

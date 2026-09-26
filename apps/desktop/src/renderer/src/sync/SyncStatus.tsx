@@ -25,7 +25,16 @@ interface PillView {
 }
 
 /** 相对时间（分钟内/小时内/今天之外回退本地时间）。 */
-export function relativeTime(atMs: number, nowMs: number): string {
+export /** 附件字节人话（1023KB 内 KB，向上 MB 一位小数，再 GB）。 */
+function fmtBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0 B';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+function relativeTime(atMs: number, nowMs: number): string {
   const delta = Math.max(0, nowMs - atMs);
   const minutes = Math.floor(delta / 60_000);
   if (minutes < 1) {
@@ -214,6 +223,16 @@ export function SyncStatusButton() {
               {String((status?.pendingOps ?? 0) + (status?.pendingSegs ?? 0))}
             </span>
           </div>
+          {status?.attachments ? (
+            <div className="sc-sync-status__row">
+              <span className="sc-sync-status__k">{t('sync.attachments')}</span>
+              <span className="sc-sync-status__v sc-sync-status__mono">
+                {t('sync.attachmentsValue')
+                  .replace('{n}', String(status.attachments.pending))
+                  .replace('{b}', fmtBytes(status.attachments.bytes))}
+              </span>
+            </div>
+          ) : null}
 
           <div className="sc-sync-status__section">{t('sync.devices')}</div>
           {status === null || status.devices.length === 0 ? (

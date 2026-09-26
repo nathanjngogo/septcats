@@ -58,6 +58,36 @@ function toHeldCounts(held: ReadonlyArray<{ reason: keyof AssetGcHeldCounts }>):
   return counts;
 }
 
+/** 引用哈希集 = 六路只读 SELECT 的并集（宁多勿漏：任何一路报错整体拒绝而非少算）。
+ *  T84-02：导出为公共判定（SyncRuntime 附件上行引用集与 GC 同一套代码，红线「复用
+ *  不另造」；失败上抛由调用方按「引用不完整=不做破坏性动作」口径处置）。 */
+export async function loadReferencedHashes(
+  executor: Pick<StatementExecutor, 'all'>,
+): Promise<Set<string>> {
+  const [blocks, covers, collections, records, ledger] = await Promise.all([
+    executor.all('assetgc.blockRefs'),
+    executor.all('assetgc.pageCoverRefs'),
+    executor.all('assetgc.collectionRefs'),
+    executor.all('assetgc.recordRefs'),
+    executor.all('assetgc.ledgerRefs'),
+  ]);
+  const hashes = new Set<string>();
+  for (const bag of [blocks, collections, records, ledger]) {
+    for (const row of bag.rows) {
+      const json = rowString(row, 'json');
+      if (json !== null) { extractRefHashes(json, hashes); }
+    }
+  }
+  // cover/icon 列本身可能直接就是哈希或含 URL 的 JSON——整列文本照扫。
+  for (const row of covers.rows) {
+    for (const key of ['json', 'icon'] as const) {
+      const text = rowString(row, key);
+      if (text !== null) { extractRefHashes(text, hashes); }
+    }
+  }
+  return hashes;
+}
+
 export interface AssetGcServiceOptions {
   readonly executor: StatementExecutor;
   readonly attachmentsDir: string;
@@ -83,31 +113,7 @@ export function createAssetGcService(options: AssetGcServiceOptions): AssetGcSer
   const now = options.now ?? ((): number => Date.now());
   const retentionDays = options.retentionDays ?? ((): number => ASSET_GC_DEFAULT_RETENTION_DAYS);
 
-  /** 引用哈希集 = 六路只读 SELECT 的并集（宁多勿漏：任何一路报错整体拒绝而非少算）。 */
-  async function loadReferencedHashes(): Promise<Set<string>> {
-    const [blocks, covers, collections, records, ledger] = await Promise.all([
-      executor.all('assetgc.blockRefs'),
-      executor.all('assetgc.pageCoverRefs'),
-      executor.all('assetgc.collectionRefs'),
-      executor.all('assetgc.recordRefs'),
-      executor.all('assetgc.ledgerRefs'),
-    ]);
-    const hashes = new Set<string>();
-    for (const bag of [blocks, collections, records, ledger]) {
-      for (const row of bag.rows) {
-        const json = rowString(row, 'json');
-        if (json !== null) { extractRefHashes(json, hashes); }
-      }
-    }
-    // cover/icon 列本身可能直接就是哈希或含 URL 的 JSON——整列文本照扫。
-    for (const row of covers.rows) {
-      for (const key of ['json', 'icon'] as const) {
-        const text = rowString(row, key);
-        if (text !== null) { extractRefHashes(text, hashes); }
-      }
-    }
-    return hashes;
-  }
+  /** 引用哈希集：公共判定（六路并集；T84-02 与附件上行共用同一套代码）。 */
 
   async function blindCount(): Promise<number> {
     const r = await executor.get('assetgc.blindCount');
@@ -152,7 +158,7 @@ export function createAssetGcService(options: AssetGcServiceOptions): AssetGcSer
     referencesComplete: boolean;
     days: number;
   }> {
-    const referenced = await loadReferencedHashes();
+    const referenced = await loadReferencedHashes(executor);
     const blind = await blindCount();
     const files = (options.listDisk ?? defaultListDisk)();
     const days = retentionDays();

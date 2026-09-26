@@ -813,6 +813,8 @@ export const enUS = {
     hoursAgo: '{n} hours ago',
     locale: 'en-US',
     pending: 'Pending segments',
+    attachments: 'Synced attachments',
+    attachmentsValue: '{n} items · {b}',
     devices: 'Devices',
     noDevices: 'No other devices',
     watermark: 'Watermark {n}',

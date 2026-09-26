@@ -130,6 +130,7 @@ import {
 } from './importer';
 import { initPlatform, type PlatformContext } from './platform';
 import { SyncRuntime } from './sync/runtime';
+import { AttachmentSyncService } from './sync/attachments';
 import { SyncKeyring } from './sync/keyring';
 import { registerSyncIpc } from './sync/ipc';
 import { withSyncHook } from './sync/bridge';
@@ -446,9 +447,22 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     // 写路径成功后进攒段器；sync 启动失败时回落裸 handle（普通路径照常）。
     let executor: StatementExecutor = handle;
     try {
+      // T84-02（PRD-T84 方案 A，老板 09-26「同意」）：附件双向队列引擎。引用枚举
+      // 复用 assetGc 六路（红线）；加密面 DEK 经 runtime.currentDek 晚绑（构造序）。
+      // 一期只增不删（files/ 永不删，GC 随 G6）。节拍=sync 轮（无独立定时器）。
+      let attachRuntimeRef: SyncRuntime | null = null;
+      const attachments = new AttachmentSyncService({
+        attachmentsDir: ctx.layout.attachments,
+        syncRoot: syncFolderFor(ctx),
+        executor: handle,
+        encryptEnabled: () => readSettings(ctx.userDataDir).sync.encrypt,
+        dek: () => attachRuntimeRef?.currentDek() ?? null,
+        log: (line) => syncLogger.info(line),
+      });
       const runtime = new SyncRuntime({
         rootDir: syncFolderFor(ctx),
         db: handle,
+        attachments,
         actor,
         enabled: readSettings(ctx.userDataDir).sync.enabled,
         workspaceId: async () => {
@@ -469,6 +483,7 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         log: (line) => syncLogger.info(line),
       });
       syncRuntime = runtime;
+      attachRuntimeRef = runtime;
       runtime.onState((status) => {
         for (const window of BrowserWindow.getAllWindows()) {
           window.webContents.send(CHANNEL_SYNC_STATE, status);
@@ -1428,7 +1443,7 @@ async function bootstrapApplication(): Promise<void> {
     // T84-01：托盘菜单顶部同步状态行（runtime 不可用 = null「未开启」态）
     getSyncStatus: () => {
       const snapshot = syncRuntime?.getStatus() ?? null;
-      return snapshot === null ? null : { enabled: snapshot.enabled, state: snapshot.state, pendingSegs: snapshot.pendingSegs };
+      return snapshot === null ? null : { enabled: snapshot.enabled, state: snapshot.state, pendingSegs: snapshot.pendingSegs, attachments: snapshot.attachments };
     },
     log: (message) => {
       logger.info(`[tray] ${message}`);

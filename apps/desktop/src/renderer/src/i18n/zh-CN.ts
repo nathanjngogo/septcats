@@ -806,6 +806,8 @@ export const zhCN = {
     hoursAgo: '{n} 小时前',
     locale: 'zh-CN',
     pending: '待发段',
+    attachments: '同步附件',
+    attachmentsValue: '{n} 项 · {b}',
     devices: '设备',
     noDevices: '暂无其他设备',
     watermark: '水位 {n}',

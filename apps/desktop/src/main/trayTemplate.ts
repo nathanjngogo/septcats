@@ -32,6 +32,8 @@ export interface TraySyncStatus {
   state: 'idle' | 'syncing' | 'ok' | 'degraded' | 'error' | 'key_mismatch';
   /** 等待重试发布的段数（=「待传 N」口径，与设置页同步面板一致）。 */
   pendingSegs: number;
+  /** T84-02：附件队列快照（无引擎/未接线=undefined；既有构造点兼容）。 */
+  attachments?: { pending: number; active: number; bytes: number; failed: number } | null;
 }
 
 const DICTS: Record<MenuLocale, { menu: Record<TrayLabelKey, string> }> = {
@@ -70,9 +72,10 @@ export function traySyncLabel(locale: MenuLocale, status: TraySyncStatus | null)
           : status.pendingSegs > 0
             ? dict.traySyncPending
             : dict.traySyncIdleOk;
+  const totalPending = status.pendingSegs + (status.attachments?.pending ?? 0);
   const counts =
-    status.state === 'syncing' || status.pendingSegs > 0
-      ? `${statePart} (${String(status.pendingSegs)})`
+    status.state === 'syncing' || totalPending > 0
+      ? `${statePart} (${String(totalPending)})`
       : statePart;
   return `${trayText(locale, 'traySync')}${sep}${counts}`;
 }

@@ -132,11 +132,13 @@ describe('命令面板 · 质感切换（T85-01）', () => {
       openWorkbench: noop,
       notify: noop,
       setThemeMode: noop,
-    } as never;
-    const without = configurePaletteCommands({ ...base, openThemeGallery: noop, setThemePalette: noop }, true).map((c) => c.id);
+    };
+    type Deps = Parameters<typeof configurePaletteCommands>[0];
+    const baseDeps = base as Deps;
+    const without = configurePaletteCommands({ ...baseDeps, openThemeGallery: noop, setThemePalette: noop }, true).map((c) => c.id);
     expect(without.filter((id) => id.startsWith('theme.look.'))).toEqual([]);
     const withLook = configurePaletteCommands(
-      { ...base, openThemeGallery: noop, setThemePalette: noop, setThemeLook: noop },
+      { ...baseDeps, openThemeGallery: noop, setThemePalette: noop, setThemeLook: noop },
       true,
     ).map((c) => c.id);
     for (const id of ['theme.look.pixel', 'theme.look.linear', 'theme.look.glass']) {

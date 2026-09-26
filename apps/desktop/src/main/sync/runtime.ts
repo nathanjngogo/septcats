@@ -73,6 +73,7 @@ import {
   keyIdBytes,
   keyIdOf,
 } from './crypto';
+import type { AttachmentSyncService } from './attachments';
 import type { SyncKeyring } from './keyring';
 import { FsWatchProvider } from './provider';
 
@@ -102,6 +103,8 @@ export interface SyncRuntimeOptions {
   encryptEnabled: () => boolean;
   /** gc 真删开关（每轮从设置读取；false = dry-run 只计数）。 */
   gcEnabled: () => boolean;
+  /** T84-02：附件同步引擎（本地 attachments 目录所在侧；缺省=不接线=旧行为零变化）。 */
+  attachments?: AttachmentSyncService | null;
   /** 初始启停（settings.sync.enabled；之后经 setEnabled 动态切换）。 */
   enabled?: boolean;
   /** 墙上时间（测试注入）。 */
@@ -189,6 +192,9 @@ export class SyncRuntime {
   private provider: FsWatchProvider | null = null;
   private readonly workspaceIdFn: string | (() => string | Promise<string>);
 
+  /** T84-02：附件队列（可选接线；runtime 不拥有其生命周期定时器）。 */
+  private readonly attachments: AttachmentSyncService | null;
+
   private readonly builder: SegmentBuilder;
   private readonly seenContentHashes = new Set<string>();
   private dek: Uint8Array | null = null;
@@ -244,6 +250,7 @@ export class SyncRuntime {
       dek: (): Uint8Array | null => this.dek,
     });
     this.builder = new SegmentBuilder(options.actor, options.policy);
+    this.attachments = options.attachments ?? null;
     this.manifest = {
       schema_ver: SCHEMA_VERSION,
       created_at: this.nowFn(),
@@ -256,6 +263,11 @@ export class SyncRuntime {
   }
 
   // --- 状态面 ---------------------------------------------------------------
+
+  /** T84-02：当前 DEK 只读视图（附件引擎加密面取数；未就绪=null）。 */
+  currentDek(): Uint8Array | null {
+    return this.dek;
+  }
 
   getStatus(): SyncStatusSnapshot {
     const devices: SyncDeviceEntry[] = Object.entries(this.manifest.devices).map(([actorId, info]) => ({
@@ -273,6 +285,7 @@ export class SyncRuntime {
       pendingOps: this.builder.pendingCount,
       pendingSegs: this.pendingPublish === null ? 0 : 1,
       conflicts: this.conflictCount,
+      attachments: this.attachments?.status() ?? null,
       errors: [...this.errors],
     };
   }
@@ -373,6 +386,9 @@ export class SyncRuntime {
 
   /** 停止：清定时器、摘 watcher（进程退出或 setEnabled(false) 时调用）。 */
   stop(): void {
+    // T84-02：在途附件传输立即中止（abort 闸）；半截 .part-* 由下一轮 runCycle
+    // 开头的 sweepTemps 兜底清理——停机路径保持同步、不挂异步尾巴。
+    this.attachments?.pause();
     if (this.mergeTimer !== null) {
       clearInterval(this.mergeTimer);
       this.mergeTimer = null;
@@ -396,6 +412,7 @@ export class SyncRuntime {
       this.setState('idle');
       return;
     }
+    this.attachments?.resume(); // stop() 置的暂停闸随开启解除（否则永久 pause）
     this.setState('syncing');
     this.mergeTimer = setInterval(() => {
       void this.runCycle();
@@ -831,6 +848,19 @@ export class SyncRuntime {
 
     // manifest 心跳：读远端 → mergeManifest → 更新本机水位 → 回写
     await this.heartbeat(now);
+
+    // T84-02：附件双向队列（护栏内；引用枚举复用六路=红线）。失败只影响附件面
+    // （显示占位），不损数据真相；异常吞并留痕，不让段面周期因附件而中断。
+    if (this.attachments !== null) {
+      try {
+        await this.attachments.runCycle();
+      } catch (error) {
+        this.recordError(
+          'E_SYNC_ATTACHMENTS_FAILED',
+          `附件队列异常（不影响数据同步）：${describe(error)}`,
+        );
+      }
+    }
     return 'ok';
   }
 

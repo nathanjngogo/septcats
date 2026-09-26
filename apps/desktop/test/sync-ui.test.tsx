@@ -25,6 +25,7 @@ function statusOf(overrides: Partial<SyncStatusSnapshot> = {}): SyncStatusSnapsh
     pendingOps: 3,
     pendingSegs: 0,
     conflicts: 0,
+    attachments: null,
     errors: [],
     ...overrides,
   };
