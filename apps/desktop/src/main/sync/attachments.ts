@@ -246,7 +246,8 @@ export class AttachmentSyncService {
   private readonly freeSpace: (path: string) => Promise<number>;
   /** 上行队列（name → 状态）。 */
   private readonly queue = new Map<string, QueueEntry>();
-  /** 本进程已成功推送的名字（重扫快路径）。 */
+  /** 本进程已成功推送的 `<形态>:<名字>`（重扫快路径；形态=enc/plain——
+   *  加密开关中途翻转时明文推送不能顶掉 .enc 的义务，反之亦然，必须分形态记账）。 */
   private readonly pushedOk = new Set<string>();
   /** 连续 sha 复验失败熔断：hash → 次数。 */
   private readonly hashFailures = new Map<string, number>();
@@ -350,7 +351,8 @@ export class AttachmentSyncService {
     // ---- 上行：引用集 ∩ 本机盘上件 −（远端已有 ∪ 本进程已推） ----
     const localFiles = await this.listDir(this.opts.attachmentsDir);
     const remoteFiles = await this.listDir(this.filesDir());
-    const remoteLogical = new Set(remoteFiles.filter((n) => !n.includes('.part-')).map(logicalOf));
+    const remoteStored = new Set(remoteFiles.filter((n) => !n.includes('.part-')));
+    const encNow = this.opts.encryptEnabled();
     let referenced: Set<string>;
     try {
       referenced = await loadReferencedHashes(this.opts.executor);
@@ -381,7 +383,9 @@ export class AttachmentSyncService {
       if (local === undefined) {
         continue; // 本机没这份附件（可能是远端引用）——下行面管
       }
-      if (this.pushedOk.has(local.name) || remoteLogical.has(local.name)) {
+      // 形态匹配才算「已有」：enc=true 要 files/<name>.enc；enc=false 要 files/<name>
+      const wanted = encNow ? `${local.name}${ENC_SUFFIX}` : local.name;
+      if (this.pushedOk.has(`${encNow ? 'enc' : 'plain'}:${local.name}`) || remoteStored.has(wanted)) {
         report.skippedExists += 1;
         continue;
       }
@@ -415,11 +419,11 @@ export class AttachmentSyncService {
           report.pushed += 1;
           report.pushedBytes += entry.bytes;
           this.queue.delete(entry.name);
-          this.pushedOk.add(entry.name);
+          this.pushedOk.add(`${encNow ? 'enc' : 'plain'}:${entry.name}`);
         } else if (outcome === 'exists') {
           report.skippedExists += 1;
           this.queue.delete(entry.name);
-          this.pushedOk.add(entry.name);
+          this.pushedOk.add(`${encNow ? 'enc' : 'plain'}:${entry.name}`);
         } else if (outcome === 'disk') {
           report.diskDeferred += 1;
         } else {
@@ -516,8 +520,16 @@ export class AttachmentSyncService {
     } catch {
       /* 不存在，继续 */
     }
-    const free = await this.freeSpace(this.filesDir()).catch((): number => 0);
-    if (!diskOk(free, entry.bytes)) {
+    // 先建 files/ 再量盘（statfs 对不存在路径抛 ENOENT≠盘满）；读数失败按放行处理
+    // （真写不下时 write 自抛走 failed+退避），绝不让「读数异常」误判「盘满」永久挂起。
+    await mkdir(this.filesDir(), { recursive: true }).catch(() => undefined);
+    let free = -1;
+    try {
+      free = await this.freeSpace(this.filesDir());
+    } catch (error) {
+      this.log(`磁盘余量读数失败（放行）：${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (free >= 0 && !diskOk(free, entry.bytes)) {
       entry.attempts += 1;
       entry.nextAtMs = this.nowFn() + BACKOFF_CAP_MS; // 盘满：退到最长再探
       entry.lastError = ATTACH_ERRORS.DISK_FULL;
@@ -569,8 +581,14 @@ export class AttachmentSyncService {
     if (st === null) {
       return 'exists'; // 竞态被删：下轮再看
     }
-    const free = await this.freeSpace(this.opts.attachmentsDir).catch((): number => 0);
-    if (!diskOk(free, st.size)) {
+    await mkdir(this.opts.attachmentsDir, { recursive: true }).catch(() => undefined);
+    let free = -1;
+    try {
+      free = await this.freeSpace(this.opts.attachmentsDir);
+    } catch (error) {
+      this.log(`下行磁盘读数失败（放行）：${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (free >= 0 && !diskOk(free, st.size)) {
       this.log(`磁盘余量不足，下行 ${cand.logical} 挂起`);
       return 'disk';
     }
@@ -611,8 +629,14 @@ export class AttachmentSyncService {
     } catch (error) {
       await rm(tmp, { force: true }).catch(() => undefined);
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg === ATTACH_ERRORS.KEY_MISMATCH || msg === 'E_SYNC_KEY_MISMATCH' || msg.startsWith('E_SYNC_ATTACH_')) {
-        // 信封非法/钥不符/截断：内容不可信 → 计入熔断（远端垃圾不无限重试），隔离不落地
+      if (msg === ATTACH_ERRORS.KEY_MISMATCH || msg === 'E_SYNC_KEY_MISMATCH') {
+        // 钥不符=「我还读不了」非「它是垃圾」：不计数不熔断（恢复码导入追平后
+        // 下一轮正常收取；真机 P5 加密腿教训）。每轮只撞一次，成本可忽略。
+        this.log(`下行 ${cand.logical} 钥不符，跳过本轮（等正确钥匙）`);
+        return 'failed';
+      }
+      if (msg.startsWith('E_SYNC_ATTACH_')) {
+        // 垃圾信封（magic 错/帧乱序/截断）：内容不可信 → 计入熔断，隔离不落地
         return this.quarantine(cand, msg);
       }
       if (msg === 'aborted') {

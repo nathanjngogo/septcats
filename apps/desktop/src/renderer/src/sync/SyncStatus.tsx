@@ -224,7 +224,7 @@ export function SyncStatusButton() {
             </span>
           </div>
           {status?.attachments ? (
-            <div className="sc-sync-status__row">
+            <div className="sc-sync-status__row" data-testid="sync-attachments-row">
               <span className="sc-sync-status__k">{t('sync.attachments')}</span>
               <span className="sc-sync-status__v sc-sync-status__mono">
                 {t('sync.attachmentsValue')

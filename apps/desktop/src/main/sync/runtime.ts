@@ -182,7 +182,7 @@ export class SyncRuntime {
   private readonly gcEnabled: () => boolean;
   private readonly nowFn: () => number;
   private readonly idleFlushMs: number;
-  private readonly mergeIntervalMs: number;
+  private mergeIntervalMs: number;
   private readonly watchDebounceMs: number;
   private readonly maxKeepSegs: number;
   private readonly log: (line: string) => void;
@@ -263,6 +263,23 @@ export class SyncRuntime {
   }
 
   // --- 状态面 ---------------------------------------------------------------
+
+  /**
+   * 真机探针钩子（同 PERF_TRACE 口径，非生产路径）：重设 merge 周期并即时生效。
+   * 用途=把 60s 周期压缩到秒级，让附件链路在分钟级探针窗口内收口。
+   */
+  setMergeIntervalForProbe(ms: number): void {
+    if (!Number.isFinite(ms) || ms <= 0) {
+      return;
+    }
+    this.mergeIntervalMs = ms;
+    if (this.mergeTimer !== null) {
+      clearInterval(this.mergeTimer);
+      this.mergeTimer = setInterval(() => {
+        void this.runCycle();
+      }, ms);
+    }
+  }
 
   /** T84-02：当前 DEK 只读视图（附件引擎加密面取数；未就绪=null）。 */
   currentDek(): Uint8Array | null {

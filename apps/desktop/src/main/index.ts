@@ -482,6 +482,11 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         gcEnabled: () => readSettings(ctx.userDataDir).sync.gc,
         log: (line) => syncLogger.info(line),
       });
+      // 真机探针钩子（同 PERF_TRACE 口径）：env 注入毫秒把周期压缩到分钟级内收口
+      const probeMergeMs = Number(process.env['SEPTCATS_SYNC_MERGE_MS'] ?? '');
+      if (Number.isFinite(probeMergeMs) && probeMergeMs > 0) {
+        runtime.setMergeIntervalForProbe(probeMergeMs);
+      }
       syncRuntime = runtime;
       attachRuntimeRef = runtime;
       runtime.onState((status) => {

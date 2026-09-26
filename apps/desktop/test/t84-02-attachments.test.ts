@@ -285,14 +285,15 @@ describe('下行队列', () => {
     void hash;
   });
 
-  it('错钥密文 → 隔离熔断，不产生半截附件', async () => {
+  it('错钥密文 → 跳过不熔断、不落半截；换回正确钥下轮拉回', async () => {
     const d = mk('pull-wrongkey');
     const dek = generateDek();
     const { hash, name } = fileHash(Buffer.from('secret data'));
     const enc: Buffer[] = [];
     await pipeline(
-      Readable.from((async function* (): AsyncGenerator<Buffer> {        yield Buffer.from('secret data');
-})()),
+      Readable.from((async function* (): AsyncGenerator<Buffer> {
+        yield Buffer.from('secret data');
+      })()),
       scafEncrypt(dek, name),
       async (src): Promise<void> => {
         for await (const c of src) {
@@ -301,11 +302,24 @@ describe('下行队列', () => {
       },
     );
     writeFileSync(join(d.syncRoot, FILES_DIR, `${name}.enc`), Buffer.concat(enc));
-    const s = svc(d, '{}', { enc: true, dek: generateDek() }); // 另一把钥
-    const r = await s.runCycle();
+    let myDek = generateDek(); // 先拿错钥
+    const s2 = new AttachmentSyncService({
+      attachmentsDir: d.attachments,
+      syncRoot: d.syncRoot,
+      executor: executorWith('{}') as never,
+      encryptEnabled: () => true,
+      dek: () => myDek,
+      freeSpaceBytes: async () => 10 * 1024 ** 3,
+    });
+    const r = await s2.runCycle();
     expect(r.pulled).toBe(0);
-    expect(r.quarantined).toBe(1);
+    // 关键契约：错钥 ≠ 垃圾，**不计隔离熔断**（quarantined=0），换钥后还能拉
+    expect(r.quarantined).toBe(0);
     expect(readdirSync(d.attachments).filter((n) => !n.startsWith('.'))).toEqual([]);
+    myDek = dek; // 恢复码导入等效：换正确钥
+    const r2 = await s2.runCycle();
+    expect(r2.pulled).toBe(1);
+    expect(readdirSync(d.attachments).filter((n) => !n.startsWith('.'))).toEqual([name]);
     void hash;
   });
 
@@ -331,6 +345,33 @@ describe('下行队列', () => {
     await s.stop();
     expect(existsSync(join(d.attachments, `${'9'.repeat(64)}.png.part-dead`))).toBe(false);
     expect(existsSync(join(d.syncRoot, FILES_DIR, '.part-ghost'))).toBe(false);
+  });
+
+  it('加密开关中途翻转：明文推过的附件加密态必须重推 .enc（形态分账）', async () => {
+    const d = mk('push-flip');
+    const content = randomBytes(4096);
+    const { hash, name } = fileHash(content);
+    writeFileSync(join(d.attachments, name), content);
+    const dek = generateDek();
+    let enc = false;
+    const s = new AttachmentSyncService({
+      attachmentsDir: d.attachments,
+      syncRoot: d.syncRoot,
+      executor: executorWith(`{"u":"attachment://${hash}"}`) as never,
+      encryptEnabled: () => enc,
+      dek: () => (enc ? dek : null),
+      freeSpaceBytes: async () => 10 * 1024 ** 3,
+    });
+    const r1 = await s.runCycle();
+    expect(r1.pushed).toBe(1); // 明文形态落 files/<name>
+    enc = true;
+    const r2 = await s.runCycle();
+    expect(r2.pushed).toBe(1); // 加密形态必须重推 files/<name>.enc（旧缺陷：被 pushedOk 误跳）
+    const encName = `${name}.enc`;
+    expect(existsSync(join(d.syncRoot, FILES_DIR, encName))).toBe(true);
+    // 再跑一轮：两形态都已推 → 全跳过
+    const r3 = await s.runCycle();
+    expect(r3.pushed).toBe(0);
   });
 
   it('双写同 hash 幂等：远端已有同名 → skipped 非 failed', async () => {
