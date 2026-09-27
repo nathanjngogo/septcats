@@ -7,7 +7,9 @@ import {
   CredentialNameError,
   CredentialUnavailableError,
   spawnCollect,
+  type CredentialStore,
   type SpawnImpl,
+  type SpawnResult,
 } from '../src/credentials';
 
 const created: string[] = [];
@@ -146,4 +148,95 @@ describe.skipIf(!backendAvailable)('credentials/真实后端往返', () => {
     await store.set(SERVICE, ACCOUNT, 'second-value');
     await expect(store.get(SERVICE, ACCOUNT)).resolves.toBe('second-value');
   }, REAL_BACKEND_TIMEOUT);
+});
+
+// macOS 分支退出码语义（注入 spawn + platform:'darwin'，Windows 本机可跑）。
+// H-11 治本：`security` 非零退出必须区分「条目不存在（44 / could not be found）」与
+// 「真失败（钥匙串锁定、用户拒绝授权、权限不足）」——真失败静默返回 null/false 会让
+// 上层显示「未配置 / 已清空」，而密钥其实仍留在钥匙串里。
+describe('credentials/macOS security 退出码语义（H-11 fail-loud）', () => {
+  const HELP_OK: SpawnResult = { code: 0, stdout: '', stderr: '' };
+  /** 只关心某一条子命令时用它造 reply；`security help`（可用性探针）恒返回 0。 */
+  function route(target: string, onTarget: SpawnResult): (args: readonly string[]) => SpawnResult {
+    return (args) =>
+      args[0] === 'help' ? HELP_OK : args[0] === target ? onTarget : { code: 1, stdout: '', stderr: 'unexpected-subcommand' };
+  }
+  function macStore(reply: (args: readonly string[]) => SpawnResult, calls?: string[][]): CredentialStore {
+    const spawn: SpawnImpl = (_file, args) => {
+      calls?.push([...args]);
+      return Promise.resolve(reply(args));
+    };
+    return createCredentialStore({
+      credDir: tempDir('septcats-cred-mac-'),
+      platform: 'darwin',
+      spawn,
+    });
+  }
+
+  it('delete：退出码 0 → true', async () => {
+    const store = macStore(route('delete-generic-password', { code: 0, stdout: '', stderr: '' }));
+    await expect(store.delete(SERVICE, ACCOUNT)).resolves.toBe(true);
+  });
+
+  it('delete：退出码 44（errSecItemNotFound）→ false，幂等不算失败', async () => {
+    const store = macStore(
+      route('delete-generic-password', {
+        code: 44,
+        stdout: '',
+        stderr: 'security: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.',
+      }),
+    );
+    await expect(store.delete(SERVICE, ACCOUNT)).resolves.toBe(false);
+  });
+
+  it('delete：非 44 但 stderr 说 could not be found → false（旧版 security 兜底）', async () => {
+    const store = macStore(
+      route('delete-generic-password', {
+        code: 1,
+        stdout: '',
+        stderr: 'security: The specified item could not be found in the keychain.',
+      }),
+    );
+    await expect(store.delete(SERVICE, ACCOUNT)).resolves.toBe(false);
+  });
+
+  it('delete：真失败（用户拒绝授权）必须上抛 E_CRED_DELETE_FAILED', async () => {
+    const store = macStore(
+      route('delete-generic-password', {
+        code: 36,
+        stdout: '',
+        stderr: 'security: User interaction is not allowed.',
+      }),
+    );
+    await expect(store.delete(SERVICE, ACCOUNT)).rejects.toThrow(/E_CRED_DELETE_FAILED/);
+  });
+
+  it('get：退出码 0 → 值（去尾换行）', async () => {
+    const store = macStore(route('find-generic-password', { code: 0, stdout: 'sk-abc\n', stderr: '' }));
+    await expect(store.get(SERVICE, ACCOUNT)).resolves.toBe('sk-abc');
+  });
+
+  it('get：退出码 44 → null', async () => {
+    const store = macStore(route('find-generic-password', { code: 44, stdout: '', stderr: 'could not be found' }));
+    await expect(store.get(SERVICE, ACCOUNT)).resolves.toBeNull();
+  });
+
+  it('get：真失败（钥匙串口令错误）必须上抛 E_CRED_READ_FAILED，不得当「没设过」', async () => {
+    const store = macStore(
+      route('find-generic-password', {
+        code: 51,
+        stdout: '',
+        stderr: 'security: The user name or passphrase you entered is not correct.',
+      }),
+    );
+    await expect(store.get(SERVICE, ACCOUNT)).rejects.toThrow(/E_CRED_READ_FAILED/);
+  });
+
+  it('delete 的 argv 只含 service/account，不含任何密文/明文', async () => {
+    const calls: string[][] = [];
+    const store = macStore(route('delete-generic-password', { code: 0, stdout: '', stderr: '' }), calls);
+    await store.delete(SERVICE, ACCOUNT);
+    const del = calls.find((c) => c[0] === 'delete-generic-password');
+    expect(del).toEqual(['delete-generic-password', '-s', SERVICE, '-a', ACCOUNT]);
+  });
 });

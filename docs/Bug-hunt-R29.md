@@ -32,7 +32,7 @@
 | **H-09** | 「撤销导入」真机必失败且留半成品：进程存活时 io.remove(主库) 撞 Windows EBUSY；失败瞬间 -wal/-shm 已删 → 库非任何一致态（run-E P5-3 实证重启后包外页仍在） | 探针 P5-1；restorePairs 先清三件套再回写、无原子性；D-1 文件级还原未先关连接 | P1（产品承诺失效+破坏半径） | ✅ **已收口（T80-04 / d256591）**：close/reopen 句柄通道 + 调用前快照 + 失败整体回滚（还原前先停连接）；单测持连接再还原 |
 | **H-06** | `page_link_index`/`mention` 不在 `REBUILD_CLEAR_SQL`：重建（两种模式）后双链索引可能与投影不一致 | 派生索引缺口（replace 时代就有）；`page_link_index` 有启动全量重建兜底、`mention` 无回填（schema.v2 注释口径） | P2 一致性 | 后续单收（重建事务尾部补 links 全量重建）；已记 T82-01 报告 §5.1 |
 | **H-07** | 工作台「最近页」卡片与模板市场种子**摘不到表格/折叠块的正文文字**（显示空摘要） | T79-02 挂账核实现仍成立：`workbench/cards.tsx:firstTextOfBlock` 与 `workbench/market.ts:extractPlainText` 只认 PM doc（`text`/`content` 嵌套），table 的 `{rows,header}`、toggle 的 `{title,body}` 结构化 content 抽不出 | P2 体验 | ✅ **已收口（T82-02 / e80d19d）**：`blockContentTextLines` 单一实现（@septcats/editor），卡片/市场/正文抽取/wikilink 全部改消费它，逐字等价回归钉死旧口径 |
-| **H-11** | macOS 上删除凭据失败可能被静默当成功 | `platform/credentials.ts:317-322` 只判 `code === 0`（`security delete-generic-password` 返回 false 时不分「不存在」与「真失败」）→ 非 Windows 路径下「钥匙串删除失败」会以 `{ok:true}` 通过 | P2 隐私（mac 面） | 📋 **待立案**（T82-02 §6 遗留②，DSH 侦察发现；Windows 主线不受影响） |
+| **H-11** | macOS 上删除凭据失败可能被静默当成功 | `platform/credentials.ts:317-322` 只判 `code === 0`（`security delete-generic-password` 返回 false 时不分「不存在」与「真失败」）→ 非 Windows 路径下「钥匙串删除失败」会以 `{ok:true}` 通过 | P2 隐私（mac 面） | ✅ **已收口（R35）**：`delete` 按退出码 44 / stderr `could not be found` 区分「不存在」（幂等→`false`）与**真失败**（上抛 `E_CRED_DELETE_FAILED`）；**同源口子一并治**——`get()` 尾部原 `return null` 会把「读不到」当「没设过」（真失败现上抛 `E_CRED_READ_FAILED`）；新增 8 条注入式用例（`platform:'darwin'`+假 spawn，Windows 本机可跑）→ platform **49 passed / 1 skipped** |
 
 
 ## 路4 日志审查结论（09-25）

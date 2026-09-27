@@ -13,6 +13,9 @@ import { isAbsolute, join, relative } from 'node:path';
  * 2. `isAvailable()` 只探测、永不抛；后端不可用时 get/set/delete 抛稳定错误
  *    `E_CRED_UNAVAILABLE`。
  * 3. service/account 名白名单 `[a-z0-9_-]{1,32}`，文件名校验拒绝路径穿越。
+ * 4. **fail-loud**：macOS 侧 `security` 非零退出必须区分「条目不存在」（退出码 44 /
+ *    stderr `could not be found`）与「真失败」（钥匙串锁定、用户拒绝授权、权限不足）——
+ *    真失败一律上抛 `E_CRED_READ_FAILED`/`E_CRED_DELETE_FAILED`，绝不静默当空值或当成功。
  */
 
 export interface CredentialStore {
@@ -261,7 +264,9 @@ export function createCredentialStore(options: CredentialStoreOptions): Credenti
       if (result.code === 44 || /could not be found/i.test(result.stderr)) {
         return null;
       }
-      return null;
+      // 钥匙串锁定 / 用户拒绝授权 / 访问被拒等**真失败**必须上抛：
+      // 静默返回 null 会让上层把「读不到」当「没设过」——密钥仍在钥匙串却提示未配置。
+      throw new Error(`E_CRED_READ_FAILED：无法读取凭据（${service}/${account}）`);
     },
 
     async set(service: string, account: string, secret: string): Promise<void> {
@@ -319,7 +324,16 @@ export function createCredentialStore(options: CredentialStoreOptions): Credenti
         ['delete-generic-password', '-s', service, '-a', account],
         {},
       );
-      return result.code === 0;
+      if (result.code === 0) {
+        return true;
+      }
+      // 44 = errSecItemNotFound：无此条 = 删除目标态已达成（幂等）
+      if (result.code === 44 || /could not be found/i.test(result.stderr)) {
+        return false;
+      }
+      // 钥匙串锁定 / 用户拒绝授权 / 权限不足等**真失败**必须上抛：
+      // 静默返回 false 会让调用方把「没删掉」当「本来就没有」——密钥留在钥匙串却显示已清空。
+      throw new Error(`E_CRED_DELETE_FAILED：无法删除凭据（${service}/${account}）`);
     },
 
     isAvailable,

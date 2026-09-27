@@ -5,6 +5,11 @@
 
 ---
 
+## [未发布 / Unreleased]
+
+### 修复 Fixed
+- **macOS 凭据删除/读取的「真失败」不再被静默吞掉**（H-11，P2 隐私面）：`packages/platform/src/credentials.ts` 的 `security` 分支此前只判 `code === 0`——钥匙串锁定、用户拒绝授权、权限不足等**真失败**被当成「条目不存在/无此条」，于是**删除失败以 `ok` 通过**、读取失败被当作「未配置」，而密钥其实仍留在钥匙串里。现按退出码 **44** / stderr `could not be found` 精确区分：不存在=幂等语义（`delete→false`、`get→null`）、真失败=上抛 `E_CRED_DELETE_FAILED` / `E_CRED_READ_FAILED`（与 Windows 分支同一契约）。新增 8 条注入式用例（`platform:'darwin'` + 假 spawn，Windows 本机可跑）：44/文本兜底/拒绝授权/口令错误/argv 审计。
+
 ## [0.6.1] - 2026-09-27
 
 ### 新增 Added
