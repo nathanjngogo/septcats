@@ -11,7 +11,10 @@
 - **macOS 凭据删除/读取的「真失败」不再被静默吞掉**（H-11，P2 隐私面）：`packages/platform/src/credentials.ts` 的 `security` 分支此前只判 `code === 0`——钥匙串锁定、用户拒绝授权、权限不足等**真失败**被当成「条目不存在/无此条」，于是**删除失败以 `ok` 通过**、读取失败被当作「未配置」，而密钥其实仍留在钥匙串里。现按退出码 **44** / stderr `could not be found` 精确区分：不存在=幂等语义（`delete→false`、`get→null`）、真失败=上抛 `E_CRED_DELETE_FAILED` / `E_CRED_READ_FAILED`（与 Windows 分支同一契约）。新增 8 条注入式用例（`platform:'darwin'` + 假 spawn，Windows 本机可跑）：44/文本兜底/拒绝授权/口令错误/argv 审计。
 - **快速连点删除不再误报 `E_NOT_FOUND`**（H-12，P3 健壮性）：`main/pages.ts` 的 `deletePage` 此前用 `requirePage(..., alive=true)` 守卫，第一次删除成功后，其余**并发/连点**请求命中「已删除」态即抛 `E_NOT_FOUND`——UI 会对一次**已成功**的删除弹「页面不存在或已删除」（真机 5 并发实测 3 条 reject），而函数内部本已备好 `ops.length === 0 → { deleted: 0 }` 的幂等分支被守卫提前挡掉。现改用与 `restorePage` 同口径的宽容版 `requirePage(..., false)`：已进回收站 → `{ deleted: 0 }`（幂等、不弹误报）；真不存在的 id（越界 / 已被 GC 物理清除）仍显式 `E_NOT_FOUND`。
 
+- **反向链接面板遇非数组载荷不再崩到 React 错误边界**（H-13，CI 抓到的未捕获 TypeError）：`BacklinksPanel.tsx` 原样 `setEntries(res.entries)`，任何缺字段/旧形状载荷（`t78-bulk-selection` 假桥曾误写 `{ items: [] }`）都会把 `undefined` 塞进 state，渲染读 `entries.length` 抛 `TypeError: Cannot read properties of undefined (reading 'length')`——整页被拖进 React 错误边界（CI 报「Errors 1 error」）。现归一化 `Array.isArray(res?.entries) ? res.entries : []`：载荷异常只退化成「无反向链接」空态；假桥字段名改正 + 新增回归用例锁定。
+
 ### 测试 Tests
+- **perf 门禁按渠道分档**：`BUDGET_REBUILD` 原为**平铺 5000ms**，而 CI win-latest 实测 4.09/4.18/5.41 s（余量仅 ~18%，落在共享 runner 噪声带内必然偶发翻红）→ 改为 `IS_CI ? (win 15000 / mac 8000) : 5000`（与 `BUDGET_COMMIT_BATCH_P95` 同一「CI=量级哨兵、严格阈值留本地」口径，实测依据写进注释；本地严格 5000ms 不变）。
 - **R29 并发压测真机探针**（**28 断言**）：`docs/mockups/cdp-e2e-r29-concurrency.mjs`——并发创建/提交/覆盖、FTS 与写交错、索引重建与读并发、连点删除幂等、并发删+恢复无幽灵页、同页并发移动（无孤儿/无双父）、并发重命名、并发类型转换、**同目录并发便携包导出（原子写，产物逐包 `testzip` 通过）**、并发页面导出预览、pageerror=0、离线只读 `PRAGMA integrity_check=ok`、真实数据根 mtime 零触碰；打包产物与 dev 靶可切（`SEPTCATS_APP_BIN`）。
 
 ## [0.6.1] - 2026-09-27
