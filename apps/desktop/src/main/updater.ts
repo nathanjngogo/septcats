@@ -144,6 +144,7 @@ export type UpdateEvent =
   | { type: 'download-progress'; percent: number }
   | { type: 'downloaded'; version?: string | undefined }
   | { type: 'error'; code: string; message?: string | undefined }
+  | { type: 'manual'; downloadUrl: string }
   | { type: 'reset' };
 
 export interface UpdaterStateMachine {
@@ -204,6 +205,9 @@ export function createUpdaterStateMachine(initial: UpdateState = { status: 'idle
             errorCode: event.code,
             message: event.message,
           });
+        case 'manual':
+          // 手动更新（mac 未签名）：终态，不参与 available/downloading 跃迁
+          return apply({ status: 'manual', downloadUrl: event.downloadUrl });
         case 'reset':
           return apply({ status: 'idle' });
       }
@@ -258,6 +262,13 @@ export function feedYmlName(platform: NodeJS.Platform = process.platform): strin
   return platform === 'darwin' ? 'latest-mac.yml' : 'latest.yml';
 }
 
+/**
+ * macOS 未签名构建的手动更新入口（老板决定：不购买 Apple Developer ID）。
+ * 仅作为 `manual` 态的透出链接交给渲染层 `shell.openExternal`（协议白名单只放 http/https）。
+ */
+export const MANUAL_UPDATE_URL =
+  'https://github.com/nathanjngogo/septcats-releases/releases/latest';
+
 /** fetch 响应最小面（真实 net.fetch 的 Response 由 main/index.ts 适配）。 */
 export interface FetchResponseLike {
   ok: boolean;
@@ -286,6 +297,8 @@ export interface UpdaterIpcDeps {
   feedUrl?: string | null | undefined;
   env: Record<string, string | undefined>;
   isPackaged: boolean;
+  /** 平台（测试注入用；默认 process.platform）。darwin=未签名构建 → 手动更新。 */
+  platform?: NodeJS.Platform | undefined;
   /** 启动自动检查延迟毫秒；null = 不自动检查（测试默认关）。 */
   autoCheckDelayMs?: number | null;
   log?: (line: string) => void;
@@ -314,6 +327,9 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
 
   const devFeedEnabled = deps.env['SEPTCATS_DEV_FEED'] === '1';
   const devFeedUrl = deps.env['SEPTCATS_DEV_FEED_URL'];
+  /** 平台（测试可注入）；mac 未签名 → 手动更新，不走 electron-updater。 */
+  const platform = deps.platform ?? process.platform;
+  const manualUpdate = platform === 'darwin';
 
   // dev feed 注入（§0.2 运行期覆盖）：env 指定 URL 且过门才 setFeedURL；
   // 过门失败只记日志不注入（fail-closed，但不阻断应用启动）
@@ -337,6 +353,15 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
    * electron-updater 的事件（checking/available/progress/downloaded/error）驱动状态机。
    */
   const check = async (): Promise<UpdateState> => {
+    // macOS 未签名构建（老板决定：不购买 Apple Developer ID）：Squirrel.Mac 会校验
+    // 运行中应用与更新包的代码签名，未签名/未公证的更新**必然装不上**。故 mac 端
+    // 不发任何网络请求、也不进 electron-updater，只给「手动更新」态 + Releases 链接
+    // ——既不谎报「已是最新」，也不给一个点了会失败的更新按钮（顺带守住零外联纪律）。
+    if (manualUpdate) {
+      log('macOS 未签名构建：跳过自动更新检查，转手动下载');
+      machine.dispatch({ type: 'manual', downloadUrl: MANUAL_UPDATE_URL });
+      return currentState();
+    }
     if (deps.updater === null) {
       machine.dispatch({ type: 'error', code: 'E_UPDATE_UNAVAILABLE', message: '更新器不可用' });
       return currentState();
@@ -445,6 +470,13 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
   deps.registrar.handle(CHANNEL_UPDATE_CHECK, async () => check());
 
   deps.registrar.handle(CHANNEL_UPDATE_DOWNLOAD, async () => {
+    // mac 未签名：不下载（装了也过不了 Squirrel.Mac 的签名校验）——fail-loud 明示手动路径
+    if (manualUpdate) {
+      throw new UpdaterError(
+        'E_UPDATE_UNAVAILABLE',
+        'macOS 未签名构建不支持自动更新，请手动下载新版 DMG',
+      );
+    }
     if (deps.updater === null) {
       throw new UpdaterError('E_UPDATE_UNAVAILABLE', '更新器不可用');
     }
@@ -471,6 +503,12 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
     }
     if (deps.updater === null) {
       throw new UpdaterError('E_UPDATE_UNAVAILABLE', '更新器不可用');
+    }
+    if (manualUpdate) {
+      throw new UpdaterError(
+        'E_UPDATE_UNAVAILABLE',
+        'macOS 未签名构建不支持自动更新，请手动下载新版 DMG',
+      );
     }
     if (currentState().status !== 'downloaded') {
       throw new UpdaterError('E_UPDATE_FAILED', '更新未就绪（须先完成下载）');

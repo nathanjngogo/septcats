@@ -781,6 +781,8 @@ export const enUS = {
       statusDownloading: 'Downloading version {version}: {percent}%',
       statusDownloaded: 'Version {version} is ready; restart to apply',
       statusErrorFmt: 'Update failed ({code})',
+      statusManual: 'The macOS build is unsigned: auto-update is unavailable — download the new DMG manually',
+      openDownloadPage: 'Open download page',
       restartToUpdate: 'Restart to Update',
       confirmTitle: 'Restart and Install Update',
       confirmBody:

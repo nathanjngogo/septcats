@@ -40,12 +40,20 @@ export const updateStatusSchema = z.enum([
   'downloaded',
   'not-available',
   'error',
+  /**
+   * 手动更新（macOS 未签名构建）：Squirrel.Mac 拒绝安装无签名/未公证的更新包，
+   * 故 mac 端不发网络请求、不提供自动更新——只透出 Releases 页让用户自行下载新版 DMG。
+   * id/状态一并入 schema（渲染层按同一 SSOT 渲染，不另发明字符串）。
+   */
+  'manual',
 ]);
 
 export const updateStateSchema = z.object({
   status: updateStatusSchema,
   /** available/downloading/downloaded 时的目标版本号。 */
   version: z.string().min(1).optional(),
+  /** manual 时的下载页（https，仅透出给渲染层 openExternal）。 */
+  downloadUrl: z.string().min(1).optional(),
   /** downloading 时的下载进度（0-100，含小数）。 */
   progress: z.number().min(0).max(100).optional(),
   /** error 时的机器可读错误码（E_FEED_SIGNATURE / E_FEED_SOURCE_DENIED / E_UPDATE_FAILED / E_UPDATE_UNAVAILABLE / E_MALFORMED）。 */

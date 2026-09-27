@@ -13,7 +13,10 @@
 
 - **反向链接面板遇非数组载荷不再崩到 React 错误边界**（H-13，CI 抓到的未捕获 TypeError）：`BacklinksPanel.tsx` 原样 `setEntries(res.entries)`，任何缺字段/旧形状载荷（`t78-bulk-selection` 假桥曾误写 `{ items: [] }`）都会把 `undefined` 塞进 state，渲染读 `entries.length` 抛 `TypeError: Cannot read properties of undefined (reading 'length')`——整页被拖进 React 错误边界（CI 报「Errors 1 error」）。现归一化 `Array.isArray(res?.entries) ? res.entries : []`：载荷异常只退化成「无反向链接」空态；假桥字段名改正 + 新增回归用例锁定。
 
+- **macOS 未签名构建：自动更新改为「手动下载」**（老板决定**不购买 Apple Developer ID**）：Squirrel.Mac 会校验运行中应用与更新包的代码签名，**未签名包必然装不上**——若照旧提供自动更新，用户只会看到一个点了就失败的按钮。现新增 `manual` 更新态（状态与 `downloadUrl` 同入 zod schema，渲染层按同一 SSOT 渲染）：mac 端**零网络**（不发 feed 请求、不进 electron-updater，顺带守住零外联纪律），设置页显示「macOS 版为未签名构建：自动更新不可用，请手动下载新版 DMG」+「前往下载页」按钮（`shell.openExternal` 至 Releases，走协议白名单）；`update:download` / `update:install` 在 mac 上 **fail-loud `E_UPDATE_UNAVAILABLE`**（不给装不上的按钮留后门）。
+
 ### 测试 Tests
+- **mac 手动更新**：主进程 3 条（darwin=manual 且 `fetched` 零请求 + `checkForUpdates` 未被调 / download+install 双通道拒 / win32 回归钉防平台守卫误伤）+ 渲染层 1 条（manual 文案 + 「前往下载页」→ `openExternal`，且不出现「重启更新」）。
 - **perf 门禁按渠道分档**：`BUDGET_REBUILD` 原为**平铺 5000ms**，而 CI win-latest 实测 4.09/4.18/5.41 s（余量仅 ~18%，落在共享 runner 噪声带内必然偶发翻红）→ 改为 `IS_CI ? (win 15000 / mac 8000) : 5000`（与 `BUDGET_COMMIT_BATCH_P95` 同一「CI=量级哨兵、严格阈值留本地」口径，实测依据写进注释；本地严格 5000ms 不变）。
 - **R29 并发压测真机探针**（**28 断言**）：`docs/mockups/cdp-e2e-r29-concurrency.mjs`——并发创建/提交/覆盖、FTS 与写交错、索引重建与读并发、连点删除幂等、并发删+恢复无幽灵页、同页并发移动（无孤儿/无双父）、并发重命名、并发类型转换、**同目录并发便携包导出（原子写，产物逐包 `testzip` 通过）**、并发页面导出预览、pageerror=0、离线只读 `PRAGMA integrity_check=ok`、真实数据根 mtime 零触碰；打包产物与 dev 靶可切（`SEPTCATS_APP_BIN`）。
 

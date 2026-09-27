@@ -644,3 +644,36 @@ describe('设置页 · 关于块第三方许可（TASK-T75-01 §1）', () => {
     expect(row?.textContent).toContain('licenses/OFL-NotoSansSC.txt');
   });
 });
+
+describe('设置页 · 更新区手动更新态（macOS 未签名构建，老板决定不买 Apple Developer ID）', () => {
+  it('manual 态：文案=手动下载提示，按钮=前往下载页（走 openExternal），不给「重启更新」', async () => {
+    const openExternal = vi.fn(async () => ({ ok: true }));
+    installBridge({
+      update: {
+        check: vi.fn(async () => ({ status: 'manual' }) as const),
+        download: vi.fn(async () => ({ status: 'manual' }) as const),
+        install: vi.fn(async () => ({ ok: true }) as const),
+        rollbackHint: vi.fn(async () => ({ state: { status: 'manual' } as const, hint: '' })),
+        onState: vi.fn((listener: (state: { status: string; downloadUrl?: string }) => void) => {
+          listener({ status: 'manual', downloadUrl: 'https://example.com/releases/latest' });
+          return () => {};
+        }),
+      },
+      shell: { openExternal },
+    } as never);
+
+    render(<SettingsPage />);
+    await screen.findByTestId('settings-page');
+
+    // 文案来自 i18n（zh 字典）：未签名 → 手动下载，不谎报「已是最新」
+    await waitFor(() => {
+      expect(screen.getByText(/manual|手动下载新版 DMG/)).not.toBeNull();
+    });
+    expect(screen.queryByText('重启更新')).toBeNull();
+
+    fireEvent.click(screen.getByText('前往下载页'));
+    await waitFor(() => {
+      expect(openExternal).toHaveBeenCalledWith({ url: 'https://example.com/releases/latest' });
+    });
+  });
+});

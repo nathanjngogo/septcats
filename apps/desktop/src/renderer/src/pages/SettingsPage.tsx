@@ -62,6 +62,9 @@ function describeUpdateState(state: UpdateState | null, currentVersion: string):
       return fillTemplate(t('settings.about.statusErrorFmt'), {
         code: state.errorCode ?? 'E_UPDATE_FAILED',
       });
+    case 'manual':
+      // macOS 未签名构建：自动更新不可用（Squirrel.Mac 拒绝无签名包），只给手动下载入口
+      return t('settings.about.statusManual');
   }
 }
 
@@ -1173,7 +1176,19 @@ export function SettingsPage() {
               title={t('settings.about.checkUpdate')}
               desc={describeUpdateState(updateState, meta?.version ?? '')}
               control={
-                updateState !== null && updateState.status === 'downloaded' ? (
+                updateState !== null && updateState.status === 'manual' ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      if (updateState.downloadUrl !== undefined) {
+                        void window.septcats.shell.openExternal({ url: updateState.downloadUrl });
+                      }
+                    }}
+                  >
+                    {t('settings.about.openDownloadPage')}
+                  </Button>
+                ) : updateState !== null && updateState.status === 'downloaded' ? (
                   <Button
                     size="sm"
                     loading={updateBusy}

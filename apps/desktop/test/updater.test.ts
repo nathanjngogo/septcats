@@ -18,6 +18,7 @@ import {
   createUpdaterStateMachine,
   feedYmlName,
   isLocalFeedUrl,
+  MANUAL_UPDATE_URL,
   parseFeedUrlFromYml,
   registerUpdaterIpc,
   toUpdaterError,
@@ -231,6 +232,8 @@ interface Harness {
   handlers: Map<string, (raw: unknown) => Promise<unknown>>;
   updater: ReturnType<typeof makeFakeUpdater>;
   service: ReturnType<typeof registerUpdaterIpc>;
+  /** 被请求过的 feed URL（零网络断言用）。 */
+  fetched: string[];
 }
 
 function makeHarness(options: {
@@ -243,10 +246,13 @@ function makeHarness(options: {
   feedUrl?: string | null | undefined;
   isPackaged?: boolean;
   autoCheckDelayMs?: number | null;
+  /** 平台注入（mac=未签名 → 手动更新路径）。 */
+  platform?: NodeJS.Platform | undefined;
 }): Harness {
   const updater = makeFakeUpdater();
   const states: UpdateState[] = [];
   const handlers = new Map<string, (raw: unknown) => Promise<unknown>>();
+  const fetched: string[] = [];
   const feedYml = options.feedYml ?? Buffer.from(SAMPLE_YML, 'utf8');
   const feedSig = options.feedSig ?? null;
   const service = registerUpdaterIpc({
@@ -260,6 +266,7 @@ function makeHarness(options: {
     },
     updater,
     fetch: async (url) => {
+      fetched.push(url);
       if (options.fetchFail === true || !url.endsWith('.yml') && !url.endsWith('.sig')) {
         return { ok: false, status: 404, bytes: async () => new Uint8Array(0) };
       }
@@ -278,10 +285,48 @@ function makeHarness(options: {
     feedPublicKeyPem: options.feedPublicKeyPem,
     isPackaged: options.isPackaged ?? true,
     autoCheckDelayMs: options.autoCheckDelayMs ?? null,
+    platform: options.platform,
     log: () => {},
   });
-  return { states, handlers, updater, service };
+  return { states, handlers, updater, service, fetched };
 }
+
+// ---------------------------------------------------------------------------
+// macOS 未签名构建 → 手动更新（老板决定：不购买 Apple Developer ID）
+// 依据：Squirrel.Mac 校验运行中应用与更新包的代码签名，未签名包必然装不上——
+// 故 mac 端零网络、不进 electron-updater，只给 manual 态 + Releases 链接。
+// ---------------------------------------------------------------------------
+
+describe('macOS 未签名构建：manual 态（零网络，不给装不上的按钮）', () => {
+  it('check 直接回 manual + downloadUrl，且零 fetch / 不碰 electron-updater', async () => {
+    const h = makeHarness({ platform: 'darwin' });
+    const state = (await h.handlers.get('update:check')!({})) as UpdateState;
+    expect(state.status).toBe('manual');
+    expect(state.downloadUrl).toBe(MANUAL_UPDATE_URL);
+    expect(updateStateSchema.parse(state).status).toBe('manual');
+    expect(h.fetched).toHaveLength(0);
+    expect(h.updater.calls).not.toContain('checkForUpdates');
+    expect(h.states.some((s) => s.status === 'checking')).toBe(false);
+  });
+
+  it('manual 态下 download / install 一律 E_UPDATE_UNAVAILABLE（fail-loud，不留后门）', async () => {
+    const h = makeHarness({ platform: 'darwin' });
+    await h.handlers.get('update:check')!({});
+    await expect(h.handlers.get('update:download')!({})).rejects.toThrow(/E_UPDATE_UNAVAILABLE/);
+    await expect(h.handlers.get('update:install')!({ confirm: true })).rejects.toThrow(
+      /E_UPDATE_UNAVAILABLE/,
+    );
+    expect(h.updater.calls).not.toContain('downloadUpdate');
+    expect(h.updater.calls).not.toContain('quitAndInstall');
+  });
+
+  it('win32 不受影响：仍走 feed 检查（回归钉，防平台守卫误伤）', async () => {
+    const h = makeHarness({ platform: 'win32' });
+    await h.handlers.get('update:check')!({});
+    expect(h.fetched.some((url) => url.endsWith('latest.yml'))).toBe(true);
+    expect(h.states.some((s) => s.status === 'checking')).toBe(true);
+  });
+});
 
 describe('registerUpdaterIpc（五通道 + 预验签 + 事件流）', () => {
   it('happy path：验签过 → checkForUpdates → available → download → downloaded payload 全过 zod', async () => {

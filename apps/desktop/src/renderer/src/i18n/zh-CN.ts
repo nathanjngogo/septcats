@@ -776,6 +776,8 @@ export const zhCN = {
       statusDownloading: '下载新版本 {version}：{percent}%',
       statusDownloaded: '新版本 {version} 已就绪，重启后生效',
       statusErrorFmt: '更新失败（{code}）',
+      statusManual: 'macOS 版为未签名构建：自动更新不可用，请手动下载新版 DMG',
+      openDownloadPage: '前往下载页',
       restartToUpdate: '重启更新',
       confirmTitle: '重启并安装更新',
       confirmBody: '将退出 Septcats 并安装新版本 {version}。未保存的内容可能丢失，确定继续吗？',
