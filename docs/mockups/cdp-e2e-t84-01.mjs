@@ -20,29 +20,36 @@ const { chromium } = reqAgent('playwright-core');
 
 const REPO = 'E:/Hermes Agent工作空间/Septcats';
 const APPDIR = join(REPO, 'apps', 'desktop');
-const RUN = join(REPO, '..', '_scratch', 't84-01-e2e');
+const RUN = join(REPO, '..', '_scratch', process.env['SEPTCATS_RUN_NAME'] ?? 't84-01-e2e');
+const RUN_DIR_TAG = process.env['SEPTCATS_RUN_NAME'] ?? 't84-01-e2e';
 const UD = join(RUN, 'ud');
 const ROOT = join(RUN, 'data');
 const TARGET = join(RUN, 'netdisk', 'SeptcatsSync'); // 模拟网盘同步目录
 const REAL_ROOT = 'C:\\Users\\Administrator\\.septcats';
-const PORT = 9253;
-const ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
+const PORT = Number(process.env['SEPTCATS_CDP_PORT'] ?? '9253');
+// SEPTCATS_APP_BIN 指向打包产物 exe（交付物终验口径）；默认 dev electron
+const APP_BIN = process.env['SEPTCATS_APP_BIN'] ?? '';
+const ELECTRON = APP_BIN === '' ? join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe') : APP_BIN;
+const APP_ARGS = APP_BIN === '' ? ['.'] : [];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const waitSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 function killTree(pid) { try { execSync(`taskkill /PID ${String(pid)} /T /F`, { stdio: 'ignore' }); } catch { /* gone */ } }
 function realRootStamp() { try { return String(statSync(REAL_ROOT).mtimeMs); } catch { return '-1'; } }
 function killStaleApp() {
-  try {
-    const out = execSync(`wmic process where "name='electron.exe'" get processid,commandline /format:list`, { encoding: 'utf8' });
-    let cur = '';
-    for (const line of out.split('\n')) {
-      if (line.startsWith('CommandLine=')) cur = line;
-      else if (line.startsWith('ProcessId=')) { const m = line.match(/^ProcessId=(\d+)/); if (m !== null && cur.includes('t84-01-e2e')) killTree(Number(m[1])); cur = ''; }
-    }
-  } catch { /* wmic 缺失 */ }
+  // 靶子可切（SEPTCATS_APP_BIN）：打包靶进程名是 Septcats.exe，dev 靶是 electron.exe——两个都扫
+  for (const pname of ['electron.exe', 'Septcats.exe']) {
+    try {
+      const out = execSync(`wmic process where "name='${pname}'" get processid,commandline /format:list`, { encoding: 'utf8' });
+      let cur = '';
+      for (const line of out.split('\n')) {
+        if (line.startsWith('CommandLine=')) cur = line;
+        else if (line.startsWith('ProcessId=')) { const m = line.match(/^ProcessId=(\d+)/); if (m !== null && cur.includes(RUN_DIR_TAG)) killTree(Number(m[1])); cur = ''; }
+      }
+    } catch { /* wmic 缺失 */ }
+  }
 }
 async function launch() {
-  const child = spawn(ELECTRON, ['.', `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: APPDIR, stdio: 'ignore' });
+  const child = spawn(ELECTRON, [...APP_ARGS, `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: APPDIR, stdio: 'ignore' });
   let browser = null;
   for (let i = 0; i < 40; i += 1) { await wait(800); try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); break; } catch { /* retry */ } }
   if (browser === null) throw new Error('CDP 连不上');

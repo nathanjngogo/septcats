@@ -58,12 +58,19 @@ for (const y of ymls) {
   const mv = /^version: (.+)$/m.exec(txt);
   const ms = /^size: (\d+)$/m.exec(txt);
   const ymlVer = mv === null ? '' : mv[1].trim();
+  // publish.sh 无条件读 dist/latest.yml 归一化+签名上传 → 它必须永远等于本版（硬拦）；
+  // 同渠道文件（expectedYml）同理；其它渠道的残留只告警（不会被上传，删掉即可）。
+  const hard = y === expectedYml || y === 'latest.yml';
   if (ymlVer !== ver) {
-    console.error(
-      `dist:check FAILED — ${y} 声明 version=${ymlVer === '' ? '?' : ymlVer}，当前包 ${ver}` +
-        '（上一版残留：删除该 yml 后重跑构建；残留被归一化上传会让 feed 指向旧版本）',
-    );
-    failed = true;
+    const msg =
+      `${y} 声明 version=${ymlVer === '' ? '?' : ymlVer}，当前包 ${ver}` +
+      '（上一版残留：删除该 yml 后重跑构建；latest.yml 残留被归一化+签名上传会让 feed 指向旧版本）';
+    if (hard) {
+      console.error(`dist:check FAILED — ${msg}`);
+      failed = true;
+    } else {
+      console.warn(`dist:check 告警 — ${msg}（该渠道不会被 publish.sh 上传）`);
+    }
   }
   if (ms !== null && !exes.some((f) => statSync(join(distDir, f)).size === Number(ms[1]))) {
     console.error(`dist:check FAILED — ${y} 声明 size=${ms[1]}，dist/ 内无同尺寸安装器`);
