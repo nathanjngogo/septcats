@@ -1,8 +1,8 @@
 {
   "task": "r29-concurrency",
-  "ranAt": "2026-09-27T14:30:42.135Z",
+  "ranAt": "2026-09-27T14:39:49.884Z",
   "target": "E:/Hermes Agent工作空间/Septcats/apps/desktop/node_modules/electron/dist/electron.exe",
-  "dbCheck": "integrity=ok\r\npages=30\r\nblocks=41\r\nops=122",
+  "dbCheck": "integrity=ok\r\npages=30\r\nblocks=41\r\nops=144",
   "consoleErrors": [],
   "assertions": [
     {
@@ -15,7 +15,7 @@
       "step": "P0|前置",
       "name": "P0-2 应用自报版本 + 工作区就位",
       "ok": true,
-      "detail": "{\"version\":\"0.6.1\",\"wsId\":\"01M3HMCVS49YE5E1DC44RM026K\",\"wsCount\":1}"
+      "detail": "{\"version\":\"0.6.1\",\"wsId\":\"01M3HMXJB6SKQ3E77M6QEHRB61\",\"wsCount\":1}"
     },
     {
       "step": "P1|基线",
@@ -75,7 +75,7 @@
       "step": "P5|FTS 与写并发交错",
       "name": "P5-2 40 次查询返回结构合法（hits 数组）",
       "ok": true,
-      "detail": "sample={\"hits\":[{\"kind\":\"page\",\"id\":\"01M3HMCVTV1Y1QPZAD2Z785VMD\",\"pageId\":\"01M3HMCVTV1Y1QPZAD2Z785VMD\",\"title\":\"R29并发mujx1lca-2"
+      "detail": "sample={\"hits\":[{\"kind\":\"page\",\"id\":\"01M3HMXJKTW70CPSATF4C3TCST\",\"pageId\":\"01M3HMXJKTW70CPSATF4C3TCST\",\"title\":\"R29并发mujxdbvu-2"
     },
     {
       "step": "P6|重建与读并发",
@@ -114,6 +114,48 @@
       "detail": "29 → 24 → 29"
     },
     {
+      "step": "P12|并发移动（同页多目标）",
+      "name": "P12-1 同页 6 并发移动 0 reject（连点不炸）",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
+      "step": "P12|并发移动（同页多目标）",
+      "name": "P12-2 无孤儿/无双父：落点 ∈ 目标集合且存活计数不变",
+      "ok": true,
+      "detail": "parent=01M3HMXJKM71JTVTQMS1XFJNT5 count=29→29"
+    },
+    {
+      "step": "P13|并发重命名",
+      "name": "P13-1 10 并发重命名 0 reject 且终态标题 ∈ 写入集合",
+      "ok": true,
+      "detail": "rej=0 title=R29改名-9"
+    },
+    {
+      "step": "P14|并发类型转换",
+      "name": "P14-1 6 并发转换 0 reject 且终态类型合法（folder/page/wiki）",
+      "ok": true,
+      "detail": "rej=0  type=wiki"
+    },
+    {
+      "step": "P15|并发便携导出（同目录原子写）",
+      "name": "P15-1 同目录 3 并发导出 0 reject（原子写 tmp→rename）",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
+      "step": "P15|并发便携导出（同目录原子写）",
+      "name": "P15-2 产物 zip 完整可解（无半成品/无截断）",
+      "ok": true,
+      "detail": "zips=3 ok=true entries=112"
+    },
+    {
+      "step": "P16|并发页面导出预览（只读零写）",
+      "name": "P16-1 5 并发 pageExport.preview 0 reject 且结构合法",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
       "step": "P9|未捕获异常",
       "name": "P9-1 全程 pageerror = 0（无未捕获 JS 异常）",
       "ok": true,
@@ -123,7 +165,7 @@
       "step": "P10|收尾",
       "name": "P10-1 离线只读 PRAGMA integrity_check=ok",
       "ok": true,
-      "detail": "integrity=ok pages=30 blocks=41 ops=122"
+      "detail": "integrity=ok pages=30 blocks=41 ops=144"
     },
     {
       "step": "P11|隔离",

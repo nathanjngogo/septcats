@@ -107,6 +107,21 @@ async function main() {
   mkdirSync(UD, { recursive: true });
   mkdirSync(ROOT, { recursive: true });
   writeFileSync(join(UD, 'septcats.settings.json'), JSON.stringify({ schema: 1, rootPath: ROOT.replace(/\\/g, '/') }));
+  // 便携包产物校验器（python 标准库 zipfile：逐包 testzip + 条目数，判「无半成品/无截断」）
+  writeFileSync(join(RUN, 'zipcheck.py'), [
+    'import glob,os,sys,zipfile',
+    'd=sys.argv[1]',
+    'zips=[p for p in glob.glob(os.path.join(d,"**","*.zip"),recursive=True)]',
+    'ok=True;entries=0',
+    'for p in zips:',
+    '    try:',
+    '        z=zipfile.ZipFile(p)',
+    '        if z.testzip() is not None or len(z.namelist())==0: ok=False',
+    '        entries+=len(z.namelist())',
+    '    except Exception:',
+    '        ok=False',
+    'print(f"zips={len(zips)} ok={str(ok).lower()} entries={entries}")',
+  ].join('\n'));
   const stampBefore = realRootStamp();
 
   STEP = 'P0|前置';
@@ -199,6 +214,55 @@ async function main() {
     const fin = await treeCount();
     check('P8-1 5 并发删除 → 5 并发恢复 全 resolve', dels.rejected.length === 0 && rest.rejected.length === 0, `delRej=${String(dels.rejected.length)} restRej=${String(rest.rejected.length)}`);
     check('P8-2 无幽灵页：中间态 -5、恢复后回位', mid === before8 - 5 && fin === before8, `${String(before8)} → ${String(mid)} → ${String(fin)}`);
+
+    STEP = 'P12|并发移动（同页多目标）';
+    const mover = ids[7];
+    const pa = ids[8];
+    const pb = ids[9];
+    const pc = ids[10];
+    const before12 = await treeCount();
+    const mv = await allSettled(Array.from({ length: 6 }, (_v, i) =>
+      page.evaluate((a) => window.septcats.pages.move({ id: a.id, newParentId: [a.pa, a.pb, a.pc][a.i % 3] }), { id: mover, pa, pb, pc, i })));
+    const placed = await page.evaluate(async (a) => {
+      const tree = await window.septcats.pages.tree({ workspaceId: a.w });
+      const node = tree.find((n) => n.id === a.id);
+      return node === undefined ? null : { parentId: node.parentId ?? node.parent_id ?? null, count: tree.filter((n) => n.alive !== 0).length };
+    }, { w: wsId, id: mover, i: 0 });
+    check('P12-1 同页 6 并发移动 0 reject（连点不炸）', mv.rejected.length === 0, `rej=${String(mv.rejected.length)} ${String(mv.rejected[0]?.reason ?? '')}`);
+    check('P12-2 无孤儿/无双父：落点 ∈ 目标集合且存活计数不变', [pa, pb, pc].includes(placed?.parentId) && placed?.count === before12, `parent=${String(placed?.parentId)} count=${String(before12)}→${String(placed?.count)}`);
+
+    STEP = 'P13|并发重命名';
+    const nm = await allSettled(Array.from({ length: 10 }, (_v, i) =>
+      page.evaluate((a) => window.septcats.pages.rename({ id: a.id, title: `R29改名-${String(a.i)}` }), { id: mover, i })));
+    const titleNow = await page.evaluate(async (a) => {
+      const tree = await window.septcats.pages.tree({ workspaceId: a.w });
+      return tree.find((n) => n.id === a.id)?.title ?? null;
+    }, { w: wsId, id: mover });
+    check('P13-1 10 并发重命名 0 reject 且终态标题 ∈ 写入集合', nm.rejected.length === 0 && /^R29改名-\d+$/.test(String(titleNow)), `rej=${String(nm.rejected.length)} title=${String(titleNow)}`);
+
+    STEP = 'P14|并发类型转换';
+    const conv = await allSettled(Array.from({ length: 6 }, (_v, i) =>
+      page.evaluate((a) => window.septcats.pages.convert({ pageId: a.id, to: ['folder', 'page', 'wiki'][a.i % 3] }), { id: ids[11], i })));
+    const typeNow = await page.evaluate(async (a) => {
+      const tree = await window.septcats.pages.tree({ workspaceId: a.w });
+      return tree.find((n) => n.id === a.id)?.pageType ?? null;
+    }, { w: wsId, id: ids[11] });
+    check('P14-1 6 并发转换 0 reject 且终态类型合法（folder/page/wiki）', conv.rejected.length === 0 && ['folder', 'page', 'wiki'].includes(String(typeNow)), `rej=${String(conv.rejected.length)} ${String(conv.rejected[0]?.reason ?? '')} type=${String(typeNow)}`);
+
+    STEP = 'P15|并发便携导出（同目录原子写）';
+    const OUT = join(RUN, 'export');
+    rmSync(OUT, { recursive: true, force: true });
+    mkdirSync(OUT, { recursive: true });
+    const pe = await allSettled([0, 1, 2].map(() => page.evaluate((d) => window.septcats.portable.confirm({ dir: d }), OUT)));
+    check('P15-1 同目录 3 并发导出 0 reject（原子写 tmp→rename）', pe.rejected.length === 0, `rej=${String(pe.rejected.length)} ${String(pe.rejected[0]?.reason ?? '')}`);
+    const zipOut = execSync(`python "${join(RUN, 'zipcheck.py')}" "${OUT}"`, { encoding: 'utf8' }).trim();
+    check('P15-2 产物 zip 完整可解（无半成品/无截断）', /^zips=\d+ ok=true/.test(zipOut) && !/ok=false/.test(zipOut), zipOut);
+
+    STEP = 'P16|并发页面导出预览（只读零写）';
+    const pv = await allSettled(Array.from({ length: 5 }, () =>
+      page.evaluate((a) => window.septcats.pageExport.preview({ pageId: a.id, scope: 'single' }), { id: ids[12] })));
+    const pvOk = pv.values.every((v) => v !== null && typeof v === 'object');
+    check('P16-1 5 并发 pageExport.preview 0 reject 且结构合法', pv.rejected.length === 0 && pvOk, `rej=${String(pv.rejected.length)} ${String(pv.rejected[0]?.reason ?? '')}`);
 
     STEP = 'P9|未捕获异常';
     check('P9-1 全程 pageerror = 0（无未捕获 JS 异常）', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | ') || `consoleErrors=${String(consoleErrors.length)}`);

@@ -12,7 +12,7 @@
 - **快速连点删除不再误报 `E_NOT_FOUND`**（H-12，P3 健壮性）：`main/pages.ts` 的 `deletePage` 此前用 `requirePage(..., alive=true)` 守卫，第一次删除成功后，其余**并发/连点**请求命中「已删除」态即抛 `E_NOT_FOUND`——UI 会对一次**已成功**的删除弹「页面不存在或已删除」（真机 5 并发实测 3 条 reject），而函数内部本已备好 `ops.length === 0 → { deleted: 0 }` 的幂等分支被守卫提前挡掉。现改用与 `restorePage` 同口径的宽容版 `requirePage(..., false)`：已进回收站 → `{ deleted: 0 }`（幂等、不弹误报）；真不存在的 id（越界 / 已被 GC 物理清除）仍显式 `E_NOT_FOUND`。
 
 ### 测试 Tests
-- **R29 并发压测真机探针**（21 断言）：`docs/mockups/cdp-e2e-r29-concurrency.mjs`——并发创建/提交/覆盖、FTS 与写交错、索引重建与读并发、连点删除幂等、并发删+恢复无幽灵页、pageerror=0、离线只读 `PRAGMA integrity_check=ok`、真实数据根 mtime 零触碰；打包产物与 dev 靶可切（`SEPTCATS_APP_BIN`）。
+- **R29 并发压测真机探针**（**28 断言**）：`docs/mockups/cdp-e2e-r29-concurrency.mjs`——并发创建/提交/覆盖、FTS 与写交错、索引重建与读并发、连点删除幂等、并发删+恢复无幽灵页、同页并发移动（无孤儿/无双父）、并发重命名、并发类型转换、**同目录并发便携包导出（原子写，产物逐包 `testzip` 通过）**、并发页面导出预览、pageerror=0、离线只读 `PRAGMA integrity_check=ok`、真实数据根 mtime 零触碰；打包产物与 dev 靶可切（`SEPTCATS_APP_BIN`）。
 
 ## [0.6.1] - 2026-09-27
 
