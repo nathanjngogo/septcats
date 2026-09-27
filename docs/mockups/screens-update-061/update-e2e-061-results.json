@@ -1,0 +1,57 @@
+{
+  "task": "update-e2e-061",
+  "ranAt": "2026-09-27T13:55:50.507Z",
+  "feedDir": "E:\\Hermes Agent工作空间\\_scratch\\feed-061",
+  "assertions": [
+    {
+      "name": "V0-1 起始已装=0.6.0-rc.1",
+      "ok": true,
+      "detail": "0.6.0-rc.1"
+    },
+    {
+      "name": "V0-2 feed 镜像五件套就位",
+      "ok": true,
+      "detail": "files"
+    },
+    {
+      "name": "V0-3 镜像不失真：sha512(本地 exe)==线上 yml 声明",
+      "ok": true,
+      "detail": "N5JjiAKIQ8oqfCh5PN0cvuGR vs N5JjiAKIQ8oqfCh5PN0cvuGR"
+    },
+    {
+      "name": "V1-1 check→available 0.6.1（latest.yml 自拉验签过）",
+      "ok": true,
+      "detail": "{\"status\":\"available\",\"version\":\"0.6.1\"}"
+    },
+    {
+      "name": "V2-1 下载终态=downloaded（本地源；sha512 由 electron-updater 内建校验）",
+      "ok": true,
+      "detail": "{\"status\":\"downloaded\",\"version\":\"0.6.1\"}"
+    },
+    {
+      "name": "V3-1 install confirm 受理（随后 quitAndInstall 退出）",
+      "ok": true,
+      "detail": "{\"ok\":true}"
+    },
+    {
+      "name": "V3-2 NSIS 静默升级完成：注册表 DisplayVersion=0.6.1",
+      "ok": true,
+      "detail": "0.6.1"
+    },
+    {
+      "name": "0.6.1 check→not-available（不循环升级）",
+      "ok": true,
+      "detail": "{\"status\":\"not-available\"}"
+    },
+    {
+      "name": "V4-2 应用自报版本=0.6.1",
+      "ok": true,
+      "detail": "{\"name\":\"@septcats/desktop\",\"version\":\"0.6.1\",\"schemaVersion\":3,\"layoutRoot\":\"data\"}"
+    },
+    {
+      "name": "V5-1 真实数据根零触碰（mtime 不变）",
+      "ok": true,
+      "detail": "before=1790512492839.6003 after=1790512492839.6003"
+    }
+  ]
+}
