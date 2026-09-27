@@ -1,78 +1,96 @@
 {
   "task": "T65",
-  "ranAt": "2026-09-23T17:41:48.916Z",
+  "ranAt": "2026-09-27T16:32:26.705Z",
   "assertions": [
     {
-      "step": "T1|入口",
-      "name": "T1-a 缺省态（palette=none/mono 口径，theme=light）",
+      "step": "T1|两行在位",
+      "name": "T1-a 质感行 3 项 = 像素/Linear 极简/毛玻璃",
       "ok": true,
-      "raw": "{\"theme\":\"light\",\"palette\":\"mono\",\"bg\":\"rgb(245, 245, 245)\",\"stored\":\"none\"}"
+      "raw": "[\"像素\",\"Linear 极简\",\"毛玻璃\"]"
     },
     {
-      "step": "T1|入口",
-      "name": "T1-b 顶栏钮开画廊",
+      "step": "T1|两行在位",
+      "name": "T1-b 配色行 6 项",
       "ok": true,
-      "raw": "overlay visible"
+      "raw": "6"
     },
     {
-      "step": "T1|入口",
-      "name": "T1-c 关闭钮收画廊",
+      "step": "T2|画廊取消",
+      "name": "T2-a 无画廊浮层",
       "ok": true,
-      "raw": "closed"
+      "raw": "false"
     },
     {
-      "step": "T2|六卡+点选",
-      "name": "T2-a 六派系卡齐",
+      "step": "T2|画廊取消",
+      "name": "T2-b 无设置页画廊入口钮",
       "ok": true,
-      "raw": "mono,oled,contrast,paper,slate,moss"
+      "raw": "false"
     },
     {
-      "step": "T2|六卡+点选",
-      "name": "T2-b 点苔青→data-palette 换值+底色变化",
+      "step": "T2|画廊取消",
+      "name": "T2-c 无顶栏调色板钮 palette-open",
       "ok": true,
-      "raw": "before=rgb(245, 245, 245) after=rgb(239, 242, 235)"
+      "raw": "false"
     },
     {
-      "step": "T2|六卡+点选",
-      "name": "T2-c 当前角标在苔青卡",
+      "step": "T3|点选生效",
+      "name": "T3-a data-palette=moss",
       "ok": true,
-      "raw": "badge"
+      "raw": "{\"theme\":\"light\",\"palette\":\"moss\",\"look\":\"pixel\",\"bodyBg\":\"rgb(239, 242, 235)\",\"stored\":\"moss\"}"
     },
     {
-      "step": "T3|oled×light 回退",
-      "name": "T3-a light×oled 渲染色=mono 口径（回退不塌）",
+      "step": "T3|点选生效",
+      "name": "T3-b localStorage septcats.palette=moss",
       "ok": true,
-      "raw": "oledL=rgb(245, 245, 245) monoL=rgb(245, 245, 245)"
+      "raw": "moss"
     },
     {
-      "step": "T4|切 dark+oled 生效+持久",
-      "name": "T4-a 命令面板切 dark 成功",
+      "step": "T3|点选生效",
+      "name": "T3-c body 背景随派系变化（代表色真落）",
       "ok": true,
-      "raw": "{\"theme\":\"dark\",\"palette\":\"mono\",\"bg\":\"rgb(20, 20, 20)\",\"stored\":\"mono\"}"
+      "raw": "rgb(245, 245, 245) -> rgb(239, 242, 235)"
     },
     {
-      "step": "T4|切 dark+oled 生效+持久",
-      "name": "T4-b dark×oled 点卡生效（纯黑底≠mono dark 底）",
+      "step": "T4|oled×light",
+      "name": "T4-a 浅色基底「纯黑」置灰（disabled）",
       "ok": true,
-      "raw": "oledD=rgb(0, 0, 0) monoD=rgb(20, 20, 20)"
+      "raw": "true"
     },
     {
-      "step": "T4|切 dark+oled 生效+持久",
-      "name": "T4-c 重启后 oled 持久（点卡路径落盘）",
+      "step": "T4|oled×light",
+      "name": "T4-b 切深色基底生效（data-theme=dark）",
       "ok": true,
-      "raw": "{\"theme\":\"dark\",\"palette\":\"oled\",\"bg\":\"rgb(0, 0, 0)\",\"stored\":\"oled\"}"
+      "raw": "theme switch"
     },
     {
-      "step": "T5|设置页入口",
-      "name": "T5-a 设置页 theme-section 可见",
+      "step": "T4|oled×light",
+      "name": "T4-c 深色基底「纯黑」可选（disabled=false）",
       "ok": true,
-      "raw": "visible"
+      "raw": "false"
     },
     {
-      "step": "T5|设置页入口",
-      "name": "T5-b 设置页入口开画廊",
+      "step": "T4|oled×light",
+      "name": "T4-d 深色下选「纯黑」→ data-palette=oled",
       "ok": true,
-      "raw": "gallery open"
+      "raw": "{\"theme\":\"dark\",\"palette\":\"oled\",\"look\":\"pixel\",\"bodyBg\":\"rgb(0, 0, 0)\",\"stored\":\"oled\"}"
+    },
+    {
+      "step": "T5|重启持久",
+      "name": "T5-a 重启后 CDP 重连",
+      "ok": true,
+      "raw": "reconnected"
+    },
+    {
+      "step": "T5|重启持久",
+      "name": "T5-b 重启后 data-palette 与重启前一致",
+      "ok": true,
+      "raw": "oled -> oled"
+    },
+    {
+      "step": "T5|重启持久",
+      "name": "T5-c 重启后 data-look 随存储恢复",
+      "ok": true,
+      "raw": "pixel"
     }
   ]
 }

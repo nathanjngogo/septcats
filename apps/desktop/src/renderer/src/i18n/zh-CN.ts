@@ -32,7 +32,6 @@ export const zhCN = {
     // T72-01 §范围1：顶栏「工作台模板市场」入口钮（店铺 glyph，Alt+H 语义改开市场）
     workbenchMarketLabel: '工作台模板市场',
     // T65-01 §1：顶栏调色板入口钮（画廊）
-    paletteLabel: '配色画廊',
   },
   // T66-01：个人工作台（home 视图）文案。
   workbench: {
@@ -272,6 +271,13 @@ export const zhCN = {
     E_AI_TIMEOUT: '请求超时',
   },
   sidebar: {
+    // T86-01：批量删除（老板 09-27 令）——入口行 / 操作条 / 勾选框无障碍名
+    bulkEnter: '批量删除…',
+    bulkSelected: '已选 {n} 项',
+    bulkAll: '全选',
+    bulkClear: '清空',
+    bulkDelete: '删除所选',
+    bulkCheckAria: '选择「{name}」',
     workspace: '个人库',
     createFromAria: '从模板新建',
     favorites: '收藏',
@@ -374,6 +380,11 @@ export const zhCN = {
     title: '删除页面',
     body: '「{name}」将移入回收站，可随时在回收站中恢复。',
     bodyWithChildren: '「{name}」及其 {n} 个子页面将移入回收站，可随时在回收站中恢复。',
+    // T86-01：侧栏批量删除（老板 09-27 令）
+    bulkTitle: '批量删除确认',
+    bulkBody: '选中的 {n} 项将移入回收站（各自的子页面一并移入），可在回收站中恢复。',
+    bulkToast: '已移入回收站 {n} 项',
+    bulkToastPartial: '已移入回收站 {n} 项，{m} 项失败',
   },
   trash: {
     back: '返回页面',
@@ -486,8 +497,7 @@ export const zhCN = {
       langEn: 'English',
       // T65-01 §1：配色派系（六选，画廊预览即时切换；含「跟随明暗三态」既有主题开关）
       palette: '配色派系',
-      paletteDesc: '六套中性配色，画廊预览即时切换并记住',
-      paletteGallery: '打开画廊',
+      paletteDesc: '六套中性配色，点一下即时切换并记住',
       paletteCurrent: '当前',
       paletteDisabledOled: '纯黑仅深色背景生效',
       paletteNames: {
@@ -953,8 +963,7 @@ export const zhCN = {
       light: '切换主题：浅色',
       dark: '切换主题：深色',
       system: '切换主题：跟随系统',
-      // T65-01 §1：主题画廊（六派系迷你预览）；{name} = 派系名（settings.appearance.paletteNames）
-      palette: '主题画廊',
+      // {name} = 派系名（settings.appearance.paletteNames）
       switch: '切到 {name} 配色',
       switchLook: '切到 {name} 质感',
     },
@@ -995,7 +1004,6 @@ export const zhCN = {
       light: '界面主题',
       dark: '界面主题',
       system: '界面主题',
-      palette: '打开主题画廊，六派系迷你预览即时切换',
       switch: '切到 {name} 配色派系并记住',
       switchLook: '切到 {name} 质感派系并记住',
     },

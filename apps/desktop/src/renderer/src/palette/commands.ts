@@ -108,7 +108,6 @@ export interface CommandDeps {
    * T65-01 §1：打开主题画廊（六派系迷你预览弹框）。App 恒注入 → 命令恒出现；
    * 测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
    */
-  openThemeGallery?(): void;
   /**
    * T65-01 §1：切到指定配色派系（六条独立的「切到 X 派系」命令）。App 恒注入
    * → 命令恒出现；测试 spy deps 不注入 → 不出现（静态清单/别名基线不受影响）。
@@ -233,18 +232,6 @@ export const WORKBENCH_MARKET_DEF: PaletteCommandDef = {
   label: t('commands.app.workbenchMarket'),
   hint: t('commandHints.app.workbenchMarket'),
   aliases: ['mobanshichang', 'mb sc', 'mbsc', 'mb', 'template market', 'market', 'templates'],
-};
-
-/**
- * T65-01 §1：主题画廊命令。**不在静态 COMMAND_DEFS 里**——同 openManual 走 deps 门
- * （App 恒注入 openThemeGallery → 恒出现；palette 基线测试的 spy deps 不注入 →
- * 静态清单/别名基线不受影响）。
- */
-export const THEME_GALLERY_DEF: PaletteCommandDef = {
-  id: 'theme.palette',
-  label: t('commands.theme.palette'),
-  hint: t('commandHints.theme.palette'),
-  aliases: ['zhutiuhualang', 'zhutihualang', 'hualang', 'tzhl', 'theme gallery', 'gallery', 'palette'],
 };
 
 /**
@@ -444,15 +431,7 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       run: deps.openWorkbenchMarket,
     });
   }
-  // T65-01 §1：主题画廊 + 六条「切到 X 派系」命令（App 恒注入 → 恒出现）。
-  if (deps.openThemeGallery !== undefined) {
-    commands.push({
-      ...THEME_GALLERY_DEF,
-      label: t('commands.theme.palette'),
-      hint: t('commandHints.theme.palette'),
-      run: deps.openThemeGallery,
-    });
-  }
+  // 六条「切到 X 派系」命令（老板 09-27：画廊已取消，配色/质感在「设置→外观」内联）。
   if (deps.setThemePalette !== undefined) {
     for (const id of PALETTE_IDS) {
       const name = t(`settings.appearance.paletteNames.${id}`);

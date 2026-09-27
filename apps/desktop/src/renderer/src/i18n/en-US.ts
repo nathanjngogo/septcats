@@ -31,7 +31,6 @@ export const enUS = {
     workbenchLabel: 'My Workbench',
     // T72-01 §1: top-bar "Workbench Template Market" entry button (shop glyph; Alt+H opens market)
     workbenchMarketLabel: 'Template Market',
-    paletteLabel: 'Color gallery',
   },
   // T66-01: personal workbench (home view) copy.
   workbench: {
@@ -271,6 +270,13 @@ export const enUS = {
     E_AI_TIMEOUT: 'Request timed out',
   },
   sidebar: {
+    // T86-01: batch delete (owner's 09-27 request)
+    bulkEnter: 'Batch delete…',
+    bulkSelected: '{n} selected',
+    bulkAll: 'Select all',
+    bulkClear: 'Clear',
+    bulkDelete: 'Delete selected',
+    bulkCheckAria: 'Select "{name}"',
     workspace: 'Personal vault',
     createFromAria: 'New from template',
     favorites: 'Favorites',
@@ -367,6 +373,12 @@ export const enUS = {
     body: '"{name}" will be moved to the Trash. You can restore it from the Trash at any time.',
     bodyWithChildren:
       '"{name}" and its {n} subpages will be moved to the Trash. You can restore them from the Trash at any time.',
+    // T86-01: sidebar batch delete (owner's 09-27 request)
+    bulkTitle: 'Confirm Batch Delete',
+    bulkBody:
+      'The {n} selected items (and their subpages) will be moved to the Trash. You can restore them from the Trash.',
+    bulkToast: '{n} items moved to the Trash',
+    bulkToastPartial: '{n} items moved to the Trash, {m} failed',
   },
   trash: {
     back: 'Back to Pages',
@@ -483,8 +495,7 @@ export const enUS = {
       langEn: 'English',
       // T65-01 §1: color palettes (six to choose; live preview in gallery)
       palette: 'Color palette',
-      paletteDesc: 'Six neutral palettes; preview and switch live in the gallery',
-      paletteGallery: 'Open gallery',
+      paletteDesc: 'Six neutral palettes; pick one to switch and remember',
       paletteCurrent: 'Current',
       paletteDisabledOled: 'Pure Black only applies on dark background',
       paletteNames: {
@@ -966,7 +977,6 @@ export const enUS = {
       light: 'Switch Theme: Light',
       dark: 'Switch Theme: Dark',
       system: 'Switch Theme: System',
-      palette: 'Theme gallery',
       switch: 'Switch to {name} palette',
       switchLook: 'Switch to {name} texture',
     },
@@ -1007,7 +1017,6 @@ export const enUS = {
       light: 'Interface theme',
       dark: 'Interface theme',
       system: 'Interface theme',
-      palette: 'Open the theme gallery; preview six palettes live',
       switch: 'Switch to the {name} palette and remember it',
       switchLook: 'Switch to the {name} texture and remember it',
     },

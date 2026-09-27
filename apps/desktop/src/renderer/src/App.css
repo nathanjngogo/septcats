@@ -375,3 +375,40 @@ html, body {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * T86-01：侧栏批量删除（老板 09-27 令第 5 条）——入口行复用 .app-nav-row，
+   以下 = 行首勾选框槽 + 多选操作条。颜色/间距一律走 token（no-magic 门禁）。
+ * ------------------------------------------------------------------------- */
+.app-nav-leading {
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.app-nav-check {
+  accent-color: var(--sc-color-ink);
+  width: var(--sc-space-md);
+  height: var(--sc-space-md);
+  margin: 0;
+  cursor: pointer;
+}
+
+.app-nav-bulkbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sc-space-xs);
+  margin: var(--sc-space-xs) var(--sc-space-sm);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  background: var(--sc-color-surface-raised);
+  /* --sc-border-edge 是**复合** token（`<width> solid <ink-edge>`），不能再套 1px solid（T62-01 纪律） */
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+}
+
+.app-nav-bulkbar-count {
+  margin-right: auto;
+  color: var(--sc-color-ink-secondary);
+  font-size: var(--sc-text-ui-xs);
+}

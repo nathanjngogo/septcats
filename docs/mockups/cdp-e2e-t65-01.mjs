@@ -1,11 +1,16 @@
 /*
- * cdp-e2e-t65-01.mjs —— TASK-T65-01（主题画廊 R17①）PM 真机取证。
- * T1 入口三径：顶栏 palette-open / 设置页 theme-gallery-entry / 命令面板 theme.palette；
- * T2 画廊六卡齐 + 当前角标 + 点选生效（documentElement[data-palette] 换值 + 代表色变化）；
- * T3 oled×light 回退：存 oled 但 light 基底 → 生效口径=mono（paletteState §1.1）；
- * T4 持久：换派系→重启→data-palette 仍在 + localStorage 键=septcats.palette；
- * T5 明暗基底联动：theme.dark 命令→data-theme 换；画廊卡对比不塌（截图取证）。
- * 夹具双隔离（settings rootPath + user-data-dir），真实根零触碰。
+ * cdp-e2e-t65-01.mjs —— 主题设置真机取证（TASK-T65-01 画廊版 → 老板 09-27 令后改口径）。
+ *
+ * **老板 09-27 原话**：「2. 根本没有毛玻璃等主题 … 4. 取消主题画廊」→ 画廊浮层/顶栏
+ * 入口钮/命令面板 theme.palette 一并删除，配色 + 质感**内联进「设置→外观」两行**。
+ * 本探针钉住改口径后的真机事实（真实 UI 路径，非直写 localStorage）：
+ *   T1 设置→外观：配色 6 项 + 质感 3 项（像素/Linear 极简/毛玻璃）在位；
+ *   T2 画廊零残留：无 theme-gallery 浮层、无 theme-gallery-entry 入口钮、无顶栏 palette-open 钮；
+ *   T3 点「苔青」→ data-palette=moss 即时生效 + localStorage 持久；
+ *   T4 oled×light 回退：浅色基底置灰不可选（disabled），深色基底可选并落 oled；
+ *   T5 重启后 data-palette/data-look 仍在（持久链）；
+ *   T6 真实档案根 mtime 未变（零触碰）。
+ * 夹具双隔离（settings rootPath + user-data-dir）。
  */
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
@@ -60,20 +65,45 @@ async function launch() {
   const ctx = browser.contexts()[0];
   const page = ctx.pages().find((p) => p.url().startsWith('file:')) ?? await ctx.waitForEvent('page');
   await page.waitForSelector('.app-side', { timeout: 30000 });
-  await wait(2500); // 稳态：首帧渲染 + init 管线
+  await wait(2500);
   const pick = await page.locator('[data-testid="ws-create"]').count();
   if (pick > 0) { await page.locator('[data-testid="ws-create"]').first().click(); await wait(2500); }
   return { child, browser, page };
 }
 
-/** 页内求值小工具：根属性 + 代表色（body 计算背景）。 */
+/** 打开设置页 → 等主题两行就位（老板口径：这里是唯一入口）。 */
+async function openSettings(page) {
+  await page.evaluate(() => window.dispatchEvent(new Event('septcats:open-settings')));
+  await page.waitForSelector('[data-testid="theme-look-section"]', { timeout: 15000 });
+  await wait(400);
+}
+
 async function rootSig(page) {
   return page.evaluate(() => ({
     theme: document.documentElement.getAttribute('data-theme') ?? 'none',
     palette: document.documentElement.getAttribute('data-palette') ?? 'none',
-    bg: getComputedStyle(document.body).backgroundColor,
+    look: document.documentElement.getAttribute('data-look') ?? 'none',
+    bodyBg: getComputedStyle(document.body).backgroundColor,
     stored: localStorage.getItem('septcats.palette') ?? 'none',
   }));
+}
+
+async function rowFacts(page) {
+  return page.evaluate(() => {
+    const lookRow = document.querySelector('[data-testid="theme-look-section"]');
+    const paletteRow = document.querySelector('[data-testid="theme-section"]');
+    const labels = (row) => [...(row?.querySelectorAll('.sc-radio__label') ?? [])].map((el) => el.textContent ?? '');
+    const oled = paletteRow?.querySelector('input[value="oled"]');
+    return {
+      lookLabels: labels(lookRow),
+      lookCount: lookRow?.querySelectorAll('input[type="radio"]').length ?? 0,
+      paletteCount: paletteRow?.querySelectorAll('input[type="radio"]').length ?? 0,
+      oledDisabled: oled ? oled.disabled === true : null,
+      galleryOverlay: document.querySelector('[data-testid="theme-gallery"]') !== null,
+      galleryEntry: document.querySelector('[data-testid="theme-gallery-entry"]') !== null,
+      paletteOpenBtn: document.querySelector('[data-testid="palette-open"]') !== null,
+    };
+  });
 }
 
 async function main() {
@@ -81,105 +111,92 @@ async function main() {
   rmSync(RUN, { recursive: true, force: true });
   mkdirSync(UD, { recursive: true }); mkdirSync(ROOT, { recursive: true });
   const rootBefore = rootMtime();
-  const { child, browser, page } = await launch();
+  const app = await launch();
   try {
-    STEP = 'T1|入口';
-    const sig0 = await rootSig(page);
-    check('T1-a 缺省态（palette=none/mono 口径，theme=light）', sig0.theme === 'light' && (sig0.palette === 'none' || sig0.palette === 'mono'), JSON.stringify(sig0));
-    await page.locator('[data-testid="palette-open"]').click();
+    // ===== T1 设置→外观 两行在位（老板「根本没有毛玻璃等主题」的正面钉）=====
+    STEP = 'T1|两行在位';
+    await openSettings(app.page);
+    let f = await rowFacts(app.page);
+    check('T1-a 质感行 3 项 = 像素/Linear 极简/毛玻璃',
+      f.lookCount === 3 && f.lookLabels.includes('像素') && f.lookLabels.includes('Linear 极简') && f.lookLabels.includes('毛玻璃'),
+      JSON.stringify(f.lookLabels));
+    check('T1-b 配色行 6 项', f.paletteCount === 6, String(f.paletteCount));
+    await app.page.screenshot({ path: join(SHOTS, 't1-theme-rows.png') });
+
+    // ===== T2 画廊零残留 =====
+    STEP = 'T2|画廊取消';
+    check('T2-a 无画廊浮层', f.galleryOverlay === false, String(f.galleryOverlay));
+    check('T2-b 无设置页画廊入口钮', f.galleryEntry === false, String(f.galleryEntry));
+    check('T2-c 无顶栏调色板钮 palette-open', f.paletteOpenBtn === false, String(f.paletteOpenBtn));
+
+    // ===== T3 点「苔青」→ 即时生效 + 持久 =====
+    STEP = 'T3|点选生效';
+    const sig0 = await rootSig(app.page);
+    await app.page.click('[data-testid="theme-section"] input[value="moss"]');
+    await wait(600);
+    const sig1 = await rootSig(app.page);
+    check('T3-a data-palette=moss', sig1.palette === 'moss', JSON.stringify(sig1));
+    check('T3-b localStorage septcats.palette=moss', sig1.stored === 'moss', sig1.stored);
+    check('T3-c body 背景随派系变化（代表色真落）', sig0.bodyBg !== sig1.bodyBg, `${sig0.bodyBg} -> ${sig1.bodyBg}`);
+
+    // ===== T4 oled×light 回退（浅色置灰 / 深色可选）=====
+    STEP = 'T4|oled×light';
+    f = await rowFacts(app.page);
+    check('T4-a 浅色基底「纯黑」置灰（disabled）', f.oledDisabled === true, String(f.oledDisabled));
+    // 明暗基底切换走设置页内真实通路：同一「外观」节的「主题（明暗）」单选（name=settings-theme）
+    await app.page.click('input[name="settings-theme"][value="dark"]');
     await wait(700);
-    check('T1-b 顶栏钮开画廊', await page.locator('[data-testid="theme-gallery"]').isVisible() === true, 'overlay visible');
-    await page.screenshot({ path: join(SHOTS, 't1-gallery-open.png') });
-    await page.locator('[data-testid="theme-gallery-close"]').click();
-    await wait(500);
-    check('T1-c 关闭钮收画廊', await page.locator('[data-testid="theme-gallery"]').count() === 0, 'closed');
-
-    STEP = 'T2|六卡+点选';
-    await page.locator('[data-testid="palette-open"]').click();
-    await wait(600);
-    const ids = ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss'];
-    let cardsOk = true;
-    for (const id of ids) {
-      if (await page.locator(`[data-testid="theme-gallery-card-${id}"]`).count() !== 1) cardsOk = false;
+    let darkApplied = false;
+    for (let i = 0; i < 20; i += 1) {
+      const sig = await rootSig(app.page);
+      if (sig.theme === 'dark') { darkApplied = true; break; }
+      await wait(500);
     }
-    check('T2-a 六派系卡齐', cardsOk === true, ids.join(','));
-    const bgMoss0 = (await rootSig(page)).bg;
-    await page.locator('[data-testid="theme-gallery-card-moss"]').click();
-    await wait(900);
-    const sigMoss = await rootSig(page);
-    check('T2-b 点苔青→data-palette 换值+底色变化', sigMoss.palette === 'moss' && sigMoss.bg !== bgMoss0, `before=${bgMoss0} after=${sigMoss.bg}`);
-    await page.screenshot({ path: join(SHOTS, 't2-moss-light.png') });
-    check('T2-c 当前角标在苔青卡', await page.locator('[data-testid="theme-gallery-card-moss"] [data-testid="theme-gallery-current"]').count() === 1, 'badge');
-    await page.locator('[data-testid="theme-gallery-close"]').click();
-    await wait(400);
-
-    STEP = 'T3|oled×light 回退';
-    await page.evaluate(() => localStorage.setItem('septcats.palette', 'oled'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await wait(3200);
-    const sigOledLight = await rootSig(page);
-    const effBg = sigOledLight.bg;
-    // light 基底存 oled → 生效=mono 渲染口径（属性可保留 oled，但色值必须=mono/light）
-    await page.evaluate(() => localStorage.setItem('septcats.palette', 'mono'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await wait(3200);
-    const sigMonoLight = await rootSig(page);
-    check('T3-a light×oled 渲染色=mono 口径（回退不塌）', effBg === sigMonoLight.bg, `oledL=${effBg} monoL=${sigMonoLight.bg}`);
-
-    STEP = 'T4|切 dark+oled 生效+持久';
-    // 走产品路径：命令面板 theme.dark
-    await page.keyboard.press('Control+K');
-    await wait(600);
-    await page.keyboard.type('深色');
-    await wait(700);
-    await page.keyboard.press('Enter');
-    await wait(900);
-    const sigDark = await rootSig(page);
-    check('T4-a 命令面板切 dark 成功', sigDark.theme === 'dark', JSON.stringify(sigDark));
-    // 走产品路径点卡（画廊内选 oled）而非 evaluate 直写：leveldb 写盘有异步刷盘，
-    // 直写+秒杀=探针时序 bug（首轮 T4-c 因此假红）。点卡后留 3s flush 再重启。
-    await page.locator('[data-testid="palette-open"]').click();
-    await wait(600);
-    await page.locator('[data-testid="theme-gallery-card-oled"]').click();
-    await wait(3500);
-    const sigOledDark = await rootSig(page);
-    check('T4-b dark×oled 点卡生效（纯黑底≠mono dark 底）', sigOledDark.palette === 'oled' && sigOledDark.bg !== sigDark.bg, `oledD=${sigOledDark.bg} monoD=${sigDark.bg}`);
-    await page.screenshot({ path: join(SHOTS, 't4-oled-dark.png') });
-    await page.locator('[data-testid="theme-gallery-close"]').click();
-    await wait(500);
-    // 优雅退出（window.close→应用自然 quit）：taskkill /F 强杀会丢 Chromium 尚未 flush 的
-    // localStorage leveldb 写（T4-c 两轮假红根因=探针强杀丢写，非产品缺陷）。
-    await page.evaluate(() => window.close()).catch(() => { /* */ });
-    for (let k = 0; k < 16; k += 1) {
-      await wait(1000);
-      try { execSync(`tasklist /FI "PID eq ${String(child.pid)}" | findstr ${String(child.pid)}`, { stdio: 'pipe' }); } catch { break; }
+    check('T4-b 切深色基底生效（data-theme=dark）', darkApplied, 'theme switch');
+    f = await rowFacts(app.page);
+    check('T4-c 深色基底「纯黑」可选（disabled=false）', f.oledDisabled === false, String(f.oledDisabled));
+    if (darkApplied) {
+      await app.page.click('[data-testid="theme-section"] input[value="oled"]');
+      await wait(600);
+      const sigOled = await rootSig(app.page);
+      check('T4-d 深色下选「纯黑」→ data-palette=oled', sigOled.palette === 'oled', JSON.stringify(sigOled));
+    } else {
+      check('T4-d 深色下选「纯黑」→ data-palette=oled', false, 'skipped: dark not applied');
     }
-    killTree(child.pid);
-    await wait(1500);
-    const re = await launch();
-    try {
-      const sigRe = await rootSig(re.page);
-      check('T4-c 重启后 oled 持久（点卡路径落盘）', sigRe.palette === 'oled' && sigRe.stored === 'oled', JSON.stringify(sigRe));
-    } finally {
-      STEP = 'T5|设置页入口';
-      // 产品事件开设置页（App.tsx:330 监听 septcats:open-settings）→ theme-section 挂载 →
-      // 点 theme-gallery-entry 真开画廊。
-      await re.page.evaluate(() => window.dispatchEvent(new Event('septcats:open-settings')));
-      await wait(900);
-      const secOk = await re.page.locator('[data-testid="theme-section"]').isVisible();
-      check('T5-a 设置页 theme-section 可见', secOk === true, 'visible');
-      await re.page.locator('[data-testid="theme-gallery-entry"]').click();
-      await wait(700);
-      check('T5-b 设置页入口开画廊', await re.page.locator('[data-testid="theme-gallery"]').isVisible() === true, 'gallery open');
-      await re.page.screenshot({ path: join(SHOTS, 't5-settings-entry.png') });
-      void [browser, page];
+
+    // ===== T5 重启后持久 =====
+    STEP = 'T5|重启持久';
+    const sigBeforeRestart = await rootSig(app.page);
+    await app.page.evaluate(() => window.septcats.sync.restart().catch(() => undefined));
+    await wait(5000);
+    let re = null;
+    for (let i = 0; i < 30 && re === null; i += 1) {
+      try {
+        const b = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`);
+        const p = b.contexts()[0]?.pages()?.[0];
+        if (p !== undefined) {
+          await p.waitForSelector('.app-side', { timeout: 20000 });
+          await wait(2000);
+          re = { browser: b, page: p };
+        }
+      } catch { /* relaunch 未就绪 */ }
+      if (re === null) await wait(1500);
+    }
+    if (re === null) {
+      check('T5-a 重启后 CDP 重连', false, '30 次轮询超时');
+    } else {
+      const sig2 = await rootSig(re.page);
+      check('T5-a 重启后 CDP 重连', true, 'reconnected');
+      check('T5-b 重启后 data-palette 与重启前一致', sig2.palette === sigBeforeRestart.palette, `${sigBeforeRestart.palette} -> ${sig2.palette}`);
+      check('T5-c 重启后 data-look 随存储恢复', sig2.look !== 'none', sig2.look);
+      await re.browser.close().catch(() => undefined);
     }
   } finally {
     const pass = assertions.filter((x) => x.ok === true).length;
     const fail = assertions.filter((x) => x.ok === false).length;
     writeFileSync(join(SHOTS, 't65-results.json'), JSON.stringify({ task: 'T65', ranAt: new Date().toISOString(), assertions }, null, 2));
     console.log(`\n===== T65：${pass} PASS / ${fail} FAIL =====`);
-    check('T 真实数据根未被触碰', rootBefore === rootMtime(), `before=${String(rootBefore)}`);
+    check('T6 真实数据根未被触碰', rootBefore === rootMtime(), `before=${String(rootBefore)}`);
     try { execSync('taskkill /F /IM electron.exe', { stdio: 'ignore' }); } catch { /* */ }
     process.exit(fail === 0 ? 0 : 1);
   }

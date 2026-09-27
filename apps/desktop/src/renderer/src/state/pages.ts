@@ -56,6 +56,11 @@ export interface PagesState {
   toasts: ToastMessage[];
   /** 「删除页面」二次确认弹层的目标页 id（null = 关闭；T24-01 §0.A）。 */
   deleteConfirmId: string | null;
+  /**
+   * T86-01：侧栏「批量删除」的确认弹层状态（null = 关闭；非空数组 = 待删页 id）。
+   * 与 deleteConfirmId（单页删除）并列，互不覆盖：单页弹层与批量弹层各自独立开合。
+   */
+  deleteBatch: string[] | null;
   /** T67-01-B2-01：当前已上锁页 id 集合（侧栏锁 glyph + 菜单项口径 + 命令面板条件项）。 */
   lockedIds: Set<string>;
   /** T67-01-B2-01 范围1：加锁/改密/移除 弹层状态（null = 关闭）。 */
@@ -90,6 +95,7 @@ const initialState: PagesState = {
   recentIds: [],
   toasts: [],
   deleteConfirmId: null,
+  deleteBatch: null,
   lockedIds: new Set<string>(),
   lockDialog: null,
   exportDialog: null,
@@ -312,19 +318,26 @@ async function optimistic(options: {
   apply: (state: PagesState) => Partial<PagesState>;
   run: () => Promise<void>;
   success?: string;
+  /**
+   * T86-01：静默模式——成功/失败都**不**各自发 toast，由调用方汇总一条
+   * （批量删 N 页不能刷 N 条提示；失败明细由调用方计数后统一上报）。
+   */
+  silent?: boolean;
 }): Promise<boolean> {
   const before = takeSnapshot();
   pagesStore.setState((state) => ({ ...state, ...options.apply(state) }));
   try {
     await options.run();
-    if (options.success !== undefined) {
+    if (options.success !== undefined && options.silent !== true) {
       pushToast(options.success, 'success');
     }
     await refresh();
     return true;
   } catch (error) {
     pagesStore.setState((state) => ({ ...state, ...before }));
-    pushToast(describeError(error), 'danger');
+    if (options.silent !== true) {
+      pushToast(describeError(error), 'danger');
+    }
     return false;
   }
 }
@@ -583,6 +596,71 @@ export const pagesActions = {
     pagesActions.ensureSelection();
   },
 
+  /**
+   * T86-01（老板 09-27 令「左侧边栏增加批量删除功能」）：请求批量删除 → 开确认弹层。
+   *
+   * ids 归一化：去空、去重、只留**当前存活**页（回收站里的页不进批量语义——那里另有
+   * 「彻底删除」通道，单页删除入口同口径）。
+   */
+  requestDeletePages(ids: readonly string[]): void {
+    const alive = new Set(aliveNodes(pagesStore.getState().nodes).map((node) => node.id));
+    const normalized = [...new Set(ids)].filter((id) => id.length > 0 && alive.has(id));
+    if (normalized.length === 0) {
+      return;
+    }
+    pagesStore.setState((state) => ({ ...state, deleteBatch: normalized }));
+  },
+
+  cancelDeletePages(): void {
+    pagesStore.setState((state) => ({ ...state, deleteBatch: null }));
+  },
+
+  /**
+   * T86-01：确认批量删除 → 逐页软删（复用 deletePage 的乐观更新/回滚/对账 + H-12 幂等），
+   * 逐页**静默**、末尾只发**一条**汇总 toast（全成 success；有失败 danger 带失败数）。
+   *
+   * 祖先/子孙同选时只删祖先（子树删除已覆盖子孙），避免重复 IPC 与重复计数。
+   * 收尾与单页删除同口径：回 pages 视图 + ensureSelection 选中回落。
+   */
+  async confirmDeletePages(): Promise<void> {
+    const ids = pagesStore.getState().deleteBatch;
+    pagesStore.setState((state) => ({ ...state, deleteBatch: null }));
+    if (ids === null || ids.length === 0) {
+      return;
+    }
+    const byId = nodeMap(pagesStore.getState().nodes);
+    const selected = new Set(ids);
+    const targets = ids.filter((id) => {
+      let cursor = byId.get(id)?.parentId ?? null;
+      while (cursor !== null) {
+        if (selected.has(cursor)) {
+          return false;
+        }
+        cursor = byId.get(cursor)?.parentId ?? null;
+      }
+      return true;
+    });
+    let okCount = 0;
+    let failCount = 0;
+    for (const id of targets) {
+      const ok = await pagesActions.deletePage(id, { silent: true });
+      if (ok) {
+        okCount += 1;
+      } else {
+        failCount += 1;
+      }
+    }
+    pushToast(
+      t(failCount === 0 ? 'pageDelete.bulkToast' : 'pageDelete.bulkToastPartial')
+        .replace('{n}', String(okCount))
+        .replace('{m}', String(failCount)),
+      failCount === 0 ? 'success' : 'danger',
+      'toast-bulk-delete',
+    );
+    pagesActions.showPages();
+    pagesActions.ensureSelection();
+  },
+
   dismissToast(id: string): void {
     removeToast(id);
   },
@@ -685,7 +763,7 @@ export const pagesActions = {
     });
   },
 
-  async deletePage(id: string): Promise<void> {
+  async deletePage(id: string, options: { silent?: boolean } = {}): Promise<boolean> {
     const targets = subtreeIds(pagesStore.getState().nodes, id);
     const ok = await optimistic({
       apply: (state) => ({
@@ -697,6 +775,8 @@ export const pagesActions = {
         await bridge().pages.remove({ id });
       },
       success: t('pages.toastTrashed'),
+      // T86-01：批量删除走静默通道（逐页不刷 toast），由 confirmDeletePages 汇总一条
+      silent: options.silent === true,
     });
     if (ok) {
       // T37-01 §0.6/§0.7：被删页（含子树）的标签随之移除；删的是当前标签 →
@@ -716,6 +796,8 @@ export const pagesActions = {
       const settled = pagesStore.getState();
       writeTabs(settled.workspaceId, settled.tabs, settled.selectedId);
     }
+    // T86-01：返回成败供批量删除汇总（既有调用方忽略返回值，行为不变）
+    return ok;
   },
 
   /** T37-01 §0.1：恢复后打开该页（返回是否恢复成功，供调用方决定 openInTab）。 */

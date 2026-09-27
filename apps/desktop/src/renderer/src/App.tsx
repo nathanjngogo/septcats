@@ -15,6 +15,7 @@ import { AiChatPanel } from './ai/AiChatPanel';
 import { aiChatActions, useAiChat } from './ai/chatState';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
+import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
 import { SearchPage } from './pages/SearchPage';
@@ -43,10 +44,8 @@ import { WorkbenchPage } from './workbench/WorkbenchPage';
 import { workbenchActions, useWorkbench } from './workbench/state';
 import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
-import { paletteActions as themePaletteActions, OPEN_THEME_GALLERY_EVENT } from './theme/paletteState';
+import { paletteActions as themePaletteActions } from './theme/paletteState';
 import { lookActions } from './theme/lookState';
-import { ThemeGallery } from './theme/ThemeGallery';
-import { ThemePaletteButton } from './theme/ThemePaletteButton';
 import './App.css';
 
 /**
@@ -102,10 +101,8 @@ function useCommandWiring(
             openWorkbench,
             // T72-01 §范围1：命令面板「工作台模板市场」入口（与顶栏房子钮/Alt+H 同效）
             openWorkbenchMarket,
-            // T65-01 §1.2：命令面板「主题画廊」+「切到 X 派系」六条（经事件/派系状态同通道）
-            openThemeGallery: (): void => {
-              window.dispatchEvent(new Event(OPEN_THEME_GALLERY_EVENT));
-            },
+            // 老板 09-27 令（取消主题画廊）：配色/质感已内联进「设置→外观」，
+            // 命令面板只保留「切到 X 派系 / X 质感」，不再有开画廊这一条。
             setThemePalette: (id): void => {
               themePaletteActions.setPalette(id);
             },
@@ -202,12 +199,6 @@ export function App() {
   const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout' | 'market'>('editor');
   // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
-  // T65-01 §1.2：主题画廊弹框开合（aria-pressed 同源；命令面板/设置入口经事件开）
-  const [themeGalleryOpen, setThemeGalleryOpen] = useState(false);
-  // T65-01 §1.1：当前明暗基底（data-theme 由 ThemeProvider 管，这里只读根属性，不借 useTheme
-  // 以兼容「App 直渲」集成测试未包 ThemeProvider 的接线）
-  const resolvedTheme: 'light' | 'dark' =
-    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);
@@ -271,15 +262,6 @@ export function App() {
   // T85-01：挂载时初始化质感派系（读存储 + 挂根属性 data-look；pixel 缺省 = 现状）。
   useEffect(() => {
     lookActions.init();
-  }, []);
-
-  // T65-01 §1.2：监听「打开主题画廊」事件（设置页入口钮 / 命令面板同通道解耦），路由仍在 App。
-  useEffect(() => {
-    const openGallery = (): void => setThemeGalleryOpen(true);
-    window.addEventListener(OPEN_THEME_GALLERY_EVENT, openGallery);
-    return () => {
-      window.removeEventListener(OPEN_THEME_GALLERY_EVENT, openGallery);
-    };
   }, []);
 
   // T39-01：侧栏位置随布局状态同步（预设切换/导入布局后生效）
@@ -576,14 +558,6 @@ export function App() {
               data-testid="workbench-market-open"
               onClick={openWorkbenchMarket}
             />
-            {/* T65-01 §1.2：顶栏调色板入口钮（学 workbench-open 接线；glyph 曾局部自绘，
-                T74-01 已收编进 @septcats/ui，调用点零改动）。 */}
-            <ThemePaletteButton
-              ariaPressed={themeGalleryOpen}
-              onClick={() => {
-                setThemeGalleryOpen((open) => !open);
-              }}
-            />
             <IconButton
               icon={MagnifyingGlass}
               label={t('app.searchLabel')}
@@ -694,16 +668,10 @@ export function App() {
         }}
         onEdit={openLayoutEditor}
       />
-      {/* T65-01 §1.2：主题画廊弹框（六派系迷你预览卡，点卡即时切换+持久化，不关闭） */}
-      <ThemeGallery
-        open={themeGalleryOpen}
-        resolvedTheme={resolvedTheme}
-        onClose={() => {
-          setThemeGalleryOpen(false);
-        }}
-      />
       {/* T24-01 §0.A：「删除页面」二次确认（命令面板与侧栏行菜单共用） */}
       <PageDeleteDialog />
+      {/* T86-01：侧栏批量删除的二次确认（老板 09-27 令） */}
+      <BatchDeleteDialog />
       {/* T67-01-B2-01 范围1：加锁/改密/移除 弹层（侧栏行菜单 + 命令面板共用） */}
       <PageLockDialog />
       {/* R27（T79-01）：页面导出 Markdown 的 scope 选择弹层（侧栏行菜单入口） */}

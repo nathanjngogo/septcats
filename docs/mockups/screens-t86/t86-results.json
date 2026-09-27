@@ -1,0 +1,30 @@
+{
+  "partial": true,
+  "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"side-bulk-check-01M3HV44QE64SKHBTF70Z4FFP4\"]')\u001b[22m\n",
+  "assertions": [
+    {
+      "step": "B1|入口",
+      "name": "B1-a 侧栏「批量删除…」入口行在位",
+      "ok": true,
+      "detail": "count=1"
+    },
+    {
+      "step": "B1|入口",
+      "name": "B1-b 未进多选时无操作条",
+      "ok": true,
+      "detail": "no bar"
+    },
+    {
+      "step": "B2|多选态",
+      "name": "B2-a 操作条出现且计数 0",
+      "ok": true,
+      "detail": "已选 0 项"
+    },
+    {
+      "step": "B3|造页",
+      "name": "B3-a 侧栏出现 3 个页行",
+      "ok": true,
+      "detail": "[\"01M3HV43AMTYE4JWA0FAEWWEFM\",\"01M3HV44QE64SKHBTF70Z4FFP4\",\"01M3HV4647ZGD75VV8B7C2173D\"]"
+    }
+  ]
+}

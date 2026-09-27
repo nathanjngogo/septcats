@@ -3,11 +3,11 @@
  * t85-looks.test.ts —— 质感派系状态（lookState.ts）单测（TASK-T85-01 §测试）。
  *
  * 覆盖：持久化 roundtrip / 野值回退 pixel / 应用器写根属性 / setLook 即时应用 /
- * 画廊三质感卡在位 + 点卡生效（data-look 落 documentElement）。
+ * 设置页质感行在位 + 点选生效（data-look 落 documentElement）。老板 09-27 取消画廊后改口径。
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import { ThemeGallery } from '../src/renderer/src/theme/ThemeGallery';
+import { ThemeSection } from '../src/renderer/src/theme/ThemeSection';
 import { configurePaletteCommands } from '../src/renderer/src/palette/commands';
 import {
   applyLookToRoot,
@@ -74,47 +74,43 @@ describe('lookState · 持久化与回退', () => {
 
 const noop = (): void => {};
 
-describe('主题画廊 · 质感行（T85-01 入主题市场）', () => {
+describe('设置→外观 · 质感行（老板 09-27：取消画廊、内联进设置）', () => {
   beforeEach(() => {
     window.localStorage.clear();
     document.documentElement.removeAttribute('data-look');
+    document.documentElement.removeAttribute('data-palette');
+    delete document.documentElement.dataset.theme;
     lookStore.setState(() => ({ look: 'pixel' }));
     lookActions.init();
   });
 
-  it('三张质感卡在位（data-look 卡；与配色卡 data-palette 互斥标记）', () => {
-    render(<ThemeGallery open resolvedTheme="dark" onClose={noop} />);
-    const lookCards = document.querySelectorAll('[data-testid^="theme-gallery-card-"][data-look]');
-    expect(lookCards.length).toBe(3);
-    for (const id of LOOK_IDS) {
-      expect(document.querySelector(`[data-testid="theme-gallery-card-${id}"][data-look="${id}"]`)).not.toBeNull();
-    }
+  it('三档选项在位（LOOK_IDS 每条都有对应 radio）', () => {
+    render(<ThemeSection />);
+    const row = document.querySelector('[data-testid="theme-look-section"]');
+    expect(row).not.toBeNull();
+    const values = [...(row as HTMLElement).querySelectorAll('input[type="radio"]')].map(
+      (el) => (el as HTMLInputElement).value,
+    );
+    expect(values).toEqual([...LOOK_IDS]);
     cleanup();
   });
 
-  it('默认 pixel 卡带「当前」角标', () => {
-    render(<ThemeGallery open resolvedTheme="dark" onClose={noop} />);
-    const pixel = document.querySelector('[data-testid="theme-gallery-card-pixel"]');
-    expect(pixel?.getAttribute('data-current')).toBe('true');
-    expect(pixel?.querySelector('[data-testid="theme-gallery-look-current"]')).not.toBeNull();
+  it('默认 pixel 为选中态（受控 radio）', () => {
+    render(<ThemeSection />);
+    const row = document.querySelector('[data-testid="theme-look-section"]') as HTMLElement;
+    expect((row.querySelector('input[value="pixel"]') as HTMLInputElement).checked).toBe(true);
+    expect((row.querySelector('input[value="glass"]') as HTMLInputElement).checked).toBe(false);
     cleanup();
   });
 
-  it('点 glass 卡 → 即时应用（store + localStorage + documentElement 三处）', () => {
-    render(<ThemeGallery open resolvedTheme="dark" onClose={noop} />);
-    const glass = document.querySelector<HTMLElement>('[data-testid="theme-gallery-card-glass"]');
-    expect(glass).not.toBeNull();
-    fireEvent.click(glass as HTMLElement);
+  it('点 glass → 即时应用（store + localStorage + documentElement 三处）+ 选中态迁移', () => {
+    render(<ThemeSection />);
+    fireEvent.click(document.querySelector('input[value="glass"]') as HTMLElement);
     expect(lookStore.getState().look).toBe('glass');
     expect(window.localStorage.getItem('septcats.look')).toBe('glass');
     expect(document.documentElement.dataset.look).toBe('glass');
-    // 角标迁移
-    expect(
-      document.querySelector('[data-testid="theme-gallery-card-glass"]')?.getAttribute('data-current'),
-    ).toBe('true');
-    expect(
-      document.querySelector('[data-testid="theme-gallery-card-pixel"]')?.getAttribute('data-current'),
-    ).toBe('false');
+    expect((document.querySelector('input[value="glass"]') as HTMLInputElement).checked).toBe(true);
+    expect((document.querySelector('input[value="pixel"]') as HTMLInputElement).checked).toBe(false);
     cleanup();
   });
 });
@@ -135,10 +131,10 @@ describe('命令面板 · 质感切换（T85-01）', () => {
     };
     type Deps = Parameters<typeof configurePaletteCommands>[0];
     const baseDeps = base as Deps;
-    const without = configurePaletteCommands({ ...baseDeps, openThemeGallery: noop, setThemePalette: noop }, true).map((c) => c.id);
+    const without = configurePaletteCommands({ ...baseDeps, setThemePalette: noop }, true).map((c) => c.id);
     expect(without.filter((id) => id.startsWith('theme.look.'))).toEqual([]);
     const withLook = configurePaletteCommands(
-      { ...baseDeps, openThemeGallery: noop, setThemePalette: noop, setThemeLook: noop },
+      { ...baseDeps, setThemePalette: noop, setThemeLook: noop },
       true,
     ).map((c) => c.id);
     for (const id of ['theme.look.pixel', 'theme.look.linear', 'theme.look.glass']) {

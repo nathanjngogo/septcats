@@ -77,6 +77,7 @@ function resetStore(): void {
     recentIds: [],
     toasts: [],
     deleteConfirmId: null,
+    deleteBatch: null,
     lockedIds: new Set<string>(),
     lockDialog: null,
     exportDialog: null,

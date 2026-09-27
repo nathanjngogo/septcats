@@ -42,7 +42,6 @@ if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !=
 
 const WS_ID = 'ws-t74-test';
 const MARKET_LABEL = '工作台模板市场';
-const PALETTE_LABEL = '配色画廊';
 
 /** 迁移前基线：四枚 glyph 的直渲 rect 清单（x,y WxH@opacity，行内同档已合并）。 */
 const BASELINE_HOME = [
@@ -161,46 +160,6 @@ const BASELINE_MARKET_BUTTON = [
   '11,15 3x1@1',
 ];
 
-/** 迁移前基线：顶栏「配色画廊」钮（<Icon size="md"> 转发 PixelPaletteGlyph）。 */
-const BASELINE_PALETTE_BUTTON = [
-  '5,2 4x1@0.8',
-  '3,3 2x1@0.8',
-  '5,3 4x1@1',
-  '9,3 2x1@0.8',
-  '2,4 1x1@0.8',
-  '3,4 8x1@1',
-  '11,4 1x1@0.8',
-  '2,5 10x1@1',
-  '1,6 1x1@0.8',
-  '2,6 10x1@1',
-  '12,6 1x1@0.8',
-  '1,7 1x1@0.8',
-  '2,7 7x1@1',
-  '9,7 2x1@0.8',
-  '12,7 1x1@0.8',
-  '1,8 1x1@0.8',
-  '2,8 6x1@1',
-  '8,8 1x1@0.8',
-  '9,8 2x1@1',
-  '11,8 1x1@0.8',
-  '1,9 1x1@0.8',
-  '2,9 4x1@1',
-  '6,9 1x1@0.8',
-  '7,9 4x1@1',
-  '11,9 1x1@0.8',
-  '1,10 1x1@0.8',
-  '2,10 10x1@1',
-  '12,10 1x1@0.8',
-  '2,11 10x1@1',
-  '12,11 1x1@0.8',
-  '2,12 1x1@0.8',
-  '3,12 8x1@1',
-  '11,12 1x1@0.8',
-  '3,13 2x1@0.8',
-  '5,13 4x1@1',
-  '9,13 2x1@0.8',
-  '5,14 4x1@0.8',
-];
 
 function defaultSettings(): AppSettings {
   return {
@@ -364,12 +323,9 @@ describe('T74-01 收编后消费面零回归（基线 = 迁移前实渲染捕获
     expect(rectSig(svg)).toEqual(BASELINE_MARKET_BUTTON);
   });
 
-  it('顶栏「配色画廊」钮：in-situ rect 清单逐条等于迁移前基线（37 条，含 opacity 档）', async () => {
-    const container = await renderApp();
-    const svg = actionButton(container, PALETTE_LABEL).querySelector('svg')!;
-    expect(svg.getAttribute('class')).toBe('sc-icon');
-    expect(rectSig(svg)).toEqual(BASELINE_PALETTE_BUTTON);
-  });
+  // 老板 09-27 令「取消主题画廊」：顶栏「配色画廊」图标钮随画廊一并删除 →
+  // 原 in-situ rect 基线用例（BASELINE_PALETTE_BUTTON/PALETTE_LABEL）随之废止。
+  // 像素 glyph 本体（PixelPaletteGlyph）仍在，由下方「四枚经 <Icon> 转发」用例继续钉。
 
   it('四枚经 <Icon> 转发后仍是同一份矩阵（逐格掩码 = PIXEL_GLYPHS_EXTRA）', () => {
     for (const [name, Comp] of [

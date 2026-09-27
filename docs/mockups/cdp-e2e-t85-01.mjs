@@ -8,7 +8,7 @@
  *        重连后 data-look=glass 自动恢复 + 顶栏框线仍 1px（持久化链闭环）→
  *     L4 布局无破洞 + 真实根 C:\Users\Administrator\.septcats 零触碰（mtime 钉）。
  * 桥面：无新 IPC——纯前端质感层；探针经 CDP 走**真实 UI 路径**（派画廊事件 +
- *   点卡按钮），比直写 localStorage 更强：连 lookActions.setLook 一起验。
+ *   设置页 radio），比直写 localStorage 更强：连 lookActions.setLook 一起验。
  * 双钉纪律：--user-data-dir=<scratch ud> 且 ud/septcats.settings.json 的 rootPath→scratch data。
  * 断言 <8 = FATAL（静默蒸发守卫）。
  * 教训（上一版 9/16）：force-kill 下 Chromium localStorage 不落盘——重启验证必须走
@@ -67,13 +67,31 @@ async function shut({ child, browser }) {
   killTree(child.pid);
   await wait(1200);
 }
-/** 开画廊 → 点指定质感卡 → Esc 关画廊（全真实 UI 路径）。 */
-async function clickLookCard(page, id) {
-  await page.evaluate(() => window.dispatchEvent(new Event('septcats:open-theme-gallery')));
-  await page.waitForSelector('[data-testid="theme-gallery"]', { timeout: 8000 });
-  await page.click(`[data-testid="theme-gallery-card-${id}"]`);
-  await page.keyboard.press('Escape').catch(() => undefined);
-  await page.waitForSelector('[data-testid="theme-gallery"]', { state: 'detached', timeout: 5000 }).catch(() => undefined);
+/**
+ * 老板 09-27 令「取消主题画廊」后：质感/配色的唯一入口 = 设置→外观**内联两行**。
+ * 本探针走真实 UI 路径：应用事件开设置 → 点质感行里的原生 radio（等价用户操作）。
+ * （旧写法经 `septcats:open-theme-gallery` 事件点画廊卡，画廊已随该令删除。）
+ */
+async function setLookViaSettings(page, id) {
+  await page.evaluate(() => window.dispatchEvent(new Event('septcats:open-settings')));
+  await page.waitForSelector('[data-testid="theme-look-section"]', { timeout: 8000 });
+  await page.click(`[data-testid="theme-look-section"] input[value="${id}"]`);
+}
+/** 设置→外观两行的可见性探针（老板点名「根本没有毛玻璃等主题」的回归钉）。 */
+async function probeThemeRows(page) {
+  return page.evaluate(() => {
+    const lookRow = document.querySelector('[data-testid="theme-look-section"]');
+    const paletteRow = document.querySelector('[data-testid="theme-section"]');
+    const labels = (row) =>
+      [...(row?.querySelectorAll('.sc-radio__label') ?? [])].map((el) => el.textContent ?? '');
+    return {
+      lookLabels: labels(lookRow),
+      lookCount: lookRow?.querySelectorAll('input[type="radio"]').length ?? 0,
+      paletteCount: paletteRow?.querySelectorAll('input[type="radio"]').length ?? 0,
+      gallery: document.querySelector('[data-testid="theme-gallery"]') !== null,
+      galleryEntry: document.querySelector('[data-testid="theme-gallery-entry"]') !== null,
+    };
+  });
 }
 const probeBox = () => {
   const topbar = document.querySelector('.sc-shell__topbar');
@@ -114,51 +132,79 @@ try {
     check('L0-3 按钮零圆角（像素态）', r.radius === '0px', r.radius);
   }
 
-  // ===== L1 点 Linear 卡 → 即时换肤 =====
+  // ===== L1 设置→外观内联行 → 点 Linear → 即时换肤 =====
   STEP = 'L1|linear 级联';
   {
-    await clickLookCard(app.page, 'linear');
-    // 柔影验证量「确实吃 --sc-pixel-out 的浮层」（主屏首钮是 ghost 无框钮，量它=探针缺陷）
-    await app.page.evaluate(() => window.dispatchEvent(new Event('septcats:open-theme-gallery')));
-    await app.page.waitForSelector('[data-testid="theme-gallery"]', { timeout: 8000 });
-    const r = await app.page.evaluate(() => {
-      const topbar = document.querySelector('.sc-shell__topbar');
-      const btn = document.querySelector('.sc-btn--secondary') ?? document.querySelector('button');
-      const gallery = document.querySelector('[data-testid="theme-gallery"]');
-      return {
-        dataLook: document.documentElement.dataset.look ?? '',
-        topBorder: topbar ? getComputedStyle(topbar).borderBottomWidth : 'NO-TOPBAR',
-        radius: btn ? getComputedStyle(btn).borderTopLeftRadius : 'NO-BTN',
-        cardShadow: gallery ? getComputedStyle(gallery).boxShadow.slice(0, 90) : 'NO-GALLERY',
-      };
-    });
-    await app.page.keyboard.press('Escape').catch(() => undefined);
-    await app.page.waitForSelector('[data-testid="theme-gallery"]', { state: 'detached', timeout: 5000 }).catch(() => undefined);
-    check('L1-1 点卡后 data-look=linear', r.dataLook === 'linear', JSON.stringify(r));
+    await setLookViaSettings(app.page, 'linear');
+    const rows = await probeThemeRows(app.page);
+    const r = await app.page.evaluate(probeBox);
+    check(
+      'L1-0 设置→外观内联两行在位（质感 3 项，含老板点名的「毛玻璃」「Linear 极简」）',
+      rows.lookLabels.includes('像素') &&
+        rows.lookLabels.includes('Linear 极简') &&
+        rows.lookLabels.includes('毛玻璃') &&
+        rows.lookCount === 3 &&
+        rows.paletteCount === 6,
+      JSON.stringify(rows),
+    );
+    check(
+      'L1-0b 画廊已取消（无画廊浮层 + 无画廊入口钮）',
+      rows.gallery === false && rows.galleryEntry === false,
+      JSON.stringify(rows),
+    );
+    check('L1-1 点选后 data-look=linear', r.dataLook === 'linear', JSON.stringify(r));
     check('L1-2 顶栏框线即时收细 = 1px（token 级联真实生效）', r.topBorder === '1px', r.topBorder);
     check('L1-3 按钮圆角 >0（linear 圆角阶）', parseFloat(r.radius) > 0, r.radius);
-    check('L1-4 面板影=柔影（rgba/oklab 且非 inset 硬 bevel）', r.cardShadow.includes('rgba') || /rgb\(/.test(r.cardShadow) ? !r.cardShadow.includes('inset') : false, r.cardShadow);
+    check(
+      'L1-4 按钮影=柔影（非 inset 硬 bevel）',
+      r.shadow !== '' && !r.shadow.includes('inset') && (r.shadow.includes('rgba') || /rgb\(/.test(r.shadow)),
+      r.shadow,
+    );
   }
 
-  // ===== L2 点毛玻璃卡 → backdrop 生效 =====
+  // ===== L2 点毛玻璃 → 真实表面 backdrop 生效 =====
   STEP = 'L2|glass 毛玻璃';
   {
-    await clickLookCard(app.page, 'glass');
-    await app.page.evaluate(() => window.dispatchEvent(new Event('septcats:open-theme-gallery')));
-    await app.page.waitForSelector('[data-testid="theme-gallery"]', { timeout: 8000 });
+    await setLookViaSettings(app.page, 'glass');
     const r = await app.page.evaluate(() => {
-      const gallery = document.querySelector('[data-testid="theme-gallery"]');
-      const cs = gallery ? getComputedStyle(gallery) : null;
+      const topbar = document.querySelector('.sc-shell__topbar');
+      const side = document.querySelector('.sc-shell__sidebar');
+      const cs = topbar ? getComputedStyle(topbar) : null;
       return {
         dataLook: document.documentElement.dataset.look ?? '',
-        backdrop: cs ? (cs.backdropFilter || cs.webkitBackdropFilter || '') : 'NO-GALLERY',
-        bg: cs ? cs.backgroundColor : '',
-        galleryOpen: gallery !== null,
+        topbarBackdrop: cs ? cs.backdropFilter || cs.webkitBackdropFilter || '' : 'NO-TOPBAR',
+        topbarBg: cs ? cs.backgroundColor : '',
+        sideBackdrop: side ? getComputedStyle(side).backdropFilter || 'none' : 'NO-SIDE',
       };
     });
-    check('L2-1 点卡后 data-look=glass', r.dataLook === 'glass', JSON.stringify(r));
-    check('L2-2 画廊 backdrop-filter 生效（Electron 内核支持性）', r.galleryOpen && r.backdrop !== '' && r.backdrop !== 'none', r.backdrop);
-    check('L2-3 画廊背景半透明（color-mix 解析成功）', /rgba\([\d.,\s]+0?\.\d/.test(r.bg) || /color\(srgb[^)]*0?\.\d/.test(r.bg), r.bg);
+    check('L2-1 点选后 data-look=glass', r.dataLook === 'glass', JSON.stringify(r));
+    check(
+      'L2-2 顶栏 backdrop-filter=blur(10px)（真实 chrome 玻璃，Electron 内核支持性）',
+      r.topbarBackdrop.includes('blur(10px)'),
+      r.topbarBackdrop,
+    );
+    check('L2-3 侧栏同档玻璃（blur）', r.sideBackdrop.includes('blur('), r.sideBackdrop);
+    check(
+      'L2-4 玻璃表面背景半透明（color-mix 解析成功）',
+      /rgba\([\d.,\s]+0?\.\d/.test(r.topbarBg) || /color\(srgb[^)]*0?\.\d/.test(r.topbarBg),
+      r.topbarBg,
+    );
+    // 浮层档玻璃（blur 14px + saturate 1.4）：命令面板是最稳的真实浮层
+    await app.page.keyboard.press('Control+k').catch(() => undefined);
+    await wait(400);
+    const ov = await app.page.evaluate(() => {
+      const pal = document.querySelector('.palette');
+      const cs = pal ? getComputedStyle(pal) : null;
+      return {
+        open: pal !== null,
+        backdrop: cs ? cs.backdropFilter || cs.webkitBackdropFilter || '' : 'NO-PALETTE',
+      };
+    });
+    check(
+      'L2-5 命令面板浮层 glass backdrop=blur(14px) saturate(1.4)',
+      ov.open && ov.backdrop.includes('blur(14px)'),
+      ov.backdrop,
+    );
     await app.page.keyboard.press('Escape').catch(() => undefined);
     await wait(400);
   }

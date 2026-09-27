@@ -15,7 +15,7 @@
  * oled 约束（§1.1）：仅 dark 基底生效。light 基底**不剔除**已存值（任务书给了
  * 「置灰不可选或按 mono 渲染」二选一，画廊 UI 走「置灰 + 按 mono 渲染」，见下）。
  */
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { createStore, useStore } from '../state/store';
 
 /** 派系 id（mono = tokens.css 现状默认，无覆写块）。 */
@@ -114,25 +114,7 @@ export function isPaletteDisabled(palette: PaletteId, resolvedTheme: 'light' | '
   return palette === 'oled' && resolvedTheme !== 'dark';
 }
 
-/** 顶栏钮 / 画廊外入口用的开合事件名（同 OPEN_LAYOUT_EDITOR_EVENT 范式）。 */
-export const OPEN_THEME_GALLERY_EVENT = 'septcats:open-theme-gallery';
 
-/** 组件内派发「打开主题画廊」（设置页紧凑嵌入卡片的「打开画廊」钮与命令面板共用）。 */
-export function useOpenThemeGallery(): () => void {
-  return useCallback((): void => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event(OPEN_THEME_GALLERY_EVENT));
-    }
-  }, []);
-}
-
-/** 监听「打开主题画廊」事件（App 挂载一次）。 */
-export function onOpenThemeGallery(handler: () => void): () => void {
-  window.addEventListener(OPEN_THEME_GALLERY_EVENT, handler);
-  return () => {
-    window.removeEventListener(OPEN_THEME_GALLERY_EVENT, handler);
-  };
-}
 
 /** 主题基底变化时的联动效果（light 下 oled 属性保留但渲染按 mono；无需清属性）。 */
 export function usePaletteThemeSync(resolvedTheme: 'light' | 'dark'): void {

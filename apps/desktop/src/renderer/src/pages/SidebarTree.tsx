@@ -20,7 +20,7 @@ import type {
   ReactNode,
 } from 'react';
 import type { PageNode } from '@septcats/editor';
-import { CaretDown, CaretRight, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
+import { Button, CaretDown, CaretRight, CheckCircle, Clock, DotsThree, FileText, FolderSimple, Icon, IconButton, Menu, Note, Plus, Star, Trash } from '@septcats/ui';
 import type { MenuEntry } from '@septcats/ui';
 import type { PageNodeView } from '../../../types/window';
 import { aliveNodes, ancestorsOf, nodeMap, pageTypeOf, pagesActions, trashNodes, usePages } from '../state/pages';
@@ -176,6 +176,8 @@ interface NavRowProps {
   active?: boolean;
   /** 分组标题行（T34-01：收藏/最近的小字弱化态，只动样式不改结构）。 */
   head?: boolean;
+  /** 提供时渲染在行首（T86-01：批量删除的勾选框槽，位于折叠三角之前）。 */
+  leading?: ReactNode;
   /** 有子节点 → tw 槽渲染折叠三角（点击切展开，不冒泡到行选中）。 */
   branch?: boolean;
   open?: boolean;
@@ -197,6 +199,7 @@ function NavRow({
   testId,
   label,
   icon,
+  leading,
   depth = 0,
   active = false,
   head = false,
@@ -225,6 +228,7 @@ function NavRow({
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
     >
+      {leading === undefined ? null : <span className="app-nav-leading">{leading}</span>}
       <span className={open ? 'app-nav-tw app-nav-tw--open' : 'app-nav-tw'} onClick={onCaretClick}>
         {branch ? <Icon icon={CaretRight} size="sm" /> : null}
       </span>
@@ -252,6 +256,10 @@ export function SidebarTree() {
     workspaces.find((item) => item.id === workspaceId)?.name ?? t('sidebar.workspace');
   // T23-02 §C.1：「新建页面 ▾」模板子菜单展开态（本地视图态；列表订阅 templates slice）
   const [tplOpen, setTplOpen] = useState(false);
+  // T86-01（老板 09-27 令「左侧边栏增加批量删除功能」）：批量多选态（纯视图态）。
+  // bulkIds = 待删页 id（选中即行高亮）；删除走 pagesActions.requestDeletePages → 确认弹层。
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkIds, setBulkIds] = useState<readonly string[]>([]);
   // T64-01：顶栏「新建页」箭头菜单（新建页面 / 新建文件夹 / 从模板新建）展开态 + 锚点
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [newMenuAt, setNewMenuAt] = useState<{ x: number; y: number } | null>(null);
@@ -667,6 +675,44 @@ export function SidebarTree() {
     };
   };
 
+  /** T86-01：退出多选（清空选中集）。 */
+  const exitBulk = (): void => {
+    setBulkMode(false);
+    setBulkIds([]);
+  };
+
+  /** T86-01：勾选/取消一项。 */
+  const toggleBulk = (id: string): void => {
+    setBulkIds((ids) => (ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]));
+  };
+
+  // T86-01：多选态下 Esc 退出（与弹层关闭同键位习惯）。
+  useEffect(() => {
+    if (!bulkMode) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setBulkMode(false);
+        setBulkIds([]);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [bulkMode]);
+
+  // T86-01：删掉的页从选中集里自动摘除（批量删完计数自然归零，不留僵尸 id）。
+  // 仅当集合真的变化才写回（同引用返回 → 不触发额外渲染，避免 effect 自激）。
+  useEffect(() => {
+    const alive = new Set(aliveNodes(nodes).map((node) => node.id));
+    setBulkIds((ids) => {
+      const next = ids.filter((id) => alive.has(id));
+      return next.length === ids.length ? ids : next;
+    });
+  }, [nodes]);
+
   /**
    * 页面行（普通分区与 Wiki 分区共用，T42-01 抽取）：
    * ⋯ 菜单 = 重命名 + 全宽开关 + 承载类型转换（wiki 页显示「转为普通页」，普通页显示
@@ -686,6 +732,23 @@ export function SidebarTree() {
         <NavRow
         key={node.id}
         testId={`${testIdPrefix}-${node.id}`}
+        leading={
+          bulkMode ? (
+            <input
+              type="checkbox"
+              className="app-nav-check"
+              data-testid={`side-bulk-check-${node.id}`}
+              checked={bulkIds.includes(node.id)}
+              aria-label={t('sidebar.bulkCheckAria').replace('{name}', node.title)}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              onChange={() => {
+                toggleBulk(node.id);
+              }}
+            />
+          ) : undefined
+        }
         label={node.title}
         /* T60-01 ②（PRD-R13 ②）：普通页行一律 FileText（含树根：树根原走 rootIcon=
            FolderSimple → 「新建页面」出来的行是文件夹图标，老板点名要文件图标）；
@@ -731,11 +794,16 @@ export function SidebarTree() {
           ) : undefined
         }
         depth={depth}
-        active={selectedId === node.id}
+        active={bulkMode ? bulkIds.includes(node.id) : selectedId === node.id}
         branch={childCount > 0}
         open={expanded.has(node.id)}
         labelNode={isEditing ? <RenameInput id={node.id} title={node.title} /> : undefined}
         onClick={() => {
+          // T86-01：多选态下点行 = 勾选/取消（不导航、不展开、不进行内重命名）
+          if (bulkMode) {
+            toggleBulk(node.id);
+            return;
+          }
           // T64-01：folder = 容器节点 → 点击只展开/收起，不 selectPage（不建页签/不进编辑器）
           if (pageTypeOf(node) === 'folder') {
             pagesActions.toggleExpand(node.id);
@@ -752,8 +820,18 @@ export function SidebarTree() {
           event.stopPropagation();
           pagesActions.toggleExpand(node.id);
         }}
-        onDoubleClick={() => pagesActions.beginRename(node.id)}
+        onDoubleClick={() => {
+          // T86-01：多选态下双击不进行内重命名（避免误改标题）
+          if (bulkMode) {
+            return;
+          }
+          pagesActions.beginRename(node.id);
+        }}
         onContextMenu={(event) => {
+          // T86-01：多选态下不给行菜单（删除走底部操作条，语义唯一）
+          if (bulkMode) {
+            return;
+          }
           const target = event.target;
           // 子控件（重命名输入框 / ⋯ 钮 / 折叠三角）命中 → 放行，不抢它们各自的语义
           if (target instanceof Element && target.closest('input, .app-nav-more-wrap, .app-nav-tw') !== null) {
@@ -765,6 +843,8 @@ export function SidebarTree() {
           setRowMenuAt({ x: event.clientX, y: event.clientY });
         }}
         suffix={
+          // T86-01：多选态下收起「⋯」菜单（删除入口收敛到批量操作条）
+          bulkMode ? undefined : (
           // T24-01 §0.A：行「⋯」菜单（hover/选中时露出，见 .app-nav-more-wrap）；
           // 点击不冒泡到行选中；「删除」→ 既有二次确认弹层（PageDeleteDialog）。
           // T64-01（Phase A）：⋯ 钮 = 贴钮定位——用触发钮 rect 作锚写入 rowMenuAt，
@@ -794,6 +874,7 @@ export function SidebarTree() {
               }}
             />
           </span>
+          )
         }
       />
         {/* T64-01：空文件夹展开态显示一行灰阶空态文案（无按钮） */}
@@ -934,6 +1015,58 @@ export function SidebarTree() {
             </span>
           }
         />
+        {/* T86-01：批量删除入口 / 多选操作条（老板 09-27 令）。 */}
+        {bulkMode ? (
+          <div className="app-nav-bulkbar" data-testid="side-bulk-bar">
+            <span className="app-nav-bulkbar-count" data-testid="side-bulk-count">
+              {t('sidebar.bulkSelected').replace('{n}', String(bulkIds.length))}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="side-bulk-all"
+              onClick={() => {
+                setBulkIds(aliveNodes(nodes).map((node) => node.id));
+              }}
+            >
+              {t('sidebar.bulkAll')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="side-bulk-clear"
+              onClick={() => {
+                setBulkIds([]);
+              }}
+            >
+              {t('sidebar.bulkClear')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              data-testid="side-bulk-delete"
+              disabled={bulkIds.length === 0}
+              onClick={() => {
+                pagesActions.requestDeletePages(bulkIds);
+              }}
+            >
+              {t('sidebar.bulkDelete')}
+            </Button>
+            <Button variant="ghost" size="sm" data-testid="side-bulk-exit" onClick={exitBulk}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        ) : (
+          <NavRow
+            testId="side-bulk-toggle"
+            label={t('sidebar.bulkEnter')}
+            icon={CheckCircle}
+            onClick={() => {
+              setBulkMode(true);
+              setBulkIds([]);
+            }}
+          />
+        )}
         {tplOpen
           ? templates.length === 0
             ? (
