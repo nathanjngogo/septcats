@@ -68,9 +68,11 @@
   --sc-radius-md: 10px;
   --sc-radius-lg: 14px;
 }
-/* Linear 的「层」感 = chrome 面与正文面分色 + 发丝分界（大面积可辨；色值全部由既有色板派生） */
+/* Linear 的「层」感 = chrome 面与正文面分色 + 发丝分界（大面积可辨；色值全部由既有色板派生）。
+   T87-02：自绘菜单带(.menub_band)同属 chrome 面，一起灰化。 */
 [data-look='linear'] .sc-shell__sidebar,
-[data-look='linear'] .sc-shell__topbar {
+[data-look='linear'] .sc-shell__topbar,
+[data-look='linear'] .menub_band {
   background: color-mix(in srgb, var(--sc-color-ink-edge) 7%, var(--sc-color-canvas));
 }
 [data-look='linear'] .sc-shell__main {
@@ -105,7 +107,8 @@
 }
 /* chrome 真玻璃：顶栏 / 侧栏 62% 半透明 + 22px 模糊 + 饱和提升 */
 [data-look='glass'] .sc-shell__topbar,
-[data-look='glass'] .sc-shell__sidebar {
+[data-look='glass'] .sc-shell__sidebar,
+[data-look='glass'] .menub_band {
   background: color-mix(in srgb, var(--sc-color-canvas) 42%, transparent);
   -webkit-backdrop-filter: blur(26px) saturate(1.9);
   backdrop-filter: blur(26px) saturate(1.9);

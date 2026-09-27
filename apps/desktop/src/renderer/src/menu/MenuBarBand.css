@@ -1,0 +1,50 @@
+/*
+ * MenuBarBand.css —— 自绘菜单带（TASK-T87-02）。
+ *
+ * 纪律：全部吃 token（color/border/radius/space 一律 var(--sc-*)），
+ * 随 theme × palette × look 三层联动——这正是本组件存在的意义：原生菜单条
+ * 不吃这些 token，换肤永远漏它。pixel-borders 扫描面：本文件 border 声明
+ * 全部命中 --sc-border-edge / --sc-color-ink-edge（§1.1/§1.2 口径）。
+ */
+
+.menub_band {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sc-space-xxs);
+  height: var(--sc-layout-menu-band);
+  padding: 0 var(--sc-space-xs);
+  background: var(--sc-color-canvas);
+  border-bottom: var(--sc-border-edge);
+  user-select: none;
+  flex: 0 0 auto;
+}
+
+.menub_slot {
+  position: relative;
+  display: flex;
+}
+
+.menub_item {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sc-space-sm);
+  border: 0;
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  cursor: default;
+}
+
+.menub_item:hover,
+.menub_item[aria-expanded='true'] {
+  background: var(--sc-color-surface-active);
+}
+
+.menub_pop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  padding-top: var(--sc-space-xxs);
+}

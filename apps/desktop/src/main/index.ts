@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, protocol, shell } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings, writeSettings } from '@septcats/platform';
@@ -17,6 +17,8 @@ import {
   CHANNEL_IMPORT_PLAN,
   CHANNEL_IMPORT_PROGRESS,
   CHANNEL_MENU_ACTION,
+  CHANNEL_MENU_CLICK,
+  CHANNEL_MENU_ROLE,
   CHANNEL_META,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
@@ -42,7 +44,7 @@ import {
 } from '../shared/ipc';
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
-import type { MenuActionId } from '../shared/ipc';
+import { MENU_ACTIONS, type MenuActionId } from '../shared/ipc';
 import type { ThemeMode } from '../shared/settings';
 import { ASSETGC_CHANNELS, CLOSE_CHANNELS, DBGC_CHANNELS } from '../shared/ipc';
 import { applyApplicationMenu } from './menu';
@@ -898,6 +900,11 @@ function handleMenuAction(action: MenuActionId): void {
     showAboutDialog(menuLocale);
     return;
   }
+  // T87-02：自绘菜单带的「退出」（Win 撤原生菜单后由 renderer 发起）→ 托盘退出同路径
+  if (action === 'quit') {
+    quitFromTray();
+    return;
+  }
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(CHANNEL_MENU_ACTION, { action });
   }
@@ -951,7 +958,14 @@ function applyChromeTheme(mode: ThemeMode): void {
 /** 按 locale 重建并安装应用菜单（启动即用当前 locale；语言切换后即时重建）。 */
 function installApplicationMenu(locale: string): void {
   menuLocale = toMenuLocale(locale);
-  applyApplicationMenu(menuLocale, handleMenuAction);
+  // T87-02（老板 09-28「整个软件随主题变」）：Windows/Linux 撤原生菜单栏 ——
+  // 原生菜单由 OS 绘制、不吃应用 CSS（palette/look 完全无效），renderer 自绘菜单带
+  // （MenuBarBand）取代；macOS 保留原生菜单（OS 惯例 + nativeTheme 已联动深浅）。
+  if (process.platform === 'darwin') {
+    applyApplicationMenu(menuLocale, handleMenuAction);
+  } else {
+    Menu.setApplicationMenu(null);
+  }
   // T54-01：托盘右键菜单 label 同源 i18n → 随语言切换即时重建
   refreshTrayMenu(menuLocale, TRAY_MENU_ACTIONS);
 }
@@ -1093,10 +1107,52 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   ipcMain.handle(CHANNEL_META, () => ({
     name: app.getName(),
     version: app.getVersion(),
+    platform: process.platform as NodeJS.Platform,
     schemaVersion: SCHEMA_VERSION,
     // 隐私默认：只暴露数据根目录名，不泄露完整家目录路径
     layoutRoot: basename(ctx.layout.root),
   }));
+
+  // T87-02（Win 自绘菜单带）：条目点击 → 复用原生菜单同一动作出口（单源，行为不漂移）。
+  ipcMain.handle(CHANNEL_MENU_CLICK, (_event: unknown, raw: unknown) => {
+    if (typeof raw !== 'object' || raw === null) {
+      return;
+    }
+    const action = (raw as Record<string, unknown>)['action'];
+    if (typeof action === 'string' && (MENU_ACTIONS as readonly string[]).includes(action)) {
+      handleMenuAction(action as MenuActionId);
+    }
+  });
+  // T87-02：标准 role 转发（编辑六件套 + 缩放三件套）——renderer 沙箱无此能力，
+  // 由发起窗口自己的 webContents 执行（焦点在编辑器/输入框，语义与旧原生菜单一致）。
+  ipcMain.handle(CHANNEL_MENU_ROLE, (event: { sender: import('electron').WebContents }, raw: unknown) => {
+    if (typeof raw !== 'object' || raw === null) {
+      return;
+    }
+    const role = (raw as Record<string, unknown>)['role'];
+    const contents = event.sender;
+    switch (role) {
+      case 'undo':
+      case 'redo':
+      case 'cut':
+      case 'copy':
+      case 'paste':
+      case 'selectAll':
+        contents[role]();
+        break;
+      case 'zoomIn':
+      case 'zoomOut': {
+        const step = role === 'zoomIn' ? 0.5 : -0.5;
+        contents.setZoomLevel(Math.max(0.5, Math.min(3, contents.getZoomLevel() + step)));
+        break;
+      }
+      case 'resetZoom':
+        contents.setZoomLevel(0);
+        break;
+      default:
+        break;
+    }
+  });
 
   // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份
   ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, syncFolderFor(ctx)));

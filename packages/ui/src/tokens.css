@@ -81,6 +81,8 @@
 
   /* layout（解析自 DESIGN.md「Layout」章节） */
   --sc-layout-topbar: 40px;
+  /* T87-02：自绘菜单带高度（替代原生菜单栏；Win 下渲染） */
+  --sc-layout-menu-band: 30px;
   --sc-layout-sidebar: 240px;
   --sc-layout-sidebar-collapsed: 48px;
   --sc-layout-row-h: 36px;

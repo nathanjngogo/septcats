@@ -436,11 +436,26 @@ export const MENU_ACTIONS = [
   'helpManual',
   /** 「关于」由 main 侧就地弹窗处理，不经 renderer。 */
   'about',
+  /** T87-02：自绘菜单带「退出」（quittingFlag 同托盘退出路径）；仅 main 侧消费。 */
+  'quit',
 ] as const;
 
 export type MenuActionId = (typeof MENU_ACTIONS)[number];
 
-export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION } as const;
+// T87-02（老板 09-28：「整个软件随着主题而改变」）：Windows 撤原生菜单栏 →
+// renderer 自绘菜单带。两条新通道：
+//   menu:click  —— 自绘菜单条目点击 → invoke main.handleMenuAction（与原生菜单同一动作出口，
+//                  快捷键/行为语义单源，不另起第二套）。
+//   menu:role   —— Edit 标准 role 转发执行（webContents.undo/cut/…）；renderer 无 webFrame
+//                  权限，zoom 三件套也走 main（setZoomLevel ±0.5 = Chromium 菜单 role 同款步长）。
+export const CHANNEL_MENU_CLICK = 'menu:click';
+export const CHANNEL_MENU_ROLE = 'menu:role';
+
+/** 自绘菜单带需要转发的标准 role（编辑六件套 + 缩放三件套；与旧原生模板逐一对应，语义不丢）。 */
+export const MENU_ROLES = ['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll', 'zoomIn', 'zoomOut', 'resetZoom'] as const;
+export type MenuRole = (typeof MENU_ROLES)[number];
+
+export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION, click: CHANNEL_MENU_CLICK, role: CHANNEL_MENU_ROLE } as const;
 
 // ---------------------------------------------------------------------------
 // 关窗协作（T54-01）：关窗前「冲刷未提交编辑」握手 + 自绘询问框决议。

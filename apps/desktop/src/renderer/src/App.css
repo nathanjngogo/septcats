@@ -19,6 +19,22 @@ html, body {
   overflow: hidden;
 }
 
+/* T87-02：窗口纵向骨架 = 自绘菜单带（Win）+ 主体。frame 占满 #root，
+   body 吃剩余高度（min-height:0 闭合滚动链，口径同 T30-01 #root 定高注释）。 */
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--sc-color-canvas);
+}
+
+.app-frame_body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+
 /*
  * T39-01 布局设计器 · 密度档位（token 派生，不写死数值）：
  * 舒适 = T34-01 基准（行高 xxl+xs = 28、pad md = 12）；紧凑各降一档。

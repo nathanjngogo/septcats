@@ -16,6 +16,8 @@ import { aiChatActions, useAiChat } from './ai/chatState';
 import { PageView } from './pages/PageView';
 import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
+// T87-02：Win/Linux 自绘菜单带（原生菜单栏不吃应用 CSS，老板 09-28 令整窗随主题变）
+import { MenuBarBand } from './menu/MenuBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
 import { SearchPage } from './pages/SearchPage';
@@ -324,6 +326,39 @@ export function App() {
     };
   }, [paletteOpenForHotkey, toggleAiPanel]);
 
+  // T87-02：Windows 撤原生菜单 → 其注册的快捷键补挂 renderer 侧（动作单源=menu 出口）：
+  //   Ctrl+N 新建页面；Ctrl+±/0 缩放（经 menu.role → 本窗 webContents.setZoomLevel）。
+  //   Edit 六件套原本 registerAccelerator:false（页内 ProseMirror 自持），无需补。
+  //   仅 Win 生效——mac 保留原生菜单，其 accelerator 照常注册，避免双触发。
+  useEffect(() => {
+    if (!/Windows/i.test(navigator.userAgent)) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!(event.ctrlKey && !event.metaKey && !event.altKey)) {
+        return;
+      }
+      const k = event.key.toLowerCase();
+      if (k === 'n' && !event.shiftKey) {
+        event.preventDefault();
+        void window.septcats.menu.click({ action: 'newPage' });
+      } else if (k === '=' || k === '+') {
+        event.preventDefault();
+        void window.septcats.menu.role({ role: 'zoomIn' });
+      } else if (k === '-') {
+        event.preventDefault();
+        void window.septcats.menu.role({ role: 'zoomOut' });
+      } else if (k === '0') {
+        event.preventDefault();
+        void window.septcats.menu.role({ role: 'resetZoom' });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
   // T72-01 §范围1：快捷键 Alt+H 打开工作台模板市场（T66 原「开合工作台」语义改为开市场；
   // 与既有 Ctrl/Cmd 系键位不相交；命令面板打开时不劫持——输入焦点在 palette 输入框）。
   useEffect(() => {
@@ -538,8 +573,12 @@ export function App() {
       <Breadcrumb items={pagesBreadcrumbItems(pagesState)} />
     );
 
+  // T87-02：Windows 撤了原生菜单栏 → 自绘菜单带顶上（吃全套主题 token；
+  // macOS 不渲染 = OS 惯例 + nativeTheme 已联动，判定在组件内与 main 撤菜单同口径）
   return (
-    <>
+    <div className="app-frame">
+      <MenuBarBand />
+      <div className="app-frame_body">
       <AppShell
         className={editorView ? 'app-shell--fused' : ''}
         sidebarCollapsed={collapsed}
@@ -658,6 +697,8 @@ export function App() {
           </div>
         )}
       </AppShell>
+      </div>{/* /app-frame_body */}
+      {/* 弹层族 = 根层 fixed 定位，不参与 frame 的 flex 布局 */}
       <CommandPalette />
       <TemplateSaveDialog />
       {/* T57-01 §1.2：布局快选弹框（overlay，不挡主区的结构变化——选卡即时重排可见） */}
@@ -686,6 +727,6 @@ export function App() {
           pagesActions.dismissToast(id);
         }}
       />
-    </>
+    </div>
   );
 }

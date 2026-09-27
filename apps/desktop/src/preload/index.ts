@@ -254,8 +254,11 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(LOCK_CHANNELS.remove, input) as ReturnType<SeptcatsApi['lock']['remove']>,
   },
   // T51-01：原生菜单动作推送订阅（main → renderer 单向）
+  // T87-02：自绘菜单带的点击回发 + 标准 role 转发（renderer → main 单向命令）
   menu: {
     onAction: (listener) => subscribe(MENU_CHANNELS.action, listener),
+    click: (input) => ipcRenderer.invoke(MENU_CHANNELS.click, input),
+    role: (input) => ipcRenderer.invoke(MENU_CHANNELS.role, input),
   },
   // T54-01：关窗协作（冲刷握手 + 自绘询问框）
   close: {

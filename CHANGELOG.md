@@ -5,6 +5,22 @@
 
 ---
 
+## [0.6.6] - 2026-09-28
+
+### 菜单栏带改为自绘，随主题全量联动（老板三次打回「这里还是没有改变」治本）
+- **根因**：0.6.5 只把原生菜单条的明暗接到 nativeTheme；配色派系/质感两轴
+  OS 根本不理会，且 nativeTheme 联动在老板实机上依旧判「没变」→ 撤掉
+  Windows 原生菜单栏，由 renderer 自绘菜单带（`MenuBarBand`）顶上：
+  吃全套 `--sc-color-*` token，**明暗 × 配色派系 × 质感三轴全联动**。
+- 动作单源不破：条目点击 → `menu.click`/`menu.role` 回 main 既有
+  `handleMenuAction`（与原生菜单同一出口）；Ctrl+N / Ctrl+±/0 快捷键在
+  Win 侧补挂 renderer（mac 保留原生菜单与其 accelerator，不双触发）。
+- macOS 不渲染自绘带（OS 顶部全局菜单栏惯例 + 原生条已随 nativeTheme 变深）。
+- 真机探针 `cdp-e2e-t87-02.mjs` **14/14**（win-unpacked）：在位/明暗亮度翻转/
+  paper≠contrast 暖褐可辨/glass 半透+blur/pixel 实心/点击真建页/重启持久/零触碰。
+- 新单测 5 用例；踩坑钉死：开合 click 必须 stopPropagation——Menu 文档级
+  「点空白关闭」监听会把刚打开的下拉同帧关掉（jsdom 复现不了，真机才有）。
+
 ## [0.6.5] - 2026-09-28
 
 ### 原生窗口条随主题（老板截图圈定：标题栏+菜单栏带一并变色）

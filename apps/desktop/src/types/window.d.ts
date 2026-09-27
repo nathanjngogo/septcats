@@ -8,6 +8,7 @@ import type {
   CloseDecisionInput,
   EditorFlushAckInput,
   MenuActionId,
+  MenuRole,
   ShellOpenInput,
   ShellOpenResult,
 } from '../shared/ipc';
@@ -170,6 +171,8 @@ export interface SeptcatsImportApi {
 export interface SeptcatsAppMeta {
   name: string;
   version: string;
+  /** T87-02：主进程平台（renderer 据此决定自绘菜单带 vs 原生菜单栏；win32 才自绘） */
+  platform?: string;
   schemaVersion: number;
   /**
    * 数据根目录名（basename），用于状态栏/关于页展示。
@@ -445,6 +448,10 @@ export interface SeptcatsLinksApi {
 export interface SeptcatsMenuApi {
   /** 订阅菜单动作推送，返回退订函数。 */
   onAction(listener: (payload: { action: MenuActionId }) => void): () => void;
+  /** T87-02：自绘菜单带条目点击 → main 复用原生菜单动作出口（fire-and-forget 命令）。 */
+  click(input: { action: MenuActionId }): Promise<void>;
+  /** T87-02：标准 role 转发执行（编辑六件套 + 缩放三件套，本窗 webContents 执行）。 */
+  role(input: { role: MenuRole }): Promise<void>;
 }
 
 /**
