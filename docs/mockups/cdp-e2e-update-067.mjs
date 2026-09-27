@@ -75,8 +75,8 @@ async function boot() {
 async function main() {
   // 镜像准备：yml/sig 实拉线上真值；exe=本地终包（V0-3 断言等价）
   rmSync(FEED_DIR, { recursive: true, force: true }); mkdirSync(FEED_DIR, { recursive: true });
-  execSync(`curl -sfL "${GH}/latest.yml" -o "${join(FEED_DIR, 'latest.yml')}"`, { stdio: 'ignore' });
-  execSync(`curl -sfL "${GH}/latest.yml.sig" -o "${join(FEED_DIR, 'latest.yml.sig')}"`, { stdio: 'ignore' });
+  execSync(`curl -sfL --retry 6 --retry-delay 2 --retry-all-errors -m 60 "${GH}/latest.yml" -o "${join(FEED_DIR, 'latest.yml')}"`, { stdio: 'ignore' });
+  execSync(`curl -sfL --retry 6 --retry-delay 2 --retry-all-errors -m 60 "${GH}/latest.yml.sig" -o "${join(FEED_DIR, 'latest.yml.sig')}"`, { stdio: 'ignore' });
   copyFileSync(join(REPO, 'apps', 'desktop', 'dist', 'Septcats Setup 0.6.7.exe'), join(FEED_DIR, ASSET));
   const server = spawn('python', ['-m', 'http.server', String(HTTP_PORT), '--directory', FEED_DIR], { stdio: 'ignore', detached: true });
   server.unref();
