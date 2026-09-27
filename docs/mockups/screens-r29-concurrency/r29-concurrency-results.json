@@ -1,0 +1,135 @@
+{
+  "task": "r29-concurrency",
+  "ranAt": "2026-09-27T14:30:42.135Z",
+  "target": "E:/Hermes Agent工作空间/Septcats/apps/desktop/node_modules/electron/dist/electron.exe",
+  "dbCheck": "integrity=ok\r\npages=30\r\nblocks=41\r\nops=122",
+  "consoleErrors": [],
+  "assertions": [
+    {
+      "step": "P0|前置",
+      "name": "P0-1 靶子在产（打包产物优先，SEPTCATS_APP_BIN 可切）",
+      "ok": true,
+      "detail": "E:/Hermes Agent工作空间/Septcats/apps/desktop/node_modules/electron/dist/electron.exe"
+    },
+    {
+      "step": "P0|前置",
+      "name": "P0-2 应用自报版本 + 工作区就位",
+      "ok": true,
+      "detail": "{\"version\":\"0.6.1\",\"wsId\":\"01M3HMCVS49YE5E1DC44RM026K\",\"wsCount\":1}"
+    },
+    {
+      "step": "P1|基线",
+      "name": "P1-1 基线页树读取正常",
+      "ok": true,
+      "detail": "pages=0"
+    },
+    {
+      "step": "P2|并发创建 30",
+      "name": "P2-1 30 并发创建全部成功（0 reject）",
+      "ok": true,
+      "detail": "ok=30 rej=0"
+    },
+    {
+      "step": "P2|并发创建 30",
+      "name": "P2-2 30 个 id 全唯一（无撞号复用）",
+      "ok": true,
+      "detail": "unique=30"
+    },
+    {
+      "step": "P2|并发创建 30",
+      "name": "P2-3 页树计数精确 +30",
+      "ok": true,
+      "detail": "0 → 30"
+    },
+    {
+      "step": "P3|同页 20 并发提交",
+      "name": "P3-1 20 并发提交全部 resolve（0 reject）",
+      "ok": true,
+      "detail": "ok=20 rej=0 "
+    },
+    {
+      "step": "P3|同页 20 并发提交",
+      "name": "P3-2 无丢写：该页存活块恰 20",
+      "ok": true,
+      "detail": "blocks=20"
+    },
+    {
+      "step": "P4|同块 10 并发覆盖",
+      "name": "P4-1 10 并发同块覆盖 0 reject",
+      "ok": true,
+      "detail": "ok=10"
+    },
+    {
+      "step": "P4|同块 10 并发覆盖",
+      "name": "P4-2 无撕裂：list 中该块唯一且文本是写入集合之一",
+      "ok": true,
+      "detail": "count=1 content={\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"覆盖值-9\"}]}]}"
+    },
+    {
+      "step": "P5|FTS 与写并发交错",
+      "name": "P5-1 60 路读写交错全部 resolve（无 database is locked）",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
+      "step": "P5|FTS 与写并发交错",
+      "name": "P5-2 40 次查询返回结构合法（hits 数组）",
+      "ok": true,
+      "detail": "sample={\"hits\":[{\"kind\":\"page\",\"id\":\"01M3HMCVTV1Y1QPZAD2Z785VMD\",\"pageId\":\"01M3HMCVTV1Y1QPZAD2Z785VMD\",\"title\":\"R29并发mujx1lca-2"
+    },
+    {
+      "step": "P6|重建与读并发",
+      "name": "P6-1 links.rebuild 三连并发无异常",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
+      "step": "P6|重建与读并发",
+      "name": "P6-2 重建后 20 并发查询全绿",
+      "ok": true,
+      "detail": "ok=20"
+    },
+    {
+      "step": "P7|快速连点删除（幂等）",
+      "name": "P7-1 同页 5 并发删除 0 reject（连点不炸）",
+      "ok": true,
+      "detail": "rej=0 "
+    },
+    {
+      "step": "P7|快速连点删除（幂等）",
+      "name": "P7-2 幂等：页数恰 -1（未重复扣减）",
+      "ok": true,
+      "detail": "30 → 29"
+    },
+    {
+      "step": "P8|并发删 + 并发恢复",
+      "name": "P8-1 5 并发删除 → 5 并发恢复 全 resolve",
+      "ok": true,
+      "detail": "delRej=0 restRej=0"
+    },
+    {
+      "step": "P8|并发删 + 并发恢复",
+      "name": "P8-2 无幽灵页：中间态 -5、恢复后回位",
+      "ok": true,
+      "detail": "29 → 24 → 29"
+    },
+    {
+      "step": "P9|未捕获异常",
+      "name": "P9-1 全程 pageerror = 0（无未捕获 JS 异常）",
+      "ok": true,
+      "detail": "consoleErrors=0"
+    },
+    {
+      "step": "P10|收尾",
+      "name": "P10-1 离线只读 PRAGMA integrity_check=ok",
+      "ok": true,
+      "detail": "integrity=ok pages=30 blocks=41 ops=122"
+    },
+    {
+      "step": "P11|隔离",
+      "name": "P11-1 真实数据根零触碰（mtime 不变）",
+      "ok": true,
+      "detail": "before=1790512492839.6003 after=1790512492839.6003"
+    }
+  ]
+}

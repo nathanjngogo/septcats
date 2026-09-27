@@ -660,8 +660,12 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
     },
 
     async deletePage(input) {
-      const workspaceId = await requireActiveWorkspace();
-      const { all } = await requirePage(workspaceId, input.id);
+          const workspaceId = await requireActiveWorkspace();
+          // R29 并发压测（快速连点删除）：宽容版 `requirePage(..., false)` —— 已进回收站的页不再抛
+          // E_NOT_FOUND，直接收敛到下一条 `ops.length === 0 → { deleted: 0 }`（幂等：连点只删一次、
+          // 不弹误报）。id 在 page 表根本不存在（越界 id / 已被 T81-01 GC 物理清除）仍显式
+          // E_NOT_FOUND——与 restorePage 同一口径（「已彻底清除」≠「本就存活」）。
+          const { all } = await requirePage(workspaceId, input.id, false);
       const ops = cascadeDeleteOps(all, input.id, ctx());
       if (ops.length === 0) {
         return { deleted: 0 };

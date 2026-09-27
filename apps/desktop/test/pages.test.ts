@@ -272,6 +272,20 @@ describeDb('pagesApi（页面树 / 回收站 / 工作区）', (ctor) => {
     expect(trashAfter.rows).toHaveLength(0);
   });
 
+  it('deletePage：连点幂等（已进回收站再删 → { deleted: 0 }）；真不存在 id 仍 E_NOT_FOUND', async () => {
+    const page = await service.createPage({ parentId: null });
+    const first = await service.deletePage({ id: page.id });
+    expect(first.deleted).toBeGreaterThan(0);
+
+    // R29 并发压测（快速连点删除）：第二次删除不得抛 E_NOT_FOUND——幂等收敛为 0 条，
+    // 否则 UI 会对一次成功删除弹「页面不存在或已删除」的误报。
+    const second = await service.deletePage({ id: page.id });
+    expect(second.deleted).toBe(0);
+
+    // 边界不变：真不存在的 id（越界 / 已被 GC 物理清除）保持显式 E_NOT_FOUND
+    await expectApiError(service.deletePage({ id: 'ghost' }), 'E_NOT_FOUND');
+  });
+
   it('purgePage：彻底删除后不再出现在回收站，tombstone 仍在 page 表', async () => {
     const page = await service.createPage({ parentId: null });
     await service.deletePage({ id: page.id });
