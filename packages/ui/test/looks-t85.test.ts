@@ -105,7 +105,20 @@ describe('T85-01 L2-L5 质感口径', () => {
     // 环境光底：外壳必须铺渐变，chrome 才「有东西可磨」
     const ambient = lookRules('glass').filter((r) => r.sel.includes('.sc-shell') && !r.sel.includes('__') && r.body.includes('background-image'));
     expect(ambient.length, 'glass 缺外壳环境光背景图（旧版无效磨砂根因）').toBeGreaterThan(0);
-    expect(ambient.map((r) => r.body).join(' '), '环境光底必须是渐变').toContain('radial-gradient');
+    const ambientBody = ambient.map((r) => r.body).join(' ');
+    expect(ambientBody, '环境光底必须是渐变').toContain('radial-gradient');
+    // T88 通透锚（老板 09-28「做不到背景通透」）：光斑必须含**彩光**（danger/success 派生），
+    // 纯灰度光斑磨出来没有通透感（chroma 实测 0.6 → 8.5 的差距来源）。
+    expect(ambientBody, 'glass 环境光缺彩光斑（danger/success 派生）').toMatch(/--sc-color-(danger|success)\)/);
+    // chrome 面板透明度锚：canvas 混色占比 ≤30%（>40% 就回到「磨了像没磨」的不透档）
+    const chrome = lookRules('glass').find((r) => r.sel.includes('.sc-shell__topbar'));
+    expect(chrome, 'glass 缺 chrome 半透块').toBeDefined();
+    const mix = /background:\s*color-mix\(in srgb,\s*var\(--sc-color-canvas\)\s+(\d+)%/.exec(chrome?.body ?? '');
+    expect(mix, 'chrome 底必须是 canvas color-mix 半透').not.toBeNull();
+    expect(Number(mix?.[1]), 'chrome 面板混色占比过高（>30% = 不透）').toBeLessThanOrEqual(30);
+    // 饱和提升锚：saturate ≥2.2（1.8 档实测彩光发闷）
+    const sats = frost.flatMap((r) => [...r.body.matchAll(/saturate\(([\d.]+)\)/g)].map((m) => Number(m[1])));
+    expect(Math.max(...sats), 'glass 饱和提升不足（<2.2 彩光透不出）').toBeGreaterThanOrEqual(2.2);
   });
 
   it('L6 pixel 档特征：网格纸底 + 弹层硬位移影（0 模糊半径）', () => {

@@ -58,13 +58,13 @@
       "step": "B1|机制层",
       "name": "B1-e glass chrome 半透明 ≤50%",
       "ok": true,
-      "raw": "alpha=0.42 bg=color(srgb 0.960784 0.960784 0.960784 / 0.42)"
+      "raw": "alpha=0.14 bg=color(srgb 0.960784 0.960784 0.960784 / 0.14)"
     },
     {
       "step": "B1|机制层",
       "name": "B1-f glass chrome 磨砂 blur ≥20px",
       "ok": true,
-      "raw": "blur(26px) saturate(1.9)"
+      "raw": "blur(30px) saturate(2.6)"
     },
     {
       "step": "B1|机制层",
@@ -94,19 +94,19 @@
       "step": "B2|像素差（观感门）",
       "name": "B2-b 外壳 pixel↔glass ≥8%",
       "ok": true,
-      "raw": "14.13%（均值差 5.2）"
+      "raw": "25.79%（均值差 9.1）"
     },
     {
       "step": "B2|像素差（观感门）",
       "name": "B2-c 外壳 linear↔glass ≥8%",
       "ok": true,
-      "raw": "24.10%（均值差 4.2）"
+      "raw": "19.69%（均值差 5.0）"
     },
     {
       "step": "B2|像素差（观感门）",
       "name": "B2-d 浮层（命令面板）pixel↔glass ≥25%",
       "ok": true,
-      "raw": "50.14%"
+      "raw": "60.83%"
     },
     {
       "step": "B3|暗色档复跑",
@@ -118,13 +118,13 @@
       "step": "B3|暗色档复跑",
       "name": "B3-b 暗色 glass chrome 仍半透明+磨砂",
       "ok": true,
-      "raw": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.42) / blur(26px) saturate(1.9)"
+      "raw": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.14) / blur(30px) saturate(2.6)"
     },
     {
       "step": "B3|暗色档复跑",
       "name": "B3-c 暗色外壳 pixel↔glass ≥8%",
       "ok": true,
-      "raw": "14.44%（均值差 5.2）"
+      "raw": "26.02%（均值差 8.6）"
     },
     {
       "step": "C1|隔离钉",
@@ -213,19 +213,19 @@
           "blur": "none"
         },
         "main": {
-          "bg": "color(srgb 1 1 1 / 0.86)",
+          "bg": "color(srgb 1 1 1 / 0.58)",
           "img": "none",
           "blur": "none"
         },
         "sidebar": {
-          "bg": "color(srgb 0.960784 0.960784 0.960784 / 0.42)",
+          "bg": "color(srgb 0.960784 0.960784 0.960784 / 0.14)",
           "img": "none",
-          "blur": "blur(26px) saturate(1.9)"
+          "blur": "blur(30px) saturate(2.6)"
         },
         "topbar": {
-          "bg": "color(srgb 0.960784 0.960784 0.960784 / 0.42)",
+          "bg": "color(srgb 0.960784 0.960784 0.960784 / 0.14)",
           "img": "none",
-          "blur": "blur(26px) saturate(1.9)"
+          "blur": "blur(30px) saturate(2.6)"
         },
         "radiusSm": "10px",
         "radiusLg": "20px",
@@ -283,19 +283,19 @@
           "blur": "none"
         },
         "main": {
-          "bg": "color(srgb 0.0392157 0.0392157 0.0392157 / 0.86)",
+          "bg": "color(srgb 0.0392157 0.0392157 0.0392157 / 0.58)",
           "img": "none",
           "blur": "none"
         },
         "sidebar": {
-          "bg": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.42)",
+          "bg": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.14)",
           "img": "none",
-          "blur": "blur(26px) saturate(1.9)"
+          "blur": "blur(30px) saturate(2.6)"
         },
         "topbar": {
-          "bg": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.42)",
+          "bg": "color(srgb 0.0784314 0.0784314 0.0784314 / 0.14)",
           "img": "none",
-          "blur": "blur(26px) saturate(1.9)"
+          "blur": "blur(30px) saturate(2.6)"
         },
         "radiusSm": "10px",
         "radiusLg": "20px",
@@ -315,26 +315,26 @@
       "h": 190
     },
     "dPG": {
-      "pct": 14.126955903271693,
-      "mean": 5.218480364286991,
+      "pct": 25.78769559032717,
+      "mean": 9.109625432299042,
       "w": 296,
       "h": 190
     },
     "dLG": {
-      "pct": 24.098506401137982,
-      "mean": 4.21824908094773,
+      "pct": 19.690611664295876,
+      "mean": 4.971184960659775,
       "w": 296,
       "h": 190
     },
     "dPal": {
-      "pct": 50.13869132290185,
-      "mean": 14.115664990443042,
+      "pct": 60.82503556187767,
+      "mean": 17.70303578747302,
       "w": 296,
       "h": 190
     },
     "dDark": {
-      "pct": 14.441678520625889,
-      "mean": 5.152075893492166,
+      "pct": 26.017069701280228,
+      "mean": 8.610744484575008,
       "w": 296,
       "h": 190
     }

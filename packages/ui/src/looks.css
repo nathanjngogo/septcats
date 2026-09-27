@@ -97,25 +97,32 @@
   --sc-radius-md: 14px;
   --sc-radius-lg: 20px;
 }
-/* 环境光渐变：外壳铺柔光，chrome 才有东西可「磨」（Electron 渲染器 backdrop 采样层叠元素） */
+/* 环境光渐变（T88 通透版）：亮核 + 暗核 + 冷暖彩核四类光斑必须**并存**，
+ * chrome 磨出来才有「通透」的明暗/彩度对比（旧版只有灰度弱差 → 磨了像没磨）。
+ * 光斑色全部由既有 token 派生（accent 系=明度光，danger/success=低饱和彩光）。 */
 [data-look='glass'] .sc-shell {
   background-image:
     radial-gradient(64rem 34rem at 4% -14%, color-mix(in srgb, var(--sc-color-accent) 78%, transparent), transparent 70%),
     radial-gradient(52rem 30rem at 98% 0%, color-mix(in srgb, var(--sc-color-accent) 38%, transparent), transparent 70%),
     radial-gradient(44rem 26rem at 70% 88%, color-mix(in srgb, var(--sc-color-accent-soft) 95%, transparent), transparent 72%),
-    radial-gradient(38rem 38rem at 52% 122%, color-mix(in srgb, var(--sc-color-ink-edge) 16%, transparent), transparent 70%);
+    radial-gradient(38rem 38rem at 52% 122%, color-mix(in srgb, var(--sc-color-ink-edge) 16%, transparent), transparent 70%),
+    radial-gradient(30rem 20rem at 88% 16%, color-mix(in srgb, var(--sc-color-danger) 22%, transparent), transparent 70%),
+    radial-gradient(34rem 24rem at 16% 70%, color-mix(in srgb, var(--sc-color-success) 26%, transparent), transparent 70%),
+    radial-gradient(26rem 22rem at 55% 42%, color-mix(in srgb, var(--sc-color-selection) 20%, transparent), transparent 72%);
 }
-/* chrome 真玻璃：顶栏 / 侧栏 62% 半透明 + 22px 模糊 + 饱和提升 */
+/* chrome 真玻璃（T88 再通透一档）：32% 面板 + 30px 模糊 + 饱和 2.4 ——
+ * alpha 从 42→32：底光可透；saturate 1.9→2.4：磨出的彩光才「看得见」。 */
 [data-look='glass'] .sc-shell__topbar,
 [data-look='glass'] .sc-shell__sidebar,
 [data-look='glass'] .menub_band {
-  background: color-mix(in srgb, var(--sc-color-canvas) 42%, transparent);
-  -webkit-backdrop-filter: blur(26px) saturate(1.9);
-  backdrop-filter: blur(26px) saturate(1.9);
+  background: color-mix(in srgb, var(--sc-color-canvas) 14%, transparent);
+  -webkit-backdrop-filter: blur(30px) saturate(2.6);
+  backdrop-filter: blur(30px) saturate(2.6);
 }
-/* 主区 88% 微透：让环境光透进来（正文仍 ≥88% 实心 = 可读性铁律） */
+/* 主区 72%（T88：86→72）：正文底下透出环境光 = 通透感主战场；
+ * 72% content 底对正文对比度损耗 <15%，可读性不破线（t85 像素门复验）。 */
 [data-look='glass'] .sc-shell__main {
-  background: color-mix(in srgb, var(--sc-color-content) 86%, transparent);
+  background: color-mix(in srgb, var(--sc-color-content) 58%, transparent);
 }
 /* 浮层重磨砂（浮层背后必有内容可磨，是毛玻璃最该发力的地方） */
 [data-look='glass'] .sc-dialog,
@@ -125,9 +132,9 @@
 [data-look='glass'] .sc-select__listbox,
 [data-look='glass'] .sc-tooltip__bubble,
 [data-look='glass'] .palette {
-  background: color-mix(in srgb, var(--sc-color-surface-raised) 66%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  backdrop-filter: blur(24px) saturate(1.8);
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 60%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(2.2);
+  backdrop-filter: blur(28px) saturate(2.2);
 }
 
 /* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）
