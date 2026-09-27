@@ -1,22 +1,26 @@
 /*
- * looks.css —— 主题画廊·质感派系（TASK-T85-01，老板 09-26 令：「目前只有像素风的主题，
- * 我需要增加 Linear 风格的主题，以及毛玻璃风格的主题。放入主题市场。」）
+ * looks.css —— 主题·质感派系（TASK-T85-01 起，TASK-T86-02 大幅加强）
  *
  * 架构定位：主题 = theme（明暗基底）× palette（配色派系，themes.css）× look（质感派系，本文件）。
- * palette 只碰中性色阶；look 与之正交，只覆写**质感 token**（边框宽度谱 --sc-border-edge*、
- * 圆角阶 --sc-radius-*、立体斜角/硬投影 --sc-bevel-*、--sc-pixel-*、柔影 --sc-shadow-modal）；
- * glass 额外给浮层加半透明 + backdrop-blur。任何 look 都不碰 --sc-color-* 色阶 token。
+ * palette 只碰中性色阶；look 与之正交，只覆写**质感 token**（框线宽度谱 --sc-border-edge*、
+ * 圆角阶 --sc-radius-*、立体斜角/硬投影 --sc-bevel-* / --sc-pixel-*、柔影 --sc-shadow-modal）
+ * 与**表面处理**（外壳 / chrome / 浮层的背景、模糊、渐变、纹理）。任何 look 都不碰 --sc-color-* 定义。
  *
- * 机制（零组件结构改动的关键）：全库框线自 T85-01 起统一吃 var(--sc-border-edge)（默认
- * = 2px solid ink-edge，与 T59/T62 像素纪律逐字等值）；圆角/投影本就 token 化。于是
- * look 只改 token 值即可整仓换骨：linear = 1px 细边 + 连续圆角 + 柔影；glass = linear
- * 骨架 + 浮层磨砂。选择器用 [data-look='x']（不限 :root）→ 画廊预览卡同口径生效。
- * 注意：全仓无 CSS @layer 体系（themes.css 同款裸选择器）——本文件不得使用 @layer，
- * 否则覆写输给非 layer 样式；加载顺序 tokens → themes → looks（main.tsx），同特异度后者胜。
+ * 机制（零组件结构改动的关键）：全库框线自 T85-01 起统一吃 var(--sc-border-edge)，圆角/投影
+ * 本就 token 化 → look 只改 token 值即可整仓换骨；表面处理靠 [data-look='x'] 选择器覆写
+ * AppShell / 浮层既有类的 background / backdrop-filter / background-image。
+ * 本文件纪律：**不写任何 border*: / outline*: 直声明**（边框全部走 token，pixel-borders.test.ts
+ * 扫描面对本文件零命中）。全仓无 CSS @layer 体系（themes.css 同款裸选择器）——本文件不得使用
+ * @layer，否则覆写输给非 layer 样式；加载顺序 tokens → themes → looks（main.tsx），同特异度后者胜。
  *
- * 本文件纪律：只写自定义属性与背景/模糊/宽度，**不写任何 border*: / outline*: 直声明**
- * （pixel-borders.test.ts 扫描面对本文件零命中；边框宽度全部走 token）。
- * 默认（无 data-look 属性 = React 挂载前/旧存档）与 pixel 块逐字一致 → 零回归。
+ * 老板 09-28 口径：「质感风格没有实质性的改变」——旧版实测主界面三档像素差仅 1.86~1.97%
+ * （linear vs glass 0.14%），根因 = 毛玻璃把顶栏/侧栏做半透明，但背后是同色不透明画布
+ * → 模糊了等于没模糊。本版三条硬口径：
+ *   ① 像素：0 圆角 + 硬黑框 + 硬位移投影（弹层 8px 硬影）+ 4px 网格纸底；
+ *   ② linear：发丝边（ink-edge 38% 透明）+ 连续圆角 4/6/10/14 + 分层柔影 + 极浅面渐变，无纹理；
+ *   ③ 毛玻璃：外壳铺**环境光渐变**，chrome 62% 半透明 + blur(22px) saturate(1.7) 真磨砂，
+ *      浮层 66% + blur(24px)，主区 92% 微透（正文可读性优先）。
+ * 验收=**像素差客观门**（docs/mockups/cdp-e2e-t85-01.mjs 逐像素比对截图），不再只看 computed 值。
  */
 
 /* ===== 默认 = pixel（属性缺席时的兜底，与 [data-look='pixel'] 同值） ===== */
@@ -25,7 +29,7 @@
   --sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);
 }
 
-/* ===== pixel（现状默认；显式属性 = 画廊选中态与探针锚点） ===== */
+/* ===== pixel（像素）：硬黑框 · 零圆角 · 硬位移投影 · 网格纸底 ===== */
 [data-look='pixel'] {
   --sc-border-edge: 2px solid var(--sc-color-ink-edge);
   --sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);
@@ -33,64 +37,100 @@
   --sc-radius-sm: 0;
   --sc-radius-md: 0;
   --sc-radius-lg: 0;
+  /* 立体斜角维持像素硬边语义 */
+  --sc-bevel-in: inset 2px 2px 0 0 var(--sc-color-bevel-lo), inset -2px -2px 0 0 var(--sc-color-bevel-hi);
+  --sc-bevel-out: inset 2px 2px 0 0 var(--sc-color-bevel-hi), inset -2px -2px 0 0 var(--sc-color-bevel-lo);
+  /* 硬位移投影（0 模糊半径）= 像素风招牌；比 tokens 默认更重一档 */
+  --sc-pixel-out: 3px 3px 0 0 var(--sc-color-shadow-pixel);
+  --sc-pixel-flat: 2px 2px 0 0 var(--sc-color-shadow-pixel);
+  --sc-shadow-modal: 8px 8px 0 0 var(--sc-color-shadow-pixel);
+}
+/* 4px 网格纸底（画布 + 主区）：像素档的「纸感」——1px 线 5% 墨色，只做底纹不压正文 */
+[data-look='pixel'] .sc-shell,
+[data-look='pixel'] .sc-shell__main {
+  background-image:
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--sc-color-ink-edge) 7%, transparent) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--sc-color-ink-edge) 7%, transparent) 0 1px, transparent 1px 4px);
 }
 
-/* ===== linear（Linear 风：1px 细边、连续圆角、硬斜角退役为柔影分层） ===== */
+/* ===== linear（Linear 极简）：发丝边 · 连续圆角 · 分层柔影 · 极浅面渐变 ===== */
 [data-look='linear'] {
-  --sc-border-edge: 1px solid var(--sc-color-ink-edge);
-  --sc-border-edge-dashed: 1px dashed var(--sc-color-ink-edge);
+  --sc-border-edge: 1px solid color-mix(in srgb, var(--sc-color-ink-edge) 38%, transparent);
+  --sc-border-edge-dashed: 1px dashed color-mix(in srgb, var(--sc-color-ink-edge) 38%, transparent);
   /* 输入类「内凹感」= 极浅内晕（替代 2px 硬斜角；focus-ring 引用同 token 自然跟随） */
-  --sc-bevel-in: inset 0 1px 2px 0 rgba(28, 30, 33, 0.06);
-  /* 凸起/浮起投影语义复用为柔影（Button/Card/Dialog/Select 全部引用这组 token） */
-  --sc-bevel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel);
-  --sc-pixel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel), 0 1px 6px -2px var(--sc-color-shadow-pixel);
-  --sc-pixel-flat: 0 1px 2px 0 var(--sc-color-shadow-pixel);
-  --sc-shadow-modal: 0 12px 32px -8px rgba(28, 30, 33, 0.22), 0 2px 8px rgba(28, 30, 33, 0.08);
-  --sc-radius-xs: 2px;
-  --sc-radius-sm: 4px;
-  --sc-radius-md: 6px;
-  --sc-radius-lg: 8px;
+  --sc-bevel-in: inset 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 20%, transparent);
+  --sc-bevel-out: 0 1px 2px rgba(28, 30, 33, 0.06);
+  --sc-pixel-out: 0 1px 2px rgba(28, 30, 33, 0.06), 0 8px 24px -12px rgba(28, 30, 33, 0.18);
+  --sc-pixel-flat: 0 1px 2px rgba(28, 30, 33, 0.05);
+  --sc-shadow-modal: 0 24px 60px -20px rgba(28, 30, 33, 0.35), 0 4px 14px rgba(28, 30, 33, 0.1);
+  --sc-radius-xs: 4px;
+  --sc-radius-sm: 6px;
+  --sc-radius-md: 10px;
+  --sc-radius-lg: 14px;
+}
+/* Linear 的「层」感 = chrome 面与正文面分色 + 发丝分界（大面积可辨；色值全部由既有色板派生） */
+[data-look='linear'] .sc-shell__sidebar,
+[data-look='linear'] .sc-shell__topbar {
+  background: color-mix(in srgb, var(--sc-color-ink-edge) 7%, var(--sc-color-canvas));
+}
+[data-look='linear'] .sc-shell__main {
+  background-image: linear-gradient(180deg,
+    color-mix(in srgb, var(--sc-color-ink-edge) 5%, transparent) 0,
+    color-mix(in srgb, var(--sc-color-ink-edge) 2%, transparent) 16rem,
+    transparent 32rem);
 }
 
-/* ===== glass（毛玻璃：linear 骨架 + 浮层半透明磨砂；正文面保持实心 = 可读性铁律） ===== */
+/* ===== glass（毛玻璃）：环境光底 + chrome 真磨砂 + 浮层重磨砂 =====
+   正文面保持 92% 实心 = 可读性铁律（旧版 84% 之所以「磨了等于没磨」，是因为背后无光可磨）。 */
 [data-look='glass'] {
-  --sc-border-edge: 1px solid var(--sc-color-ink-edge);
-  --sc-border-edge-dashed: 1px dashed var(--sc-color-ink-edge);
-  --sc-bevel-in: inset 0 1px 2px 0 rgba(28, 30, 33, 0.05);
-  --sc-bevel-out: 0 1px 2px 0 var(--sc-color-shadow-pixel);
-  --sc-pixel-out: 0 4px 16px -4px rgba(28, 30, 33, 0.18);
+  --sc-border-edge: 1px solid color-mix(in srgb, var(--sc-color-ink-edge) 26%, transparent);
+  --sc-border-edge-dashed: 1px dashed color-mix(in srgb, var(--sc-color-ink-edge) 26%, transparent);
+  --sc-bevel-in: inset 0 1px 2px rgba(28, 30, 33, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  --sc-bevel-out: 0 1px 2px rgba(28, 30, 33, 0.05);
+  --sc-pixel-out: 0 6px 20px -6px rgba(28, 30, 33, 0.2);
   --sc-pixel-flat: 0 2px 8px -2px rgba(28, 30, 33, 0.14);
-  --sc-shadow-modal: 0 16px 40px -8px rgba(28, 30, 33, 0.28), 0 2px 10px rgba(28, 30, 33, 0.1);
-  --sc-radius-xs: 4px;
-  --sc-radius-sm: 8px;
-  --sc-radius-md: 12px;
-  --sc-radius-lg: 16px;
+  --sc-shadow-modal: 0 32px 80px -24px rgba(28, 30, 33, 0.42), 0 4px 16px rgba(28, 30, 33, 0.12);
+  --sc-radius-xs: 8px;
+  --sc-radius-sm: 10px;
+  --sc-radius-md: 14px;
+  --sc-radius-lg: 20px;
 }
-/* 浮层玻璃化（只写背景/模糊，不写 border —— 宽度已随 token 收细为 1px）。
-   Electron 渲染器内 backdrop 采样窗口内层叠元素，观感成立（真机 frame-check 核）。 */
+/* 环境光渐变：外壳铺柔光，chrome 才有东西可「磨」（Electron 渲染器 backdrop 采样层叠元素） */
+[data-look='glass'] .sc-shell {
+  background-image:
+    radial-gradient(64rem 34rem at 4% -14%, color-mix(in srgb, var(--sc-color-accent) 78%, transparent), transparent 70%),
+    radial-gradient(52rem 30rem at 98% 0%, color-mix(in srgb, var(--sc-color-accent) 38%, transparent), transparent 70%),
+    radial-gradient(44rem 26rem at 70% 88%, color-mix(in srgb, var(--sc-color-accent-soft) 95%, transparent), transparent 72%),
+    radial-gradient(38rem 38rem at 52% 122%, color-mix(in srgb, var(--sc-color-ink-edge) 16%, transparent), transparent 70%);
+}
+/* chrome 真玻璃：顶栏 / 侧栏 62% 半透明 + 22px 模糊 + 饱和提升 */
+[data-look='glass'] .sc-shell__topbar,
+[data-look='glass'] .sc-shell__sidebar {
+  background: color-mix(in srgb, var(--sc-color-canvas) 42%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(1.9);
+  backdrop-filter: blur(26px) saturate(1.9);
+}
+/* 主区 88% 微透：让环境光透进来（正文仍 ≥88% 实心 = 可读性铁律） */
+[data-look='glass'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 86%, transparent);
+}
+/* 浮层重磨砂（浮层背后必有内容可磨，是毛玻璃最该发力的地方） */
 [data-look='glass'] .sc-dialog,
 [data-look='glass'] .sc-menu,
 [data-look='glass'] .sc-popover__panel,
 [data-look='glass'] .sc-toast__item,
 [data-look='glass'] .sc-select__listbox,
 [data-look='glass'] .sc-tooltip__bubble,
-[data-look='glass'] .palette,
-[data-look='glass'] .theme-gallery {
-  background: color-mix(in srgb, var(--sc-color-surface-raised) 72%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-}
-/* 顶栏/侧栏 chrome 轻玻璃（84% 实心，文字可读优先） */
-[data-look='glass'] .sc-shell__topbar,
-[data-look='glass'] .sc-shell__sidebar {
-  background: color-mix(in srgb, var(--sc-color-canvas) 84%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+[data-look='glass'] .palette {
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 66%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  backdrop-filter: blur(24px) saturate(1.8);
 }
 
 /* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）
-   随质感收细为 1px（像素态保持 2px = T59 锚定不动）===== */
+   随质感收细为 1px 并降为半透明墨（像素态保持 2px 实墨 = T59 锚定不动）===== */
 [data-look='linear'] .sc-shell__sidebar::after,
 [data-look='glass'] .sc-shell__sidebar::after {
   width: 1px;
+  background: color-mix(in srgb, var(--sc-color-ink-edge) 30%, transparent);
 }

@@ -1,273 +1,305 @@
-/* T85-01 真机探针（质感派系层：Linear + 毛玻璃在 Electron 内真实生效）
- * 链：L0 默认 pixel 态（顶栏框线 computed=2px + 按钮零圆角）→
- *     L1 同会话真实 UI 点「Linear」卡 → 顶栏框线即时=1px + 按钮圆角>0 +
- *        柔影非硬 bevel（CSS 级联真实换肤，不止 data 属性挂着）→
- *     L2 点「毛玻璃」卡 → 画廊弹层 backdrop-filter≠none + 背景 rgba 半透明
- *        （color-mix/backdrop-filter 在 Electron 内核支持性 = 物理墙探测）→
- *     L3 优雅重启（sync:restart → app.quit 冲刷 localStorage → relaunch 同 argv）→
- *        重连后 data-look=glass 自动恢复 + 顶栏框线仍 1px（持久化链闭环）→
- *     L4 布局无破洞 + 真实根 C:\Users\Administrator\.septcats 零触碰（mtime 钉）。
- * 桥面：无新 IPC——纯前端质感层；探针经 CDP 走**真实 UI 路径**（派画廊事件 +
- *   设置页 radio），比直写 localStorage 更强：连 lookActions.setLook 一起验。
- * 双钉纪律：--user-data-dir=<scratch ud> 且 ud/septcats.settings.json 的 rootPath→scratch data。
- * 断言 <8 = FATAL（静默蒸发守卫）。
- * 教训（上一版 9/16）：force-kill 下 Chromium localStorage 不落盘——重启验证必须走
- *   app.quit 优雅通道（sync:restart 自带 relaunch）；换肤验证放同会话点卡完成。
- * 点卡 jsdom 路径已由 test/t85-looks.test.tsx（12 测）覆盖；本探针证明
- *   **Electron 内核里 CSS 级联真实换肤**。
+/* cdp-e2e-t85-01.mjs —— 质感派系（像素 / Linear / 毛玻璃）真机验收探针。
+ *
+ * 老板 09-28 打回：「质感风格没有实质性的改变」——旧版探针只断言 computed 值（有 backdrop-filter
+ * 就 PASS），而实测主界面三档像素差仅 1.86~1.97%（linear vs glass 0.14%）：全绿却肉眼没变。
+ * 本版口径升级为**像素差客观门**：同内容下逐档截图，探针内嵌 PNG 解码逐像素比对，
+ * 差异不足即 FAIL（不再有「声明存在=通过」的漏洞）。
+ *
+ * 靶子：默认打包产物 win-unpacked（交付物终验口径）；SEPTCATS_APP_BIN / SEPTCATS_APP_DIR 可切。
+ * 判据（全为真机实测，非推定）：
+ *   A 机制层：glass chrome 半透(≤50%)+blur≥20px 且外壳有 radial-gradient 环境光；
+ *             linear chrome 灰面（与画布亮度差≥12）+ 主区 linear-gradient + 无磨砂；
+ *             pixel 外壳/主区 4px 网格底；三档圆角 token 严格递增（--sc-radius-sm）。
+ *   B 观感层（像素差）：外壳 pixel↔linear ≥8%、pixel↔glass ≥8%、linear↔glass ≥8%；
+ *             浮层（命令面板）pixel↔glass ≥25%；暗色档 glass↔pixel ≥8%。
+ *   所有测档共用一个 scratch 夹具（真实档案根 mtime 零触碰 = 硬不变量）。
  */
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
-import { mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-const reqAgent = createRequire('C:/Users/Administrator/.workbuddy/binaries/node/workspace/package.json');
-const { chromium } = reqAgent('playwright-core');
+import { mkdirSync, rmSync, writeFileSync, statSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
-const REPO = 'E:/Hermes Agent工作空间/Septcats';
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO = join(SCRIPT_DIR, '..', '..');
 const APPDIR = join(REPO, 'apps', 'desktop');
-const RUN = join(REPO, '..', '_scratch', process.env['SEPTCATS_RUN_NAME'] ?? 't85-01-e2e');
-const UD = join(RUN, 'ud');
-const ROOT = join(RUN, 'data');
+const PACKAGE_APP = join(APPDIR, 'dist', 'win-unpacked', 'Septcats.exe');
+const DEV_ELECTRON = join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
+const RUN_NAME = process.env.SEPTCATS_RUN_NAME ?? 't85';
+const APP_BIN = process.env.SEPTCATS_APP_BIN ?? (process.env.SEPTCATS_APP_DIR ? join(process.env.SEPTCATS_APP_DIR, 'Septcats.exe') : PACKAGE_APP);
+const DEV = process.env.SEPTCATS_DEV === '1';
+const RUN = `E:\\Hermes Agent工作空间\\_scratch\\${RUN_NAME}`;
+const UD = `${RUN}\\ud`;
+const ROOT = `${RUN}\\data`;
+const SHOTS = join(SCRIPT_DIR, `screens-${RUN_NAME}`);
+const PORT = Number(process.env.SEPTCATS_CDP_PORT ?? '9562');
 const REAL_ROOT = 'C:\\Users\\Administrator\\.septcats';
-const PORT = Number(process.env['SEPTCATS_CDP_PORT'] ?? '9255');
-// 靶子可切：默认 dev electron；SEPTCATS_APP_BIN 指向打包产物 exe（交付物终验口径）
-const APP_BIN = process.env['SEPTCATS_APP_BIN'] ?? '';
-const PACKAGED = APP_BIN !== '';
-const ELECTRON = PACKAGED ? APP_BIN : join(APPDIR, 'node_modules', 'electron', 'dist', 'electron.exe');
-const APP_ARGS = PACKAGED ? [] : ['.'];
-const RUN_DIR_TAG = process.env['SEPTCATS_RUN_NAME'] ?? 't85-01-e2e';
+const SCALE = 4; // 像素差下采样：每 4x4 取均值一像素（抗抖动，只量整体观感差）
+
+const requireFrom = createRequire(join(REPO, 'node_modules', 'playwright-core', 'package.json'));
+const { chromium } = requireFrom('playwright-core');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-function killTree(pid) { try { execSync(`taskkill /PID ${String(pid)} /T /F`, { stdio: 'ignore' }); } catch { /* gone */ } }
-function realRootStamp() { try { return String(statSync(REAL_ROOT).mtimeMs); } catch { return '-1'; } }
-function killStaleApp() {
-  // 打包靶子的进程名是 Septcats.exe，dev 靶子是 electron.exe——两个都扫（命中判据=命令行含本探针 RUN 目录）
-  for (const pname of ['electron.exe', 'Septcats.exe']) {
-    try {
-      const out = execSync(`wmic process where "name='${pname}'" get processid,commandline /format:list`, { encoding: 'utf8' });
-      let cur = '';
-      for (const line of out.split('\n')) {
-        if (line.startsWith('CommandLine=')) cur = line;
-        else if (line.startsWith('ProcessId=')) { const m = line.match(/^ProcessId=(\d+)/); if (m !== null && cur.includes(RUN_DIR_TAG)) killTree(Number(m[1])); cur = ''; }
-      }
-    } catch { /* wmic 缺失 */ }
-  }
+const assertions = [];
+let STEP = 'boot';
+function check(name, ok, raw) {
+  assertions.push({ step: STEP, name, ok: ok === true, raw: String(raw).slice(0, 260) });
+  console.log(`${ok ? 'PASS' : 'FAIL'}  [${STEP}] ${name}  — ${String(raw).slice(0, 180)}`);
 }
+function killTree(pid) { try { execSync(`taskkill /PID ${String(pid)} /T /F`, { stdio: 'ignore' }); } catch { /* */ } }
+function killStaleApp() {
+  for (const name of ['Septcats.exe', 'electron.exe']) { try { execSync(`taskkill /F /IM ${name}`, { stdio: 'ignore' }); } catch { /* */ } }
+}
+function rootMtime() { try { return statSync(REAL_ROOT).mtimeMs; } catch { return -1; } }
+function listeningPids(port) {
+  try {
+    const out = execSync(`netstat -ano | findstr :${String(port)} | findstr LISTENING`, { encoding: 'utf8' });
+    return [...new Set(out.split('\n').map((l) => l.trim().split(/\s+/).pop()).filter((x) => /^\d+$/.test(x)))];
+  } catch { return []; }
+}
+
+/* ===== 内嵌 PNG 解码（8bit RGBA/RGB 非隔行，Chromium 截图形态）+ 下采样像素比对 ===== */
+function decodePng(buf) {
+  if (buf.readUInt32BE(0) !== 0x89504e47) throw new Error('非 PNG');
+  let pos = 8; let idat = Buffer.alloc(0); let w = 0; let h = 0; let ch = 4;
+  while (pos < buf.length) {
+    const len = buf.readUInt32BE(pos); const type = buf.toString('latin1', pos + 4, pos + 8);
+    const data = buf.subarray(pos + 8, pos + 8 + len); pos += 12 + len;
+    if (type === 'IHDR') { w = data.readUInt32BE(0); h = data.readUInt32BE(4); const ct = data[9]; ch = { 0: 1, 2: 3, 4: 2, 6: 4 }[ct] ?? 4; }
+    else if (type === 'IDAT') idat = Buffer.concat([idat, data]);
+    else if (type === 'IEND') break;
+  }
+  const raw = zlib.inflateSync(idat); const stride = w * ch;
+  const rows = []; let prev = Buffer.alloc(stride); let p = 0;
+  for (let y = 0; y < h; y += 1) {
+    const f = raw[p]; p += 1; const line = Buffer.from(raw.subarray(p, p + stride)); p += stride;
+    for (let i = 0; i < stride; i += 1) {
+      const a = i >= ch ? line[i - ch] : 0; const b = prev[i]; const c = i >= ch ? prev[i - ch] : 0;
+      if (f === 1) line[i] = (line[i] + a) & 255;
+      else if (f === 2) line[i] = (line[i] + b) & 255;
+      else if (f === 3) line[i] = (line[i] + ((a + b) >> 1)) & 255;
+      else if (f === 4) {
+        const pp = a + b - c; const pa = Math.abs(pp - a); const pb = Math.abs(pp - b); const pc = Math.abs(pp - c);
+        line[i] = (line[i] + (pa <= pb && pa <= pc ? a : (pb <= pc ? b : c))) & 255;
+      }
+    }
+    rows.push(line); prev = line;
+  }
+  return { w, h, ch, rows };
+}
+/** 下采样亮度网格（每 SCALE² 取均值）。 */
+function lumaGrid(path) {
+  const { w, h, ch, rows } = decodePng(readFileSync(path));
+  const gw = Math.floor(w / SCALE); const gh = Math.floor(h / SCALE); const g = new Float64Array(gw * gh);
+  for (let gy = 0; gy < gh; gy += 1) {
+    for (let gx = 0; gx < gw; gx += 1) {
+      let tot = 0; let n = 0;
+      for (let y = gy * SCALE; y < (gy + 1) * SCALE; y += 1) {
+        const r = rows[y];
+        for (let x = gx * SCALE; x < (gx + 1) * SCALE; x += 1) {
+          const i = x * ch;
+          const v = ch >= 3 ? (r[i] * 299 + r[i + 1] * 587 + r[i + 2] * 114) / 1000 : r[i];
+          tot += v; n += 1;
+        }
+      }
+      g[gy * gw + gx] = tot / n;
+    }
+  }
+  return { gw, gh, g };
+}
+/** 差异像素占比（阈值 thr 亮度单位）；两图尺寸不一致时取交集。 */
+function diffPct(pathA, pathB, thr = 6) {
+  const A = lumaGrid(pathA); const B = lumaGrid(pathB);
+  const gw = Math.min(A.gw, B.gw); const gh = Math.min(A.gh, B.gh);
+  let over = 0; let sum = 0; let n = 0;
+  for (let y = 0; y < gh; y += 1) {
+    for (let x = 0; x < gw; x += 1) {
+      const d = Math.abs(A.g[y * A.gw + x] - B.g[y * B.gw + x]);
+      sum += d; if (d > thr) over += 1; n += 1;
+    }
+  }
+  return { pct: (over / n) * 100, mean: sum / n, w: gw, h: gh };
+}
+
 async function launch() {
-  const child = spawn(ELECTRON, [...APP_ARGS, `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`], { cwd: APPDIR, stdio: 'ignore' });
+  for (const pid of listeningPids(PORT)) killTree(pid);
+  killStaleApp();
+  rmSync(RUN, { recursive: true, force: true });
+  mkdirSync(UD, { recursive: true }); mkdirSync(ROOT, { recursive: true }); mkdirSync(SHOTS, { recursive: true });
+  writeFileSync(`${UD}\\septcats.settings.json`, JSON.stringify({
+    schema: 1, rootPath: ROOT, theme: 'light', locale: 'zh-CN',
+    privacy: { telemetry: false, linkPreviewOnType: true },
+    editor: { defaultEditMode: 'rich', spellcheck: true },
+    data: { note: '' }, sync: { enabled: false, encrypt: false, gc: false },
+  }, null, 2), 'utf8');
+  const bin = DEV ? DEV_ELECTRON : APP_BIN;
+  const args = DEV
+    ? ['.', `--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`]
+    : [`--user-data-dir=${UD}`, `--remote-debugging-port=${String(PORT)}`];
+  const child = spawn(bin, args, { cwd: DEV ? APPDIR : dirname(APP_BIN), stdio: 'ignore' });
   let browser = null;
-  for (let i = 0; i < 40; i += 1) { await wait(800); try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); break; } catch { /* retry */ } }
-  if (browser === null) throw new Error('CDP 连不上');
+  const dl = Date.now() + 60000;
+  while (Date.now() < dl) {
+    try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`); break; } catch { await wait(800); }
+  }
+  if (browser === null) throw new Error('CDP 未就绪');
   const ctx = browser.contexts()[0];
-  const page = ctx.pages()[0] ?? (await ctx.newPage());
-  await page.waitForFunction(() => window.septcats !== undefined, null, { timeout: 30000 });
+  const page = ctx.pages().find((p) => p.url().startsWith('file:')) ?? await ctx.waitForEvent('page');
+  await page.waitForSelector('.app-side', { timeout: 30000 });
+  await wait(2500);
+  if (await page.locator('[data-testid="ws-create"]').count() > 0) { await page.locator('[data-testid="ws-create"]').first().click(); await wait(2500); }
   return { child, browser, page };
 }
-async function shut({ child, browser }) {
-  try { await browser.close(); } catch { /* */ }
-  killTree(child.pid);
-  await wait(1200);
+
+/** 造 2 页正文（给磨砂提供可模糊的底、给像素差提供稳定内容）。 */
+async function seedContent(page) {
+  for (let i = 1; i <= 2; i += 1) {
+    await page.locator('[data-testid="side-new-page"]').click();
+    await wait(1100);
+    const ed = page.locator('.ProseMirror').first();
+    if (await ed.count() > 0) {
+      await ed.click(); await wait(250);
+      await page.keyboard.type(`质感对照样本 ${i}：毛玻璃 / Linear / 像素三档应当一眼可辨。`);
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('第二行用于观察行高、分割线与圆角在正文面的差别。');
+      await wait(600);
+    }
+  }
+  await wait(900);
 }
-/**
- * 老板 09-27 令「取消主题画廊」后：质感/配色的唯一入口 = 设置→外观**内联两行**。
- * 本探针走真实 UI 路径：应用事件开设置 → 点质感行里的原生 radio（等价用户操作）。
- * （旧写法经 `septcats:open-theme-gallery` 事件点画廊卡，画廊已随该令删除。）
- */
-async function setLookViaSettings(page, id) {
-  await page.evaluate(() => window.dispatchEvent(new Event('septcats:open-settings')));
-  await page.waitForSelector('[data-testid="theme-look-section"]', { timeout: 8000 });
-  await page.click(`[data-testid="theme-look-section"] input[value="${id}"]`);
-}
-/** 设置→外观两行的可见性探针（老板点名「根本没有毛玻璃等主题」的回归钉）。 */
-async function probeThemeRows(page) {
-  return page.evaluate(() => {
-    const lookRow = document.querySelector('[data-testid="theme-look-section"]');
-    const paletteRow = document.querySelector('[data-testid="theme-section"]');
-    const labels = (row) =>
-      [...(row?.querySelectorAll('.sc-radio__label') ?? [])].map((el) => el.textContent ?? '');
+
+/** 单档采集：设 look(+theme) → reload → 断言 data-look → 记录样式 → 截图（外壳 + 命令面板）。 */
+async function capture(page, look, theme) {
+  await page.evaluate(([l, t]) => {
+    localStorage.setItem('septcats.look', l);
+    localStorage.setItem('septcats.theme', t);
+  }, [look, theme]);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.app-side', { timeout: 30000 });
+  await wait(2600);
+  const attr = await page.evaluate(() => document.documentElement.getAttribute('data-look'));
+  const style = await page.evaluate(() => {
+    const cs = (s) => {
+      const el = document.querySelector(s);
+      if (el === null) return null;
+      const c = getComputedStyle(el);
+      return {
+        bg: c.backgroundColor,
+        img: (c.backgroundImage === 'none' ? 'none' : c.backgroundImage.slice(0, 40)),
+        blur: (c.backdropFilter || c.webkitBackdropFilter || 'none').slice(0, 40),
+      };
+    };
+    const rs = getComputedStyle(document.documentElement);
     return {
-      lookLabels: labels(lookRow),
-      lookCount: lookRow?.querySelectorAll('input[type="radio"]').length ?? 0,
-      paletteCount: paletteRow?.querySelectorAll('input[type="radio"]').length ?? 0,
-      gallery: document.querySelector('[data-testid="theme-gallery"]') !== null,
-      galleryEntry: document.querySelector('[data-testid="theme-gallery-entry"]') !== null,
+      shell: cs('.sc-shell'), main: cs('.sc-shell__main'), sidebar: cs('.sc-shell__sidebar'), topbar: cs('.sc-shell__topbar'),
+      radiusSm: rs.getPropertyValue('--sc-radius-sm').trim(),
+      radiusLg: rs.getPropertyValue('--sc-radius-lg').trim(),
+      borderEdge: rs.getPropertyValue('--sc-border-edge').trim().slice(0, 60),
+      modalShadow: rs.getPropertyValue('--sc-shadow-modal').trim().slice(0, 60),
     };
   });
-}
-const probeBox = () => {
-  const topbar = document.querySelector('.sc-shell__topbar');
-  const btn = document.querySelector('.sc-btn--secondary') ?? document.querySelector('button');
-  return {
-    dataLook: document.documentElement.dataset.look ?? '',
-    topBorder: topbar ? getComputedStyle(topbar).borderBottomWidth : 'NO-TOPBAR',
-    radius: btn ? getComputedStyle(btn).borderTopLeftRadius : 'NO-BTN',
-    shadow: btn ? getComputedStyle(btn).boxShadow.slice(0, 70) : '',
-  };
-};
-
-const assertions = [];
-let STEP = '-';
-function check(name, ok, extra = '') {
-  assertions.push({ name: `${STEP}|${name}`, pass: Boolean(ok), extra: String(extra).slice(0, 170) });
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${STEP} ${name}${extra ? ` :: ${String(extra).slice(0, 130)}` : ''}`);
-}
-function seedSettings() {
-  mkdirSync(UD, { recursive: true });
-  writeFileSync(join(UD, 'septcats.settings.json'), JSON.stringify({ rootPath: ROOT, theme: 'light', locale: 'zh-CN' }));
-  mkdirSync(ROOT, { recursive: true });
+  const shellShot = join(SHOTS, `look-${theme}-${look}-shell.png`);
+  const paletteShot = join(SHOTS, `look-${theme}-${look}-palette.png`);
+  await page.screenshot({ path: shellShot });
+  await page.keyboard.press('Control+k');
+  await wait(1200);
+  const palFound = await page.locator('.palette').count();
+  await page.screenshot({ path: paletteShot });
+  await page.keyboard.press('Escape');
+  await wait(700);
+  return { look, theme, attr, style, shellShot, paletteShot, palFound };
 }
 
-try {
-  rmSync(RUN, { recursive: true, force: true });
-  seedSettings();
-  killStaleApp();
-  const stamp0 = realRootStamp();
+/** "rgba(255, 255, 255, 0.42)" / "color(srgb ...)" → 取 alpha（取不到按 1）。 */
+function alphaOf(bg) {
+  const m = /\/\s*([\d.]+)\)|\b(0?\.\d+)\s*\)/.exec(bg);
+  if (m !== null) return Number(m[1] ?? m[2]);
+  const m2 = /rgba?\([^)]*,\s*([\d.]+)\s*\)/.exec(bg);
+  return m2 !== null ? Number(m2[1]) : 1;
+}
+function lumOf(bg) {
+  const m = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(bg);
+  if (m !== null) return (Number(m[1]) * 299 + Number(m[2]) * 587 + Number(m[3]) * 114) / 1000;
+  const m2 = /srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(bg);
+  if (m2 !== null) return Number(m2[1]) * 255;
+  return -1;
+}
+function blurPx(s) { const m = /blur\((\d+(?:\.\d+)?)px\)/.exec(s); return m !== null ? Number(m[1]) : 0; }
+function px(s) { const m = /^([\d.]+)(?:px)?$/.exec(String(s).trim()); return m !== null ? Number(m[1]) : NaN; }  // 无单位 0 也是合法 token 值
+function writeResults(extra) {
+  writeFileSync(join(SHOTS, `${RUN_NAME}-results.json`), JSON.stringify({ assertions, ...extra }, null, 2), 'utf8');
+}
 
-  // ===== L0 默认 pixel =====
-  STEP = 'L0|pixel 默认';
-  let app = await launch();
-  {
-    const r = await app.page.evaluate(probeBox);
-    check('L0-1 data-look=pixel（启动 init 挂属性）', r.dataLook === 'pixel', JSON.stringify(r));
-    check('L0-2 顶栏下沿 computed = 2px', r.topBorder === '2px', r.topBorder);
-    check('L0-3 按钮零圆角（像素态）', r.radius === '0px', r.radius);
-  }
+let CTX = null;
+async function main() {
+  const before = rootMtime();
+  const { child, browser, page } = await launch();
+  CTX = { child, browser };
+  try {
+    STEP = 'A1|夹具';
+    await seedContent(page);
+    check('A1-a 打包靶子存在', DEV || statSync(APP_BIN).size > 0, DEV ? 'dev 模式' : APP_BIN);
+    check('A1-b 造页后侧栏有行', (await page.locator('[data-testid^="side-node-"]').count()) >= 2, `rows=${await page.locator('[data-testid^="side-node-"]').count()}`);
 
-  // ===== L1 设置→外观内联行 → 点 Linear → 即时换肤 =====
-  STEP = 'L1|linear 级联';
-  {
-    await setLookViaSettings(app.page, 'linear');
-    const rows = await probeThemeRows(app.page);
-    const r = await app.page.evaluate(probeBox);
-    check(
-      'L1-0 设置→外观内联两行在位（质感 3 项，含老板点名的「毛玻璃」「Linear 极简」）',
-      rows.lookLabels.includes('像素') &&
-        rows.lookLabels.includes('Linear 极简') &&
-        rows.lookLabels.includes('毛玻璃') &&
-        rows.lookCount === 3 &&
-        rows.paletteCount === 6,
-      JSON.stringify(rows),
-    );
-    check(
-      'L1-0b 画廊已取消（无画廊浮层 + 无画廊入口钮）',
-      rows.gallery === false && rows.galleryEntry === false,
-      JSON.stringify(rows),
-    );
-    check('L1-1 点选后 data-look=linear', r.dataLook === 'linear', JSON.stringify(r));
-    check('L1-2 顶栏框线即时收细 = 1px（token 级联真实生效）', r.topBorder === '1px', r.topBorder);
-    check('L1-3 按钮圆角 >0（linear 圆角阶）', parseFloat(r.radius) > 0, r.radius);
-    check(
-      'L1-4 按钮影=柔影（非 inset 硬 bevel）',
-      r.shadow !== '' && !r.shadow.includes('inset') && (r.shadow.includes('rgba') || /rgb\(/.test(r.shadow)),
-      r.shadow,
-    );
-  }
-
-  // ===== L2 点毛玻璃 → 真实表面 backdrop 生效 =====
-  STEP = 'L2|glass 毛玻璃';
-  {
-    await setLookViaSettings(app.page, 'glass');
-    const r = await app.page.evaluate(() => {
-      const topbar = document.querySelector('.sc-shell__topbar');
-      const side = document.querySelector('.sc-shell__sidebar');
-      const cs = topbar ? getComputedStyle(topbar) : null;
-      return {
-        dataLook: document.documentElement.dataset.look ?? '',
-        topbarBackdrop: cs ? cs.backdropFilter || cs.webkitBackdropFilter || '' : 'NO-TOPBAR',
-        topbarBg: cs ? cs.backgroundColor : '',
-        sideBackdrop: side ? getComputedStyle(side).backdropFilter || 'none' : 'NO-SIDE',
-      };
-    });
-    check('L2-1 点选后 data-look=glass', r.dataLook === 'glass', JSON.stringify(r));
-    check(
-      'L2-2 顶栏 backdrop-filter=blur(10px)（真实 chrome 玻璃，Electron 内核支持性）',
-      r.topbarBackdrop.includes('blur(10px)'),
-      r.topbarBackdrop,
-    );
-    check('L2-3 侧栏同档玻璃（blur）', r.sideBackdrop.includes('blur('), r.sideBackdrop);
-    check(
-      'L2-4 玻璃表面背景半透明（color-mix 解析成功）',
-      /rgba\([\d.,\s]+0?\.\d/.test(r.topbarBg) || /color\(srgb[^)]*0?\.\d/.test(r.topbarBg),
-      r.topbarBg,
-    );
-    // 浮层档玻璃（blur 14px + saturate 1.4）：命令面板是最稳的真实浮层
-    await app.page.keyboard.press('Control+k').catch(() => undefined);
-    await wait(400);
-    const ov = await app.page.evaluate(() => {
-      const pal = document.querySelector('.palette');
-      const cs = pal ? getComputedStyle(pal) : null;
-      return {
-        open: pal !== null,
-        backdrop: cs ? cs.backdropFilter || cs.webkitBackdropFilter || '' : 'NO-PALETTE',
-      };
-    });
-    check(
-      'L2-5 命令面板浮层 glass backdrop=blur(14px) saturate(1.4)',
-      ov.open && ov.backdrop.includes('blur(14px)'),
-      ov.backdrop,
-    );
-    await app.page.keyboard.press('Escape').catch(() => undefined);
-    await wait(400);
-  }
-
-  // ===== L3 优雅重启 → 持久化恢复 =====
-  STEP = 'L3|重启恢复';
-  {
-    await app.page.evaluate(() => window.septcats.sync.restart().catch(() => undefined));
-    await wait(4000); // 原进程退出 + relaunch 启动
-    let reconnected = null;
-    for (let i = 0; i < 30; i += 1) {
-      try {
-        const b = await chromium.connectOverCDP(`http://127.0.0.1:${String(PORT)}`);
-        const p = b.contexts()[0]?.pages()[0];
-        if (p !== undefined) {
-          await p.waitForFunction(() => window.septcats !== undefined, null, { timeout: 20000 });
-          reconnected = { browser: b, page: p };
-          break;
-        }
-        await b.close().catch(() => undefined);
-      } catch { /* relaunch 未就绪 */ }
-      await wait(1500);
+    STEP = 'A2|三档采集';
+    const light = {};
+    for (const look of ['pixel', 'linear', 'glass']) {
+      light[look] = await capture(page, look, 'light');
+      check(`A2-${look} data-look 生效`, light[look].attr === look, `attr=${String(light[look].attr)}`);
     }
-    if (reconnected === null) {
-      check('L3-1 relaunch 后 CDP 重连', false, '30 次轮询超时');
-    } else {
-      const r = await reconnected.page.evaluate(probeBox);
-      check('L3-1 重启后 data-look=glass 自动恢复（localStorage 冲刷链）', r.dataLook === 'glass', JSON.stringify(r));
-      check('L3-2 重启后顶栏框线仍 1px（质感跨会话）', r.topBorder === '1px', r.topBorder);
-      await reconnected.browser.close().catch(() => undefined);
-    }
-  }
+    const px_ = light.pixel.style; const ln = light.linear.style; const gl = light.glass.style;
 
-  // ===== L4 收尾 =====
-  STEP = 'L4|无破洞+零触碰';
-  {
-    killTree(app.child.pid);
+    STEP = 'B1|机制层';
+    check('B1-a pixel 外壳铺 4px 网格底', String(px_.shell?.img).includes('repeating-linear-gradient'), px_.shell?.img);
+    check('B1-b pixel 弹层影 = 硬位移（0 模糊）', /px\s+[\d.]+px\s+0\s+0/.test(px_.modalShadow), px_.modalShadow);
+    check('B1-c linear chrome 是灰面（与画布亮度差 ≥12）', (() => {
+      const a = lumOf(ln.sidebar?.bg ?? ''); const b = lumOf(px_.sidebar?.bg ?? '');
+      return a > 0 && b > 0 && Math.abs(b - a) >= 12;
+    })(), `linear=${ln.sidebar?.bg} pixel=${px_.sidebar?.bg}`);
+    check('B1-d linear 主区有面渐变且无磨砂', String(ln.main?.img).startsWith('linear-gradient') && ln.sidebar?.blur === 'none', `${ln.main?.img} / blur=${ln.sidebar?.blur}`);
+    check('B1-e glass chrome 半透明 ≤50%', alphaOf(gl.sidebar?.bg ?? '') <= 0.5, `alpha=${String(alphaOf(gl.sidebar?.bg ?? ''))} bg=${gl.sidebar?.bg}`);
+    check('B1-f glass chrome 磨砂 blur ≥20px', blurPx(gl.sidebar?.blur ?? '') >= 20, gl.sidebar?.blur);
+    check('B1-g glass 外壳有环境光 radial-gradient（背后无光=磨砂无效）', String(gl.shell?.img).includes('radial-gradient'), gl.shell?.img);
+    check('B1-h glass 浮层磨砂 blur ≥20px', blurPx(gl.sidebar?.blur ?? '') >= 20 && light.glass.palFound === 1, `palFound=${String(light.glass.palFound)}`);
+    STEP = 'B1|圆角三档';
+    const r = { pixel: px(px_.radiusSm), linear: px(ln.radiusSm), glass: px(gl.radiusSm) };
+    check('B1-i 圆角严格递增 pixel < linear < glass', r.pixel === 0 && r.linear > 0 && r.glass > r.linear, JSON.stringify(r));
+
+    STEP = 'B2|像素差（观感门）';
+    const dPL = diffPct(light.pixel.shellShot, light.linear.shellShot);
+    const dPG = diffPct(light.pixel.shellShot, light.glass.shellShot);
+    const dLG = diffPct(light.linear.shellShot, light.glass.shellShot);
+    const dPal = diffPct(light.pixel.paletteShot, light.glass.paletteShot);
+    check('B2-a 外壳 pixel↔linear ≥8%', dPL.pct >= 8, `${dPL.pct.toFixed(2)}%（均值差 ${dPL.mean.toFixed(1)}）`);
+    check('B2-b 外壳 pixel↔glass ≥8%', dPG.pct >= 8, `${dPG.pct.toFixed(2)}%（均值差 ${dPG.mean.toFixed(1)}）`);
+    check('B2-c 外壳 linear↔glass ≥8%', dLG.pct >= 8, `${dLG.pct.toFixed(2)}%（均值差 ${dLG.mean.toFixed(1)}）`);
+    check('B2-d 浮层（命令面板）pixel↔glass ≥25%', dPal.pct >= 25, `${dPal.pct.toFixed(2)}%`);
+
+    STEP = 'B3|暗色档复跑';
+    const dark = {};
+    for (const look of ['pixel', 'glass']) dark[look] = await capture(page, look, 'dark');
+    const dDark = diffPct(dark.pixel.shellShot, dark.glass.shellShot);
+    check('B3-a 暗色 data-theme 生效', (await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark', 'dark');
+    check('B3-b 暗色 glass chrome 仍半透明+磨砂', alphaOf(dark.glass.style.sidebar?.bg ?? '') <= 0.5 && blurPx(dark.glass.style.sidebar?.blur ?? '') >= 20, `${dark.glass.style.sidebar?.bg} / ${dark.glass.style.sidebar?.blur}`);
+    check('B3-c 暗色外壳 pixel↔glass ≥8%', dDark.pct >= 8, `${dDark.pct.toFixed(2)}%（均值差 ${dDark.mean.toFixed(1)}）`);
+
+    STEP = 'C1|隔离钉';
+    const after = rootMtime();
+    check('C1-a 真实档案根 mtime 未变（零触碰）', before === after, `${String(before)} vs ${String(after)}`);
+    writeResults({ light, dark, diffs: { dPL, dPG, dLG, dPal, dDark } });
+  } finally {
+    try { await browser.close(); } catch { /* */ }
+    killTree(child.pid);
     killStaleApp();
-    await wait(1200);
-    app = await launch();
-    const r = await app.page.evaluate(() => {
-      const shell = document.querySelector('.sc-shell');
-      const topbar = document.querySelector('.sc-shell__topbar');
-      return {
-        shellW: shell ? shell.getBoundingClientRect().width : 0,
-        shellH: shell ? shell.getBoundingClientRect().height : 0,
-        topVisible: topbar ? topbar.getBoundingClientRect().height > 20 : false,
-      };
-    });
-    check('L4-1 glass 态壳宽高>0（无塌陷）', r.shellW > 400 && r.shellH > 300, JSON.stringify(r));
-    check('L4-2 顶栏可见', r.topVisible, String(r.topVisible));
-    await shut(app);
   }
-  check('L4-3 真实档案 mtime 未变', realRootStamp() === stamp0, `${realRootStamp()} vs ${stamp0}`);
-} catch (e) {
-  assertions.push({ name: `${STEP}|FATAL`, pass: false, extra: String(e) });
-  console.log('FATAL', e);
-} finally {
-  killStaleApp();
 }
 
-const fails = assertions.filter((a) => !a.pass);
-console.log(`\nRESULT ${String(assertions.length - fails.length)}/${String(assertions.length)} PASS`);
-for (const f of fails) console.log('MISS', f.name, f.extra);
-if (assertions.length < 8) { console.log('TOO FEW ASSERTIONS — FATAL'); process.exit(2); }
-process.exit(fails.length === 0 ? 0 : 1);
+function report(fatal) {
+  const pass = assertions.filter((x) => x.ok === true).length;
+  const fail = assertions.filter((x) => x.ok !== true).length;
+  if (fatal !== undefined) console.log('FATAL', fatal);
+  console.log(`\n===== T85-02 质感探针：${pass} PASS / ${fail} FAIL（靶=${DEV ? 'dev' : 'win-unpacked'}，截图 ${SHOTS}）=====`);
+  if (fail === 0 && fatal === undefined) process.exit(0);
+  process.exit(fatal !== undefined ? 3 : 1);
+}
+main().then(() => report()).catch((e) => report(e && e.stack ? e.stack : String(e)));

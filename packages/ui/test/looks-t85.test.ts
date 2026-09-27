@@ -1,15 +1,19 @@
 /**
- * looks-t85.test.ts —— T85-01 质感派系层的静态锚（老板 09-26 令：Linear + 毛玻璃入主题市场）。
+ * looks-t85.test.ts —— T85-01/T86-02 质感派系层的静态锚（老板 09-28：「质感风格没有实质性的改变」）。
  *
- * CSS 不参与计算（vitest css:false），一律磁盘读 looks.css / AppShell.css 文本断言：
- *  L1 looks.css 恰有 pixel/linear/glass 三块 + :root 默认块（缺属性 = pixel 兜底）；
+ * CSS 不参与计算（vitest css:false），一律磁盘读 looks.css / AppShell.css 文本断言。
+ * T86-02 起口径从「有没有声明」升级为「**差得够不够明显**」（旧版只断言存在性，主界面像素差
+ * 实测仅 1.86~1.97% 却全绿，正是老板打回那一条）：
+ *  L1 looks.css 恰有 pixel/linear/glass 三块 + :root 默认块，且画廊选择器零残留（T86-01 已删画廊）；
  *  L2 任何 look 块不得覆写 --sc-color-*（色板归 themes.css，质感层只碰质感）；
- *  L3 边框宽度谱：linear/glass 的 --sc-border-edge 必须 1px（与 pixel 2px 判别）；
- *  L4 圆角阶：pixel 恒 0；linear max ≤8；glass max ≥12（三档质感可分辨）；
- *  L5 glass 块含 backdrop-filter（毛玻璃定义特征）且浮层选择器在列；
- *  L6 pixel 块与 tokens.css 现状逐字等值（border token 展开 = 2px solid ink-edge）→ 零回归；
- *  L7 looks.css 不写任何 border*: / outline*: 直声明（pixel-borders 扫描面零命中前提）；
- *  L8 AppShell 侧栏接缝条 ::after width: 2px 原样（像素态）且 looks 提供 1px 收细。
+ *  L3 边框谱：pixel 2px 实墨；linear/glass 1px 且**必须半透明墨**（color-mix 占比 ≤45%）；
+ *  L4 圆角三档**严格递增**：pixel 全 0 < linear [4,14] < glass [8,20]，且 glass max > linear max；
+ *  L5 glass 特征：chrome+浮层都上 backdrop-filter 且 blur ≥20px，**且外壳铺环境光背景图**
+ *     （「背后无光可磨」= 旧版毛玻璃无效的根因，本条钉死防复发）；
+ *  L6 pixel 档：网格纸底（repeating-linear-gradient）+ 弹层**硬位移影**（0 模糊半径）= 像素招牌；
+ *  L7 linear 档：主区有极浅面渐变，且**不得**出现 backdrop-filter（与 glass 判别）；
+ *  L8 :root 默认块 = pixel = tokens.css ink-edge 现状（2px solid）→ 零回归；
+ *  L9 AppShell 侧栏接缝条 ::after width: 2px 原样（像素态）且 looks 提供 1px 收细。
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -34,6 +38,9 @@ function rules(text: string): Array<{ sel: string; body: string }> {
 const ALL = rules(css);
 const lookBlock = (id: string): string =>
   ALL.filter((r) => r.sel === `[data-look='${id}']`).map((r) => r.body).join('\n');
+const lookRules = (id: string) => ALL.filter((r) => r.sel.includes(`[data-look='${id}']`));
+const radii = (id: string): number[] =>
+  [...lookBlock(id).matchAll(/--sc-radius-[a-z]+:\s*(\d+)px/g)].map((m) => Number(m[1]));
 
 describe('T85-01 L1/L7 looks.css 结构', () => {
   it('三 look 块 + :root 默认块齐备', () => {
@@ -52,6 +59,10 @@ describe('T85-01 L1/L7 looks.css 结构', () => {
     const decls = [...stripped.matchAll(/(?:^|[;{\s])(border(?:-(?:width|color|style))?|outline(?:-(?:width|color|style))?)\s*:/g)];
     expect(decls.map((m) => m[1])).toEqual([]);
   });
+
+  it('画廊已删（T86-01）：looks.css 不得再引用 .theme-gallery', () => {
+    expect(css).not.toContain('theme-gallery');
+  });
 });
 
 describe('T85-01 L2-L5 质感口径', () => {
@@ -62,34 +73,58 @@ describe('T85-01 L2-L5 质感口径', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('L3 pixel = 2px 边；linear/glass = 1px 边', () => {
+  it('L3 边框谱：pixel 2px 实墨；linear/glass 1px 半透明墨（占比 ≤45%）', () => {
     expect(lookBlock('pixel')).toMatch(/--sc-border-edge:\s*2px solid var\(--sc-color-ink-edge\)/);
-    expect(lookBlock('linear')).toMatch(/--sc-border-edge:\s*1px solid var\(--sc-color-ink-edge\)/);
-    expect(lookBlock('glass')).toMatch(/--sc-border-edge:\s*1px solid var\(--sc-color-ink-edge\)/);
-  });
-
-  it('L4 圆角三档：pixel=0 / linear≤8 / glass≥12', () => {
-    const radii = (id: string): number[] =>
-      [...lookBlock(id).matchAll(/--sc-radius-[a-z]+:\s*(\d+)px/g)].map((m) => Number(m[1]));
-    expect(radii('pixel').filter((n) => n !== 0)).toEqual([]);
-    expect(radii('glass').length).toBeGreaterThan(0);
-    const lin = [...lookBlock('linear').matchAll(/--sc-radius-[a-z]+:\s*(\d+)px/g)].map((m) => Number(m[1]));
-    expect(Math.max(...lin)).toBeLessThanOrEqual(8);
-    expect(Math.max(...radii('glass'))).toBeGreaterThanOrEqual(12);
-  });
-
-  it('L5 glass 定义特征 = backdrop-filter 磨砂，且浮层/画廊在玻璃名单内', () => {
-    const glassSel = ALL.filter((r) => r.sel.includes("[data-look='glass']") && r.body.includes('backdrop-filter'));
-    expect(glassSel.length, '缺 glass 磨砂块').toBeGreaterThan(0);
-    const joined = glassSel.map((r) => r.sel).join(' ');
-    for (const cls of ['.sc-dialog', '.sc-menu', '.palette', '.theme-gallery']) {
-      expect(joined, `glass 磨砂名单缺 ${cls}`).toContain(cls);
+    for (const id of ['linear', 'glass']) {
+      const m = new RegExp(`--sc-border-edge:\\s*1px solid color-mix\\(in srgb, var\\(--sc-color-ink-edge\\) (\\d+)%, transparent\\)`).exec(lookBlock(id));
+      expect(m, `${id} 的 --sc-border-edge 未收为「1px 半透明墨」`).not.toBeNull();
+      expect(Number(m?.[1]), `${id} 边线不够淡（>45% 即接近实墨）`).toBeLessThanOrEqual(45);
     }
+  });
+
+  it('L4 圆角三档严格递增：pixel 全 0 < linear [4,14] < glass [8,20]', () => {
+    expect(radii('pixel').filter((n) => n !== 0)).toEqual([]);
+    const lin = radii('linear');
+    const gl = radii('glass');
+    expect(Math.min(...lin), 'linear 圆角下限').toBeGreaterThanOrEqual(4);
+    expect(Math.max(...lin), 'linear 圆角上限').toBeLessThanOrEqual(14);
+    expect(Math.max(...gl), 'glass 圆角上限').toBeGreaterThanOrEqual(20);
+    expect(Math.max(...gl) > Math.max(...lin), 'glass 圆角必须大于 linear（三档可分辨）').toBe(true);
+  });
+
+  it('L5 glass 特征：chrome/浮层磨砂 blur ≥20px + 外壳环境光背景图（背后无光=磨砂无效）', () => {
+    const frost = lookRules('glass').filter((r) => r.body.includes('backdrop-filter'));
+    expect(frost.length, '缺 glass 磨砂块').toBeGreaterThan(0);
+    const joinedSel = frost.map((r) => r.sel).join(' ');
+    for (const cls of ['.sc-dialog', '.sc-menu', '.palette', '.sc-shell__topbar', '.sc-shell__sidebar']) {
+      expect(joinedSel, `glass 磨砂名单缺 ${cls}`).toContain(cls);
+    }
+    const blurs = frost.flatMap((r) => [...r.body.matchAll(/backdrop-filter:\s*blur\((\d+)px\)/g)].map((m) => Number(m[1])));
+    expect(blurs.length, 'glass 磨砂块未声明 blur(<n>px)').toBeGreaterThan(0);
+    expect(Math.min(...blurs), '磨砂半径过小（<20px 肉眼几乎无感）').toBeGreaterThanOrEqual(20);
+    // 环境光底：外壳必须铺渐变，chrome 才「有东西可磨」
+    const ambient = lookRules('glass').filter((r) => r.sel.includes('.sc-shell') && !r.sel.includes('__') && r.body.includes('background-image'));
+    expect(ambient.length, 'glass 缺外壳环境光背景图（旧版无效磨砂根因）').toBeGreaterThan(0);
+    expect(ambient.map((r) => r.body).join(' '), '环境光底必须是渐变').toContain('radial-gradient');
+  });
+
+  it('L6 pixel 档特征：网格纸底 + 弹层硬位移影（0 模糊半径）', () => {
+    const grid = lookRules('pixel').filter((r) => r.sel.includes('.sc-shell') && r.body.includes('repeating-linear-gradient'));
+    expect(grid.length, 'pixel 缺网格纸底').toBeGreaterThan(0);
+    expect(lookBlock('pixel'), 'pixel 弹层影必须是硬位移（0 模糊）').toMatch(/--sc-shadow-modal:\s*\d+px \d+px 0 0/);
+    expect(lookBlock('pixel'), 'pixel 凸起影必须是硬位移（0 模糊）').toMatch(/--sc-pixel-out:\s*\d+px \d+px 0 0/);
+  });
+
+  it('L7 linear 档特征：主区极浅面渐变，且不得出现 backdrop-filter', () => {
+    const grad = lookRules('linear').filter((r) => r.sel.includes('.sc-shell__main') && r.body.includes('linear-gradient'));
+    expect(grad.length, 'linear 缺主区面渐变').toBeGreaterThan(0);
+    const frost = lookRules('linear').filter((r) => r.body.includes('backdrop-filter'));
+    expect(frost.map((r) => r.sel), 'linear 不得有磨砂（与 glass 判别）').toEqual([]);
   });
 });
 
-describe('T85-01 L6/L8 零回归锚', () => {
-  it('L6 :root 默认块与 [data-look=pixel] 同值 = tokens.css 的 ink-edge 现状（2px solid）', () => {
+describe('T85-01 L8/L9 零回归锚', () => {
+  it('L8 :root 默认块与 [data-look=pixel] 同值 = tokens.css 的 ink-edge 现状（2px solid）', () => {
     const root = ALL.find((r) => r.sel === ':root')?.body ?? '';
     expect(root).toContain('--sc-border-edge: 2px solid var(--sc-color-ink-edge);');
     expect(root).toContain('--sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);');
@@ -98,7 +133,7 @@ describe('T85-01 L6/L8 零回归锚', () => {
     expect(tokensCss).toContain('--sc-color-ink-edge: #EDEDED;');
   });
 
-  it('L8 AppShell 侧栏接缝条保持 2px；looks 提供 linear/glass 1px 收细', () => {
+  it('L9 AppShell 侧栏接缝条保持 2px；looks 提供 linear/glass 1px 收细', () => {
     expect(appShellCss).toMatch(/\.sc-shell__sidebar::after\s*\{[^}]*width:\s*2px/);
     const thin = ALL.filter((r) => r.sel.includes('::after') && r.body.includes('width: 1px'));
     expect(thin.length, 'looks.css 缺接缝条 1px 收细块').toBeGreaterThan(0);
