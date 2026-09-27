@@ -75,6 +75,21 @@ describe('BacklinksPanel（反向链接面板）', () => {
     expect(empty).not.toContain('backlinksEmpty');
   });
 
+  it('非数组载荷（缺 entries 字段 / 旧桥形状）→ 退化为空态，不崩面板', async () => {
+    // R29 CI 回归：t78 的假桥曾给 `{ items: [] }` → setEntries(undefined) → 渲染读 .length
+    // 直接抛未捕获 TypeError，把整页拖进 React 错误边界（CI 报「Errors 1 error」）。
+    backlinks = vi.fn(async () => ({ items: [] }) as never);
+    vi.stubGlobal('septcats', { links: { backlinks } });
+    render(<BacklinksPanel pageId={PAGE_ID} revision={0} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(screen.getByTestId('backlinks-panel')).not.toBeNull();
+    expect(screen.queryAllByTestId('backlinks-item')).toHaveLength(0);
+    const empty = document.querySelector('.pv-backlinks__empty')?.textContent ?? '';
+    expect(empty.length).toBeGreaterThan(0);
+  });
+
   it('revision 变化触发防抖重拉（链接增删实时更新）', async () => {
     const { rerender } = render(<BacklinksPanel pageId={PAGE_ID} revision={0} />);
     await act(async () => {

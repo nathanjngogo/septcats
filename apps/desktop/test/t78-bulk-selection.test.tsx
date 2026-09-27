@@ -82,7 +82,7 @@ function makeBridge(blocks: Block[]) {
     },
     // BacklinksPanel 的防抖重拉（编辑后触发）；不给会在测试收尾抛未处理异常
     links: {
-      backlinks: vi.fn().mockResolvedValue({ items: [] }),
+      backlinks: vi.fn().mockResolvedValue({ entries: [] }),
     },
   };
 }

@@ -34,6 +34,7 @@
 | **H-07** | 工作台「最近页」卡片与模板市场种子**摘不到表格/折叠块的正文文字**（显示空摘要） | T79-02 挂账核实现仍成立：`workbench/cards.tsx:firstTextOfBlock` 与 `workbench/market.ts:extractPlainText` 只认 PM doc（`text`/`content` 嵌套），table 的 `{rows,header}`、toggle 的 `{title,body}` 结构化 content 抽不出 | P2 体验 | ✅ **已收口（T82-02 / e80d19d）**：`blockContentTextLines` 单一实现（@septcats/editor），卡片/市场/正文抽取/wikilink 全部改消费它，逐字等价回归钉死旧口径 |
 | **H-11** | macOS 上删除凭据失败可能被静默当成功 | `platform/credentials.ts:317-322` 只判 `code === 0`（`security delete-generic-password` 返回 false 时不分「不存在」与「真失败」）→ 非 Windows 路径下「钥匙串删除失败」会以 `{ok:true}` 通过 | P2 隐私（mac 面） | ✅ **已收口（R35）**：`delete` 按退出码 44 / stderr `could not be found` 区分「不存在」（幂等→`false`）与**真失败**（上抛 `E_CRED_DELETE_FAILED`）；**同源口子一并治**——`get()` 尾部原 `return null` 会把「读不到」当「没设过」（真失败现上抛 `E_CRED_READ_FAILED`）；新增 8 条注入式用例（`platform:'darwin'`+假 spawn，Windows 本机可跑）→ platform **49 passed / 1 skipped** |
 | **H-12** | **快速连点删除 → 误报 `E_NOT_FOUND`**（并发重入） | `main/pages.ts` 的 `deletePage` 用 `requirePage(..., alive=true)` 守卫：首删成功后其余并发请求命中「已删除」态 → 抛 `E_NOT_FOUND`（**真机实测：同页 5 并发删除 3 条 reject**，UI 会对一次**已成功**的删除弹「页面不存在或已删除」）；而函数内部本已写好 `ops.length === 0 → { deleted: 0 }` 幂等分支，被守卫提前挡掉 | P3 健壮性（UX 误报，无数据损伤） | ✅ **已收口（R36）**：改宽容版 `requirePage(..., false)`（与 `restorePage` 同口径）——已进回收站 → `{ deleted: 0 }`；真不存在 id（越界 / 已被 T81-01 GC 物理清除）仍显式 `E_NOT_FOUND`；单测锁定 + 真机压测 **28 PASS / 0 FAIL** |
+| **H-13** | **反向链接面板遇非数组载荷直崩 React 边界**（CI 抓到的未捕获 TypeError） | `BacklinksPanel.tsx` 直接 `setEntries(res.entries)`：契约虽是 `{ entries: [...] }`，但任何缺字段/旧形状载荷（如测试假桥写成 `{ items: [] }`）都会把 `undefined` 塞进 state，渲染时读 `entries.length` 抛 `TypeError: Cannot read properties of undefined (reading 'length')` → 整页进 React 错误边界（CI 报「Errors 1 error」，`t78-bulk-selection` 触发） | P3 健壮性（IPC 边界缺校验 + 测试假桥字段名错） | ✅ **已收口（R36 续）**：组件侧归一化 `Array.isArray(res?.entries) ? res.entries : []`（退化空态，绝不崩）；假桥改正为 `{ entries: [] }`；新增回归用例（缺字段载荷 → 空态不崩）锁定 |
 
 
 ## 路4 日志审查结论（09-25）
@@ -86,6 +87,7 @@
 ## 路5 静态竞态扫描结论（09-25）
 
 **并发压测（09-27 完成，PM 自写探针）**：`docs/mockups/cdp-e2e-r29-concurrency.mjs`（**28 断言**，打包/dev 靶可切，双钉 scratch）——P2 并发创建 30 页（id 全唯一、计数 +30）· P3 同页 20 并发提交（无丢写：存活块恰 20）· P4 同块 10 并发覆盖（LWW 无撕裂：list 唯一 + 文本 ∈ 写入集合）· P5 60 路读写交错（40 查询 + 20 提交同刻 → 0 reject，无 `database is locked`）· P6 `links.rebuild` 三连并发 + 20 并发读（无异常）· P7 同页 5 并发删除（幂等）· P8 5 并发删 + 5 并发恢复（无幽灵页）· P9 pageerror=0 · P10 离线只读 `PRAGMA integrity_check=ok` · P11 真实根 mtime 零触碰 · **P12 同页 6 并发移动**（0 reject + 落点 ∈ 目标集合 + 无孤儿/无双父）· **P13 10 并发重命名**（终态标题 ∈ 集合）· **P14 6 并发类型转换**（0 reject + 终态类型合法）· **P15 同目录 3 并发便携包导出**（原子写 tmp→rename；产物 3 个 zip 全部 `testzip` 通过、条目完整）· **P16 5 并发 pageExport.preview**（只读零写，结构合法）。
-**压测产出**：抓到 **H-12**（连点删除误报）→ 治本后复跑 21/21；单测基线 pages 18（含新锁）/ 全量 desktop 1277。
+**压测产出**：抓到 **H-12**（连点删除误报）→ 治本后复跑 **28/28**；单测基线 pages 18（含新锁）/ 全量 desktop 1277。
+**CI 侧连带收口**：①**H-13**（本面板非数组载荷崩溃，见台账）②`perf.test.ts` 的 `BUDGET_REBUILD` 原为**平铺 5000ms**，而 CI win-latest 实测 4.09/4.18/5.41 s（余量仅 ~18% → 落在共享 runner 噪声带内必然偶发翻红）→ 按既有「CI=量级哨兵、严格阈值留本地」口径改为 `IS_CI ? (win 15000 / mac 8000) : 5000`，实测依据写进代码注释；本地严格 5000ms 不变。
 
 异步 read-modify-write 面：runtime.ts 的 cycleRunning/cycleQueued 互斥+finally 补跑、reencrypting 双保险（495/532 前置检查）——审读均单线程事件循环下正确；其余（ai/service、crypto、provider）状态字段无跨 await 复合更新危险形。文件并发写面：export/import 为用户发起动作（main 串行）、段写=runCycle 单写者队列（时序问题即 H-08，已立案）。不新增案。

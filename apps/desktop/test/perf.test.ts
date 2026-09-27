@@ -57,7 +57,10 @@ const IS_CI = (process.env['CI'] ?? '').length > 0;
 // win-latest 实测两跑 164.8/336.6ms（mac M1 腿 13.4ms 正常）→ win 哨兵 1000ms，
 // 只拦结构性灾难（如整批退化为逐条写），精度账由本地 16ms 门禁负责。
 const BUDGET_COMMIT_BATCH_P95 = IS_CI ? (process.platform === 'win32' ? 1000 : 200) : 16;
-const BUDGET_REBUILD = 5000;
+// 同一口径（R29 收口补齐）：rebuild 此前是**平铺 5000ms**，而 CI win-latest 实测
+// 4.09 / 4.18 / 5.41 s（仅 ~18% 余量，落在共享 runner 噪声带内 → 必然偶发翻红）；
+// mac 腿实测 1.63 / 2.72 s。故 CI 腿同样只做量级哨兵，严格 5000ms 由本地门禁把关。
+const BUDGET_REBUILD = IS_CI ? (process.platform === 'win32' ? 15000 : 8000) : 5000;
 const BUDGET_COLD_OPEN_MIGRATE_QUERY = 800;
 
 /** 提交路径等价物：单页 1 万字 ≈ 200 块 × 50 字。 */

@@ -40,7 +40,10 @@ export function BacklinksPanel({ pageId, revision }: BacklinksPanelProps) {
           if (cancelled) {
             return;
           }
-          setEntries(res.entries);
+          // IPC 边界硬化（R29 CI 抓到：mock/旧桥给出 `{ items: [] }` 时面板直崩 React 边界）：
+          // 契约是 `{ entries: [...] }`，任何非数组载荷都归一化为空数组——面板退化成
+          // 「无反向链接」空态，绝不因一个字段缺失把整页拖进错误边界。
+          setEntries(Array.isArray(res?.entries) ? res.entries : []);
           setError(null);
         })
         .catch((err: unknown) => {
