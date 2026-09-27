@@ -5,6 +5,17 @@
 
 ---
 
+## [0.6.5] - 2026-09-28
+
+### 原生窗口条随主题（老板截图圈定：标题栏+菜单栏带一并变色）
+- 「设置→外观→主题（明暗）」现在联动 **OS 原生层**：Windows 标题栏（Septcats/最小化/最大化/关闭）、
+  原生菜单栏（文件/编辑/视图/帮助）与窗口预绘底色随 light/dark/system 即时切换
+  （`nativeTheme.themeSource` + 已存窗口 `setBackgroundColor`；dark=#141414 / light=#F5F5F5=canvas token）。
+- 新增常驻自证日志（chromeTheme applied/probe/windowState），真机探针
+  `cdp-e2e-t87-01.mjs` **11/11**（win-unpacked 靶）；启动/运行切换/system/重启持久四路全覆盖。
+- 新纯函数单测 `test/window-chrome-theme.test.ts`（5 用例，含与 tokens.css 色值对账钉）。
+- 已知坑钉死：renderer `matchMedia` 经 CDP 读会翻回系统真值 → 取证一律走 main 日志自证行。
+
 ## [0.6.4] - 2026-09-28
 
 ### 质感大改版（老板二次打回「质感风格没有实质性的改变」治本）

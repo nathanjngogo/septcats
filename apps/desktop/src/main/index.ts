@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, net, protocol, shell } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, nativeTheme, net, protocol, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings, writeSettings } from '@septcats/platform';
@@ -43,6 +43,7 @@ import {
 import type { UpdateState } from '../shared/updater';
 import { CHANNEL_UPDATE_STATE } from '../shared/ipc';
 import type { MenuActionId } from '../shared/ipc';
+import type { ThemeMode } from '../shared/settings';
 import { ASSETGC_CHANNELS, CLOSE_CHANNELS, DBGC_CHANNELS } from '../shared/ipc';
 import { applyApplicationMenu } from './menu';
 import { menuText, toMenuLocale, type MenuLocale } from './menuTemplate';
@@ -66,6 +67,7 @@ import {
 import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
+import { CHROME_BACKGROUND, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
 import {
   PagesApiError,
   createPagesService,
@@ -240,8 +242,9 @@ function createWindow(): void {
     minWidth: 720,
     minHeight: 480,
     show: false,
-    // T53-01 灰阶谱内的 chrome 面（#FBFBFA 是暖白漏网项，与 DESIGN.md canvas #F5F5F5 对齐）
-    backgroundColor: '#F5F5F5',
+    // T87-01：窗口预绘底色跟随应用主题（light #F5F5F5 / dark #141414 = canvas token，
+    // 与 DESIGN.md 对齐；旧版写死浅色 → 深色档启动白闪一帧 + OS 标题栏不随主题）。
+    backgroundColor: CHROME_BACKGROUND[currentChromeTheme],
     title: 'Septcats',
     ...(iconPath === null ? {} : { icon: iconPath }),
     webPreferences: {
@@ -256,6 +259,16 @@ function createWindow(): void {
   window.once('ready-to-show', () => {
     window.show();
     platformContext?.logger.forModule('main').info('window ready-to-show');
+    // T87-01 自证：新窗就绪即报 Chromium 明暗（= OS 标题栏采用态；main→renderer 单向读，
+    // 不受 CDP attach 对 matchMedia 的干扰——口径详见 applyChromeTheme 注释与 t87 探针头注）。
+    void window.webContents
+      .executeJavaScript("JSON.stringify({mm:matchMedia('(prefers-color-scheme: dark)').matches})")
+      .then((r) => {
+        platformContext?.logger
+          .forModule('main')
+          .info(`chromeTheme windowState(${currentChromeTheme}): ${String(r)}`);
+      })
+      .catch(() => undefined);
   });
 
   /**
@@ -890,6 +903,51 @@ function handleMenuAction(action: MenuActionId): void {
   }
 }
 
+// --- 窗口原生主题（TASK-T87-01） ---------------------------------------------
+
+/** 当前窗口 chrome 明暗态（启动即从 settings.theme 解析；settings:patch 后重解）。 */
+let currentChromeTheme: ChromeTheme = 'light';
+
+/**
+ * 把应用主题应用到窗口原生区域：nativeTheme.themeSource 驱动 OS 标题栏与原生菜单
+ * 深浅色，重建菜单使 label/底色即时刷新，并同步已存在窗口的 backgroundColor。
+ * `system` 交回 OS 决定（Electron 自动同步 shouldUseDarkColors）。
+ */
+function applyChromeTheme(mode: ThemeMode): void {
+  nativeTheme.themeSource = mode;
+  const next = resolveChromeTheme(mode, nativeTheme.shouldUseDarkColors);
+  currentChromeTheme = next;
+  for (const win of BrowserWindow.getAllWindows()) {
+    try {
+      win.setBackgroundColor(CHROME_BACKGROUND[next]);
+    } catch {
+      /* 窗口正在销毁：跳过，不阻断设置落盘回执 */
+    }
+  }
+  platformContext?.logger
+    .forModule('main')
+    .info(`chromeTheme applied: mode=${String(mode)} → ${next} (bg=${CHROME_BACKGROUND[next]})`);
+  // 自证探针（真机验收取证用，docs/mockups/cdp-e2e-t87-01.mjs 消费）：apply 后 400ms
+  // 从 main 侧读各窗 Chromium 的 prefers-color-scheme —— 这是 OS 条将采用的明暗。
+  // 注意：renderer 侧 matchMedia 在 CDP attach 后会翻回系统真值（探针设计实证），
+  // 所以取证必须走 webContents.executeJavaScript（main→renderer 单向，不受 CDP 影响）。
+  for (const win of BrowserWindow.getAllWindows()) {
+    setTimeout(() => {
+      if (win.isDestroyed()) {
+        return;
+      }
+      void win.webContents
+        .executeJavaScript("JSON.stringify({mm:matchMedia('(prefers-color-scheme: dark)').matches})")
+        .then((r) => {
+          platformContext?.logger
+            .forModule('main')
+            .info(`chromeTheme probe(${String(mode)}→${next}): ${String(r)}`);
+        })
+        .catch(() => undefined);
+    }, 400);
+  }
+}
+
 /** 按 locale 重建并安装应用菜单（启动即用当前 locale；语言切换后即时重建）。 */
 function installApplicationMenu(locale: string): void {
   menuLocale = toMenuLocale(locale);
@@ -1046,6 +1104,8 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const settings = patchAppSettings(ctx.userDataDir, syncFolderFor(ctx), raw);
     // T51-01：语言（或任何设置）落盘后按新 locale 即时重建原生菜单
     installApplicationMenu(settings.locale);
+    // T87-01：明暗主题落盘后即时应用到 OS 标题栏/原生菜单/窗口预绘底色
+    applyChromeTheme(settings.theme);
     return settings;
   });
 
@@ -1436,6 +1496,9 @@ async function bootstrapApplication(): Promise<void> {
   protocol.handle(ASSET_SCHEME, assetHandler);
   protocol.handle(ATTACHMENT_SCHEME, assetHandler);
 
+  // T87-01：启动即把已存主题应用到窗口原生区域（**须在 createWindow 之前**——
+  // createWindow 读 currentChromeTheme 决定首窗预绘底色；跑晚=首窗白闪一帧）
+  applyChromeTheme(readSettings(ctx.userDataDir).theme);
   createWindow();
   // T81-01：按设置开关（settings.sync.gc）跑一次 DB 面墓碑物理清除——有界后台
   // （分批事务、失败只记日志、不阻塞首屏；同 T44 双链索引重建的 fire-and-forget 纪律）。
@@ -1455,6 +1518,7 @@ async function bootstrapApplication(): Promise<void> {
     },
   });
   // T51-01：启动即用当前 locale 装配原生应用菜单（替换 Electron 默认英文菜单）
+  //（T87-01：applyChromeTheme 已前移至 createWindow 之前）
   installApplicationMenu(readSettings(ctx.userDataDir).locale);
   registerPaletteShortcut();
   if (PERF_TRACE) {
