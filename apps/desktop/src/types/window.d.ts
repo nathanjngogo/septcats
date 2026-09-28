@@ -470,7 +470,8 @@ export interface SeptcatsWindowControlApi {
  * 任一变化都要推——OS 按钮区够不着 CSS，只有这条通道能让它跟着配色派系走。
  */
 export interface SeptcatsThemeApi {
-  pushChrome(input: { canvas: string; ink: string }): Promise<boolean>;
+  pushChrome(input: { canvas: string; ink: string; look: string }): Promise<boolean>;
+  onOsglass(listener: (enabled: boolean) => void): () => void;
 }
 
 /**

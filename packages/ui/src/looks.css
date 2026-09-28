@@ -111,6 +111,28 @@
     radial-gradient(34rem 24rem at 16% 70%, color-mix(in srgb, var(--sc-color-success) 26%, transparent), transparent 70%),
     radial-gradient(26rem 22rem at 55% 42%, color-mix(in srgb, var(--sc-color-selection) 20%, transparent), transparent 72%);
 }
+/* ============================================================================
+ * T90-01 真通透（老板 09-28 深夜：「毛玻璃的通透性也没有，没有跟着背景变色」）
+ * 唯一能透出**桌面壁纸**的是 DWM 亚克力材质（main 侧 setBackgroundMaterial）。
+ * 材质起来时 main 广播 data-osglass=1 → 本段透明链贯穿全窗：实心 canvas 底
+ * 全部让位，各层 alpha 底直接合成在 DWM 磨砂上 = 真「跟着背景变色」。
+ * 材质没起来（老系统/系统透明效果关/pixel/linear 档）→ 属性缺席 = 本段零作用，
+ * 保持 0.6.9 实心外观（烟测实证：alpha 底无材质 = 纯黑不可读，绝不可裸开）。
+ * ========================================================================== */
+[data-look='glass'][data-osglass='1'],
+[data-look='glass'][data-osglass='1'] body,
+[data-look='glass'][data-osglass='1'] #root,
+[data-look='glass'][data-osglass='1'] .app-frame,
+[data-look='glass'][data-osglass='1'] .app-frame_body,
+[data-look='glass'][data-osglass='1'] .sc-shell,
+[data-look='glass'][data-osglass='1'] .sc-shell__body {
+  background: transparent;
+}
+/* 正文面：42% content 薄纱罩在 DWM 磨砂上——壁纸色彩透出但文字对比不破 */
+[data-look='glass'][data-osglass='1'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 42%, transparent);
+}
+
 /* chrome 真玻璃（T88 再通透一档）：32% 面板 + 30px 模糊 + 饱和 2.4 ——
  * alpha 从 42→32：底光可透；saturate 1.9→2.4：磨出的彩光才「看得见」。 */
 [data-look='glass'] .sc-shell__topbar,

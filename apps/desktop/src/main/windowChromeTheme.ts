@@ -67,3 +67,51 @@ export function resolveChromeOverlay(
     symbolColor: HEX6.test(input.ink) ? input.ink : (theme === 'dark' ? '#EDE6D8' : '#2B2620'),
   };
 }
+
+/**
+ * T90-01（老板 09-28 深夜：「毛玻璃的通透性也没有，没有跟着背景变色」）：
+ * 真通透 = DWM 亚克力材质透出**桌面壁纸**。CSS 玻璃（0.6.7）只是半透明于自家
+ * canvas 底，物理上够不到桌面。材质只在三条件同时成立时启用：
+ *   ① Windows 11 22H2+（Electron setBackgroundMaterial 的硬门槛，build ≥ 22621）；
+ *   ② 系统「透明效果」开（HKCU Personalize EnableTransparency=1——实测 =0 时
+ *      材质被 DWM 停用、窗面退化成一片死灰 #D4D4D4，老板机器当时正是 0）；
+ *   ③ 应用质感档 = glass（用户显式选择）。
+ * 任一不满足 → 'none'，CSS 层保持 0.6.9 的实心 canvas 风格（不透明、不变灰）。
+ * 与材质配套的 CSS：glass 档在 data-osglass=1 时把 html/body/#root/.app-frame
+ * 底全部透明化，否则材质被实心画布挡死 = 白挂。
+ */
+export type GlassMaterial = 'acrylic' | 'none';
+
+/** Win11 22H2+ 判定（os.release() 形如 10.0.26100；门槛 = 22621）。 */
+export function isWin11GlassCapable(platform: string, osRelease: string): boolean {
+  if (platform !== 'win32') {
+    return false;
+  }
+  const m = /^10\.0\.(\d+)/.exec(osRelease);
+  return m !== null && Number(m[1]) >= 22621;
+}
+
+export function resolveGlassMaterial(
+  look: string,
+  win11Capable: boolean,
+  systemTransparencyEnabled: boolean,
+): GlassMaterial {
+  return look === 'glass' && win11Capable && systemTransparencyEnabled ? 'acrylic' : 'none';
+}
+
+/**
+ * 解析 `reg query ...Personalize /v EnableTransparency` 输出为布尔。
+ * 键缺失 = Win11 默认开（返回 true）；显式 0 / 解析不了 = false（保守不启用
+ * 材质——实测透明效果关时材质退化成死灰一片，比实心更难看，宁缺毋滥）。
+ */
+export function parseTransparencyFlag(regOutput: string | null): boolean {
+  if (regOutput === null) {
+    return true;
+  }
+  const m = /REG_DWORD\s+(0x[0-9a-fA-F]+|\d+)/.exec(regOutput);
+  if (m === null || m[1] === undefined) {
+    return false;
+  }
+  const v = m[1].startsWith('0x') ? Number.parseInt(m[1], 16) : Number(m[1]);
+  return v === 1;
+}

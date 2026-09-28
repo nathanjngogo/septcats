@@ -10,6 +10,7 @@ import {
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
   CHANNEL_THEME_CHROME,
+  CHANNEL_THEME_OSGLASS,
   CHANNEL_WINDOW_GET_STATE,
   CLOSE_CHANNELS,
   COLLAB_CHANNELS,
@@ -272,6 +273,7 @@ const api: SeptcatsApi = {
   },
   theme: {
     pushChrome: (input) => ipcRenderer.invoke(CHANNEL_THEME_CHROME, input) as Promise<boolean>,
+    onOsglass: (listener) => subscribe(CHANNEL_THEME_OSGLASS, listener),
   },
   // T54-01：关窗协作（冲刷握手 + 自绘询问框）
   close: {

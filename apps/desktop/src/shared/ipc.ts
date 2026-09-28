@@ -470,6 +470,10 @@ export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION, click: CHANNEL_MENU_
 export const CHANNEL_WINDOW_GET_STATE = 'window:getState';
 export const CHANNEL_WINDOW_STATE = 'window:state';
 export const CHANNEL_THEME_CHROME = 'theme:chrome';
+/** main → renderer：DWM 亚克力材质实际启用与否（T90-01）。renderer 收到才挂
+ *  data-osglass=1 让 glass 档 CSS 透明链生效——材质没起来时 CSS 必须保持实心，
+ * 否则 alpha 底+无材质 = 桌面穿透不可读（烟测 F 组合实证渲染崩溃态）。 */
+export const CHANNEL_THEME_OSGLASS = 'theme:osglass';
 
 export const WINDOW_CHANNELS = {
   getState: CHANNEL_WINDOW_GET_STATE,

@@ -20,7 +20,7 @@ const bridge = {
   getState: vi.fn(async () => ({ maximized: false })),
   onState: vi.fn(() => () => {}),
 };
-const themeBridge = { pushChrome: vi.fn(async () => true) };
+const themeBridge = { pushChrome: vi.fn(async () => true), onOsglass: vi.fn(() => () => {}) };
 
 function mountBand(): void {
   Object.defineProperty(window, 'septcats', {
@@ -67,10 +67,11 @@ describe('T89-01 TitleBarBand', () => {
     });
     const call = themeBridge.pushChrome.mock.calls.at(-1);
     expect(call).toBeDefined();
-    const arg = (call as unknown as [{ canvas: string; ink: string }])[0];
-    // 入参契约：两字段都是字符串（jsdom 无 computed token = 空串；真机非空由探针钉）
+    const arg = (call as unknown as [{ canvas: string; ink: string; look: string }])[0];
+    // 入参契约：三字段都是字符串（jsdom 无 computed token = 空串；真机非空由探针钉）
     expect(typeof arg.canvas).toBe('string');
     expect(typeof arg.ink).toBe('string');
+    expect(typeof arg.look).toBe('string');
   });
 
   it('T3 三轴属性变化 → 重推 OS（MutationObserver 统一捕获）', async () => {
@@ -120,5 +121,25 @@ describe('T89-01 TitleBarBand', () => {
       push?.({ maximized: false });
     });
     expect(screen.getByTestId('title-bar-band').getAttribute('data-maximized')).toBe('false');
+  });
+
+  it('T6（T90-01）main 材质判定广播 → data-osglass 开关（CSS 透明链唯一门）', async () => {
+    let glassCb: ((v: boolean) => void) | null = null;
+    (themeBridge.onOsglass as unknown as { mockImplementationOnce: (fn: unknown) => void })
+      .mockImplementationOnce((cb: (v: boolean) => void) => {
+        glassCb = cb;
+        return () => {};
+      });
+    mountBand();
+    // 未收到材质判定 → 属性缺席（实心保命态，F 组合黑窗教训）
+    expect(document.documentElement.dataset.osglass).toBeUndefined();
+    act(() => {
+      glassCb?.(true);
+    });
+    expect(document.documentElement.dataset.osglass).toBe('1');
+    act(() => {
+      glassCb?.(false);
+    });
+    expect(document.documentElement.dataset.osglass).toBeUndefined();
   });
 });

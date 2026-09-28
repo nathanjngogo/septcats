@@ -1,4 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { release } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
@@ -21,6 +23,7 @@ import {
   CHANNEL_MENU_ROLE,
   CHANNEL_META,
   CHANNEL_THEME_CHROME,
+  CHANNEL_THEME_OSGLASS,
   CHANNEL_WINDOW_GET_STATE,
   WINDOW_CHANNELS,
   CHANNEL_PALETTE_TOGGLE,
@@ -72,7 +75,7 @@ import {
 import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
-import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
+import { CHROME_BACKGROUND, isWin11GlassCapable, parseTransparencyFlag, resolveChromeOverlay, resolveChromeTheme, resolveGlassMaterial, type ChromeTheme } from './windowChromeTheme';
 import {
   PagesApiError,
   createPagesService,
@@ -941,6 +944,42 @@ function handleMenuAction(action: MenuActionId): void {
 let currentChromeTheme: ChromeTheme = 'light';
 
 /**
+ * T90-01：DWM 亚克力材质状态。osWin11GlassCapable=启动判一次（build 不变）；
+ * currentOsGlass=当前是否已挂 acrylic（theme:chrome 判定翻转时增删）；
+ * 系统透明效果 5 秒缓存（用户可能随时在设置里关/开，reg 读取开销可忽略但
+ * 推色是高频路径，缓存防抖）。
+ */
+const osWin11GlassCapable = isWin11GlassCapable(process.platform, release());
+let currentOsGlass = false;
+let transparencyCache: { at: number; value: boolean } | null = null;
+
+function readSystemTransparency(): boolean {
+  const now = Date.now();
+  if (transparencyCache !== null && now - transparencyCache.at < 5000) {
+    return transparencyCache.value;
+  }
+  let value = false;
+  try {
+    const out = execFileSync(
+      'reg',
+      ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', '/v', 'EnableTransparency'],
+      { encoding: 'buffer', timeout: 2000 },
+    ).toString('latin1');
+    value = parseTransparencyFlag(out);
+  } catch {
+    // 键不存在（老系统/未登录主题）→ reg query 非零退出：视同默认开（Win11 出厂态）
+    value = true;
+  }
+  transparencyCache = { at: now, value };
+  return value;
+}
+
+/** canvas 是否为纯 6 位 hex（玻璃态 overlay 拼 `${canvas}88` 的前置校验）。 */
+function HEX6CANVAS(v: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(v);
+}
+
+/**
  * 把应用主题应用到窗口原生区域：nativeTheme.themeSource 驱动 OS 标题栏与原生菜单
  * 深浅色，重建菜单使 label/底色即时刷新，并同步已存在窗口的 backgroundColor。
  * `system` 交回 OS 决定（Electron 自动同步 shouldUseDarkColors）。
@@ -951,15 +990,19 @@ function applyChromeTheme(mode: ThemeMode): void {
   currentChromeTheme = next;
   for (const win of BrowserWindow.getAllWindows()) {
     try {
-      win.setBackgroundColor(CHROME_BACKGROUND[next]);
       // T89-01：明暗切换先把 OS 按钮区回退到该态画布 token；renderer 的配色实测
       // （theme:chrome 通道）随后一帧推真值覆盖——两通道不竞态（renderer 总是后到）。
+      // T90-01：亚克力已挂上时窗底必须保持 alpha（#00000000），否则一帧实心
+      // canvas 就盖死 DWM 磨砂——回退色只给 overlay 按钮区。
       if (process.platform === 'win32') {
+        win.setBackgroundColor(currentOsGlass ? '#00000000' : CHROME_BACKGROUND[next]);
         win.setTitleBarOverlay({
-          color: CHROME_BACKGROUND[next],
+          color: currentOsGlass ? `${CHROME_BACKGROUND[next]}88` : CHROME_BACKGROUND[next],
           symbolColor: next === 'dark' ? '#EDE6D8' : '#2B2620',
           height: 36,
         });
+      } else {
+        win.setBackgroundColor(CHROME_BACKGROUND[next]);
       }
     } catch {
       /* 窗口正在销毁：跳过，不阻断设置落盘回执 */
@@ -1196,6 +1239,13 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   // T89-01：renderer 实测 canvas/ink token → 刷 OS titleBarOverlay 与窗口预绘底色。
   // OS overlay 只认 main 给的色值，配色轴（paper/slate/moss…）renderer 够不着它——
   // 这条通道让「整个软件随主题」覆盖到原生窗口按钮区。非法值回落明暗态画布 token。
+  // T90-01（老板 23:12：「毛玻璃的通透性也没有，没有跟着背景变色」）：同一条推送带
+  // look 字段 → main 判 DWM 亚克力三条件（glass × Win11 22H2+ × 系统透明效果开）。
+  // 成立：material=acrylic + 窗底 #00000000（alpha 底，烟测 D/G 配方实证透出桌面壁纸）
+  //       + overlay 用 canvas+88 半透明（G-alpha 实证 OS 按钮区吃 8 位 alpha）；
+  // 不成立：material=none + 实心 canvas（0.6.9 现行为）。
+  // 判定结果经 theme:osglass 广播回 renderer——CSS 透明链只准在材质确认起来后生效
+  // （烟测 F 组合实证：alpha 底无材质 = 纯黑不可读窗口）。
   ipcMain.handle(CHANNEL_THEME_CHROME, (event: { sender: import('electron').WebContents }, raw: unknown) => {
     if (typeof raw !== 'object' || raw === null) {
       return false;
@@ -1203,23 +1253,39 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const rec = raw as Record<string, unknown>;
     const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
     const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
+    const look = typeof rec['look'] === 'string' ? rec['look'] : '';
     const overlay = resolveChromeOverlay({ canvas, ink }, currentChromeTheme);
+    const wantGlass = resolveGlassMaterial(look, osWin11GlassCapable, readSystemTransparency()) === 'acrylic';
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win === null) {
       return false;
     }
     try {
-      win.setBackgroundColor(overlay.color);
       if (process.platform === 'win32') {
-        win.setTitleBarOverlay({ color: overlay.color, symbolColor: overlay.symbolColor, height: 36 });
+        if (wantGlass && !currentOsGlass) {
+          win.setBackgroundMaterial('acrylic');
+          currentOsGlass = true;
+        } else if (!wantGlass && currentOsGlass) {
+          win.setBackgroundMaterial('none');
+          currentOsGlass = false;
+        }
+        win.setBackgroundColor(currentOsGlass ? '#00000000' : overlay.color);
+        win.setTitleBarOverlay({
+          color: currentOsGlass && HEX6CANVAS(canvas) ? `${canvas}88` : overlay.color,
+          symbolColor: overlay.symbolColor,
+          height: 36,
+        });
+      } else {
+        win.setBackgroundColor(overlay.color);
       }
     } catch {
       /* 窗口正在销毁：跳过 */
       return false;
     }
+    win.webContents.send(CHANNEL_THEME_OSGLASS, currentOsGlass);
     platformContext?.logger
       .forModule('main')
-      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor}`);
+      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor} osglass=${String(currentOsGlass)}`);
     return true;
   });
 
