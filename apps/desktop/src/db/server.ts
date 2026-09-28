@@ -32,6 +32,7 @@ import {
   type SqliteDatabase,
 } from './migrations';
 import { ftsPageBodyExpr } from './schema.v4';
+import { rebuildLinkIndexSync } from './linkRebuild';
 import { getStatement, type StatementDefinition, type StatementKind } from './statements';
 import {
   dbFail,
@@ -122,9 +123,13 @@ SELECT p.title, ${ftsPageBodyExpr('p.id')}, p.id, p.workspace_id
 FROM page p
 WHERE p.alive = 1;`;
 
-/** 从分段重建前清空物化视图与事件账（分段才是真相）。 */
+/** 从分段重建前清空物化视图与事件账（分段才是真相）。
+ *  H-06（R42）补派生表：page_link_index 由事务尾部 rebuildLinkIndexSync 全量重算；
+ *  mention 是 schema.v2 预留的派生反链表（当前零写入方），一并清防未来回填漂移。 */
 const REBUILD_CLEAR_SQL: readonly string[] = [
   'DELETE FROM page_block_fts',
+  'DELETE FROM page_link_index',
+  'DELETE FROM mention',
   'DELETE FROM record',
   'DELETE FROM block',
   'DELETE FROM collection',
@@ -663,6 +668,10 @@ export function createDbServerCore(
             applyEntity(current, entity);
           }
           current.exec(FTS_RESYNC_SQL);
+          // H-06（R42 还债）：page_link_index 是派生投影（不在段/Op 真相里），
+          // 重建必须与 FTS 同事务同步重算，否则回链面板残留指向已消失页的旧行。
+          // 同事务=同回滚语义（中途 throw 一并回滚）；解析口径与 main/links.ts 同源。
+          rebuildLinkIndexSync(current);
           current.exec('UPDATE fts_defer SET flag = 0');
           return {
             segments: segments.length,

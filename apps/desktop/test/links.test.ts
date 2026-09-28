@@ -8,8 +8,8 @@
  * better-sqlite3 不可用时整组跳过（见 test/helpers.ts）。
  */
 import { afterEach, beforeEach, expect, it } from 'vitest';
-import type { ActorId, Op } from '@septcats/core';
-import type { AllData, BatchData, GetData, MigrateData, RunData } from '../src/db/rpc';
+import { buildSegment, type ActorId, type Op } from '@septcats/core';
+import type { AllData, BatchData, GetData, MigrateData, RebuildData, RunData } from '../src/db/rpc';
 import type { DbServerCore } from '../src/db/server';
 import { createBlocksService, type BlocksService } from '../src/main/blocks';
 import {
@@ -288,5 +288,63 @@ describeDb('linksService（双链派生索引 · TASK-T44-01）', (ctor) => {
       { target: { table: 'page', id: pageA }, kind: 'patch', payload: { title: 'x' } },
     ]);
     expect([...patchTouched]).toEqual([pageA]);
+  });
+
+  it('H-06 回归：rebuildFromSegments 事务内同步重建 page_link_index（清脏行+补漏行）', async () => {
+    const pageA = await createPageTitled('H06甲页');
+    const pageB = await createPageTitled('H06乙页');
+    const blockOp0 = blockUpsertOp('bk-h06-1', pageA, docWithLinks([
+      { text: '见 ' },
+      { link: { target: pageB, title: 'H06乙页' } },
+    ]));
+    await blocks.commit({ ops: [blockOp0] });
+    // 重建段的 op 需 lamport 严格升序：块 op 抬到 c=3（语义等价——重建只按内容重放）
+    const blockOp: Op = {
+      ...blockOp0,
+      lamport: { c: 3, d: ACTOR },
+      payload: { ...blockOp0.payload, workspace_id: WS },
+    };
+    expect(indexRows()).toHaveLength(1);
+
+    // 人为把派生索引弄脏（模拟旧缺陷态：重建后索引与投影不一致）
+    core.activeDatabase().prepare('DELETE FROM page_link_index').run();
+    expect(indexRows()).toHaveLength(0);
+
+    // replace 重建：段里含页+块 op → 事务内同步重建应把索引恢复为与投影一致
+    const pageOpA: Op = {
+      op_id: 'op-h06-page-a',
+      lamport: { c: 1, d: ACTOR },
+      at: AT,
+      actor: ACTOR,
+      target: { table: 'page', id: pageA },
+      kind: 'upsert',
+      payload: { workspace_id: WS, title: 'H06甲页', sort_key: 'A00000000', alive: 1 },
+    };
+    const pageOpB: Op = {
+      op_id: 'op-h06-page-b',
+      lamport: { c: 2, d: ACTOR },
+      at: AT,
+      actor: ACTOR,
+      target: { table: 'page', id: pageB },
+      kind: 'upsert',
+      payload: { workspace_id: WS, title: 'H06乙页', sort_key: 'A00000001', alive: 1 },
+    };
+    const segmentsJson = JSON.stringify([buildSegment(ACTOR, [pageOpA, pageOpB, blockOp], AT)]);
+    let seq = 0;
+    await requestOk<RebuildData>(core, {
+      id: `h06-rebuild-${String(seq++)}`,
+      t: 'rebuildFromSegments',
+      segmentsJson,
+      mode: 'replace',
+    });
+    // 索引与投影一致：恰好 1 行、指向 pageB
+    const rows = indexRows();
+    expect(rows).toHaveLength(1);
+    expect(String(rows[0]?.['target_page_id'])).toBe(pageB);
+    expect(String(rows[0]?.['source_page_id'])).toBe(pageA);
+
+    // 增量==全量判据仍成立（异步版结果与事务内同步版逐行一致）
+    await rebuildLinksIndex(executor);
+    expect(indexRows()).toEqual(rows);
   });
 });
