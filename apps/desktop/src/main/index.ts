@@ -20,6 +20,9 @@ import {
   CHANNEL_MENU_CLICK,
   CHANNEL_MENU_ROLE,
   CHANNEL_META,
+  CHANNEL_THEME_CHROME,
+  CHANNEL_WINDOW_GET_STATE,
+  WINDOW_CHANNELS,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
   CHANNEL_PAGE_CREATE_FOLDER,
@@ -69,7 +72,7 @@ import {
 import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
-import { CHROME_BACKGROUND, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
+import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
 import {
   PagesApiError,
   createPagesService,
@@ -248,6 +251,19 @@ function createWindow(): void {
     // 与 DESIGN.md 对齐；旧版写死浅色 → 深色档启动白闪一帧 + OS 标题栏不随主题）。
     backgroundColor: CHROME_BACKGROUND[currentChromeTheme],
     title: 'Septcats',
+    // T89-01（老板圈图「这上面为什么没有跟着主题走？」）：Windows 撤 OS 原生标题栏
+    // （OS 条只认明暗一轴，配色/质感不理会）→ 自绘标题带吃全套 token，窗口按钮交还
+    // titleBarOverlay（原生绘制、悬停红 X/键盘可达）。macOS 保留原生惯例不动。
+    ...(process.platform === 'win32'
+      ? {
+          titleBarStyle: 'hidden' as const,
+          titleBarOverlay: {
+            color: CHROME_BACKGROUND[currentChromeTheme],
+            symbolColor: currentChromeTheme === 'dark' ? '#EDE6D8' : '#2B2620',
+            height: 36,
+          },
+        }
+      : {}),
     ...(iconPath === null ? {} : { icon: iconPath }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -293,6 +309,15 @@ function createWindow(): void {
     closeGuard?.onWindowDestroyed('主窗口 closed');
     mainWindow = null;
   });
+
+  // T89-01：最大化/还原态广播（自绘标题带的叠窗图标联动 + 探针断言信号）。
+  const pushWindowState = (): void => {
+    if (!window.isDestroyed()) {
+      window.webContents.send(WINDOW_CHANNELS.state, { maximized: window.isMaximized() });
+    }
+  };
+  window.on('maximize', pushWindowState);
+  window.on('unmaximize', pushWindowState);
 
   const devServerUrl = process.env['ELECTRON_RENDERER_URL'];
   if (devServerUrl !== undefined && devServerUrl.length > 0) {
@@ -927,6 +952,15 @@ function applyChromeTheme(mode: ThemeMode): void {
   for (const win of BrowserWindow.getAllWindows()) {
     try {
       win.setBackgroundColor(CHROME_BACKGROUND[next]);
+      // T89-01：明暗切换先把 OS 按钮区回退到该态画布 token；renderer 的配色实测
+      // （theme:chrome 通道）随后一帧推真值覆盖——两通道不竞态（renderer 总是后到）。
+      if (process.platform === 'win32') {
+        win.setTitleBarOverlay({
+          color: CHROME_BACKGROUND[next],
+          symbolColor: next === 'dark' ? '#EDE6D8' : '#2B2620',
+          height: 36,
+        });
+      }
     } catch {
       /* 窗口正在销毁：跳过，不阻断设置落盘回执 */
     }
@@ -1152,6 +1186,41 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       default:
         break;
     }
+  });
+
+  // T89-01：自绘标题带的窗口状态初值（双击最大化 = OS HTCAPTION 原生，无需命令通道）。
+  ipcMain.handle(CHANNEL_WINDOW_GET_STATE, (event: { sender: import('electron').WebContents }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return { maximized: win?.isMaximized() ?? false };
+  });
+  // T89-01：renderer 实测 canvas/ink token → 刷 OS titleBarOverlay 与窗口预绘底色。
+  // OS overlay 只认 main 给的色值，配色轴（paper/slate/moss…）renderer 够不着它——
+  // 这条通道让「整个软件随主题」覆盖到原生窗口按钮区。非法值回落明暗态画布 token。
+  ipcMain.handle(CHANNEL_THEME_CHROME, (event: { sender: import('electron').WebContents }, raw: unknown) => {
+    if (typeof raw !== 'object' || raw === null) {
+      return false;
+    }
+    const rec = raw as Record<string, unknown>;
+    const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
+    const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
+    const overlay = resolveChromeOverlay({ canvas, ink }, currentChromeTheme);
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win === null) {
+      return false;
+    }
+    try {
+      win.setBackgroundColor(overlay.color);
+      if (process.platform === 'win32') {
+        win.setTitleBarOverlay({ color: overlay.color, symbolColor: overlay.symbolColor, height: 36 });
+      }
+    } catch {
+      /* 窗口正在销毁：跳过 */
+      return false;
+    }
+    platformContext?.logger
+      .forModule('main')
+      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor}`);
+    return true;
   });
 
   // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份

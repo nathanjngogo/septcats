@@ -5,6 +5,25 @@
 
 ---
 
+## [0.6.9] - 2026-09-28
+
+### 主题联动治本到最后一寸：Windows 撤 OS 原生标题栏，自绘标题带三轴全联动（T89-01）
+- 老板圈图：「这上面为什么没有跟着主题走？」——OS 原生标题栏由 DWM 绘制，
+  只认明暗一轴（nativeTheme.themeSource），配色派系（纸/蓝灰/苔绿…）与质感
+  两轴 OS 根本不理会。0.6.6 自绘菜单带治了菜单那条，它上面 31px 的原生标题带
+  仍是 CSS 禁区。
+- 治本：`titleBarStyle:'hidden' + titleBarOverlay`（hidden 必须配 overlay 才生效
+  ——0.6.6 那次只试 hidden 是 no-op 的根因）撤原生标题文字区；renderer 自绘
+  TitleBarBand（品牌+拖拽区+138px overlay 预留区）吃全套 `var(--sc-*)` token；
+  窗口按钮交还 Electron 原生 overlay（悬停红 X/键盘可达保留）。
+- 配色轴穿透到 OS 按钮区：新通道 `theme:chrome`——renderer 用 MutationObserver
+  盯 documentElement 的 data-theme/data-palette/data-look 三属性（三轴唯一真相挂点），
+  任一变化即实测 `--sc-color-canvas`/`--sc-color-ink` 推 main 刷 titleBarOverlay 与
+  预绘底色；非法色值收窄回落明暗态 token（fail-safe 纯函数 resolveChromeOverlay）。
+- 双击标题带最大化 = OS 对拖拽区（HTCAPTION）原生行为，零 JS。macOS 不动（惯例）。
+- 验证：真机像素=标题带 light+paper #F4EFE6 / dark #1B1712（跟派系走）；
+  t89-01 探针 7/7；t87-01/t87-02/t65/t85/t86 全绿；desktop 1307/1307、ui 180/180。
+
 ## [0.6.8] - 2026-09-28
 
 ### 数据一致性还债：H-06 治本（R29 缺陷账最后一项 P2）

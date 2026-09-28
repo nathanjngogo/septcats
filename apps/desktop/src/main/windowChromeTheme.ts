@@ -43,3 +43,27 @@ export function resolveChromeTheme(mode: ThemeMode | string, systemDark: boolean
   }
   return 'light';
 }
+
+/**
+ * T89-01：titleBarOverlay（OS 绘制的最小化/最大化/关闭按钮区）配色入参。
+ * renderer 实测 `--sc-color-canvas`（底）与 `--sc-color-ink`（符号）后推给 main；
+ * 这里做**合法性收窄**——overlay 只吃 `#rrggbb`，非法值（空/rgb()/带 alpha）一律
+ * 回落该明暗态的画布 token 实值，绝不让 OS 按钮区吃到脏值或抛错。
+ */
+export interface ChromeOverlayInput {
+  canvas: string;
+  ink: string;
+}
+
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+export function resolveChromeOverlay(
+  input: ChromeOverlayInput,
+  theme: ChromeTheme,
+): { color: string; symbolColor: string } {
+  const fallback = CHROME_BACKGROUND[theme];
+  return {
+    color: HEX6.test(input.canvas) ? input.canvas : fallback,
+    symbolColor: HEX6.test(input.ink) ? input.ink : (theme === 'dark' ? '#EDE6D8' : '#2B2620'),
+  };
+}

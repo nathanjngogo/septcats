@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CHROME_BACKGROUND, resolveChromeTheme } from '../src/main/windowChromeTheme';
+import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme } from '../src/main/windowChromeTheme';
 
 // 读仓内文件锚 import.meta.dirname（CI/聚合跑 cwd 不固定，pitfalls 口径）
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -44,5 +44,25 @@ describe('T87-01 背景色与 tokens.css 同源', () => {
     for (const hex of Object.values(CHROME_BACKGROUND)) {
       expect(hex).toMatch(/^#[0-9A-F]{6}$/);
     }
+  });
+});
+
+describe('T89-01 resolveChromeOverlay', () => {
+  it('合法 #rrggbb 直接透传（canvas 当底、ink 当符号）', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620' }, 'light')).toEqual({
+      color: '#F4EFE6',
+      symbolColor: '#2B2620',
+    });
+  });
+
+  it('非法 canvas（空/rgb()/带 alpha）回落该明暗态画布 token', () => {
+    expect(resolveChromeOverlay({ canvas: '', ink: '#2B2620' }, 'light').color).toBe('#F5F5F5');
+    expect(resolveChromeOverlay({ canvas: 'rgb(1,2,3)', ink: '#2B2620' }, 'dark').color).toBe('#141414');
+    expect(resolveChromeOverlay({ canvas: '#F4EFE600', ink: '#2B2620' }, 'light').color).toBe('#F5F5F5');
+  });
+
+  it('非法 ink 回落明暗态默认符号色（深底用亮字、浅底用暗字）', () => {
+    expect(resolveChromeOverlay({ canvas: '#141414', ink: 'nope' }, 'dark').symbolColor).toBe('#EDE6D8');
+    expect(resolveChromeOverlay({ canvas: '#F5F5F5', ink: 'nope' }, 'light').symbolColor).toBe('#2B2620');
   });
 });

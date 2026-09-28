@@ -1,0 +1,45 @@
+/*
+ * TitleBarBand.css —— T89-01 自绘标题带样式。
+ * 纪律（同 MenuBarBand.css）：背景/文字/尺寸一律吃 var(--sc-*) token（明暗/配色/质感
+ * 三轴全联动；linear/glass 的整带覆写在 looks.css）。-webkit-app-region 是拖拽语义，
+ * 与颜色无关；右侧 overlayzone 保持 no-drag，OS 按钮悬浮其上才可点。
+ */
+.titleb_band {
+  display: flex;
+  align-items: center;
+  height: var(--sc-layout-titlebar, 36px);
+  flex: 0 0 auto;
+  background: var(--sc-color-canvas);
+  color: var(--sc-color-ink);
+  border-bottom: var(--sc-border-edge);
+  font-size: 12px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.titleb_brand {
+  padding: 0 6px 0 10px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.titleb_name {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  opacity: 0.92;
+}
+
+/* 中段空白 = 纯拖拽区（继承带的 drag），双击即最大化/还原。 */
+.titleb_drag {
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+/* OS titleBarOverlay 按钮悬浮区：no-drag + 不吞事件（真按钮在 OS 上层绘制）。 */
+.titleb_overlayzone {
+  flex: 0 0 auto;
+  align-self: stretch;
+  -webkit-app-region: no-drag;
+  pointer-events: none;
+}

@@ -72,7 +72,8 @@
    T87-02：自绘菜单带(.menub_band)同属 chrome 面，一起灰化。 */
 [data-look='linear'] .sc-shell__sidebar,
 [data-look='linear'] .sc-shell__topbar,
-[data-look='linear'] .menub_band {
+[data-look='linear'] .menub_band,
+[data-look='linear'] .titleb_band {
   background: color-mix(in srgb, var(--sc-color-ink-edge) 7%, var(--sc-color-canvas));
 }
 [data-look='linear'] .sc-shell__main {
@@ -114,7 +115,8 @@
  * alpha 从 42→32：底光可透；saturate 1.9→2.4：磨出的彩光才「看得见」。 */
 [data-look='glass'] .sc-shell__topbar,
 [data-look='glass'] .sc-shell__sidebar,
-[data-look='glass'] .menub_band {
+[data-look='glass'] .menub_band,
+[data-look='glass'] .titleb_band {
   background: color-mix(in srgb, var(--sc-color-canvas) 14%, transparent);
   -webkit-backdrop-filter: blur(30px) saturate(2.6);
   backdrop-filter: blur(30px) saturate(2.6);

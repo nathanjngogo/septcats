@@ -9,6 +9,8 @@ import {
   CHANNEL_PAGE_SUMMARY_SET,
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
+  CHANNEL_THEME_CHROME,
+  CHANNEL_WINDOW_GET_STATE,
   CLOSE_CHANNELS,
   COLLAB_CHANNELS,
   DB_CHANNELS,
@@ -18,6 +20,7 @@ import {
   FAVORITES_CHANNELS,
   IMPORT_CHANNELS,
   MENU_CHANNELS,
+  WINDOW_CHANNELS,
   PAGE_EXPORT_CHANNELS,
   PAGES_CHANNELS,
   PORTABLE_EXPORT_CHANNELS,
@@ -259,6 +262,16 @@ const api: SeptcatsApi = {
     onAction: (listener) => subscribe(MENU_CHANNELS.action, listener),
     click: (input) => ipcRenderer.invoke(MENU_CHANNELS.click, input),
     role: (input) => ipcRenderer.invoke(MENU_CHANNELS.role, input),
+  },
+  // T89-01：自绘标题带的窗口状态订阅 + 主题实测色推 OS 按钮区。
+  // （双击最大化 = OS HTCAPTION 原生行为，无需通道）
+  window: {
+    getState: () =>
+      ipcRenderer.invoke(CHANNEL_WINDOW_GET_STATE) as Promise<{ maximized: boolean }>,
+    onState: (listener) => subscribe(WINDOW_CHANNELS.state, listener),
+  },
+  theme: {
+    pushChrome: (input) => ipcRenderer.invoke(CHANNEL_THEME_CHROME, input) as Promise<boolean>,
   },
   // T54-01：关窗协作（冲刷握手 + 自绘询问框）
   close: {

@@ -457,6 +457,25 @@ export type MenuRole = (typeof MENU_ROLES)[number];
 
 export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION, click: CHANNEL_MENU_CLICK, role: CHANNEL_MENU_ROLE } as const;
 
+// T89-01（老板 09-28 圈图 image_83fc8f.png：「这上面为什么没有跟着主题走？」）：
+// Windows 撤 OS 原生标题栏（titleBarStyle:'hidden' + titleBarOverlay——hidden 必须
+// 配 overlay 才生效，0.6.6 那次只试 hidden 是 no-op），renderer 自绘标题带吃全套
+// token；窗口按钮交还 Electron titleBarOverlay（原生绘制、悬停红 X 保留）。拖拽带
+// = OS 视其 HTCAPTION，双击最大化原生继承（故无需 toggle 通道）。
+// OS overlay 只认 main 给的色值 → renderer 实测 canvas/ink token 后推给 main 刷 overlay。
+//   window:getState   —— renderer 启动拉初值（invoke → { maximized }）。
+//   window:state      —— main → renderer 推送（maximize/unmaximize 事件，探针断言面）。
+//   theme:chrome      —— renderer → main：配色/质感/明暗任一轴变化后推实测色
+//                        （canvas 底 + ink 符号），main 刷 titleBarOverlay 与预绘底色。
+export const CHANNEL_WINDOW_GET_STATE = 'window:getState';
+export const CHANNEL_WINDOW_STATE = 'window:state';
+export const CHANNEL_THEME_CHROME = 'theme:chrome';
+
+export const WINDOW_CHANNELS = {
+  getState: CHANNEL_WINDOW_GET_STATE,
+  state: CHANNEL_WINDOW_STATE,
+} as const;
+
 // ---------------------------------------------------------------------------
 // 关窗协作（T54-01）：关窗前「冲刷未提交编辑」握手 + 自绘询问框决议。
 // main 拦主窗 close（quittingFlag=false 时）→ 先 editor:flush → renderer 冲刷全部

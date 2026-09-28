@@ -18,6 +18,7 @@ import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
 // T87-02：Win/Linux 自绘菜单带（原生菜单栏不吃应用 CSS，老板 09-28 令整窗随主题变）
 import { MenuBarBand } from './menu/MenuBarBand';
+import { TitleBarBand } from './menu/TitleBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
 import { SearchPage } from './pages/SearchPage';
@@ -577,6 +578,7 @@ export function App() {
   // macOS 不渲染 = OS 惯例 + nativeTheme 已联动，判定在组件内与 main 撤菜单同口径）
   return (
     <div className="app-frame">
+      <TitleBarBand />
       <MenuBarBand />
       <div className="app-frame_body">
       <AppShell

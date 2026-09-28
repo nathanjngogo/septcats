@@ -455,6 +455,25 @@ export interface SeptcatsMenuApi {
 }
 
 /**
+ * 自绘标题带的窗口控制（TASK-T89-01，老板圈图 image_83fc8f.png）。
+ * Windows frameless 后 OS 不再提供拖拽/最大化语义，双击带 → toggleMaximize；
+ * onState 订阅 maximize/unmaximize 广播（图标联动 + 探针断言）。
+ */
+export interface SeptcatsWindowControlApi {
+  getState(): Promise<{ maximized: boolean }>;
+  onState(listener: (state: { maximized: boolean }) => void): () => void;
+}
+
+/**
+ * 主题 → OS 原生窗口区（TASK-T89-01）。renderer 实测 `--sc-color-canvas`/`--sc-color-ink`
+ * token 后推 main：刷 titleBarOverlay 按钮区色 + 窗口预绘底色。三轴（明暗/配色/质感）
+ * 任一变化都要推——OS 按钮区够不着 CSS，只有这条通道能让它跟着配色派系走。
+ */
+export interface SeptcatsThemeApi {
+  pushChrome(input: { canvas: string; ink: string }): Promise<boolean>;
+}
+
+/**
  * 关窗协作（T54-01）。通道与 `src/shared/ipc.ts` 的 `CLOSE_CHANNELS` 一对一：
  * main 拦主窗 close → `onFlushRequest`（editor:flush）→ renderer 冲刷一切未提交编辑
  * → `flushAck` → main 按 settings.trayClose 路由；ask 时推 `onAsk` 弹自绘像素询问框，
@@ -603,6 +622,10 @@ export interface SeptcatsApi {
   lock: SeptcatsLockApi;
   /** 原生应用菜单（T51-01）。 */
   menu: SeptcatsMenuApi;
+  /** 自绘标题带窗口控制（T89-01）。 */
+  window: SeptcatsWindowControlApi;
+  /** 主题 → OS 原生窗口区联动（T89-01）。 */
+  theme: SeptcatsThemeApi;
   /** 关窗协作（T54-01：冲刷握手 + 自绘询问框）。 */
   close: SeptcatsCloseApi;
   /** 外部链接（TASK-T73-01：shell.openExternal，协议白名单）。 */
