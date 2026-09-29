@@ -1,6 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { release } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
@@ -22,8 +21,8 @@ import {
   CHANNEL_MENU_CLICK,
   CHANNEL_MENU_ROLE,
   CHANNEL_META,
+  CHANNEL_DESKTOP_WALLPAPER,
   CHANNEL_THEME_CHROME,
-  CHANNEL_THEME_OSGLASS,
   CHANNEL_WINDOW_GET_STATE,
   WINDOW_CHANNELS,
   CHANNEL_PALETTE_TOGGLE,
@@ -75,7 +74,8 @@ import {
 import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetSchemePrivileges } from './assets';
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
-import { CHROME_BACKGROUND, isWin11GlassCapable, parseTransparencyFlag, resolveChromeOverlay, resolveChromeTheme, resolveGlassMaterial, type ChromeTheme } from './windowChromeTheme';
+import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
+import { parseWallpaperRegValue, wallpaperToDataUrl } from './desktopWallpaper';
 import {
   PagesApiError,
   createPagesService,
@@ -944,39 +944,40 @@ function handleMenuAction(action: MenuActionId): void {
 let currentChromeTheme: ChromeTheme = 'light';
 
 /**
- * T90-01：DWM 亚克力材质状态。osWin11GlassCapable=启动判一次（build 不变）；
- * currentOsGlass=当前是否已挂 acrylic（theme:chrome 判定翻转时增删）；
- * 系统透明效果 5 秒缓存（用户可能随时在设置里关/开，reg 读取开销可忽略但
- * 推色是高频路径，缓存防抖）。
+ * T90-01B：桌面壁纸衬底读取（老板红线「跟着背景变色」的落地通道）。
+ * DWM acrylic 路线已整段撤除（本机实测材质恒死灰，见 desktopWallpaper.ts 头注）。
+ * 注册表两查询 = HKCU 实际路径优先、登录前策略键兜底；任何异常返回 null，
+ * renderer 拿到 null 保持实心——通透宁缺毋滥。壁纸内容不落日志（隐私红线）。
  */
-const osWin11GlassCapable = isWin11GlassCapable(process.platform, release());
-let currentOsGlass = false;
-let transparencyCache: { at: number; value: boolean } | null = null;
-
-function readSystemTransparency(): boolean {
-  const now = Date.now();
-  if (transparencyCache !== null && now - transparencyCache.at < 5000) {
-    return transparencyCache.value;
-  }
-  let value = false;
+function regQueryValue(key: string, name: string): string | null {
   try {
-    const out = execFileSync(
-      'reg',
-      ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', '/v', 'EnableTransparency'],
-      { encoding: 'buffer', timeout: 2000 },
-    ).toString('latin1');
-    value = parseTransparencyFlag(out);
+    const out = execFileSync('reg', ['query', key, '/v', name], {
+      encoding: 'buffer',
+      timeout: 2000,
+      windowsHide: true,
+    }).toString('latin1');
+    return out;
   } catch {
-    // 键不存在（老系统/未登录主题）→ reg query 非零退出：视同默认开（Win11 出厂态）
-    value = true;
+    return null;
   }
-  transparencyCache = { at: now, value };
-  return value;
 }
 
-/** canvas 是否为纯 6 位 hex（玻璃态 overlay 拼 `${canvas}88` 的前置校验）。 */
-function HEX6CANVAS(v: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(v);
+function readDesktopWallpaperDataUrl(): string | null {
+  if (process.platform !== 'win32') {
+    return null;
+  }
+  const path =
+    parseWallpaperRegValue(regQueryValue('HKCU\\Control Panel\\Desktop', 'WallpaperPath')) ??
+    parseWallpaperRegValue(regQueryValue('HKCU\\Control Panel\\Desktop', 'Wallpaper'));
+  if (path === null || !existsSync(path)) {
+    return null;
+  }
+  try {
+    const size = statSync(path).size;
+    return wallpaperToDataUrl(path, (p) => readFileSync(p), size);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -992,12 +993,10 @@ function applyChromeTheme(mode: ThemeMode): void {
     try {
       // T89-01：明暗切换先把 OS 按钮区回退到该态画布 token；renderer 的配色实测
       // （theme:chrome 通道）随后一帧推真值覆盖——两通道不竞态（renderer 总是后到）。
-      // T90-01：亚克力已挂上时窗底必须保持 alpha（#00000000），否则一帧实心
-      // canvas 就盖死 DWM 磨砂——回退色只给 overlay 按钮区。
       if (process.platform === 'win32') {
-        win.setBackgroundColor(currentOsGlass ? '#00000000' : CHROME_BACKGROUND[next]);
+        win.setBackgroundColor(CHROME_BACKGROUND[next]);
         win.setTitleBarOverlay({
-          color: currentOsGlass ? `${CHROME_BACKGROUND[next]}88` : CHROME_BACKGROUND[next],
+          color: CHROME_BACKGROUND[next],
           symbolColor: next === 'dark' ? '#EDE6D8' : '#2B2620',
           height: 36,
         });
@@ -1239,13 +1238,10 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   // T89-01：renderer 实测 canvas/ink token → 刷 OS titleBarOverlay 与窗口预绘底色。
   // OS overlay 只认 main 给的色值，配色轴（paper/slate/moss…）renderer 够不着它——
   // 这条通道让「整个软件随主题」覆盖到原生窗口按钮区。非法值回落明暗态画布 token。
-  // T90-01（老板 23:12：「毛玻璃的通透性也没有，没有跟着背景变色」）：同一条推送带
-  // look 字段 → main 判 DWM 亚克力三条件（glass × Win11 22H2+ × 系统透明效果开）。
-  // 成立：material=acrylic + 窗底 #00000000（alpha 底，烟测 D/G 配方实证透出桌面壁纸）
-  //       + overlay 用 canvas+88 半透明（G-alpha 实证 OS 按钮区吃 8 位 alpha）；
-  // 不成立：material=none + 实心 canvas（0.6.9 现行为）。
-  // 判定结果经 theme:osglass 广播回 renderer——CSS 透明链只准在材质确认起来后生效
-  // （烟测 F 组合实证：alpha 底无材质 = 纯黑不可读窗口）。
+  // T90-01B：DWM acrylic 在本机实测不可达（任务栏材质正常、Electron 窗恒死灰；
+  // acrylic/mica × 37/38 × transparent 真假全验过——企业版会话/虚拟显示的
+  // DirectComposition 拿不到壁纸共享）。材质逻辑整段撤除，通透改走壁纸衬底层
+  // （desktop:wallpaper 通道）；overlay 恢复实心 canvas 色。
   ipcMain.handle(CHANNEL_THEME_CHROME, (event: { sender: import('electron').WebContents }, raw: unknown) => {
     if (typeof raw !== 'object' || raw === null) {
       return false;
@@ -1253,25 +1249,16 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const rec = raw as Record<string, unknown>;
     const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
     const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
-    const look = typeof rec['look'] === 'string' ? rec['look'] : '';
     const overlay = resolveChromeOverlay({ canvas, ink }, currentChromeTheme);
-    const wantGlass = resolveGlassMaterial(look, osWin11GlassCapable, readSystemTransparency()) === 'acrylic';
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win === null) {
       return false;
     }
     try {
       if (process.platform === 'win32') {
-        if (wantGlass && !currentOsGlass) {
-          win.setBackgroundMaterial('acrylic');
-          currentOsGlass = true;
-        } else if (!wantGlass && currentOsGlass) {
-          win.setBackgroundMaterial('none');
-          currentOsGlass = false;
-        }
-        win.setBackgroundColor(currentOsGlass ? '#00000000' : overlay.color);
+        win.setBackgroundColor(overlay.color);
         win.setTitleBarOverlay({
-          color: currentOsGlass && HEX6CANVAS(canvas) ? `${canvas}88` : overlay.color,
+          color: overlay.color,
           symbolColor: overlay.symbolColor,
           height: 36,
         });
@@ -1282,12 +1269,16 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
       /* 窗口正在销毁：跳过 */
       return false;
     }
-    win.webContents.send(CHANNEL_THEME_OSGLASS, currentOsGlass);
     platformContext?.logger
       .forModule('main')
-      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor} osglass=${String(currentOsGlass)}`);
+      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor}`);
     return true;
   });
+
+  // T90-01B：桌面壁纸衬底通道。renderer 拉一次即可（壁纸更换频率极低，切档时重拉）。
+  // 只读注册表 WallpaperPath /壁纸策略键，读文件转 base64 data URL；失败返回 null
+  // ——renderer 拿到 null 就保持实心（绝不裸开透明链）。
+  ipcMain.handle(CHANNEL_DESKTOP_WALLPAPER, () => readDesktopWallpaperDataUrl());
 
   // 设置（M9）：get 回整份（data.note = 同步目录）；patch 严格校验后落盘并回整份
   ipcMain.handle(CHANNEL_SETTINGS_GET, () => readAppSettings(ctx.userDataDir, syncFolderFor(ctx)));

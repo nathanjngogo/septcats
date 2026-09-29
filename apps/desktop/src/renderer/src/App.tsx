@@ -49,6 +49,7 @@ import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import { paletteActions as themePaletteActions } from './theme/paletteState';
 import { lookActions } from './theme/lookState';
+import { useWallpaperUnderlay } from './theme/wallpaperUnderlay';
 import './App.css';
 
 /**
@@ -202,6 +203,8 @@ export function App() {
   const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout' | 'market'>('editor');
   // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
+  // T90-01B：玻璃档壁纸衬底（桌面壁纸铺 html 底，透明链只在 [data-wallpaper=1] 生效）
+  useWallpaperUnderlay();
   // T25-01：订阅 locale —— 切换语言时整棵组件树重渲染（t() 在渲染期现取文案）
   useLocale();
   const searchOpen = usePalette((state) => state.searchOpen);

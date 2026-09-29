@@ -470,10 +470,14 @@ export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION, click: CHANNEL_MENU_
 export const CHANNEL_WINDOW_GET_STATE = 'window:getState';
 export const CHANNEL_WINDOW_STATE = 'window:state';
 export const CHANNEL_THEME_CHROME = 'theme:chrome';
-/** main → renderer：DWM 亚克力材质实际启用与否（T90-01）。renderer 收到才挂
- *  data-osglass=1 让 glass 档 CSS 透明链生效——材质没起来时 CSS 必须保持实心，
- * 否则 alpha 底+无材质 = 桌面穿透不可读（烟测 F 组合实证渲染崩溃态）。 */
-export const CHANNEL_THEME_OSGLASS = 'theme:osglass';
+/**
+ * T90-01B（老板 09-28 深夜两连打回：「毛玻璃的通透性也没有，没有跟着背景变色」）：
+ * DWM 亚克力在本机实测不可靠（任务栏材质正常、Electron 窗恒死灰——企业版会话
+ * +虚拟显示驱动的 DirectComposition 拿不到壁纸共享，acrylic/mica/37/38 全验过）。
+ * 治本换路：main 只读桌面壁纸文件 → renderer 自铺壁纸衬底层，玻璃面板的
+ * 半透明+backdrop-filter 模糊的就是真壁纸像素。任何机器成立、capturePage 可验收。
+ */
+export const CHANNEL_DESKTOP_WALLPAPER = 'desktop:wallpaper';
 
 export const WINDOW_CHANNELS = {
   getState: CHANNEL_WINDOW_GET_STATE,

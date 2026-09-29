@@ -112,25 +112,32 @@
     radial-gradient(26rem 22rem at 55% 42%, color-mix(in srgb, var(--sc-color-selection) 20%, transparent), transparent 72%);
 }
 /* ============================================================================
- * T90-01 真通透（老板 09-28 深夜：「毛玻璃的通透性也没有，没有跟着背景变色」）
- * 唯一能透出**桌面壁纸**的是 DWM 亚克力材质（main 侧 setBackgroundMaterial）。
- * 材质起来时 main 广播 data-osglass=1 → 本段透明链贯穿全窗：实心 canvas 底
- * 全部让位，各层 alpha 底直接合成在 DWM 磨砂上 = 真「跟着背景变色」。
- * 材质没起来（老系统/系统透明效果关/pixel/linear 档）→ 属性缺席 = 本段零作用，
- * 保持 0.6.9 实心外观（烟测实证：alpha 底无材质 = 纯黑不可读，绝不可裸开）。
+ * T90-01B 真通透（老板 09-28 深夜：「毛玻璃的通透性也没有，没有跟着背景变色」）
+ * 壁纸衬底：main 读桌面壁纸 → renderer 铺 html 底（--sc-wallpaper），
+ * 本段透明链把各层实心 canvas 底撤掉，玻璃面板磨的就是真壁纸像素。
+ * 门控 = [data-wallpaper='1']（wallpaperUnderlay.ts 只在 glass 档且壁纸拉到时挂；
+ * 拉不到/非 glass = 属性缺席 = 本段零作用，保持实心，绝不裸开透明）。
  * ========================================================================== */
-[data-look='glass'][data-osglass='1'],
-[data-look='glass'][data-osglass='1'] body,
-[data-look='glass'][data-osglass='1'] #root,
-[data-look='glass'][data-osglass='1'] .app-frame,
-[data-look='glass'][data-osglass='1'] .app-frame_body,
-[data-look='glass'][data-osglass='1'] .sc-shell,
-[data-look='glass'][data-osglass='1'] .sc-shell__body {
-  background: transparent;
+[data-look='glass'][data-wallpaper='1'],
+[data-look='glass'][data-wallpaper='1'] body,
+[data-look='glass'][data-wallpaper='1'] .app-frame,
+[data-look='glass'][data-wallpaper='1'] .app-frame_body,
+[data-look='glass'][data-wallpaper='1'] .sc-shell,
+[data-look='glass'][data-wallpaper='1'] .sc-shell__body {
+  /* 只撤底色（background-color），绝不写 background 简写——T88 环境光光斑挂在
+     .sc-shell 的 background-image 上，简写会连它一起抹掉（t85 B1-g 实证）。
+     壁纸 + 光斑叠加合成 = 面板磨砂磨的是壁纸彩 + 主题彩光。 */
+  background-color: transparent;
 }
-/* 正文面：42% content 薄纱罩在 DWM 磨砂上——壁纸色彩透出但文字对比不破 */
-[data-look='glass'][data-osglass='1'] .sc-shell__main {
-  background: color-mix(in srgb, var(--sc-color-content) 42%, transparent);
+/* 壁纸只衬在 html——body/#root/.app-frame 透明后 CSS 背景传播会漏掉中间层，
+   故把壁纸直接钉到壳层根上（url 变量 + 覆盖视口）。 */
+[data-look='glass'][data-wallpaper='1'] #root,
+[data-look='glass'][data-wallpaper='1'] .app-frame {
+  background: var(--sc-wallpaper) center / cover no-repeat fixed;
+}
+/* 正文面：68% content 薄纱——透出壁纸色彩但不破正文对比（可读性红线高于通透）。 */
+[data-look='glass'][data-wallpaper='1'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 68%, transparent);
 }
 
 /* chrome 真玻璃（T88 再通透一档）：32% 面板 + 30px 模糊 + 饱和 2.4 ——

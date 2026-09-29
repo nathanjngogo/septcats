@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CHROME_BACKGROUND, isWin11GlassCapable, parseTransparencyFlag, resolveChromeOverlay, resolveChromeTheme, resolveGlassMaterial } from '../src/main/windowChromeTheme';
+import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme } from '../src/main/windowChromeTheme';
 
 // 读仓内文件锚 import.meta.dirname（CI/聚合跑 cwd 不固定，pitfalls 口径）
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -67,33 +67,6 @@ describe('T89-01 resolveChromeOverlay', () => {
   });
 });
 
-describe('T90-01 resolveGlassMaterial（真通透三条件门）', () => {
-  it('三条件齐备（glass × Win11 22H2+ × 系统透明效果开）才 acrylic', () => {
-    expect(resolveGlassMaterial('glass', true, true)).toBe('acrylic');
-  });
-
-  it('任一条件缺 → none（pixel/linear 档、老 Windows、系统关透明都不启用）', () => {
-    expect(resolveGlassMaterial('pixel', true, true)).toBe('none');
-    expect(resolveGlassMaterial('linear', true, true)).toBe('none');
-    expect(resolveGlassMaterial('glass', false, true)).toBe('none');
-    expect(resolveGlassMaterial('glass', true, false)).toBe('none');
-    expect(resolveGlassMaterial('glass', false, false)).toBe('none');
-  });
-
-  it('Win11 门槛=build 22621（22H2）；win32 外一律 false', () => {
-    expect(isWin11GlassCapable('win32', '10.0.26100')).toBe(true);
-    expect(isWin11GlassCapable('win32', '10.0.22621')).toBe(true);
-    expect(isWin11GlassCapable('win32', '10.0.22620')).toBe(false);
-    expect(isWin11GlassCapable('win32', '10.0.19045')).toBe(false);
-    expect(isWin11GlassCapable('darwin', '24.0.0')).toBe(false);
-    expect(isWin11GlassCapable('win32', 'garbage')).toBe(false);
-  });
-
-  it('EnableTransparency 解析：键缺失=默认开；显式 0/1 如实；解析不了=关（宁缺毋滥）', () => {
-    expect(parseTransparencyFlag(null)).toBe(true);
-    expect(parseTransparencyFlag('EnableTransparency    REG_DWORD    0x1')).toBe(true);
-    expect(parseTransparencyFlag('EnableTransparency    REG_DWORD    0x0')).toBe(false);
-    expect(parseTransparencyFlag('EnableTransparency    REG_DWORD    1')).toBe(true);
-    expect(parseTransparencyFlag('nonsense')).toBe(false);
-  });
-});
+// T90-01B：材质三条件门（resolveGlassMaterial/isWin11GlassCapable/parseTransparencyFlag）
+// 随 DWM acrylic 路线整段移除——本机实测 Electron backdrop 恒死灰，通透改走
+// 壁纸衬底（纯函数回归迁到 test/desktop-wallpaper.test.ts + test/wallpaper-underlay.test.ts）。

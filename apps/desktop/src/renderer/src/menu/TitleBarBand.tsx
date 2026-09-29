@@ -40,25 +40,14 @@ export function readTokenHex(name: string): string {
   return '';
 }
 
-/** 把当前主题实测色 + 质感档推给 main（OS 按钮区色 + DWM 亚克力材质判定门）。 */
+/** 把当前主题实测色推给 main（OS 按钮区色 + 窗口预绘底色）。 */
 export function pushChromeToOs(): void {
   void window.septcats.theme
     .pushChrome({
       canvas: readTokenHex('--sc-color-canvas'),
       ink: readTokenHex('--sc-color-ink'),
-      // 质感真相在 documentElement[data-look]（lookState 唯一挂点）；缺席=pixel 默认
-      look: document.documentElement.dataset.look ?? 'pixel',
     })
     .catch(() => undefined);
-}
-
-/** T90-01：main 材质判定结果挂根属性——CSS 透明链只准在 [data-osglass='1'] 下生效。 */
-export function applyOsGlass(enabled: boolean): void {
-  if (enabled) {
-    document.documentElement.dataset.osglass = '1';
-  } else {
-    delete document.documentElement.dataset.osglass;
-  }
 }
 
 export function TitleBarBand(): React.ReactElement | null {
@@ -88,12 +77,8 @@ export function TitleBarBand(): React.ReactElement | null {
     });
     // 首推（属性挂点可能早于本组件挂载，observer 不会回溯）
     pushChromeToOs();
-    // T90-01：main 材质判定结果 → 挂 data-osglass（CSS 透明链的唯一开关）。
-    // 订阅必须早于首推回执：invoke 回执与事件广播并发，attribute 幂等不怕重复。
-    const offOsglass = window.septcats.theme.onOsglass(applyOsGlass);
     return () => {
       offState();
-      offOsglass();
       observer.disconnect();
       cancelAnimationFrame(raf);
     };
