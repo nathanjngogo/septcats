@@ -207,6 +207,14 @@ export const zhCN = {
     archive: '归档',
   },
   // T51-01：原生应用菜单文案（main 侧 menu.ts 与 renderer 同源读取本字典；
+  // C 轮自绘窗口按钮（TitleBarBand）无障碍文案；键集与 en-US 同构（门禁①/②）
+  window: {
+    controls: '窗口控件',
+    minimize: '最小化',
+    maximize: '最大化',
+    restore: '向下还原',
+    close: '关闭',
+  },
   // 键名与 en-US.ts 逐一同构，受 i18n.test.ts 门禁①/②约束）。
   menu: {
     file: '文件',

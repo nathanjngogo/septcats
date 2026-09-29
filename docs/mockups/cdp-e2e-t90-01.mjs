@@ -195,7 +195,11 @@ async function main() {
   await setLookPalette(h.page, 'pixel', 'paper');
   const s3 = await wallpaperState(h.page);
   const g3 = await sidebarShot(h.page, 'pixel-light-paper');
-  check('P2 glass 侧栏透出壁纸（sat>18 且比 pixel 基线高≥6；实心≈10-14）', g2.st.avgSat > 18 && g2.st.avgSat >= g3.st.avgSat + 6, `glass sat=${g2.st.avgSat} lum=${g2.st.avgLum} | pixel sat=${g3.st.avgSat} lum=${g3.st.avgLum}`);
+  // C 轮判据升级：壁纸可为深色（实测暗紫 lum≈60）——此时 clash 自适应亮纱保护
+  // 可读性，透出表现为「亮度被壁纸拉离实心基线」而非彩度上升。两通道任一成立
+  // = 壁纸真的透出来了：彩度跟壁纸（sat 差）或明度跟壁纸（lum 差 >25）。
+  const p2ok = g2.st.avgSat >= g3.st.avgSat + 6 || Math.abs(g2.st.avgLum - g3.st.avgLum) > 25;
+  check('P2 glass 侧栏透出壁纸（彩度或明度跟壁纸离实心基线）', p2ok, `glass sat=${g2.st.avgSat} lum=${g2.st.avgLum} | pixel sat=${g3.st.avgSat} lum=${g3.st.avgLum}`);
 
   STEP = 'P3';
   check('P3 切 pixel → data-wallpaper 撤（门控关闭，绝不完全透）', s3.wp === null, JSON.stringify(s3));
@@ -204,7 +208,8 @@ async function main() {
   await setLookPalette(h.page, 'glass', 'paper');
   const s4 = await wallpaperState(h.page);
   const g4 = await sidebarShot(h.page, 'glass-back');
-  check('P4 切回 glass → 衬底恢复（属性驱动可逆，无重启）', s4.wp === '1' && g4.st.avgSat > 18, `wp=${String(s4.wp)} sat=${g4.st.avgSat}`);
+  const p4ok = s4.wp === '1' && (g4.st.avgSat >= g3.st.avgSat + 6 || Math.abs(g4.st.avgLum - g3.st.avgLum) > 25);
+  check('P4 切回 glass → 衬底恢复（属性驱动可逆，无重启）', p4ok, `wp=${String(s4.wp)} sat=${g4.st.avgSat} lum=${g4.st.avgLum} vs pixel lum=${g3.st.avgLum}`);
 
   STEP = 'P5';
   await h.page.evaluate(() => { localStorage.setItem('septcats.theme', 'dark'); });

@@ -10,8 +10,12 @@ import {
   CHANNEL_PING,
   CHANNEL_SEARCH_QUERY,
   CHANNEL_DESKTOP_WALLPAPER,
+  CHANNEL_WALLPAPER_GEOMETRY,
   CHANNEL_THEME_CHROME,
   CHANNEL_WINDOW_GET_STATE,
+  CHANNEL_WINDOW_MINIMIZE,
+  CHANNEL_WINDOW_MAXIMIZE_TOGGLE,
+  CHANNEL_WINDOW_CLOSE,
   CLOSE_CHANNELS,
   COLLAB_CHANNELS,
   DB_CHANNELS,
@@ -270,10 +274,15 @@ const api: SeptcatsApi = {
     getState: () =>
       ipcRenderer.invoke(CHANNEL_WINDOW_GET_STATE) as Promise<{ maximized: boolean }>,
     onState: (listener) => subscribe(WINDOW_CHANNELS.state, listener),
+    // C 轮（老板拍板全自绘窗口按钮）：min/max/close 命令通道
+    minimize: () => ipcRenderer.invoke(CHANNEL_WINDOW_MINIMIZE) as Promise<boolean>,
+    maximizeToggle: () => ipcRenderer.invoke(CHANNEL_WINDOW_MAXIMIZE_TOGGLE) as Promise<boolean>,
+    close: () => ipcRenderer.invoke(CHANNEL_WINDOW_CLOSE) as Promise<boolean>,
   },
   theme: {
     pushChrome: (input) => ipcRenderer.invoke(CHANNEL_THEME_CHROME, input) as Promise<boolean>,
     wallpaper: () => ipcRenderer.invoke(CHANNEL_DESKTOP_WALLPAPER) as Promise<string | null>,
+    onGeometry: (listener) => subscribe(CHANNEL_WALLPAPER_GEOMETRY, listener),
   },
   // T54-01：关窗协作（冲刷握手 + 自绘询问框）
   close: {

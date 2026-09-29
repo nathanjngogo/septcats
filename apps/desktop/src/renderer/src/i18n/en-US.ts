@@ -206,6 +206,14 @@ export const enUS = {
     archive: 'Archive',
   },
   // T51-01: native application menu copy (main/menu.ts reads the same dictionary
+  // Window control a11y strings (TitleBarBand); key set mirrors zh-CN.ts
+  window: {
+    controls: 'window controls',
+    minimize: 'Minimize',
+    maximize: 'Maximize',
+    restore: 'Restore down',
+    close: 'Close',
+  },
   // as the renderer; key set mirrors zh-CN.ts, enforced by the i18n gate).
   menu: {
     file: 'File',

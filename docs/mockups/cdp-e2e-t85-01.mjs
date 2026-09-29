@@ -192,6 +192,8 @@ async function capture(page, look, theme) {
     const rs = getComputedStyle(document.documentElement);
     return {
       shell: cs('.sc-shell'), main: cs('.sc-shell__main'), sidebar: cs('.sc-shell__sidebar'), topbar: cs('.sc-shell__topbar'),
+      clash: document.documentElement.getAttribute('data-wallpaper-clash') ?? '',
+      wallpaper: document.documentElement.getAttribute('data-wallpaper') ?? '',
       radiusSm: rs.getPropertyValue('--sc-radius-sm').trim(),
       radiusLg: rs.getPropertyValue('--sc-radius-lg').trim(),
       borderEdge: rs.getPropertyValue('--sc-border-edge').trim().slice(0, 60),
@@ -257,7 +259,9 @@ async function main() {
       return a > 0 && b > 0 && Math.abs(b - a) >= 12;
     })(), `linear=${ln.sidebar?.bg} pixel=${px_.sidebar?.bg}`);
     check('B1-d linear 主区有面渐变且无磨砂', String(ln.main?.img).startsWith('linear-gradient') && ln.sidebar?.blur === 'none', `${ln.main?.img} / blur=${ln.sidebar?.blur}`);
-    check('B1-e glass chrome 半透明 ≤50%', alphaOf(gl.sidebar?.bg ?? '') <= 0.5, `alpha=${String(alphaOf(gl.sidebar?.bg ?? ''))} bg=${gl.sidebar?.bg}`);
+    // C 轮升级：clash=dark（浅主题×暗铜纸）时自适应纱收亮到 72% 是有意行为（可读性，真亚克力同理）；
+    // 无冲突/无衬底时仍严格 ≤50%。
+    check('B1-e glass chrome 半透明 ≤50%（clash 自适应纱豁免）', gl.clash !== 'dark' ? alphaOf(gl.sidebar?.bg ?? '') <= 0.5 : alphaOf(gl.sidebar?.bg ?? '') <= 0.85, `alpha=${String(alphaOf(gl.sidebar?.bg ?? ''))} clash=${String(gl.clash) || 'none'} wp=${String(gl.wallpaper) || 'none'}`);
     check('B1-f glass chrome 磨砂 blur ≥20px', blurPx(gl.sidebar?.blur ?? '') >= 20, gl.sidebar?.blur);
     check('B1-g glass 外壳有环境光 radial-gradient（背后无光=磨砂无效）', String(gl.shell?.img).includes('radial-gradient'), gl.shell?.img);
     check('B1-h glass 浮层磨砂 blur ≥20px', blurPx(gl.sidebar?.blur ?? '') >= 20 && light.glass.palFound === 1, `palFound=${String(light.glass.palFound)}`);

@@ -17,11 +17,30 @@
 
 import { useEffect, useState } from 'react';
 import { isWindowsShell } from './MenuBarBand';
-import { getGlassCanvasTint, onGlassTintChange } from '../theme/wallpaperTint';
+import { t } from '../i18n';
 import './TitleBarBand.css';
 
-/** OS titleBarOverlay 标准预留宽（三按钮 ×46px，Electron 文档值）。 */
+/** OS titleBarOverlay 标准预留宽（历史：overlay 三按钮宽；C 轮自绘按钮组仍用同宽）。 */
 export const OVERLAY_ZONE_WIDTH = 138;
+
+/** Windows 惯例窗口控件（C 轮全自绘：min/还原或最大化/关闭）。SVG stroke 吃 currentColor。 */
+function WindowGlyph({ kind, maximized }: { kind: 'min' | 'max' | 'close'; maximized: boolean }): React.ReactElement {
+  if (kind === 'min') {
+    return <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1" y1="8" x2="9" y2="8" /></svg>;
+  }
+  if (kind === 'close') {
+    return <svg viewBox="0 0 10 10" aria-hidden="true"><line x1="1.5" y1="1.5" x2="8.5" y2="8.5" /><line x1="8.5" y1="1.5" x2="1.5" y2="8.5" /></svg>;
+  }
+  return maximized ? (
+    // 还原：两个错位方框（Windows 惯例）
+    <svg viewBox="0 0 10 10" aria-hidden="true">
+      <rect x="1" y="3" width="6" height="6" />
+      <polyline points="3,3 3,1 9,1 9,7 7,7" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" /></svg>
+  );
+}
 
 /** 主题三轴在 documentElement 上的属性挂点（theme/palette/look 唯一真相，设置任何入口最终都落它们）。 */
 const THEME_ATTRS = ['data-theme', 'data-palette', 'data-look'] as const;
@@ -42,9 +61,8 @@ export function readTokenHex(name: string): string {
 }
 
 /**
- * 把当前主题实测色 + 质感档 + 带体混色推给 main（OS 按钮区色 + 窗口预绘底色）。
- * canvasTint=壁纸均色混入后的带体等效实色（审核 B-2：OS 按钮区实测不吃全透明，
- * 实心 canvas 补丁会露——混实色让它与 14% 半透带体同色）。
+ * 把当前主题实测色 + 质感档推给 main（C 轮后 OS 按钮区已撤，本通道只刷窗口
+ * 预绘底色=恒实心 canvas；保留 ink/look 入参供探针断言与明暗态回退计算）。
  */
 export function pushChromeToOs(): void {
   void window.septcats.theme
@@ -52,7 +70,6 @@ export function pushChromeToOs(): void {
       canvas: readTokenHex('--sc-color-canvas'),
       ink: readTokenHex('--sc-color-ink'),
       look: document.documentElement.dataset.look ?? 'pixel',
-      canvasTint: getGlassCanvasTint(),
     })
     .catch(() => undefined);
 }
@@ -84,12 +101,8 @@ export function TitleBarBand(): React.ReactElement | null {
     });
     // 首推（属性挂点可能早于本组件挂载，observer 不会回溯）
     pushChromeToOs();
-    // 审核 B-2：壁纸混色异步算好会晚于首推 → 变化即重推（订阅在 wallpaperUnderlay
-    // 拉壁纸之后到达，attribute 幂等不怕重复）。
-    const offTint = onGlassTintChange(pushChromeToOs);
     return () => {
       offState();
-      offTint();
       observer.disconnect();
       cancelAnimationFrame(raf);
     };
@@ -104,12 +117,27 @@ export function TitleBarBand(): React.ReactElement | null {
   // 双击最大化无需 JS：整条带是 -webkit-app-region: drag = OS 视其 HTCAPTION，
   // Windows 对 HTCAPTION 双击原生触发最大化/还原（事件到不了 DOM，故也不挂
   // onDoubleClick——挂了也收不到）。main 的 maximize/unmaximize 广播驱动图标态。
+  // C 轮（老板拍板全自绘按钮）：min/最大化-还原/close 由本组接管——close 走
+  // main 的 win.close() = T54-01 closeGuard 同链路（冲刷/托盘询问零旁路）。
+  const ctrl = (fn: () => Promise<unknown>): void => {
+    void fn().catch(() => undefined);
+  };
   return (
     <div className="titleb_band" data-testid="title-bar-band" data-maximized={maximized ? 'true' : 'false'}>
       <span className="titleb_brand" aria-hidden="true">🐈</span>
       <span className="titleb_name">Septcats</span>
       <span className="titleb_drag" aria-hidden="true" />
-      <span className="titleb_overlayzone" style={{ width: OVERLAY_ZONE_WIDTH }} aria-hidden="true" />
+      <div className="titleb_controls" role="group" aria-label={t("window.controls")}>
+        <button type="button" className="titleb_btn" data-testid="titleb-min" aria-label={t("window.minimize")} onClick={() => ctrl(window.septcats.window.minimize)}>
+          <WindowGlyph kind="min" maximized={maximized} />
+        </button>
+        <button type="button" className="titleb_btn" data-testid="titleb-max" aria-label={maximized ? t('window.restore') : t('window.maximize')} onClick={() => ctrl(window.septcats.window.maximizeToggle)}>
+          <WindowGlyph kind="max" maximized={maximized} />
+        </button>
+        <button type="button" className="titleb_btn titleb_btn_close" data-testid="titleb-close" aria-label={t('window.close')} onClick={() => ctrl(window.septcats.window.close)}>
+          <WindowGlyph kind="close" maximized={maximized} />
+        </button>
+      </div>
     </div>
   );
 }

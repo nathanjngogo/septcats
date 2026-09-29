@@ -15,7 +15,8 @@
  */
 
 import { useEffect } from 'react';
-import { updateGlassTint } from './wallpaperTint';
+import type { WallpaperGeometryPayload } from '../../../shared/ipc';
+import { updateWallpaperClash } from './wallpaperClash';
 
 /** 质感真相在 documentElement[data-look]（lookState 唯一挂点）。 */
 function currentLook(): string {
@@ -55,14 +56,38 @@ export function syncWallpaperUnderlay(
   if (look === 'glass' && dataUrl !== null && dataUrl !== '') {
     root.style.setProperty('--sc-wallpaper', `url("${dataUrl}")`);
     root.dataset.wallpaper = '1';
-    // 审核 B-2：OS 按钮区不吃透明 → 同步算「带体等效实色」混色（异步，变化会
-    // 经 onGlassTintChange 通知 TitleBarBand 重推）。采样失败自动清混色。
-    void updateGlassTint(dataUrl);
   } else {
     delete root.dataset.wallpaper;
     root.style.removeProperty('--sc-wallpaper');
-    void updateGlassTint(null);
+    clearWallpaperGeometryVars(root);
   }
+}
+
+/**
+ * C 轮「实时透明」：把 main 广播的屏幕映射写成 CSS 变量——looks.css 衬底规则
+ * 用「size + 偏移定位」取代 `fixed` 视口锚定（fixed=假透明元凶：窗口在桌面上
+ * 移动，玻璃里的壁纸却一动不动）。geo=null（非 win32/平铺/算不了）→ 清变量，
+ * CSS 回退原 fixed 行为（保底不崩）。
+ */
+export function applyWallpaperGeometry(
+  geo: WallpaperGeometryPayload | null,
+  root: HTMLElement = document.documentElement,
+): void {
+  if (geo === null) {
+    clearWallpaperGeometryVars(root);
+    return;
+  }
+  root.style.setProperty('--sc-wallpaper-size', geo.size);
+  root.style.setProperty('--sc-wallpaper-x', `${geo.offsetX}px`);
+  root.style.setProperty('--sc-wallpaper-y', `${geo.offsetY}px`);
+  root.dataset.wallpaperGeom = '1';
+}
+
+function clearWallpaperGeometryVars(root: HTMLElement): void {
+  delete root.dataset.wallpaperGeom;
+  root.style.removeProperty('--sc-wallpaper-size');
+  root.style.removeProperty('--sc-wallpaper-x');
+  root.style.removeProperty('--sc-wallpaper-y');
 }
 
 export function useWallpaperUnderlay(): void {
@@ -71,6 +96,7 @@ export function useWallpaperUnderlay(): void {
       const look = currentLook();
       if (look !== 'glass') {
         syncWallpaperUnderlay(look, null);
+        void updateWallpaperClash(null);
         return;
       }
       if (force) {
@@ -80,6 +106,8 @@ export function useWallpaperUnderlay(): void {
         // 竞态护栏：异步回来时档位可能已切走
         if (currentLook() === 'glass') {
           syncWallpaperUnderlay('glass', dataUrl);
+          // C 轮：衬底挂上→按壁纸亮度×主题冲突自适应加纱（治「字体没适配」）
+          void updateWallpaperClash(dataUrl);
         }
       });
     };
@@ -87,17 +115,23 @@ export function useWallpaperUnderlay(): void {
     const observer = new MutationObserver(() => apply());
     observer.observe(document.documentElement, {
       attributes: true,
-      // palette 也在列：canvas token 随配色变 → B-2 混色要跟着重算（14% 权重，
-      // 不同配色差值可达 ~10 级，肉眼可见，必须重混）
-      attributeFilter: ['data-look', 'data-palette'],
+      // theme/palette 也在列：主题亮度与 canvas token 随两轴变 → C 轮冲突判定要跟重算
+      attributeFilter: ['data-look', 'data-palette', 'data-theme'],
     });
     // focus 重拉：换壁纸的必经路径 = 离开应用（失焦）→ 回应用即 focus，此时清缓存
     // 重读 reg/文件，衬底跟着刷新（不监听系统壁纸事件——跨平台碎+高成本）。
     const onFocus = (): void => apply(true);
     window.addEventListener('focus', onFocus);
+    // C 轮「实时透明」：main 在窗口 move/resize/首帧广播屏幕映射 → 写成 CSS 变量。
+    // 非 glass 档收到也无害：衬底规则本身被 [data-look=glass][data-wallpaper=1] 门控。
+    // 桥防御：无 preload 环境（jsdom 假桥/测试页）优雅降级为 fixed 视口衬底。
+    const offGeo = window.septcats.theme?.onGeometry?.((geo) => {
+      applyWallpaperGeometry(geo);
+    });
     return () => {
       observer.disconnect();
       window.removeEventListener('focus', onFocus);
+      offGeo?.();
     };
   }, []);
 }

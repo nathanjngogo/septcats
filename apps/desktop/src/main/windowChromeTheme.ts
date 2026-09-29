@@ -45,28 +45,23 @@ export function resolveChromeTheme(mode: ThemeMode | string, systemDark: boolean
 }
 
 /**
- * T89-01：titleBarOverlay（OS 绘制的最小化/最大化/关闭按钮区）配色入参。
- * renderer 实测 `--sc-color-canvas`（底）与 `--sc-color-ink`（符号）后推给 main；
- * 这里做**合法性收窄**——overlay 只吃 `#rrggbb`，非法值（空/rgb()/带 alpha）一律
- * 回落该明暗态的画布 token 实值，绝不让 OS 按钮区吃到脏值或抛错。
+ * T89-01：renderer 实测 token → main 刷「窗口预绘底色」（OS titleBarOverlay 已在
+ * C 轮整撤——OS 平面色块永远追不上渐变玻璃带，右上角补丁的根因；min/max/close
+ * 改 renderer 自绘）。这里做**合法性收窄**：canvas 非法值（空/rgb()/带 alpha）
+ * 回落该明暗态画布 token，绝不让窗口吃到脏底色或抛错。
+ * ink 字段保留在入参里（renderer 一并实测，供探针断言与未来 OS 面复用），
+ * 本函数不消费。
  */
 export interface ChromeOverlayInput {
   canvas: string;
   ink: string;
-  /** 质感档（documentElement[data-look]，缺席=pixel）。审核 B-2 真机证伪：OS 按钮区
-   *  不吃全透明（#00000000 → Win11 回退实心 #F5F5F5，比 14% 半透带体亮 209，就是
-   *  老板截图的「白色部分」补丁）。glass 档改用 canvasTint=带体等效实色（renderer
-   *  采样壁纸均色按 14%/86% 混出，见 renderer/theme/wallpaperTint.ts）。 */
+  /** 质感档（documentElement[data-look]，缺席=pixel）。overlay 撤除后暂只作日志维度。 */
   look?: string;
-  /** glass 档带体等效实色（混色成功才有；null/非法=采样失败，回落实心 canvas）。 */
-  canvasTint?: string | null;
 }
 
 const HEX6 = /^#[0-9a-fA-F]{6}$/;
 
 export interface ChromeOverlayResult {
-  color: string;
-  symbolColor: string;
   /** 窗口预绘底色永远实心（壁纸衬底在 DOM 层，窗体不能透明——alpha 底黑窗教训）。 */
   windowBackground: string;
 }
@@ -76,19 +71,7 @@ export function resolveChromeOverlay(
   theme: ChromeTheme,
 ): ChromeOverlayResult {
   const fallback = CHROME_BACKGROUND[theme];
-  const solid = HEX6.test(input.canvas) ? input.canvas : fallback;
-  const ink = HEX6.test(input.ink) ? input.ink : (theme === 'dark' ? '#EDE6D8' : '#2B2620');
-  if (input.look === 'glass' && typeof input.canvasTint === 'string' && HEX6.test(input.canvasTint)) {
-    // 带体等效实色当按钮区底；符号色按底色亮度反转保对比（壁纸偏暗时按钮才看得见）
-    const lum = Number.parseInt(input.canvasTint.slice(1), 16);
-    const bright = (((lum >> 16) & 0xff) * 299 + ((lum >> 8) & 0xff) * 587 + (lum & 0xff) * 114) / 1000;
-    return {
-      color: input.canvasTint.toUpperCase(),
-      symbolColor: bright < 140 ? '#EDE6D8' : ink,
-      windowBackground: solid,
-    };
-  }
-  return { color: solid, symbolColor: ink, windowBackground: solid };
+  return { windowBackground: HEX6.test(input.canvas) ? input.canvas : fallback };
 }
 
 /**

@@ -130,10 +130,19 @@
   background-color: transparent;
 }
 /* 壁纸只衬在 html——body/#root/.app-frame 透明后 CSS 背景传播会漏掉中间层，
-   故把壁纸直接钉到壳层根上（url 变量 + 覆盖视口）。 */
+   故把壁纸直接钉到壳层根上。
+   C 轮「实时透明」（老板 09-29：「目前看似透明，实际假透明」）：`fixed` 视口锚定
+   是假透明元凶——窗口在桌面上移动，玻璃里的壁纸纹丝不动。main 广播屏幕映射后
+   （--sc-wallpaper-size/x/y，锚点=壁纸左上相对窗口内容区的实时偏移），壁纸按
+   桌面真实位置定位 = 移动窗口时透出的壁纸跟着视差动。映射算不出（geo=null，
+   非 win32/平铺）→ 变量缺席 → 回退 center/cover 视口铺法，保底可用。 */
 [data-look='glass'][data-wallpaper='1'] #root,
 [data-look='glass'][data-wallpaper='1'] .app-frame {
-  background: var(--sc-wallpaper) center / cover no-repeat fixed;
+  background-color: transparent;
+  background-image: var(--sc-wallpaper);
+  background-repeat: no-repeat;
+  background-size: var(--sc-wallpaper-size, cover);
+  background-position: var(--sc-wallpaper-x, 50%) var(--sc-wallpaper-y, 50%);
 }
 /* 正文面：68% content 薄纱——透出壁纸色彩但不破正文对比（可读性红线高于通透）。 */
 [data-look='glass'][data-wallpaper='1'] .sc-shell__main {
@@ -166,6 +175,53 @@
   background: color-mix(in srgb, var(--sc-color-surface-raised) 60%, transparent);
   -webkit-backdrop-filter: blur(28px) saturate(2.2);
   backdrop-filter: blur(28px) saturate(2.2);
+}
+
+/* ============================================================================
+ * C 轮「颜色全部不统一，字体颜色没有进行适配」（老板 09-29 截图实证：暗紫壁纸
+ * lum≈30-60 透出后，light 主题深字压深底对比度只剩 ~1.5，不可读）。
+ * 壁纸=外部输入、主题三轴管不到 ⇒ 按「壁纸亮度 × 主题亮度冲突」自适应加纱
+ * （真 Windows 亚克力同样是 tint+luminosity，从不把壁纸原样全透给正文）。
+ * 属性 data-wallpaper-clash 由 wallpaperClash.ts 挂：
+ *   'dark'  = 浅主题 × 暗壁纸 → 纱向亮侧收（透出壁纸彩度、保住深字对比）
+ *   'light' = 深主题 × 亮壁纸 → 纱向暗侧收更多（浅字需更暗底）
+ *   缺席    = 无冲突/采样失败/非 glass → 上面现状，零变化。
+ * ========================================================================== */
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-shell__topbar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-shell__sidebar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .menub_band,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .titleb_band {
+  background: color-mix(in srgb, var(--sc-color-canvas) 72%, transparent);
+}
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 90%, transparent);
+}
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-dialog,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-menu,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-popover__panel,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-toast__item,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-select__listbox,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-tooltip__bubble,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .palette {
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 85%, transparent);
+}
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-shell__topbar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-shell__sidebar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .menub_band,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .titleb_band {
+  background: color-mix(in srgb, var(--sc-color-canvas) 82%, transparent);
+}
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 94%, transparent);
+}
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-dialog,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-menu,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-popover__panel,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-toast__item,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-select__listbox,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .sc-tooltip__bubble,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='light'] .palette {
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 88%, transparent);
 }
 
 /* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）

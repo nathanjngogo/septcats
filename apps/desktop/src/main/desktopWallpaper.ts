@@ -45,7 +45,76 @@ export function decodeRegOutput(buf: Buffer): string {
 }
 
 /**
- * 解析 `reg query ... /v WallpaperPath`（或 Wallpaper）输出为路径字符串。
+ * 从 WallpaperStyle 原始输出抽值（`REG_SZ 10` / `REG_DWORD 0xa` → '10'/'10'）。
+ * C 轮屏幕映射几何需要它判定 Windows 壁纸填充模式。
+ */
+export function parseRegScalar(regOutput: string | null): string | null {
+  if (regOutput === null) {
+    return null;
+  }
+  const m = /REG_(?:SZ|DWORD)\s+(\S+)\s*$/m.exec(regOutput);
+  if (m === null || m[1] === undefined) {
+    return null;
+  }
+  const v = m[1].trim();
+  if (/^0x[0-9a-fA-F]+$/.test(v)) {
+    return String(Number.parseInt(v, 16));
+  }
+  return v === '' ? null : v;
+}
+
+/**
+ * 从图像字节头探测像素尺寸（PNG IHDR / JPEG SOF0-3 / BMP DIB；只读头不解码全图，
+ * 微秒级）。探不到返回 null（不猜）。C 轮：屏幕映射几何需要壁纸原始像素宽高。
+ */
+export function probeWallpaperImageSize(buf: Buffer): { width: number; height: number } | null {
+  // PNG: 签名 + IHDR（宽@16 高@20）
+  if (buf.length >= 24 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    if (buf.toString('latin1', 12, 16) !== 'IHDR') {
+      return null;
+    }
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    return w > 0 && h > 0 ? { width: w, height: h } : null;
+  }
+  // JPEG: 逐段找 SOF0..SOF3（排除 C4/C8/CC）
+  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    let p = 2;
+    while (p + 9 < buf.length) {
+      if (buf[p] !== 0xff) {
+        p += 1;
+        continue;
+      }
+      const marker = buf[p + 1] ?? 0;
+      if (marker === 0xff) {
+        p += 1;
+        continue;
+      }
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        const h = buf.readUInt16BE(p + 5);
+        const w = buf.readUInt16BE(p + 7);
+        return w > 0 && h > 0 ? { width: w, height: h } : null;
+      }
+      if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+        p += 2;
+        continue;
+      }
+      const segLen = buf.readUInt16BE(p + 2);
+      p += 2 + Math.max(2, segLen);
+    }
+    return null;
+  }
+  // BMP: 'BM' + DIB 头（宽@18 高@22；负高=top-down 取绝对值）
+  if (buf.length >= 26 && buf[0] === 0x42 && buf[1] === 0x4d) {
+    const w = buf.readInt32LE(18);
+    const h = Math.abs(buf.readInt32LE(22));
+    return w > 0 && h > 0 ? { width: w, height: h } : null;
+  }
+  return null;
+}
+
+/**
+ * 解析 `reg query ... /v WallpaperPath`（或策略键 Wallpaper）输出为路径字符串。
  * reg 输出格式固定 `<name>    REG_SZ    <value>`；解析不了返回 null。
  */
 export function parseWallpaperRegValue(regOutput: string | null): string | null {

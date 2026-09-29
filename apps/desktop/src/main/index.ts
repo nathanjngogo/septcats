@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeTheme, net, protocol, shell } from 'electron';
+import { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, nativeTheme, net, protocol, screen, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { SCHEMA_VERSION, type ActorId } from '@septcats/core';
 import { readSettings, writeSettings } from '@septcats/platform';
@@ -22,8 +22,12 @@ import {
   CHANNEL_MENU_ROLE,
   CHANNEL_META,
   CHANNEL_DESKTOP_WALLPAPER,
+  CHANNEL_WALLPAPER_GEOMETRY,
   CHANNEL_THEME_CHROME,
   CHANNEL_WINDOW_GET_STATE,
+  CHANNEL_WINDOW_MINIMIZE,
+  CHANNEL_WINDOW_MAXIMIZE_TOGGLE,
+  CHANNEL_WINDOW_CLOSE,
   WINDOW_CHANNELS,
   CHANNEL_PALETTE_TOGGLE,
   CHANNEL_PAGE_CREATE,
@@ -75,7 +79,8 @@ import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetScheme
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
 import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
-import { decodeRegOutput, parseWallpaperRegValue, wallpaperToDataUrl } from './desktopWallpaper';
+import { decodeRegOutput, parseRegScalar, parseWallpaperRegValue, probeWallpaperImageSize, wallpaperToDataUrl } from './desktopWallpaper';
+import { computeWallpaperGeometry, normalizeWallpaperStyle, type WallpaperFillMode } from './wallpaperGeometry';
 import {
   PagesApiError,
   createPagesService,
@@ -255,18 +260,14 @@ function createWindow(): void {
     backgroundColor: CHROME_BACKGROUND[currentChromeTheme],
     title: 'Septcats',
     // T89-01（老板圈图「这上面为什么没有跟着主题走？」）：Windows 撤 OS 原生标题栏
-    // （OS 条只认明暗一轴，配色/质感不理会）→ 自绘标题带吃全套 token，窗口按钮交还
-    // titleBarOverlay（原生绘制、悬停红 X/键盘可达）。macOS 保留原生惯例不动。
-    ...(process.platform === 'win32'
-      ? {
-          titleBarStyle: 'hidden' as const,
-          titleBarOverlay: {
-            color: CHROME_BACKGROUND[currentChromeTheme],
-            symbolColor: currentChromeTheme === 'dark' ? '#EDE6D8' : '#2B2620',
-            height: 36,
-          },
-        }
-      : {}),
+    // （OS 条只认明暗一轴，配色/质感不理会）→ 自绘标题带吃全套 token。
+    // C 轮（老板 09-29：「右上角颜色像补丁」+拍板「全自绘窗口按钮」）：titleBarOverlay
+    // 整撤——OS 平面色块永远追不上渐变玻璃带（真机实测按钮区 #5D345E vs 带体 #2E2246
+    // 差 60+）；min/max/close 改 renderer 自绘（TitleBarBand 按钮组，close 走
+    // win.close()=closeGuard 同链路）。烟测 glass-hidden-nooverlay-smoke.cjs 实证
+    // hidden 不配 overlay 时 OS 按钮彻底消失、原生边框/圆角/贴边吸附保留。
+    // macOS 保留原生惯例不动。
+    ...(process.platform === 'win32' ? { titleBarStyle: 'hidden' as const } : {}),
     ...(iconPath === null ? {} : { icon: iconPath }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -280,6 +281,9 @@ function createWindow(): void {
   window.once('ready-to-show', () => {
     window.show();
     platformContext?.logger.forModule('main').info('window ready-to-show');
+    // C 轮：首帧即发一次壁纸几何——实时透明不能等用户拖动窗口才有映射
+    // （启动即对：壁纸层一开始就锚在屏幕正确位置）。
+    sendWallpaperGeometry(window);
     // T87-01 自证：新窗就绪即报 Chromium 明暗（= OS 标题栏采用态；main→renderer 单向读，
     // 不受 CDP attach 对 matchMedia 的干扰——口径详见 applyChromeTheme 注释与 t87 探针头注）。
     void window.webContents
@@ -321,6 +325,33 @@ function createWindow(): void {
   };
   window.on('maximize', pushWindowState);
   window.on('unmaximize', pushWindowState);
+
+  // C 轮「实时透明」（老板拍板「移动即实时」）：窗口在桌面上动，玻璃里透的壁纸就得跟着
+  // 视差动——move/resize/最大化切换都广播壁纸几何（40ms 节流，拖动 ~25fps 足够顺）。
+  let geomTimer: NodeJS.Timeout | null = null;
+  let geomTrailing = false;
+  const pushGeometry = (): void => {
+    if (window.isDestroyed()) {
+      return;
+    }
+    if (geomTimer !== null) {
+      geomTrailing = true;
+      return;
+    }
+    sendWallpaperGeometry(window);
+    geomTimer = setTimeout(() => {
+      geomTimer = null;
+      if (geomTrailing) {
+        geomTrailing = false;
+        pushGeometry();
+      }
+    }, 40);
+  };
+  // 逐字面量挂（union key 不匹配 Electron on() 的字面量重载 = TS no overload）
+  window.on('move', pushGeometry);
+  window.on('resize', pushGeometry);
+  window.on('maximize', pushGeometry);
+  window.on('unmaximize', pushGeometry);
 
   const devServerUrl = process.env['ELECTRON_RENDERER_URL'];
   if (devServerUrl !== undefined && devServerUrl.length > 0) {
@@ -951,11 +982,23 @@ let currentChromeTheme: ChromeTheme = 'light';
  */
 function regQueryValue(key: string, name: string): string | null {
   try {
-    // 09-29 审核 B-1：直调 reg（不经 cmd/chcp——Node→cmd 引号规则会吃掉键路径
-    // 反斜杠）；输出字节流三段解码 utf8→gbk→latin1，中文壁纸路径无损。
-    const out = execFileSync('reg', ['query', key, '/v', name], {
+    // 09-29 C 轮终修（真机两连坑）：reg.exe 直调与 `powershell -Command reg query` 都
+    // 会在 argv/引号层吃掉键路径反斜杠（HKCU\Control Panel\Desktop →
+    // HKCUControl PanelDesktop = Invalid key name，现场复现）。正解=PowerShell 原生注册表
+    // 驱动 Get-ItemProperty（drive 语法、单引号内无转义地狱）；输出伪造回
+    // `name REG_SZ value` 行——下游 parseWallpaperRegValue/parseRegScalar 零改动；
+    // 中文值经 decodeRegOutput 三段解 utf8→gbk→latin1（B-1 语义保持）。
+    const psPath = key.replace(/^([A-Za-z_]+)\\/, '$1:\\');
+    // 09-29 C 轮追加实证：本机壁纸值名实际是 WallPaper（大写 P）且无 WallpaperPath 键；
+    // Get-ItemProperty -Name 在 .NET 属性层大小写敏感会漏——GetValue() 走 Win32 语义
+    // 大小写不敏感，两坑同治。
+    const script =
+      "$ErrorActionPreference='SilentlyContinue';" +
+      `$v=(Get-Item -LiteralPath '${psPath}').GetValue('${name}');` +
+      `if ($null -ne $v) { '${name}    REG_SZ    ' + $v } else { exit 1 }`;
+    const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
       encoding: 'buffer',
-      timeout: 2000,
+      timeout: 4000,
       windowsHide: true,
     });
     return decodeRegOutput(out);
@@ -964,13 +1007,18 @@ function regQueryValue(key: string, name: string): string | null {
   }
 }
 
-function readDesktopWallpaperDataUrl(): string | null {
+function resolveWallpaperPath(): string | null {
   if (process.platform !== 'win32') {
     return null;
   }
-  const path =
+  return (
     parseWallpaperRegValue(regQueryValue('HKCU\\Control Panel\\Desktop', 'WallpaperPath')) ??
-    parseWallpaperRegValue(regQueryValue('HKCU\\Control Panel\\Desktop', 'Wallpaper'));
+    parseWallpaperRegValue(regQueryValue('HKCU\\Control Panel\\Desktop', 'Wallpaper'))
+  );
+}
+
+function readDesktopWallpaperDataUrl(): string | null {
+  const path = resolveWallpaperPath();
   if (path === null || !existsSync(path)) {
     return null;
   }
@@ -979,6 +1027,62 @@ function readDesktopWallpaperDataUrl(): string | null {
     return wallpaperToDataUrl(path, (p) => readFileSync(p), size);
   } catch {
     return null;
+  }
+}
+
+/**
+ * C 轮「实时透明」：把壁纸屏幕映射 − 窗口位置广播给 renderer（纯函数在
+ * wallpaperGeometry.ts；这里只做取数与容错）。图像尺寸/WallpaperStyle 首读缓存
+ * （壁纸文件不随窗口移动变）；任何一步失败 → 发 null，renderer 保持视口 fixed
+ * 回退（= 移动即实时的降级态，绝不闪崩）。
+ */
+let wallpaperGeomCache: { path: string; size: { width: number; height: number } | null; fill: WallpaperFillMode } | null = null;
+
+function wallpaperGeomInputs(wallpaperPath: string): { size: { width: number; height: number } | null; fill: WallpaperFillMode } {
+  if (wallpaperGeomCache !== null && wallpaperGeomCache.path === wallpaperPath) {
+    return { size: wallpaperGeomCache.size, fill: wallpaperGeomCache.fill };
+  }
+  let size: { width: number; height: number } | null = null;
+  try {
+    // 只读头 64KB：够 PNG IHDR / JPEG SOF / BMP 头，省大文件全量 IO
+    const fd = openSync(wallpaperPath, 'r');
+    try {
+      const head = Buffer.alloc(Math.min(65536, statSync(wallpaperPath).size));
+      readSync(fd, head, 0, head.length, 0);
+      size = probeWallpaperImageSize(head);
+    } finally {
+      closeSync(fd);
+    }
+  } catch { /* 读不了=尺寸 null，走 fixed 回退 */ }
+  const fill = normalizeWallpaperStyle(parseRegScalar(regQueryValue('HKCU\\Control Panel\\Desktop', 'WallpaperStyle')));
+  wallpaperGeomCache = { path: wallpaperPath, size, fill };
+  return { size, fill };
+}
+
+function sendWallpaperGeometry(win: BrowserWindow): void {
+  if (win.isDestroyed()) {
+    return;
+  }
+  try {
+    const path = resolveWallpaperPath();
+    if (path === null || !existsSync(path)) {
+      win.webContents.send(CHANNEL_WALLPAPER_GEOMETRY, null);
+      return;
+    }
+    const b = win.getBounds();
+    const disp = screen.getDisplayMatching(b).bounds;
+    const { size, fill } = wallpaperGeomInputs(path);
+    const geo = computeWallpaperGeometry({
+      win: b,
+      display: { x: disp.x, y: disp.y, width: disp.width, height: disp.height },
+      image: size,
+      fill,
+    });
+    win.webContents.send(CHANNEL_WALLPAPER_GEOMETRY, geo);
+  } catch {
+    try {
+      win.webContents.send(CHANNEL_WALLPAPER_GEOMETRY, null);
+    } catch { /* 窗口已销毁 */ }
   }
 }
 
@@ -993,18 +1097,9 @@ function applyChromeTheme(mode: ThemeMode): void {
   currentChromeTheme = next;
   for (const win of BrowserWindow.getAllWindows()) {
     try {
-      // T89-01：明暗切换先把 OS 按钮区回退到该态画布 token；renderer 的配色实测
-      // （theme:chrome 通道）随后一帧推真值覆盖——两通道不竞态（renderer 总是后到）。
-      if (process.platform === 'win32') {
-        win.setBackgroundColor(CHROME_BACKGROUND[next]);
-        win.setTitleBarOverlay({
-          color: CHROME_BACKGROUND[next],
-          symbolColor: next === 'dark' ? '#EDE6D8' : '#2B2620',
-          height: 36,
-        });
-      } else {
-        win.setBackgroundColor(CHROME_BACKGROUND[next]);
-      }
+      // C 轮：OS titleBarOverlay 已整撤（自绘按钮接管）——明暗切换只刷窗口预绘底色；
+      // renderer 的配色实测（theme:chrome 通道）随后一帧推真值覆盖，两通道不竞态。
+      win.setBackgroundColor(CHROME_BACKGROUND[next]);
     } catch {
       /* 窗口正在销毁：跳过，不阻断设置落盘回执 */
     }
@@ -1237,9 +1332,40 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const win = BrowserWindow.fromWebContents(event.sender);
     return { maximized: win?.isMaximized() ?? false };
   });
-  // T89-01：renderer 实测 canvas/ink token → 刷 OS titleBarOverlay 与窗口预绘底色。
-  // OS overlay 只认 main 给的色值，配色轴（paper/slate/moss…）renderer 够不着它——
-  // 这条通道让「整个软件随主题」覆盖到原生窗口按钮区。非法值回落明暗态画布 token。
+  // C 轮（老板 09-29 拍板全自绘窗口按钮）：min / 最大化-还原 / close。
+  // close 走 win.close() → 触发主窗 close 事件 → T54-01 closeGuard 冲刷/托盘询问
+  // 同链路（零旁路）；销毁只在 guard 放行后发生。
+  ipcMain.handle(CHANNEL_WINDOW_MINIMIZE, (event: { sender: import('electron').WebContents }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win === null || win.isDestroyed()) {
+      return false;
+    }
+    win.minimize();
+    return true;
+  });
+  ipcMain.handle(CHANNEL_WINDOW_MAXIMIZE_TOGGLE, (event: { sender: import('electron').WebContents }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win === null || win.isDestroyed()) {
+      return false;
+    }
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+    return true;
+  });
+  ipcMain.handle(CHANNEL_WINDOW_CLOSE, (event: { sender: import('electron').WebContents }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win === null || win.isDestroyed()) {
+      return false;
+    }
+    win.close();
+    return true;
+  });
+  // T89-01/C 轮：renderer 实测 canvas/ink token → 刷窗口预绘底色（OS titleBarOverlay
+  // 已整撤——OS 平面色块追不上渐变玻璃带=右上角补丁根因，按钮改 renderer 自绘）。
+  // 非法值回落明暗态画布 token。
   // T90-01B：DWM acrylic 在本机实测不可达（任务栏材质正常、Electron 窗恒死灰；
   // acrylic/mica × 37/38 × transparent 真假全验过——企业版会话/虚拟显示的
   // DirectComposition 拿不到壁纸共享）。材质逻辑整段撤除，通透改走壁纸衬底层
@@ -1252,23 +1378,17 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
     const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
     const look = typeof rec['look'] === 'string' ? rec['look'] : 'pixel';
-    const canvasTint = typeof rec['canvasTint'] === 'string' ? rec['canvasTint'] : null;
-    // 审核 B-2：glass 档按钮区=带体等效实色（壁纸混色）；预绘底色恒实心。
-    const overlay = resolveChromeOverlay({ canvas, ink, look, canvasTint }, currentChromeTheme);
+    // C 轮：OS overlay 已撤，本函数只剩窗口预绘底色（恒实心 canvas）。
+    const overlay = resolveChromeOverlay({ canvas, ink, look }, currentChromeTheme);
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win === null) {
       return false;
     }
     try {
       if (process.platform === 'win32') {
-        // B-2：预绘底色永远实心；glass 档按钮区底色 #00000000 透出带体（OS overlay
-        // 实证吃 alpha，combo G），其余档实心 canvas——两种情况下按钮都可见。
+        // C 轮：OS titleBarOverlay 已整撤（右上角补丁根治）——theme:chrome 现在只
+        // 刷窗口预绘底色（恒实心；壁纸衬底在 DOM 层，窗体绝不 alpha 底=黑窗教训）。
         win.setBackgroundColor(overlay.windowBackground);
-        win.setTitleBarOverlay({
-          color: overlay.color,
-          symbolColor: overlay.symbolColor,
-          height: 36,
-        });
       } else {
         win.setBackgroundColor(overlay.windowBackground);
       }
@@ -1278,7 +1398,7 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     }
     platformContext?.logger
       .forModule('main')
-      .info(`chromeOverlay applied: bg=${overlay.windowBackground} overlay=${overlay.color} symbol=${overlay.symbolColor}`);
+      .info(`chromeOverlay applied: bg=${overlay.windowBackground}`);
     return true;
   });
 

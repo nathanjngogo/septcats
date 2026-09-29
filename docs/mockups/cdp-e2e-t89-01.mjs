@@ -126,10 +126,10 @@ async function main() {
       brand: el.querySelector('.titleb_brand') !== null,
       name: (el.querySelector('.titleb_name')?.textContent ?? '').includes('Septcats'),
       drag: el.querySelector('.titleb_drag') !== null,
-      overlay: el.querySelector('.titleb_overlayzone') !== null,
+      controls: el.querySelector('.titleb_controls') !== null && el.querySelectorAll('.titleb_btn').length === 3,
     };
   });
-  check('B1 自绘标题带在位（品牌/名/拖拽区/overlay 区齐全）', band !== null && band.brand && band.name && band.drag && band.overlay, JSON.stringify(band));
+  check('B1 自绘标题带在位（品牌/名/拖拽区/自绘三钮齐全，C 轮）', band !== null && band.brand && band.name && band.drag && band.controls, JSON.stringify(band));
 
   STEP = 'B2-light';
   const l = await bandBg(h.page);

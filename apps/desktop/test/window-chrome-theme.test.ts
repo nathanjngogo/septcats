@@ -47,50 +47,22 @@ describe('T87-01 背景色与 tokens.css 同源', () => {
   });
 });
 
-describe('T89-01 resolveChromeOverlay', () => {
-  it('合法 #rrggbb 直接透传（canvas 当底、ink 当符号；非 glass 预绘=按钮区同色）', () => {
+describe('T89-01/C 轮 resolveChromeOverlay（OS overlay 已撤，只剩窗口预绘底色收窄）', () => {
+  it('合法 #rrggbb 透传为预绘底色', () => {
     expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620' }, 'light')).toEqual({
-      color: '#F4EFE6',
-      symbolColor: '#2B2620',
       windowBackground: '#F4EFE6',
     });
   });
 
   it('非法 canvas（空/rgb()/带 alpha）回落该明暗态画布 token', () => {
-    expect(resolveChromeOverlay({ canvas: '', ink: '#2B2620' }, 'light').color).toBe('#F5F5F5');
-    expect(resolveChromeOverlay({ canvas: 'rgb(1,2,3)', ink: '#2B2620' }, 'dark').color).toBe('#141414');
-    expect(resolveChromeOverlay({ canvas: '#F4EFE600', ink: '#2B2620' }, 'light').color).toBe('#F5F5F5');
+    expect(resolveChromeOverlay({ canvas: '', ink: '#2B2620' }, 'light').windowBackground).toBe('#F5F5F5');
+    expect(resolveChromeOverlay({ canvas: 'rgb(1,2,3)', ink: '#2B2620' }, 'dark').windowBackground).toBe('#141414');
+    expect(resolveChromeOverlay({ canvas: '#F4EFE600', ink: '#2B2620' }, 'light').windowBackground).toBe('#F5F5F5');
   });
 
-  it('非法 ink 回落明暗态默认符号色（深底用亮字、浅底用暗字）', () => {
-    expect(resolveChromeOverlay({ canvas: '#141414', ink: 'nope' }, 'dark').symbolColor).toBe('#EDE6D8');
-    expect(resolveChromeOverlay({ canvas: '#F5F5F5', ink: 'nope' }, 'light').symbolColor).toBe('#2B2620');
-  });
-
-  // 审核 B-2（09-29 真机证伪）：OS 按钮区不吃全透明（#00000000 → Win11 回退实心
-  // #F5F5F5 补丁）。glass 档改吃 canvasTint=带体等效实色（壁纸混色），符号色按
-  // 混色亮度反转保对比；预绘底色恒实心（alpha 底黑窗教训）。
-  it('B-2 glass+canvasTint：按钮区=混色实色，浅混色用暗符号', () => {
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: '#F0E8DC' }, 'light')).toEqual({
-      color: '#F0E8DC',
-      symbolColor: '#2B2620',
-      windowBackground: '#F4EFE6',
-    });
-  });
-
-  it('B-2 glass+深混色：符号回亮字（暗壁纸保按钮可见）', () => {
-    const r = resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: '#101418' }, 'light');
-    expect(r.color).toBe('#101418');
-    expect(r.symbolColor).toBe('#EDE6D8');
-  });
-
-  it('B-2 glass 无混色（采样失败）：回落实心 canvas 按钮区（=审核前行为）', () => {
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass' }, 'light').color).toBe('#F4EFE6');
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: 'nope' }, 'light').color).toBe('#F4EFE6');
-  });
-
-  it('B-2 非 glass 档无视 canvasTint（pixel/linear 维持实心 canvas）', () => {
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'pixel', canvasTint: '#101418' }, 'light').color).toBe('#F4EFE6');
+  it('C 轮：任何 look（含 glass）结果只有 windowBackground（无 OS 按钮面可刷）', () => {
+    const r = resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass' }, 'light');
+    expect(Object.keys(r)).toEqual(['windowBackground']);
   });
 });
 

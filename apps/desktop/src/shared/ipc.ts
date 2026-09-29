@@ -469,6 +469,13 @@ export const MENU_CHANNELS = { action: CHANNEL_MENU_ACTION, click: CHANNEL_MENU_
 //                        （canvas 底 + ink 符号），main 刷 titleBarOverlay 与预绘底色。
 export const CHANNEL_WINDOW_GET_STATE = 'window:getState';
 export const CHANNEL_WINDOW_STATE = 'window:state';
+/** 审核 C 轮（老板 09-29：「右上角颜色像补丁」+拍板「全自绘窗口按钮」）：
+ *  OS titleBarOverlay 整撤（OS 平面色块永远追不上渐变玻璃带=补丁根因），
+ *  最小化/最大化/关闭改 renderer 自绘 → 命令通道。close 走 win.close()
+ *  = T54-01 closeGuard 同链路（冲刷/托盘询问零旁路）。 */
+export const CHANNEL_WINDOW_MINIMIZE = 'window:minimize';
+export const CHANNEL_WINDOW_MAXIMIZE_TOGGLE = 'window:maximizeToggle';
+export const CHANNEL_WINDOW_CLOSE = 'window:close';
 export const CHANNEL_THEME_CHROME = 'theme:chrome';
 /**
  * T90-01B（老板 09-28 深夜两连打回：「毛玻璃的通透性也没有，没有跟着背景变色」）：
@@ -478,10 +485,29 @@ export const CHANNEL_THEME_CHROME = 'theme:chrome';
  * 半透明+backdrop-filter 模糊的就是真壁纸像素。任何机器成立、capturePage 可验收。
  */
 export const CHANNEL_DESKTOP_WALLPAPER = 'desktop:wallpaper';
+/**
+ * main → renderer：壁纸实时几何（C 轮「实时透明」= 老板拍板「移动即实时」）。
+ * 窗口 move/resize/最大化切换时（40ms 节流）广播「壁纸屏幕映射 − 窗口位置」，
+ * renderer 把壁纸层按该偏移定位 = 移动窗口时玻璃里透出的壁纸跟着视差移动，
+ * 所见即窗外那块真实桌面（视口 fixed 的假透明终结）。映射算法=main/wallpaperGeometry.ts。
+ */
+export const CHANNEL_WALLPAPER_GEOMETRY = 'desktop:wallpaper-geometry';
+
+/** `desktop:wallpaper-geometry` 载荷：壁纸屏幕映射（null=不可算，renderer 保持视口 fixed）。 */
+export interface WallpaperGeometryPayload {
+  /** background-size 串（如 "2560px 1440px"）。 */
+  size: string;
+  /** 壁纸层左上角相对窗口内容区的偏移（负值=铺出窗外，正确视差）。 */
+  offsetX: number;
+  offsetY: number;
+}
 
 export const WINDOW_CHANNELS = {
   getState: CHANNEL_WINDOW_GET_STATE,
   state: CHANNEL_WINDOW_STATE,
+  minimize: CHANNEL_WINDOW_MINIMIZE,
+  maximizeToggle: CHANNEL_WINDOW_MAXIMIZE_TOGGLE,
+  close: CHANNEL_WINDOW_CLOSE,
 } as const;
 
 // ---------------------------------------------------------------------------

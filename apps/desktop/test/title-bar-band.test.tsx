@@ -19,6 +19,9 @@ import { TitleBarBand } from '../src/renderer/src/menu/TitleBarBand';
 const bridge = {
   getState: vi.fn(async () => ({ maximized: false })),
   onState: vi.fn(() => () => {}),
+  minimize: vi.fn(async () => true),
+  maximizeToggle: vi.fn(async () => true),
+  close: vi.fn(async () => true),
 };
 const themeBridge = { pushChrome: vi.fn(async () => true), wallpaper: vi.fn(async () => null) };
 
@@ -51,13 +54,16 @@ afterEach(() => {
 });
 
 describe('T89-01 TitleBarBand', () => {
-  it('T1 Win UA：带在位，四段齐全（品牌/名/拖拽区/overlay 预留区）', () => {
+  it('T1 Win UA：带在位，四段齐全（品牌/名/拖拽区/自绘按钮组）', () => {
     mountBand();
     const band = screen.getByTestId('title-bar-band');
     expect(band.querySelector('.titleb_brand')).not.toBeNull();
     expect((band.querySelector('.titleb_name')?.textContent ?? '').includes('Septcats')).toBe(true);
     expect(band.querySelector('.titleb_drag')).not.toBeNull();
-    expect(band.querySelector('.titleb_overlayzone')).not.toBeNull();
+    // C 轮：OS overlay 预留区 → 自绘 min/max/close 三钮
+    expect(screen.getByTestId('titleb-min')).not.toBeNull();
+    expect(screen.getByTestId('titleb-max')).not.toBeNull();
+    expect(screen.getByTestId('titleb-close')).not.toBeNull();
   });
 
   it('T2 挂载即推实测主题色给 main（theme.pushChrome 至少一次）', async () => {
@@ -120,5 +126,16 @@ describe('T89-01 TitleBarBand', () => {
       push?.({ maximized: false });
     });
     expect(screen.getByTestId('title-bar-band').getAttribute('data-maximized')).toBe('false');
+  });
+
+  it('T6（C 轮）三钮点击 → window.minimize/maximizeToggle/close 命令各达一次', async () => {
+    mountBand();
+    const { fireEvent } = await import('@testing-library/react');
+    fireEvent.click(screen.getByTestId('titleb-min'));
+    fireEvent.click(screen.getByTestId('titleb-max'));
+    fireEvent.click(screen.getByTestId('titleb-close'));
+    expect(bridge.minimize).toHaveBeenCalledTimes(1);
+    expect(bridge.maximizeToggle).toHaveBeenCalledTimes(1);
+    expect(bridge.close).toHaveBeenCalledTimes(1);
   });
 });

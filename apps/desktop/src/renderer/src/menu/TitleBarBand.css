@@ -36,10 +36,70 @@
   align-self: stretch;
 }
 
-/* OS titleBarOverlay 按钮悬浮区：no-drag + 不吞事件（真按钮在 OS 上层绘制）。 */
+/* OS titleBarOverlay 按钮悬浮区（历史；C 轮起 overlay 已撤，保留类名兼容探针）。 */
 .titleb_overlayzone {
   flex: 0 0 auto;
   align-self: stretch;
   -webkit-app-region: no-drag;
   pointer-events: none;
+}
+
+/* ============================================================================
+ * C 轮（老板 09-29：「右上角颜色像补丁」+拍板全自绘按钮）：窗口控件按钮组。
+ * OS titleBarOverlay 撤除后由本组接管——它就在玻璃带 DOM 里，背板与带体一体
+ * （透明+同一 backdrop-filter），物理上不可能再出现补丁。尺寸/热区对齐 Windows
+ * 惯例：每钮 46×36、glyph 线性图标吃 ink token、hover 半透反色、关闭钮 hover
+ * 红底白字（Windows 肌肉记忆不破）。整组 no-drag（drag 区吞点击）。
+ * ========================================================================== */
+.titleb_controls {
+  display: flex;
+  align-self: stretch;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+}
+
+.titleb_btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  width: 46px;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 0;
+  transition: background-color var(--sc-motion-fast) linear;
+}
+
+.titleb_btn:hover {
+  background: color-mix(in srgb, var(--sc-color-ink) 10%, transparent);
+}
+
+.titleb_btn:focus-visible {
+  outline: 2px solid var(--sc-color-accent);
+  outline-offset: -2px;
+}
+
+/* 关闭钮悬停=系统语义红（danger token；前景沿用仓内 destructive 按钮口径
+   on-accent——Button.css 同对，禁裸 hex 纪律） */
+.titleb_btn_close:hover {
+  background: var(--sc-color-danger);
+  color: var(--sc-color-on-accent);
+}
+
+.titleb_btn svg {
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+  stroke-width: 1;
+  fill: none;
+}
+
+/* S4 过渡纪律：带 transition 的文件必须配 reduced-motion 退避 */
+@media (prefers-reduced-motion: reduce) {
+  .titleb_btn {
+    transition: none;
+  }
 }

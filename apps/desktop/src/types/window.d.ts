@@ -11,6 +11,7 @@ import type {
   MenuRole,
   ShellOpenInput,
   ShellOpenResult,
+  WallpaperGeometryPayload,
 } from '../shared/ipc';
 import type { Block, PageNode } from '@septcats/editor';
 import type { CollectionEntity, DbView, FieldType, RecordEntity } from '@septcats/dbview';
@@ -462,6 +463,10 @@ export interface SeptcatsMenuApi {
 export interface SeptcatsWindowControlApi {
   getState(): Promise<{ maximized: boolean }>;
   onState(listener: (state: { maximized: boolean }) => void): () => void;
+  /** C 轮自绘窗口按钮（close=win.close() 走 closeGuard 同链路，非直接销毁）。 */
+  minimize(): Promise<boolean>;
+  maximizeToggle(): Promise<boolean>;
+  close(): Promise<boolean>;
 }
 
 /**
@@ -470,10 +475,13 @@ export interface SeptcatsWindowControlApi {
  * 任一变化都要推——OS 按钮区够不着 CSS，只有这条通道能让它跟着配色派系走。
  */
 export interface SeptcatsThemeApi {
-  pushChrome(input: { canvas: string; ink: string; look: string; canvasTint?: string | null }): Promise<boolean>;
+  pushChrome(input: { canvas: string; ink: string; look: string }): Promise<boolean>;
 
   /** T90-01B：拉桌面壁纸（data URL；读不到= null，renderer 保持实心 fallback）。 */
   wallpaper(): Promise<string | null>;
+
+  /** C 轮「实时透明」：订阅壁纸屏幕映射（窗口 move/resize 时 main 节流广播）。 */
+  onGeometry(listener: (geo: WallpaperGeometryPayload | null) => void): () => void;
 }
 
 /**
