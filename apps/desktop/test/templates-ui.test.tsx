@@ -381,9 +381,10 @@ describe('侧栏「新建页面 ▾」（§C.1）', () => {
     fireEvent.click(within(menu).getByRole('menuitem', { name: /从模板新建/ }));
     const item = await screen.findByTestId('side-tpl-item-0');
     expect(item.textContent).toContain('研究模板');
-    // 数据 icon（emoji）以文本展示；空 icon 按 kind 回落 ui 图标
-    expect(item.textContent).toContain('📚');
+    // 09-29 C 轮老板令：模板行图标→中文徽标（kind→「页面/数据」，emoji 不再消费）
+    expect(item.textContent).toContain('页面');
     expect(screen.getByTestId('side-tpl-item-1').textContent).toContain('台账模板');
+    expect(screen.getByTestId('side-tpl-item-1').textContent).toContain('数据');
   });
 
   it('点击模板项 → createPage({templateId,parentId:null}) → 选中新页 → 列表收起', async () => {
@@ -414,7 +415,7 @@ describe('设置页「模板」区块（§D）', () => {
     render(<SettingsPage />);
     const row = await screen.findByTestId('settings-tpl-row-0');
     expect(row.textContent).toContain('研究模板');
-    expect(row.textContent).toContain('📚');
+    expect(row.textContent).toContain('页面'); // C 轮：中文徽标代替 emoji
     expect(screen.getByTestId('settings-tpl-row-1').textContent).toContain('台账模板');
   });
 

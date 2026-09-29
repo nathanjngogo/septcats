@@ -3,14 +3,23 @@
  * 消费方：命令面板「模板」分组、侧栏「新建页面 ▾」子菜单、设置页「模板」区块。
  */
 
-/* 模板数据自带 icon（继承源页，常见 emoji）→ 文本槽；空则回落 @septcats/ui 图标 */
-.tpl-emoji {
+/* 09-29 C 轮老板令：模板行图标 → 中文描述徽标（「页面」/「数据」）。
+   方块字徽：等宽两字、token 描边圆角，三轴（明暗/配色/质感）全随。
+   （旧 .tpl-emoji 随 emoji 图标路线退役删除。） */
+.tpl-badge {
   display: inline-grid;
   place-items: center;
-  width: var(--sc-space-lg);
   flex: none;
-  font: var(--sc-text-ui-sm);
+  min-width: calc(var(--sc-space-lg) + var(--sc-space-xs));
+  height: var(--sc-space-lg);
+  padding: 0 var(--sc-space-xxs);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-surface);
   color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  letter-spacing: 0.5px;
+  user-select: none;
 }
 
 /* 设置区块行：图标 + 名称 + 右侧「⋯」 */

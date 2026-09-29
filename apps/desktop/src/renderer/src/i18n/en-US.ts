@@ -932,6 +932,8 @@ export const enUS = {
   templates: {
     group: 'Templates',
     rowMeta: 'Template',
+    badgePage: 'Page',
+    badgeDatabase: 'Base',
     rowMenu: 'Template actions',
     createFromPrefix: 'New from template: ',
     rename: 'Rename',

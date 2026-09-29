@@ -919,6 +919,8 @@ export const zhCN = {
   templates: {
     group: '模板',
     rowMeta: '模板',
+    badgePage: '页面',
+    badgeDatabase: '数据',
     rowMenu: '模板操作',
     createFromPrefix: '从模板新建：',
     rename: '重命名',
