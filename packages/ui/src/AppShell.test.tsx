@@ -59,6 +59,48 @@ describe('AppShell', () => {
     expect(container.querySelector('.sc-shell__main')?.textContent).toBe('只有内容');
   });
 
+  // T93-01 一级导航轨（Rail）：可选插槽 —— 不传时网格仍是两列（零影响），
+  // 传了则最左多一列 rail，折叠态只收二级栏（一级导航保留）。
+  it('rail 插槽：传了渲染 .sc-shell__rail + .sc-shell--rail，不传则两者都不在', () => {
+    const bare = render(
+      <AppShell sidebar={<span>树</span>}>
+        <span>内容</span>
+      </AppShell>,
+    );
+    expect(bare.container.querySelector('.sc-shell__rail')).toBeNull();
+    expect(bare.container.querySelector('.sc-shell--rail')).toBeNull();
+    bare.unmount();
+
+    const withRail = render(
+      <AppShell rail={<nav>笔记</nav>} sidebar={<span>树</span>}>
+        <span>内容</span>
+      </AppShell>,
+    );
+    expect(withRail.container.querySelector('.sc-shell--rail')).not.toBeNull();
+    expect(withRail.container.querySelector('.sc-shell__rail nav')?.textContent).toBe('笔记');
+    // 二级栏与主区不受影响（rail 是独立一列）
+    expect(withRail.container.querySelector('.sc-shell__sidebar')?.textContent).toBe('树');
+    expect(withRail.container.querySelector('.sc-shell__main')?.textContent).toBe('内容');
+  });
+
+  it('rail 的三列/折叠 CSS 契约：rail | sidebar | 1fr；折叠 = rail | 1fr', () => {
+    const css = readFileSync(resolvePkgFile('src/AppShell.css'), 'utf8');
+    const railBody = /\.sc-shell--rail\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
+    expect(railBody, '缺 rail 三列规则').not.toBeNull();
+    expect(railBody?.[1] ?? '').toContain('--sc-layout-rail');
+    expect(railBody?.[1] ?? '').toContain('--sc-layout-sidebar');
+    // 三列下侧栏必须落在第 2 列（与 rail 抢第 1 列 = 真机「rail 点不到」事故形态）
+    const railSidebar = /\.sc-shell--rail\s+\.sc-shell__sidebar\s*\{([^}]*)\}/.exec(css);
+    expect(railSidebar, '缺 rail 态侧栏列规则').not.toBeNull();
+    expect(railSidebar?.[1] ?? '').toContain('grid-column: 2');
+    const railCollapsed = /\.sc-shell--rail\.sc-shell--collapsed\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
+    expect(railCollapsed, '缺 rail 折叠态规则').not.toBeNull();
+    expect(railCollapsed?.[1] ?? '').toMatch(/grid-template-columns:\s*var\(--sc-layout-rail\)\s*1fr/);
+    // rail 自身跨两行（通高），与侧栏同口径
+    const railEl = /\.sc-shell__rail\s*\{([^}]*)\}/.exec(css);
+    expect(railEl?.[1] ?? '').toContain('grid-row: 1 / 3');
+  });
+
   // TASK-T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨占位。
   // jsdom 不做布局，这里按 css-discipline 同范式对 AppShell.css 源面做静态契约断言；
   // 真机数值断言（getBoundingClientRect().width === 0）由 docs/mockups/cdp-audit-t30-after.mjs 覆盖。

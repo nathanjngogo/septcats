@@ -202,6 +202,28 @@ export const enUS = {
     create: 'Create',
     createEmptyName: 'Please enter a vault name',
   },
+  // T93-01 primary navigation rail: level 1 = where you are, level 2 = what is in it
+  nav: {
+    railLabel: 'Primary navigation',
+    notes: 'Notes',
+    notesHint: 'Page tree of the current library',
+    kb: 'Knowledge Base',
+    kbHint: 'Libraries on this machine (switch or create)',
+    home: 'Workbench',
+    homeHint: 'Card dashboard',
+    templates: 'Templates',
+    templatesHint: 'Workbench template market',
+    trash: 'Trash',
+    trashHint: 'Deleted pages',
+  },
+  kbPanel: {
+    title: 'Knowledge Base',
+    subtitle: 'Every library on this machine — click to switch.',
+    currentTag: 'Current',
+    switchHint: 'Switch to this library',
+    newWorkspace: 'New library…',
+    empty: 'No libraries yet',
+  },
   // T70-01: knowledge-vault seed structure page titles.
   knowledgeBase: {
     inbox: 'Inbox',

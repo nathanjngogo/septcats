@@ -9,6 +9,11 @@ export interface AppShellProps {
   /** 顶栏右侧动作（搜索/同步/设置…） */
   actions?: ReactNode;
   sidebar?: ReactNode;
+  /**
+   * T93-01 一级导航轨（NavRail）插槽：不传时网格仍是两列（零影响）；
+   * 传了则最左多一列 `--sc-layout-rail`，顶栏/主区右移，折叠态只收二级栏。
+   */
+  rail?: ReactNode;
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   children: ReactNode;
@@ -28,14 +33,23 @@ export function AppShell({
   breadcrumb,
   actions,
   sidebar,
+  rail,
   sidebarCollapsed = false,
   onToggleSidebar,
   children,
   className,
 }: AppShellProps) {
   return (
-    <div className={clsx('sc-shell', sidebarCollapsed && 'sc-shell--collapsed', className)}>
+    <div
+      className={clsx(
+        'sc-shell',
+        rail !== undefined && 'sc-shell--rail',
+        sidebarCollapsed && 'sc-shell--collapsed',
+        className,
+      )}
+    >
       <div className="sc-shell__body">
+        {rail === undefined ? null : <aside className="sc-shell__rail">{rail}</aside>}
         {sidebar === undefined ? null : <aside className="sc-shell__sidebar">{sidebar}</aside>}
         <header className="sc-shell__topbar">
           <IconButton

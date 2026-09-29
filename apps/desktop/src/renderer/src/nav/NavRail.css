@@ -1,0 +1,52 @@
+/**
+ * NavRail.css —— 一级导航轨（T93-01）。56px 宽（--sc-layout-rail），全高，
+ * 与侧栏同底色（canvas）；条目 = 中文短标签的 ghost 钮，当前项弱底 + ink 字。
+ * 全 var(--sc-*) token，三轴（明暗/配色/质感）随主题；无描边（与侧栏同面）。
+ */
+.nav-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  width: 100%;
+  height: 100%;
+  padding: var(--sc-space-xs) var(--sc-space-xxs);
+  overflow-y: auto;
+}
+
+.nav-rail__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: var(--sc-size-control-md);
+  padding: var(--sc-space-xxs);
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  letter-spacing: 0.2px;
+  /* 两字竖排观感：不换行，窄轨里居中 */
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out),
+    box-shadow var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.nav-rail__item:hover:not(.nav-rail__item--on) {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-bevel-out);
+}
+
+.nav-rail__item--on {
+  background: var(--sc-color-surface-active);
+  color: var(--sc-color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-rail__item {
+    transition: none;
+  }
+}

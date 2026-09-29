@@ -16,6 +16,23 @@
 
 ### 技术说明
 - DWM acrylic 路线在本机实测不可达（Electron backdrop 恒死灰，acrylic/mica×transparent 真假×E37/38 全验），已固化为 `desktopWallpaper.ts` 头注与探针注释；壁纸衬底路线 Chromium 自合成，capturePage/截图双通道可客观验收。
+### 追加（老板 09-29 令：一级侧边栏）
+- **左侧新增一级导航轨（NavRail，56px）**：把「一级菜单」显性化 —— 笔记 / 知识库 /
+  工作台 / 模板 / 回收站（纯中文短标签，延续「图标去掉」口径）。二级栏按一级项分流：
+  「知识库」显示本机库列表（切换 / 新建库，复用既有通道），其余项保持页面树。
+- 布局：`AppShell` 新增**可选** `rail` 插槽 + `.sc-shell--rail` 修饰类 → 三列
+  `rail | 侧栏 | 主区`；**不传 rail 时两列网格逐像素不变**（既有几何契约全保活）。
+  折叠态 = `rail | 主区`（一级导航不被「收侧栏」折掉）；rail 不在 `.sc-shell__sidebar`
+  之内，跨两行通高，与侧栏同底色无新接缝。
+- 高亮单真源：active 由既有视图状态派生（market / trash / workbench.home / nav.panel），
+  组件不另存一份；分流选择持久化 `septcats.nav.panel`。
+- token：DESIGN.md Layout 增 `一级导航轨 56px` → build-tokens 生成 `--sc-layout-rail`。
+- 验证：新立 **T93-01 真机探针 7 项**（三列几何 / 五项中文无图标 / 二级栏分流 /
+  库列表内容 / 折叠保留一级轨 / 四项高亮跟随 / 档案零触碰）+ 回归 94 项全绿；
+  门禁 desktop 1342/120·ui 182·tsc 0·no-magic 0·纪律 91/0。
+- 顺带修两处既有红（非本功能引入）：T71 heatmap 用例硬编码「今天」的日期已腐化
+  （改为 `localDateKey(new Date())` 同口径计算）；TitleBarBand.css 三处裸 10px 触
+  no-magic 门禁（改 token 派生，像素不变）。
 ### 追加（老板 09-29 令：顶栏按键中文化 → 图标去掉）
 - 顶栏「同步状态那一行」按键全部换成中文按键：模板市场 / 搜索 / AI 对话 / 导入 / 布局 / 设置
   —— 六枚纯图标钮改为**纯中文文字钮**（老板追加令「图标去掉」：本排不再挂任何 glyph；

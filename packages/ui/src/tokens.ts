@@ -161,6 +161,7 @@ export const layout = {
   topbar: "40px",
   sidebar: "240px",
   "sidebar-collapsed": "48px",
+  rail: "56px",
   "row-h": "36px",
   "head-h": "32px"
 } as const;

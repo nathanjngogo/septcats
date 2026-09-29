@@ -1,0 +1,129 @@
+/**
+ * KnowledgePanel.css —— 一级「知识库」的二级栏（T93-01）。与页面树同宿主宽度
+ * （侧栏列 240px），行语言照 DESIGN.md「侧栏列表行」（高 28px / 圆角 6px /
+ * 悬停 surface / 当前 surface-active）。全 var(--sc-*) token。
+ */
+.kb-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.kb-panel__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  height: var(--sc-layout-head-h);
+  padding: 0 var(--sc-space-sm);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+}
+
+.kb-panel__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-panel__count {
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+.kb-panel__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--sc-space-xs);
+}
+
+.kb-panel__empty {
+  padding: var(--sc-space-sm);
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+.kb-panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  width: 100%;
+  min-height: var(--sc-layout-row-h);
+  padding: 0 var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.kb-panel__row:hover {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+}
+
+.kb-panel__row--on {
+  background: var(--sc-color-surface-active);
+  color: var(--sc-color-ink);
+}
+
+.kb-panel__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-panel__tag {
+  flex: none;
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+.kb-panel__foot {
+  flex: none;
+  padding: var(--sc-space-xs) var(--sc-space-sm) var(--sc-space-sm);
+}
+
+.kb-panel__new {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--sc-layout-row-h);
+  padding: 0 var(--sc-space-sm);
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.kb-panel__new:hover {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+}
+
+.kb-panel__hint {
+  margin-top: var(--sc-space-xs);
+  color: var(--sc-color-ink-faint);
+  font: var(--sc-text-ui-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-panel__row,
+  .kb-panel__new {
+    transition: none;
+  }
+}

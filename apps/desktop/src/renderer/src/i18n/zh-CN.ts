@@ -203,6 +203,28 @@ export const zhCN = {
     create: '创建',
     createEmptyName: '请输入库名称',
   },
+  // T93-01 一级导航轨（NavRail）：一级 = 去哪块地，二级 = 那块地里的内容
+  nav: {
+    railLabel: '一级导航',
+    notes: '笔记',
+    notesHint: '当前库的页面树',
+    kb: '知识库',
+    kbHint: '本机的库（切换 / 新建）',
+    home: '工作台',
+    homeHint: '卡片仪表盘',
+    templates: '模板',
+    templatesHint: '工作台模板市场',
+    trash: '回收站',
+    trashHint: '已删除的页面',
+  },
+  kbPanel: {
+    title: '知识库',
+    subtitle: '本机所有库都在这里，点一下即可切换。',
+    currentTag: '当前',
+    switchHint: '切换到此库',
+    newWorkspace: '新建库…',
+    empty: '还没有库',
+  },
   // T70-01：知识库库种子结构页标题（createPage(null) 建 5 页后按此命名；正文不种）。
   knowledgeBase: {
     inbox: '收件箱',

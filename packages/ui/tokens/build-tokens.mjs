@@ -119,6 +119,7 @@ function extractProse(md) {
     topbar: requireNumber(/顶栏\s*(\d+)\s*px/, md, '顶栏高度'),
     sidebar: requireNumber(/侧栏\s*(\d+)\s*px/, md, '侧栏宽度'),
     collapsed: requireNumber(/折叠至\s*(\d+)\s*px/, md, '侧栏折叠宽度'),
+    rail: requireNumber(/导航轨\s*(\d+)\s*px/, md, '一级导航轨宽度'),
     rowH: requireNumber(/行高\s*(\d+)\s*px/, md, '表格行高'),
     headH: requireNumber(/表头\s*(\d+)\s*px/, md, '表头高度'),
   };
@@ -283,6 +284,7 @@ function renderCss(fm, colorModel, shadowsDark, prose) {
   L.push(`  --sc-layout-topbar: ${prose.layout.topbar}px;`);
   L.push(`  --sc-layout-sidebar: ${prose.layout.sidebar}px;`);
   L.push(`  --sc-layout-sidebar-collapsed: ${prose.layout.collapsed}px;`);
+  L.push(`  --sc-layout-rail: ${prose.layout.rail}px;`);
   L.push(`  --sc-layout-row-h: ${prose.layout.rowH}px;`);
   L.push(`  --sc-layout-head-h: ${prose.layout.headH}px;`);
   L.push('');
@@ -358,6 +360,7 @@ function renderTs(fm, colorModel, prose) {
     topbar: `${prose.layout.topbar}px`,
     sidebar: `${prose.layout.sidebar}px`,
     'sidebar-collapsed': `${prose.layout.collapsed}px`,
+    rail: `${prose.layout.rail}px`,
     'row-h': `${prose.layout.rowH}px`,
     'head-h': `${prose.layout.headH}px`,
   };

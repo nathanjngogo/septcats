@@ -14,6 +14,10 @@ import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
 // T87-02：Win/Linux 自绘菜单带（原生菜单栏不吃应用 CSS，老板 09-28 令整窗随主题变）
 import { MenuBarBand } from './menu/MenuBarBand';
 import { TopBarButton } from './layout/TopBarButton';
+// T93-01：一级导航轨 + 「知识库」二级栏（老板 09-29 令：侧栏再加一级区分一级菜单）
+import { NavRail, type RailKey } from './nav/NavRail';
+import { KnowledgePanel } from './nav/KnowledgePanel';
+import { navActions, useNav } from './nav/navState';
 import { TitleBarBand } from './menu/TitleBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
@@ -552,6 +556,45 @@ export function App() {
   // （引用稳定，见 store.ts 选择器约束）。
   const pagesState = usePages((state) => state);
 
+  // T93-01 一级导航轨：一级 = 去哪块地（笔记/知识库/工作台/模板/回收站）。
+  // 高亮单真源 = 既有视图状态派生（market / trash / home / nav.panel），组件自己不存。
+  const railPanel = useNav((state) => state.panel);
+  const railActive: RailKey =
+    inMarket
+      ? 'templates'
+      : workbenchView === 'home'
+        ? 'home'
+        : pagesState.view === 'trash'
+          ? 'trash'
+          : railPanel === 'kb'
+            ? 'kb'
+            : 'notes';
+  const onRailSelect = useCallback(
+    (key: RailKey): void => {
+      if (key === 'home') {
+        // 一级项互相排斥：进工作台先离开回收站视图（否则二级栏/高亮会打架）
+        pagesActions.showPages();
+        openWorkbench();
+        return;
+      }
+      if (key === 'templates') {
+        pagesActions.showPages();
+        openWorkbenchMarket();
+        return;
+      }
+      // 其余三项都住在编辑器视图里（工作台/market 都要先退出）
+      setView('editor');
+      workbenchActions.closeHome();
+      if (key === 'trash') {
+        pagesActions.showTrash();
+        return;
+      }
+      navActions.setPanel(key === 'kb' ? 'kb' : 'notes');
+      pagesActions.showPages();
+    },
+    [openWorkbench, openWorkbenchMarket],
+  );
+
   // T52-01 §1.1/§1.2：编辑器视图 = 标签条行存在的那一支（设置/导入/回收站/搜索页各有
   // 自己的顶栏语义，顶栏折叠钮仍由 AppShell 渲染）。编辑器视图下：
   //   ① 顶栏左侧不再显示「工作区名」兜底（名字常驻侧栏头部）；
@@ -653,11 +696,13 @@ export function App() {
             />
           </>
         }
+        rail={<NavRail active={railActive} onSelect={onRailSelect} />}
         sidebar={
           // T61-01 §2：侧栏右缘拖拽把手与侧栏同宿主（折叠态侧栏整列 display:none →
           // 把手随之不可见，无需额外条件；把手自身也按 position='collapsed' 早退）。
+          // T93-01：二级栏按一级项分流 —— 「知识库」显示库列表，其余显示页面树。
           <>
-            <SidebarTree />
+            {railActive === 'kb' ? <KnowledgePanel /> : <SidebarTree />}
             <ResizeHandle side="sidebar" />
           </>
         }

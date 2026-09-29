@@ -14,6 +14,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkbenchPage } from '../src/renderer/src/workbench/WorkbenchPage';
+import { localDateKey } from '../src/renderer/src/workbench/work';
 import {
   DEFAULT_CARD_ORDER,
   workbenchActions,
@@ -178,8 +179,10 @@ describe('T71-01 countdown 卡', () => {
 
 describe('T71-01 heatmap 卡', () => {
   it('7 格 + data-level；bump 后今日档>0', async () => {
-    // 预热：写一次今日活跃
-    window.localStorage.setItem('septcats.wbcard.activity.days', JSON.stringify({ '2026-09-23': 5 }));
+    // 预热：写一次今日活跃（日期无关化：用 app 同一口径 localDateKey 计算今天，
+    // 不再硬编码写用例当天；原写死 '2026-09-23' 会随日期腐化而红）
+    const todayKey = localDateKey(new Date());
+    window.localStorage.setItem('septcats.wbcard.activity.days', JSON.stringify({ [todayKey]: 5 }));
     workbenchActions.init?.();
     act(() => {
       workbenchStore.setState((s) => ({ ...s }));
@@ -192,7 +195,7 @@ describe('T71-01 heatmap 卡', () => {
     render(<WorkbenchPage onClose={() => workbenchActions.closeHome()} />);
     const cells = await screen.findAllByTestId(/^wb-heatmap-cell-/);
     expect(cells).toHaveLength(7);
-    const todayCell = screen.getByTestId('wb-heatmap-cell-2026-09-23');
+    const todayCell = screen.getByTestId(`wb-heatmap-cell-${todayKey}`);
     expect(Number(todayCell.getAttribute('data-count'))).toBe(5);
     expect(Number(todayCell.getAttribute('data-level'))).toBeGreaterThan(0);
   });

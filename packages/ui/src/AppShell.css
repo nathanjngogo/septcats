@@ -106,3 +106,40 @@
 .sc-shell--collapsed .sc-shell__topbar {
   grid-column: 1;
 }
+
+/* ===== T93-01 一级导航轨（Rail）：可选第三列 =====
+   不传 rail 时 .sc-shell 上没有 .sc-shell--rail → 上面所有两列规则逐像素不变。
+   传了则：rail(56) | sidebar(240) | 1fr；顶栏/主区右移一列；rail 与侧栏同跨两行
+   （通高到窗口内容区顶）。rail 与侧栏同底色（canvas、无新接缝），不做独立描边。
+   折叠态：rail(56) | 1fr —— 一级导航不该被「收侧栏」折掉。 */
+.sc-shell__rail {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-shell--rail .sc-shell__body {
+  grid-template-columns: var(--sc-layout-rail) var(--sc-layout-sidebar) 1fr;
+}
+
+.sc-shell--rail .sc-shell__topbar,
+.sc-shell--rail .sc-shell__main {
+  grid-column: 3;
+}
+
+/* 关键：三列下侧栏也必须右移一列 —— 基态 `.sc-shell__sidebar { grid-column: 1 }`
+   会与 rail 撞同一格（真机症状：侧栏压在 rail 上 → 一级轨点不到、第 2 列空 240px）。 */
+.sc-shell--rail .sc-shell__sidebar {
+  grid-column: 2;
+}
+
+.sc-shell--rail.sc-shell--collapsed .sc-shell__body {
+  grid-template-columns: var(--sc-layout-rail) 1fr;
+}
+
+.sc-shell--rail.sc-shell--collapsed .sc-shell__topbar,
+.sc-shell--rail.sc-shell--collapsed .sc-shell__main {
+  grid-column: 2;
+}

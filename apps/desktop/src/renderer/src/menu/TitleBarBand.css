@@ -19,7 +19,9 @@
 }
 
 .titleb_brand {
-  padding: 0 6px 0 10px;
+  /* 品牌左右内衬 = token 派生（no-magic 门禁：裸 px 不许重复出现） */
+  padding: 0 calc(var(--sc-space-xs) + var(--sc-space-xxs)) 0
+    calc(var(--sc-space-sm) + var(--sc-space-xxs));
   font-size: 13px;
   line-height: 1;
 }
@@ -90,8 +92,8 @@
 }
 
 .titleb_btn svg {
-  width: 10px;
-  height: 10px;
+  width: calc(var(--sc-space-sm) + var(--sc-space-xxs));
+  height: calc(var(--sc-space-sm) + var(--sc-space-xxs));
   stroke: currentColor;
   stroke-width: 1;
   fill: none;
