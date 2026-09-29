@@ -40,12 +40,16 @@ export function readTokenHex(name: string): string {
   return '';
 }
 
-/** 把当前主题实测色推给 main（OS 按钮区色 + 窗口预绘底色）。 */
+/**
+ * 把当前主题实测色 + 质感档推给 main（OS 按钮区色 + 窗口预绘底色）。
+ * look 供 main 判 glass 档：按钮区底色全透明透出带体（审核 B-2 消实心补丁）。
+ */
 export function pushChromeToOs(): void {
   void window.septcats.theme
     .pushChrome({
       canvas: readTokenHex('--sc-color-canvas'),
       ink: readTokenHex('--sc-color-ink'),
+      look: document.documentElement.dataset.look ?? 'pixel',
     })
     .catch(() => undefined);
 }

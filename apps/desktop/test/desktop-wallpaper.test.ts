@@ -1,10 +1,29 @@
 /**
  * desktop-wallpaper.test.ts —— T90-01B 壁纸衬底 main 侧纯函数（读注册表输出解析、
- * 类型收窄、体积上限、失败全 null）。纯 Node 直测（不 import electron；接线由
- * 真机探针 cdp-e2e-t90-01.mjs 覆盖）。
+ * 编码解码、类型收窄、体积上限、失败全 null）。纯 Node 直测（不 import electron；
+ * 接线由真机探针 cdp-e2e-t90-01.mjs 覆盖）。
  */
 import { describe, expect, it } from 'vitest';
-import { parseWallpaperRegValue, wallpaperMime, wallpaperToDataUrl, WALLPAPER_MAX_BYTES } from '../src/main/desktopWallpaper';
+import { decodeRegOutput, parseWallpaperRegValue, wallpaperMime, wallpaperToDataUrl, WALLPAPER_MAX_BYTES } from '../src/main/desktopWallpaper';
+
+describe('T90-01B decodeRegOutput（审核 B-1 修复锚：chcp 65001 输出按 UTF-8 无损解）', () => {
+  it('UTF-8 字节流（中文路径）→ 正确字符串', () => {
+    const cn = 'E:\\测试图片\\壁纸 2026.jpg';
+    const buf = Buffer.from('    WallpaperPath    REG_SZ    ' + cn + '\r\n', 'utf8');
+    expect(parseWallpaperRegValue(decodeRegOutput(buf))).toBe(cn);
+  });
+
+  it('非 UTF-8 字节（GBK 残留）→ latin1 兜底不抛错（ASCII 段无损）', () => {
+    const gbk = Buffer.concat([
+      Buffer.from('    Wallpaper    REG_SZ    C:\\Users\\me\\', 'latin1'),
+      Buffer.from([0xd6, 0xd0, 0xce, 0xc4]), // GBK「中文」= 非法 UTF-8 序列
+      Buffer.from('\\w.jpg\r\n', 'latin1'),
+    ]);
+    const decoded = decodeRegOutput(gbk);
+    expect(typeof decoded).toBe('string');
+    expect(decoded).toContain('C:\\Users\\me\\');
+  });
+});
 
 describe('T90-01B parseWallpaperRegValue', () => {
   it('标准 reg 输出取 REG_SZ 值（含空格路径）', () => {

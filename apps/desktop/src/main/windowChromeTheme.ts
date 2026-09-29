@@ -53,19 +53,36 @@ export function resolveChromeTheme(mode: ThemeMode | string, systemDark: boolean
 export interface ChromeOverlayInput {
   canvas: string;
   ink: string;
+  /** 质感档（documentElement[data-look]，缺席=pixel）。审核 B-2：glass 档带体=canvas
+   *  14% 叠壁纸衬底，OS 按钮区若吃实心 canvas 会在右上角出一块不跟壁纸的补丁。
+   *  OS overlay 实证吃 8 位 alpha（combo G）且合成在 web 内容之上——glass 档直接把
+   *  按钮区底色设全透明，让底下 DOM 带体原样透出 = 无缝、零采样、不赌 OS 材质。 */
+  look?: string;
 }
 
 const HEX6 = /^#[0-9a-fA-F]{6}$/;
 
+/** glass 档按钮区底色（全透明=底下带体透出；combo G 实证 OS 吃 8 位 alpha）。 */
+export const GLASS_OVERLAY_TRANSPARENT = '#00000000';
+
+export interface ChromeOverlayResult {
+  color: string;
+  symbolColor: string;
+  /** 窗口预绘底色永远实心（壁纸衬底在 DOM 层，窗体不能透明——alpha 底黑窗教训）。 */
+  windowBackground: string;
+}
+
 export function resolveChromeOverlay(
   input: ChromeOverlayInput,
   theme: ChromeTheme,
-): { color: string; symbolColor: string } {
+): ChromeOverlayResult {
   const fallback = CHROME_BACKGROUND[theme];
-  return {
-    color: HEX6.test(input.canvas) ? input.canvas : fallback,
-    symbolColor: HEX6.test(input.ink) ? input.ink : (theme === 'dark' ? '#EDE6D8' : '#2B2620'),
-  };
+  const solid = HEX6.test(input.canvas) ? input.canvas : fallback;
+  const ink = HEX6.test(input.ink) ? input.ink : (theme === 'dark' ? '#EDE6D8' : '#2B2620');
+  if (input.look === 'glass') {
+    return { color: GLASS_OVERLAY_TRANSPARENT, symbolColor: ink, windowBackground: solid };
+  }
+  return { color: solid, symbolColor: ink, windowBackground: solid };
 }
 
 /**

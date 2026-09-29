@@ -26,7 +26,21 @@ const MIME_BY_EXT: Readonly<Record<string, string>> = {
 };
 
 /**
- * 从 `reg query ... /v WallpaperPath`（或策略键 Wallpaper）输出中提取路径。
+ * reg.exe 输出解码：先按 UTF-8 解——调用方一律经 `cmd /c chcp 65001` 切码页
+ * （09-29 发版前审核 B-1 实证：默认 GBK 码页下 latin1 解码中文壁纸路径会 mojibake
+ * → existsSync 必败 → 中文路径用户永远实心，衬底整体失效；chcp 65001 + utf8 解码
+ * 对 ASCII/中文路径均无损）。老系统/异常输出回 latin1 兜底（ASCII 无损、绝不抛错）。
+ */
+export function decodeRegOutput(buf: Buffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch {
+    return buf.toString('latin1');
+  }
+}
+
+/**
+ * 解析 `reg query ... /v WallpaperPath`（或 Wallpaper）输出为路径字符串。
  * reg 输出格式固定 `<name>    REG_SZ    <value>`；解析不了返回 null。
  */
 export function parseWallpaperRegValue(regOutput: string | null): string | null {

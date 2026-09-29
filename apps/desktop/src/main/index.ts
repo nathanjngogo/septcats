@@ -75,7 +75,7 @@ import { createAssetRequestHandler, ASSET_SCHEME, ATTACHMENT_SCHEME, assetScheme
 import { buildDiagnosticPackage } from './diag';
 import { patchAppSettings, readAppSettings } from './settings';
 import { CHROME_BACKGROUND, resolveChromeOverlay, resolveChromeTheme, type ChromeTheme } from './windowChromeTheme';
-import { parseWallpaperRegValue, wallpaperToDataUrl } from './desktopWallpaper';
+import { decodeRegOutput, parseWallpaperRegValue, wallpaperToDataUrl } from './desktopWallpaper';
 import {
   PagesApiError,
   createPagesService,
@@ -951,12 +951,16 @@ let currentChromeTheme: ChromeTheme = 'light';
  */
 function regQueryValue(key: string, name: string): string | null {
   try {
-    const out = execFileSync('reg', ['query', key, '/v', name], {
+    // chcp 65001：reg.exe 默认跟随 ANSI 码页（简中=GBK），latin1 解码会把中文
+    // 壁纸路径 mojibake → existsSync 必败（09-29 审核 B-1 实证）。切 UTF-8 码页
+    // 后输出恒 UTF-8，decodeRegOutput 无损解（ASCII/中文都对）。
+    // 键名含空格（Control Panel\Desktop）——cmd 拼接必须加引号，否则 "Invalid key name"。
+    const out = execFileSync('cmd.exe', ['/c', `chcp 65001 >nul && reg query "${key}" /v "${name}"`], {
       encoding: 'buffer',
       timeout: 2000,
       windowsHide: true,
-    }).toString('latin1');
-    return out;
+    });
+    return decodeRegOutput(out);
   } catch {
     return null;
   }
@@ -1249,21 +1253,25 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const rec = raw as Record<string, unknown>;
     const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
     const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
-    const overlay = resolveChromeOverlay({ canvas, ink }, currentChromeTheme);
+    const look = typeof rec['look'] === 'string' ? rec['look'] : 'pixel';
+    // 审核 B-2：glass 档按钮区底色全透明透出带体壁纸色；预绘底色恒实心。
+    const overlay = resolveChromeOverlay({ canvas, ink, look }, currentChromeTheme);
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win === null) {
       return false;
     }
     try {
       if (process.platform === 'win32') {
-        win.setBackgroundColor(overlay.color);
+        // B-2：预绘底色永远实心；glass 档按钮区底色 #00000000 透出带体（OS overlay
+        // 实证吃 alpha，combo G），其余档实心 canvas——两种情况下按钮都可见。
+        win.setBackgroundColor(overlay.windowBackground);
         win.setTitleBarOverlay({
           color: overlay.color,
           symbolColor: overlay.symbolColor,
           height: 36,
         });
       } else {
-        win.setBackgroundColor(overlay.color);
+        win.setBackgroundColor(overlay.windowBackground);
       }
     } catch {
       /* 窗口正在销毁：跳过 */
@@ -1271,7 +1279,7 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     }
     platformContext?.logger
       .forModule('main')
-      .info(`chromeOverlay applied: bg=${overlay.color} symbol=${overlay.symbolColor}`);
+      .info(`chromeOverlay applied: bg=${overlay.windowBackground} overlay=${overlay.color} symbol=${overlay.symbolColor}`);
     return true;
   });
 

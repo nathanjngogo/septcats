@@ -48,10 +48,11 @@ describe('T87-01 背景色与 tokens.css 同源', () => {
 });
 
 describe('T89-01 resolveChromeOverlay', () => {
-  it('合法 #rrggbb 直接透传（canvas 当底、ink 当符号）', () => {
+  it('合法 #rrggbb 直接透传（canvas 当底、ink 当符号；非 glass 预绘=按钮区同色）', () => {
     expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620' }, 'light')).toEqual({
       color: '#F4EFE6',
       symbolColor: '#2B2620',
+      windowBackground: '#F4EFE6',
     });
   });
 
@@ -64,6 +65,28 @@ describe('T89-01 resolveChromeOverlay', () => {
   it('非法 ink 回落明暗态默认符号色（深底用亮字、浅底用暗字）', () => {
     expect(resolveChromeOverlay({ canvas: '#141414', ink: 'nope' }, 'dark').symbolColor).toBe('#EDE6D8');
     expect(resolveChromeOverlay({ canvas: '#F5F5F5', ink: 'nope' }, 'light').symbolColor).toBe('#2B2620');
+  });
+
+  // 审核 B-2（09-29 发版前）：glass 档带体=canvas 14% 叠壁纸衬底，OS 按钮区吃实心
+  // canvas 会在右上角出补丁 → glass 时按钮区底色全透明（OS overlay 实证吃 alpha，
+  // combo G）透出底下带体；预绘底色恒实心（窗体绝不留 alpha 底——黑窗教训）。
+  it('B-2 glass：按钮区全透明 + 符号色用 ink + 预绘底色恒实心', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass' }, 'light')).toEqual({
+      color: '#00000000',
+      symbolColor: '#2B2620',
+      windowBackground: '#F4EFE6',
+    });
+  });
+
+  it('B-2 非 glass 档不吃透明（pixel/linear 维持实心 canvas 按钮区）', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'pixel' }, 'light').color).toBe('#F4EFE6');
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'linear' }, 'light').color).toBe('#F4EFE6');
+  });
+
+  it('B-2 glass 但 canvas 非法：预绘回明暗 token、按钮区仍透明（带体总有底色）', () => {
+    const r = resolveChromeOverlay({ canvas: '', ink: '#2B2620', look: 'glass' }, 'dark');
+    expect(r.color).toBe('#00000000');
+    expect(r.windowBackground).toBe('#141414');
   });
 });
 
