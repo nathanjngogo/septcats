@@ -1,0 +1,40 @@
+/**
+ * TopBarButton.css —— 顶栏中文文字按键（09-29 老板令：同步状态那一行按键全部
+ * 换成中文按键）。本钮 = 像素 glyph + 可见中文文字，两者共用 .sc-iconbtn 的
+ * hover / active / focus token 语言（见 TopBarButton.tsx 类名说明）。
+ *
+ * 这里只做「从方盒展宽成文字钮」的布局覆盖：specificity 用 .sc-iconbtn.sc-topbtn
+ * 双类压过 IconButton.css 的固定 width。描边不加——与 IconButton 及同步胶囊
+ * 一致，整排都是无边框 ghost 钮。全 var(--sc-*) token，三轴随主题。
+ */
+.sc-iconbtn.sc-topbtn {
+  /* 基态 .sc-iconbtn 是 inline-grid + place-items:center（图标钮方盒语义），
+     这里显式转横排 flex：图标与中文文字同排，避免落成「图标在上、文字在下」
+     的两行挤 28px 盒（宽度会等于背景中较长者、观感像方徽而非按键）。 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: var(--sc-size-control-sm);
+  gap: var(--sc-space-xxs);
+  padding: 0 var(--sc-space-xs);
+}
+
+.sc-topbtn__text {
+  /* 12px 档：与同步胶囊同字号，整行等高同心 */
+  font: var(--sc-text-ui-xs);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* 选中态（原 aria-pressed 语义）：弱底 + ink 字；双类压过 .sc-iconbtn 基态 */
+.sc-iconbtn.sc-topbtn--active {
+  background: var(--sc-color-surface-active);
+  color: var(--sc-color-ink);
+}
+
+/* 展开态（布局弹框开合等）：与选中态同视觉，避免一行里多套选中语言 */
+.sc-iconbtn.sc-topbtn[aria-expanded='true'] {
+  background: var(--sc-color-surface-active);
+  color: var(--sc-color-ink);
+}

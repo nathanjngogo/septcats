@@ -18,6 +18,7 @@ import { PageDeleteDialog } from './pages/PageDeleteDialog';
 import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
 // T87-02：Win/Linux 自绘菜单带（原生菜单栏不吃应用 CSS，老板 09-28 令整窗随主题变）
 import { MenuBarBand } from './menu/MenuBarBand';
+import { TopBarButton } from './layout/TopBarButton';
 import { TitleBarBand } from './menu/TitleBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
@@ -595,16 +596,21 @@ export function App() {
                 原「我的工作台」home 入口保留为市场内的 workbench-open 行内钮（见
                 TemplateMarketPage）。glyph 曾为应用层局部自绘，T74-01 已收编进
                 @septcats/ui（packages/ui/src/icons.tsx），调用点零改动。 */}
-            <IconButton
+            {/* 09-29 老板令：顶栏「同步状态那一行」按键全部换成中文按键 →
+                图标钮升级为「像素 glyph + 中文文字」钮（TopBarButton）。
+                aria-label / data-testid / aria-pressed 语义原样保留。 */}
+            <TopBarButton
               icon={PixelShopGlyph}
               label={t('app.workbenchMarketLabel')}
-              aria-pressed={view === 'market'}
-              data-testid="workbench-market-open"
+              text={t('app.marketText')}
+              pressed={view === 'market'}
+              testId="workbench-market-open"
               onClick={openWorkbenchMarket}
             />
-            <IconButton
+            <TopBarButton
               icon={MagnifyingGlass}
               label={t('app.searchLabel')}
+              text={t('app.searchText')}
               onClick={() => {
                 paletteActions.open();
               }}
@@ -613,10 +619,11 @@ export function App() {
                 T39-01：AI 面板位置=隐藏时不渲染入口；
                 T58-01 §1.2：ICON 换像素机器人头（开=眼亮 / 关=眼暗，见 pixelIcons.css） */}
             {aiHidden ? null : (
-              <IconButton
+              <TopBarButton
                 icon={AiRobot}
                 label={t('app.aiChatLabel')}
-                aria-pressed={chatOpen}
+                text={t('app.aiText')}
+                pressed={chatOpen}
                 onClick={toggleAiPanel}
               />
             )}
@@ -625,29 +632,32 @@ export function App() {
                 且 state="idle" 是静态假态，切 English 后仍显示「已同步」——换真钮后
                 文案走 sync.* 双语键（键已存在，无需新增）。 */}
             <SyncStatusButton />
-            <IconButton
+            <TopBarButton
               icon={Plus}
               label={t('importWizard.title')}
-              aria-pressed={inImport}
+              text={t('importWizard.title')}
+              pressed={inImport}
               onClick={() => {
                 setView((current) => (current === 'import' ? 'editor' : 'import'));
               }}
             />
             {/* T57-01 §1.1：顶栏「布局」钮（设置钮左边，顺序 Sync→Plus→Layout→Gear）——
                 弹像素快选框；aria-pressed = 弹框打开态 */}
-            <IconButton
+            <TopBarButton
               icon={SidebarSimple}
               label={t('app.layoutLabel')}
-              aria-pressed={layoutPickerOpen}
-              data-testid="layout-open"
+              text={t('app.layoutLabel')}
+              pressed={layoutPickerOpen}
+              testId="layout-open"
               onClick={() => {
                 setLayoutPickerOpen((open) => !open);
               }}
             />
-            <IconButton
+            <TopBarButton
               icon={GearSix}
               label={t('app.settingsLabel')}
-              aria-pressed={inSettings}
+              text={t('app.settingsLabel')}
+              pressed={inSettings}
               onClick={() => {
                 setView((current) => (current === 'settings' ? 'editor' : 'settings'));
               }}

@@ -18,6 +18,11 @@ export const enUS = {
     settingsLabel: 'Settings',
     noWorkspaceToSwitch: 'No vault to switch to',
     aiChatLabel: 'AI chat (Ctrl+J)',
+    // 09-29: visible short labels for the top-bar buttons (labels above stay as
+    // the full accessible names/tooltips, shortcuts included)
+    marketText: 'Templates',
+    searchText: 'Search',
+    aiText: 'AI chat',
     // T52-01 §1.2: accessible name of the sidebar toggle (now at the tab row's far left)
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',

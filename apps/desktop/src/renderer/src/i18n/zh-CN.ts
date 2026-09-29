@@ -19,6 +19,11 @@ export const zhCN = {
     settingsLabel: '设置',
     noWorkspaceToSwitch: '没有可切换的库',
     aiChatLabel: 'AI 对话（Ctrl+J）',
+    // 09-29 老板令：顶栏「同步状态那一行」按键全部换成中文按键 → 可见短文案
+    // （label 仍是完整可访问名/ tooltip，含快捷键提示；可见文字取短形）
+    marketText: '模板市场',
+    searchText: '搜索',
+    aiText: 'AI 对话',
     // T52-01 §1.2：侧栏开合钮（搬到标签条行最左）的可访问名，随开合态翻转
     collapseSidebar: '收起侧栏',
     expandSidebar: '展开侧栏',
