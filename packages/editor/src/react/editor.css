@@ -47,6 +47,7 @@ h2.sc-block--heading {
 }
 
 h3.sc-block--heading {
+  letter-spacing: var(--sc-tracking-h3);
   font: var(--sc-text-h3);
   margin: var(--sc-space-sm) 0 0;
 }

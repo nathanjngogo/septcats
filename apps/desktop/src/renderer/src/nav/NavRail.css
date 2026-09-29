@@ -40,6 +40,12 @@
   box-shadow: var(--sc-bevel-out);
 }
 
+.nav-rail__item:active:not(.nav-rail__item--on) {
+  /* Apple §1/§10：反馈落在 pointer-down（按下即凹陷），不等 release */
+  box-shadow: var(--sc-bevel-in);
+  transform: translate(var(--sc-space-xxs), var(--sc-space-xxs));
+}
+
 .nav-rail__item--on {
   background: var(--sc-color-surface-active);
   color: var(--sc-color-ink);

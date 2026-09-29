@@ -16,6 +16,21 @@
 
 ### 技术说明
 - DWM acrylic 路线在本机实测不可达（Electron backdrop 恒死灰，acrylic/mica×transparent 真假×E37/38 全验），已固化为 `desktopWallpaper.ts` 头注与探针注释；壁纸衬底路线 Chromium 自合成，capturePage/截图双通道可客观验收。
+### 追加（老板 09-29 令：UI 全面评估 → 四维修正）
+- **评估正文**：`docs/UI-评估-四维.md`（Apple 准则口径；配色/质感/图形/线条各节 = 实测值 →
+  准则 → 判定 → 动作，含 P0/P1/P2 清单与「明确不动」的老板红线项）。
+- **本批修正（P0，均带证据）**：
+  ① `prefers-contrast: more` 补齐（面近实心 + 框线升实心 2px ink-edge）+ 新门禁
+     `packages/ui/test/a11y-signals.test.ts`；
+  ② `prefers-reduced-transparency` **决策：不自动降级**（Windows「透明效果」开关被 Chromium
+     映射为本信号、本机默认命中 ⇒ 照字面降级会把用户显式选中的 glass 档静默打回实心，
+     T85 四红实证：blur=none / chrome 回 rgb(20,20,20) / pixel↔glass 7.65%<8%）——
+     材质选择权归应用内 look 档（Apple §16.2 Agency 优先），并加负向契约测试防回退；
+  ③ 排版：h3 补字距 token（-0.002em，DESIGN.md → build-tokens 生成）+ 编辑器 h3 消费；
+  ④ 修 2 处「把 spacing token(2px) 当字距」的误用（PageLock 两处 → 0.02em）；
+  ⑤ 按下即反馈：一级轨条 + 知识库行补 `:active`（Apple §1/§10）。
+- 验证：ui 185/35 · desktop 1342/120 · tsc 0 · no-magic 0 · pixel-borders 越界 0 · token --check 一致；
+  真机 T85 22/22、T93 7/7、T92 11/11、T87-01 11/11、T87-02 14/14、T65 15/15、T89 7/7、T90 6/6、T91 8/8。
 ### 追加（老板 09-29 令：一级侧边栏）
 - **左侧新增一级导航轨（NavRail，56px）**：把「一级菜单」显性化 —— 笔记 / 知识库 /
   工作台 / 模板 / 回收站（纯中文短标签，延续「图标去掉」口径）。二级栏按一级项分流：

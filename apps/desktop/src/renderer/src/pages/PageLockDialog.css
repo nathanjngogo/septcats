@@ -90,7 +90,7 @@
 .lock-mono {
   font-family: var(--sc-font-mono);
   font-size: 1.1em;
-  letter-spacing: var(--sc-space-xxs);
+  letter-spacing: 0.02em; /* UI 评估：此前误用 spacing token(=2px) 当字距，过松 */
   color: var(--sc-color-ink);
   word-break: break-all;
 }

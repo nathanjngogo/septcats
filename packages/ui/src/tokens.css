@@ -38,6 +38,7 @@
   --sc-text-h2: 620 22px/1.35 var(--sc-font-ui);
   --sc-tracking-h2: -0.005em;
   --sc-text-h3: 600 18px/1.4 var(--sc-font-ui);
+  --sc-tracking-h3: -0.002em;
   --sc-text-ui-sm: 500 13px/1.5 var(--sc-font-ui);
   --sc-text-ui-md: 450 14px/1.5 var(--sc-font-ui);
   --sc-text-ui-xs: 450 12px/1.5 var(--sc-font-ui);

@@ -62,6 +62,8 @@ typography:
     fontSize: 18px
     fontWeight: 600
     lineHeight: 1.4
+    # UI 评估（Apple §15 字距随字号）：18px 仍属大字号 → 轻微收紧
+    letterSpacing: "-0.002em"
   ui-sm:
     fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
     fontSize: 13px

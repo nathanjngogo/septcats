@@ -90,7 +90,8 @@ export const typography = {
     fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",
     fontSize: "18px",
     fontWeight: 600,
-    lineHeight: 1.4
+    lineHeight: 1.4,
+    letterSpacing: "-0.002em"
   },
   "ui-sm": {
     fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif",

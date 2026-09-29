@@ -231,3 +231,55 @@
   width: 1px;
   background: color-mix(in srgb, var(--sc-color-ink-edge) 30%, transparent);
 }
+
+/* ============================================================================
+ * UI 评估（Apple 准则 §14 无障碍三信号）：本仓此前只有 prefers-reduced-motion，
+ * 另两个信号零支持 —— 补齐：
+ *   ① prefers-reduced-transparency: reduce → 玻璃档去磨砂、面回实心（升级显式诉求：
+ *      「我不要透明」时绝不继续磨；描边/圆角/bevel 造型语言保留，只撤透明度）；
+ *   ② prefers-contrast: more → 所有质感档：面近实心 + 框线升实心 2px ink-edge
+ *      （Apple：near-solid background + defined contrasting border）。
+ * 两段都只动「面/线」，不碰任何 --sc-color-ink* 文字色（对比度门禁口径不变）。
+ * ========================================================================== */
+/* ★ 决策记录（UI 评估 · 2026-09-29）：**不**实现 prefers-reduced-transparency 的
+ * 自动降级。原因（实测）：Windows 的「透明效果」开关被 Chromium 映射成本信号——
+ * 本机 EnableTransparency=0（老板机原值）⇒ 本段一旦照字面「去磨砂/回实心」，
+ * 老板在应用内明确选中的玻璃档会被系统开关**静默打回实心**（T85 质感探针
+ * B1-f/B3-b/B3-c 四红实证：blur=none、chrome 回 rgb(20,20,20)、pixel↔glass 差
+ * 7.65% < 8% 门槛）。
+ * Apple 准则的处理（§16.2 Agency 优先于 §14 的机械照搬）：**材质选择权归应用内
+ * look 档**——pixel/linear 本就是完全实心、一点即得；glass 是用户的显式选择，
+ * 系统级化妆开关不得推翻它。若将来要做，正解 = 设置页给「外观：跟随系统减少透明度」
+ * 开关（默认关），而不是 CSS 里静默降级。见 docs/UI-评估-四维.md §质感。
+ */
+
+@media (prefers-contrast: more) {
+  /* 全质感档：框线升「实心 ink-edge」（暗色主题自带亮边，见 tokens） */
+  :root {
+    --sc-border-edge: 2px solid var(--sc-color-ink-edge);
+    --sc-border-edge-dashed: 2px dashed var(--sc-color-ink-edge);
+  }
+  /* 面近实心：玻璃档的 chrome/主区/浮层全部回实心，磨砂只留极轻一层 */
+  [data-look='glass'] .sc-shell__topbar,
+  [data-look='glass'] .sc-shell__sidebar,
+  [data-look='glass'] .menub_band,
+  [data-look='glass'] .titleb_band {
+    background: var(--sc-color-canvas);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  [data-look='glass'] .sc-shell__main {
+    background: var(--sc-color-content);
+  }
+  [data-look='glass'] .sc-dialog,
+  [data-look='glass'] .sc-menu,
+  [data-look='glass'] .sc-popover__panel,
+  [data-look='glass'] .sc-toast__item,
+  [data-look='glass'] .sc-select__listbox,
+  [data-look='glass'] .sc-tooltip__bubble,
+  [data-look='glass'] .palette {
+    background: var(--sc-color-surface-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
