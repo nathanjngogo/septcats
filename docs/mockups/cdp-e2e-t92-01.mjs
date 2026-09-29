@@ -7,7 +7,7 @@
  *   - 中文可见：每个钮的可见文字非空且为中文短文案（不再只藏在 tooltip 里）；
  *   - 语义零破坏：aria-label / aria-pressed / aria-expanded / data-testid 原样，
  *     故 T57/T58/T66/T74 的既有测试与探针取钮路径不变；
- *   - 像素族保留：每钮仍带 16×16 + crispEdges 的像素 glyph（T58/T74 契约）；
+ *   - 图标去掉（老板令）：顶栏整排无 glyph（svg 一个不剩）；
  *   - 不裁切/不溢出：钮内文字未被截断，整排右缘不出顶栏；
  *   - 行为零回归：布局弹框开合、命令面板、设置页往返照旧；
  *   - 三轴随主题：切 dark+glass 后钮文字色随 token 变（不是硬编码色）。
@@ -16,7 +16,7 @@
  *   H1 顶栏 actions 七钮齐全且顺序 = 模板市场→搜索→AI 对话→同步状态→导入→布局→设置。
  *   H2 六枚文字钮可见中文非空；同步钮可见状态文字（sync.* 之一）。
  *   H3 无一钮文字被裁切（scrollWidth ≤ clientWidth+1）且整排右缘 ≤ 顶栏右缘。
- *   H4 六枚文字钮仍带像素族 svg（viewBox 0 0 16 16 + crispEdges）。
+ *   H4 顶栏整排无图标：7 钮全无 svg（老板 09-29「图标去掉」）。
  *   H5 点「布局」→ 弹框开 + aria-pressed 翻 true；Esc → 关 + 回 false。
  *   H6 点「搜索」→ 命令面板开；Esc → 关。
  *   H7 点「设置」→ 设置页（面包屑「设置」）；再点 → 回编辑器（.pv-root 复现）。
@@ -208,9 +208,10 @@ async function main() {
     noClip && noOverflow,
     `clipped=${JSON.stringify(bar.rows.map((r) => `${r.clipped}/${r.tClipped}/${r.tInside}`))} w=${JSON.stringify(bar.rows.map((r) => r.w))} textW=${JSON.stringify(bar.rows.map((r) => r.tW))} font=${bar.rows[0].font} barRight=${String(bar.barRight)} topbarRight=${String(bar.topbarRight)} winW=${String(bar.winW)}`);
 
-  const glyphOk = bar.rows.every((r, i) => (i === 3 ? r.viewBox === null : r.viewBox === '0 0 16 16' && r.crisp === 'crispEdges'));
-  check('H4 六枚文字钮仍带像素族 svg（16×16 + crispEdges，T58/T74 契约保活）',
-    glyphOk, JSON.stringify(bar.rows.map((r) => `${r.viewBox}/${r.crisp}`)));
+  // 09-29 老板令「图标去掉」：顶栏 actions 整排不得再有 glyph（同步胶囊本就无 svg）
+  const noGlyph = bar.rows.every((r) => r.viewBox === null && r.crisp === null);
+  check('H4 顶栏整排无图标（老板令：图标去掉）—— 7 钮全无 svg',
+    noGlyph, JSON.stringify(bar.rows.map((r) => `${String(r.viewBox)}/${String(r.crisp)}`)));
 
   const shot1 = await topbarShot(page, 'topbar-light-pixel');
 

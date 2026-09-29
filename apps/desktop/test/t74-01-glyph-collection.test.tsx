@@ -104,61 +104,9 @@ const BASELINE_TODO = [
   '2,13 10x1@1',
 ];
 
-/** 迁移前基线：顶栏「工作台模板市场」钮（<Icon size="md"> 转发 PixelShopGlyph）。 */
-const BASELINE_MARKET_BUTTON = [
-  '2,1 12x1@1',
-  '2,2 12x1@1',
-  '2,3 1x1@1',
-  '5,3 2x1@1',
-  '11,3 2x1@1',
-  '2,4 1x1@1',
-  '5,4 2x1@1',
-  '11,4 2x1@1',
-  '2,5 12x1@1',
-  '2,6 1x1@1',
-  '5,6 1x1@1',
-  '6,6 1x1@0.8',
-  '7,6 1x1@1',
-  '10,6 1x1@1',
-  '11,6 1x1@0.8',
-  '12,6 1x1@1',
-  '2,7 1x1@1',
-  '5,7 1x1@1',
-  '6,7 1x1@0.8',
-  '7,7 1x1@1',
-  '10,7 1x1@1',
-  '11,7 1x1@0.8',
-  '12,7 1x1@1',
-  '2,8 1x1@1',
-  '5,8 1x1@1',
-  '6,8 1x1@0.8',
-  '7,8 1x1@1',
-  '10,8 1x1@1',
-  '11,8 1x1@0.8',
-  '12,8 1x1@1',
-  '2,9 1x1@1',
-  '5,9 1x1@1',
-  '6,9 1x1@0.8',
-  '7,9 1x1@1',
-  '10,9 1x1@1',
-  '11,9 1x1@0.8',
-  '12,9 1x1@1',
-  '2,10 1x1@1',
-  '11,10 1x1@1',
-  '2,11 1x1@1',
-  '11,11 1x1@1',
-  '2,12 12x1@1',
-  '2,13 1x1@1',
-  '4,13 1x1@1',
-  '11,13 1x1@1',
-  '13,13 1x1@1',
-  '2,14 1x1@1',
-  '4,14 1x1@1',
-  '11,14 1x1@1',
-  '13,14 1x1@1',
-  '2,15 3x1@1',
-  '11,15 3x1@1',
-];
+// 老板 09-29 令「图标去掉」：顶栏不再挂 glyph → 原「顶栏工作台模板市场钮 in-situ rect
+// 基线」（BASELINE_MARKET_BUTTON，52 条）随契约废止并删除。Shop glyph 本体矩阵仍由
+// 下方「四枚经 <Icon> 转发」用例逐格钉死（掩码 = PIXEL_GLYPHS_EXTRA.Shop），资产未失控。
 
 
 function defaultSettings(): AppSettings {
@@ -298,10 +246,10 @@ async function renderApp(): Promise<HTMLElement> {
 }
 
 function actionButton(container: HTMLElement, label: string): Element {
-  const btn = [...container.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find(
+  const btn = [...container.querySelectorAll('.sc-shell__actions .sc-topbtn')].find(
     (node) => node.getAttribute('aria-label') === label,
   );
-  expect(btn, `顶栏未找到 label=${label} 的图标钮`).toBeDefined();
+  expect(btn, `顶栏未找到 label=${label} 的文字钮`).toBeDefined();
   return btn!;
 }
 
@@ -314,13 +262,15 @@ describe('T74-01 收编后消费面零回归（基线 = 迁移前实渲染捕获
     expect(rectSig(todo.container.querySelector('svg')!)).toEqual(BASELINE_TODO);
   });
 
-  it('顶栏「工作台模板市场」钮：in-situ rect 清单逐条等于迁移前基线（52 条，含 opacity 档）', async () => {
+  // 老板 09-29 令「顶栏按键…全部换成中文按键」→「图标去掉」：顶栏不再挂任何 glyph，
+  // 故 T74-01 的「顶栏 in-situ rect 基线」用例（MARKET_LABEL/BASELINE_MARKET_BUTTON）
+  // 随契约废止——改为钉「顶栏钮是纯文字钮、glyph 资产本体仍在（经 <Icon> 直渲基线）」。
+  it('顶栏「工作台模板市场」钮 = 纯文字钮（无 svg；label/data-testid 语义保留）', async () => {
     const container = await renderApp();
-    const svg = actionButton(container, MARKET_LABEL).querySelector('svg')!;
-    expect(svg.getAttribute('viewBox')).toBe('0 0 16 16');
-    expect(svg.getAttribute('shape-rendering')).toBe('crispEdges');
-    expect(svg.getAttribute('class')).toBe('sc-icon');
-    expect(rectSig(svg)).toEqual(BASELINE_MARKET_BUTTON);
+    const btn = actionButton(container, MARKET_LABEL);
+    expect(btn.querySelector('svg')).toBeNull();
+    expect((btn.textContent ?? '').trim()).toBe('模板市场');
+    expect(btn.getAttribute('data-testid')).toBe('workbench-market-open');
   });
 
   // 老板 09-27 令「取消主题画廊」：顶栏「配色画廊」图标钮随画廊一并删除 →
@@ -341,18 +291,17 @@ describe('T74-01 收编后消费面零回归（基线 = 迁移前实渲染捕获
     }
   });
 
-  it('顶栏图标钮全组仍是像素族几何（收编未引入混族残留）', async () => {
+  it('顶栏 actions 全组已无 glyph（老板令：图标去掉）——混族残留与回退都被钉死', async () => {
     const container = await renderApp();
-    const buttons = [...container.querySelectorAll('.sc-shell__actions .sc-iconbtn')];
-    expect(buttons.length).toBeGreaterThanOrEqual(5);
+    const actions = container.querySelector('.sc-shell__actions');
+    expect(actions).not.toBeNull();
+    const buttons = [...actions!.querySelectorAll('button')];
+    expect(buttons.length).toBeGreaterThanOrEqual(6);
     for (const button of buttons) {
-      const svg = button.querySelector('svg');
       const label = button.getAttribute('aria-label') ?? '(无 label)';
-      expect(svg, `${label} 无 svg`).not.toBeNull();
-      expect(svg!.getAttribute('viewBox'), `${label} viewBox`).toBe('0 0 16 16');
-      expect(svg!.getAttribute('shape-rendering'), `${label} crispEdges`).toBe('crispEdges');
-      expect(svg!.getAttribute('stroke-width'), `${label} 有描边残留`).toBeNull();
-      expect(svg!.querySelectorAll('rect').length, `${label} 无像素格`).toBeGreaterThan(0);
+      expect(button.querySelector('svg'), `${label} 仍带 svg（顶栏应无图标）`).toBeNull();
     }
+    // 顶栏左侧折叠钮（AppShell 自渲、topbar 直系子元素）仍是 .sc-iconbtn，不在 actions 内
+    expect(actions!.querySelectorAll('.sc-iconbtn').length).toBe(0);
   });
 });

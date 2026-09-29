@@ -93,14 +93,23 @@ describe('T58-01 桌面侧 · icon={X} 调用点全量落在像素族', () => {
     expect(offenders.map((f) => f.replace(REPO, ''))).toEqual([]);
   });
 
-  it('AI 语义整体收口：消费目录里 Sparkle 零 import/JSX 用法、AiRobot 至少 3 处调用点', () => {
+  it('AI 语义整体收口：消费目录里 Sparkle 零 import/JSX 用法、AiRobot 仍有调用点且不在顶栏', () => {
     const sparkle = consumerFiles.filter((file) => {
       const text = readFileSync(file, 'utf8');
       return /\bimport\b[^;]*\bSparkle\b/.test(text) || /icon=\{Sparkle\}|<Sparkle\b/.test(text);
     });
     expect(sparkle.map((f) => f.replace(REPO, ''))).toEqual([]);
-    const aiRobotUses = [...source.matchAll(/icon=\{AiRobot\}/g)].length;
-    expect(aiRobotUses).toBeGreaterThanOrEqual(3);
+    // 09-29 老板令「顶栏按键…全部换成中文按键」→「图标去掉」：AiRobot 从顶栏撤出，
+    // 现由 AI 面板标题栏承载（AiChatPanel 的 <Icon icon={AiRobot}>）。契约从
+    // 「≥3 处按钮调用点」改为「消费面仍有调用点 + 顶栏文字钮组件零图标」。
+    const aiRobotIconUses = [...source.matchAll(/icon=\{AiRobot\}/g)].length;
+    expect(aiRobotIconUses).toBeGreaterThanOrEqual(1);
+    const topBarSrc = readFileSync(
+      join(REPO, 'apps', 'desktop', 'src', 'renderer', 'src', 'layout', 'TopBarButton.tsx'),
+      'utf8',
+    );
+    expect(/\bicon\b\s*[:=]/.test(topBarSrc), '顶栏文字钮组件不得再出现 icon 属性').toBe(false);
+    expect(/<svg|IconGlyph|from '@septcats\/ui'/.test(topBarSrc), '顶栏文字钮组件不得再引图标族').toBe(false);
   });
 });
 

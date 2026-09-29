@@ -16,17 +16,19 @@
 
 ### 技术说明
 - DWM acrylic 路线在本机实测不可达（Electron backdrop 恒死灰，acrylic/mica×transparent 真假×E37/38 全验），已固化为 `desktopWallpaper.ts` 头注与探针注释；壁纸衬底路线 Chromium 自合成，capturePage/截图双通道可客观验收。
-### 追加（老板 09-29 令：顶栏按键中文化）
+### 追加（老板 09-29 令：顶栏按键中文化 → 图标去掉）
 - 顶栏「同步状态那一行」按键全部换成中文按键：模板市场 / 搜索 / AI 对话 / 导入 / 布局 / 设置
-  六枚纯图标钮升级为「像素 glyph + 可见中文文字」钮（同步钮本就带中文状态文字，保持）；
-  中文文字直接可见，不再只有悬浮提示。aria-label / aria-pressed / aria-expanded /
-  data-testid 语义原样保留 → T57/T58/T66/T74 既有测试与真机探针取钮路径零改动；
-  像素族 glyph（16×16 + crispEdges）保留，T58/T74 契约保活。
-  实现 `layout/TopBarButton.tsx` + `.css`（复用 `.sc-iconbtn` 盒语言；基态 inline-grid 为
-  图标钮方盒语义 → 本钮显式转横排 flex，防落成「图标在上文字在下」两行挤 28px）。
-  验证：新立 **T92-01 真机探针 11 项**（七钮顺序 / 中文可见逐字命中 / 钮·span·包含三判据不裁切 /
-  1200·900·760 三档宽不溢出 / 像素族 svg 保活 / 布局弹框 / 命令面板 / 设置页往返 / 三轴随主题 /
-  档案零触碰）+ 回归七路 93 项全绿；门禁 desktop 1336/119·ui 180·tsc 0·纪律 90/0。
+  —— 六枚纯图标钮改为**纯中文文字钮**（老板追加令「图标去掉」：本排不再挂任何 glyph；
+  同步钮本就带中文状态文字，保持）。
+- 实现 `layout/TopBarButton.tsx` + `.css`：ghost 语义 + 像素立体 bevel + 同高 28 档，
+  `aria-label` / `aria-pressed` / `aria-expanded` / `data-testid` 语义原样保留（取钮路径不破）；
+  文字走 `app.marketText/searchText/aiText` 双语键（en 面 Templates/Search/AI chat）。
+- 契约升级（同批）：T58/T74 的「顶栏钮必带像素族 svg」断言随老板令废止并改写为
+  「顶栏 actions 无 glyph + 可见文字非空」；AiRobot 资产 QC 移交 AI 面板标题图标
+  （单测 ③ 钉 viewBox/crispEdges/眼 4 格）；t58/t59/t57/t39/t92 探针选择器同步换到 `.sc-topbtn`。
+- 验证：T92-01 真机探针 **11 项**（七钮顺序 / 中文逐字命中 / 钮·span·包含三判据不裁切 /
+  1200·900·760 三档宽不溢出 / **整排无图标** / 布局弹框 / 命令面板 / 设置页往返 / 三轴随主题 /
+  档案零触碰）+ 回归七路 **83 项**全绿；门禁 desktop 1336/119·ui 180·tsc 0·纪律 90/0。
 ### 追加（C 轮·09-29 深夜，老板截图四连打回后）
 - 模板行图标改中文描述按键：侧栏/命令面板/设置三处模板列表的图标槽统一为文字徽标（kind=page → 「页面」，kind=database → 「数据」），不再消费源页继承的 emoji/图标混排（内容不可控、观感参差）。
 - **全自绘窗口按钮**：OS titleBarOverlay 整撤（OS 平面色块追不上渐变玻璃带=右上角补丁根因，真机实测色差 60~252）；min/最大化-还原/close 改界面层自绘（46px 热区、悬停红关闭钮、键盘可达），close 走关窗冲刷同链路。

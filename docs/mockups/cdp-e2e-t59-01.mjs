@@ -994,7 +994,7 @@ try {
   await wait(700);
   // AI 面板展开（只点带 AI 标签的那个钮，避免误触其它工具钮）
   const aiOpen = await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find((b) =>
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find((b) =>
       (b.getAttribute('aria-label') ?? '').startsWith('AI'),
     );
     if (btn === null || btn === undefined) return false;
@@ -1037,7 +1037,7 @@ try {
   }
   await shot('t59-01-light-ai.png');
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find((b) =>
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find((b) =>
       (b.getAttribute('aria-label') ?? '').startsWith('AI'),
     );
     if (btn !== null && btn !== undefined) btn.click();
@@ -1128,7 +1128,7 @@ try {
   await page.keyboard.press('Escape').catch(() => {});
   await wait(700);
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find((b) =>
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find((b) =>
       (b.getAttribute('aria-label') ?? '').startsWith('AI'),
     );
     if (btn !== null && btn !== undefined) btn.click();
@@ -1138,7 +1138,7 @@ try {
   const winShot = await captureWindow(join(SHOTS, 't59-01-window-dark.png'));
   check('G7-7 窗口级补充截图（含标题栏 + 原生菜单栏）', winShot.size > 0, `bytes=${String(winShot.size)} err=${String(winShot.err)}`);
   await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find((b) =>
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find((b) =>
       (b.getAttribute('aria-label') ?? '').startsWith('AI'),
     );
     if (btn !== null && btn !== undefined) btn.click();

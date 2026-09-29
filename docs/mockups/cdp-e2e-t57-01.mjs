@@ -554,7 +554,7 @@ try {
   // --- G1 §1.1 顶栏布局钮 ---------------------------------------------------
   STEP = 'G1|topbar-layout';
   const barOrder = await page.evaluate(() =>
-    [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].map((n) => n.getAttribute('aria-label') ?? n.className),
+    [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].map((n) => n.getAttribute('aria-label') ?? n.className),
   );
   phases.topbarOrder = barOrder;
   info('顶栏 actions 序（原始）', JSON.stringify(barOrder));

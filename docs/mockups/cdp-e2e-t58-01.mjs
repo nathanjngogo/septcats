@@ -1,4 +1,12 @@
-/* cdp-e2e-t58-01.mjs —— TASK-T58-01 真机取证（AI 钮像素化 + 全仓图标像素族接线）
+/* 契约沿革（09-29 老板令：「同步状态那一行的按键，全部换成中文按键」→「图标去掉」）——
+ * 本探针原有主体「顶栏图标钮像素族全量审计 + AI 钮 glyph 掩码比对 + 两态眼/天线明暗」
+ * 的**审计对象已从顶栏移除**：顶栏 actions 现在是纯中文文字钮，一个 glyph 都不挂。
+ * 故：G1 改为「顶栏全是文字钮（无 svg）」、G2 的 8× 掩码比对与 G3 的两态明暗按
+ * SUPERSEDED 记录（不再评判），AiRobot 资产的几何 QC 由单测接手
+ * （apps/desktop/test/t58-ai-button.test.tsx ③：面板标题图标 viewBox/crispEdges/眼 4 格）。
+ * 保留有效部分：夹具纪律、AI 面板开合语义、深浅两主题截图、退出干净。
+ *
+ * 原说明 —— TASK-T58-01 真机取证（AI 钮像素化 + 全仓图标像素族接线）
  *
  * 范围：
  *   G0 夹具：隔离 user-data-dir + rootPath（_scratch/t58-01/），真档案只读自检；
@@ -268,7 +276,7 @@ async function shotZoom(name, clip, scale) {
 /** 按可访问名点击顶栏图标钮（避免 CSS 选择器里塞 CJK/括号）。 */
 const clickAi = () =>
   page.evaluate((label) => {
-    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find((n) => n.getAttribute('aria-label') === label);
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find((n) => n.getAttribute('aria-label') === label);
     if (btn === undefined) return false;
     btn.click();
     return true;
@@ -283,41 +291,37 @@ const boxOf = (selector) =>
   }, selector);
 
 const AI_PROBE = () =>
-  page.evaluate((label) => {    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')].find(
+  page.evaluate((label) => {
+    const btn = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')].find(
       (n) => n.getAttribute('aria-label') === label,
     );
     if (btn === undefined) return null;
-    const svg = btn.querySelector('svg');
-    const eye = btn.querySelector('.sc-icon__eye');
-    const antenna = btn.querySelector('.sc-icon__antenna');
-    const rectOf = (r) => ({ x: r.getAttribute('x'), y: r.getAttribute('y'), w: r.getAttribute('width'), op: r.getAttribute('opacity') });
-    const sr = svg.getBoundingClientRect();
+    const b = btn.getBoundingClientRect();
     return {
       pressed: btn.getAttribute('aria-pressed'),
-      viewBox: svg.getAttribute('viewBox'),
-      shapeRendering: svg.getAttribute('shape-rendering'),
-      strokeWidth: svg.getAttribute('stroke-width'),
-      rectCount: svg.querySelectorAll('rect').length,
-      eyeOpacity: eye === null ? null : getComputedStyle(eye).opacity,
-      antennaOpacity: antenna === null ? null : getComputedStyle(antenna).opacity,
-      eyeRects: [...btn.querySelectorAll('.sc-icon__eye rect')].map(rectOf),
-      antennaRects: [...btn.querySelectorAll('.sc-icon__antenna rect')].map(rectOf),
-      allRects: [...svg.querySelectorAll('rect')].map(rectOf),
-      iconBox: { x: +sr.left.toFixed(2), y: +sr.top.toFixed(2), width: +sr.width.toFixed(2), height: +sr.height.toFixed(2) },
-      buttonBox: (() => {
-        const b = btn.getBoundingClientRect();
-        return { x: +b.left.toFixed(2), y: +b.top.toFixed(2), width: +b.width.toFixed(2), height: +b.height.toFixed(2) };
-      })(),
-      color: getComputedStyle(svg).color,
+      text: (btn.textContent ?? '').trim(),
+      hasSvg: btn.querySelector('svg') !== null,
+      cls: String(btn.className),
+      buttonBox: { x: +b.left.toFixed(2), y: +b.top.toFixed(2), width: +b.width.toFixed(2), height: +b.height.toFixed(2) },
+      color: getComputedStyle(btn).color,
     };
   }, AI_LABEL);
 
 const TOOLBAR_AUDIT = () =>
   page.evaluate(() => {
-    const buttons = [...document.querySelectorAll('.sc-shell__actions .sc-iconbtn')];
+    const buttons = [...document.querySelectorAll('.sc-shell__actions .sc-topbtn')];
     return {
       count: buttons.length,
-      rows: buttons.map((b) => {
+      // 09-29 后口径：顶栏钮 = 纯文字钮（label/text 齐全、hasSvg 必须 false）
+      textOnly: buttons.every((b) => b.querySelector('svg') === null && (b.textContent ?? '').trim().length > 0),
+      rows: buttons.map((b) => ({
+        label: b.getAttribute('aria-label'),
+        text: (b.textContent ?? '').trim(),
+        hasSvg: b.querySelector('svg') !== null,
+        cls: String(b.className),
+        stroke: b.querySelector('svg') === null ? null : b.querySelector('svg').getAttribute('stroke-width'),
+      })),
+      __legacy: buttons.map((b) => {
         const svg = b.querySelector('svg');
         return {
           label: b.getAttribute('aria-label') ?? '',
@@ -408,16 +412,15 @@ try {
   const audit = await TOOLBAR_AUDIT();
   phases.toolbar = audit;
   info('顶栏图标钮（原始）', JSON.stringify(audit.rows));
-  const notPixel = audit.rows.filter((r) => r.viewBox !== '0 0 16 16' || r.crisp !== 'crispEdges' || r.rects <= 0);
   check(
-    'G1-1 顶栏图标钮一个不漏都是像素族（viewBox 0 0 16 16 + crispEdges + rect 网格）',
-    audit.count >= 5 && notPixel.length === 0,
-    `钮数=${String(audit.count)} 非像素族=${JSON.stringify(notPixel)}`,
+    'G1-1 顶栏 actions 全是中文文字钮（老板令：图标去掉）——每钮无 svg 且可见文字非空',
+    audit.count >= 6 && audit.textOnly === true,
+    `钮数=${String(audit.count)} textOnly=${String(audit.textOnly)} rows=${JSON.stringify(audit.rows)}`,
   );
   check(
-    'G1-2 无描边残留（phosphor 时代 stroke-width 属性在顶栏图标上一律不存在）',
-    audit.rows.every((r) => r.stroke === null),
-    audit.rows.map((r) => `${r.label}:${String(r.stroke)}`).join(' '),
+    'G1-2 顶栏钮可访问名齐全且不再是图标钮类（label 非空、无 .sc-iconbtn）',
+    audit.rows.every((r) => (r.label ?? '').length > 0 && !r.cls.split(' ').includes('sc-iconbtn')),
+    audit.rows.map((r) => `${String(r.label)}:${r.cls}`).join(' | '),
   );
 
   // --- G2 像素级证据（8× 放大 + 逐像素采样） --------------------------------
@@ -425,15 +428,15 @@ try {
   const ai0 = await AI_PROBE();
   phases.aiClosed = ai0;
   check(
-    'G2-0 AI 钮定位 + 像素族几何（viewBox/crispEdges/无 stroke-width）',
-    ai0 !== null && ai0.viewBox === '0 0 16 16' && ai0.shapeRendering === 'crispEdges' && ai0.strokeWidth === null,
-    ai0 === null ? 'NULL' : JSON.stringify({ pressed: ai0.pressed, viewBox: ai0.viewBox, crisp: ai0.shapeRendering, rects: ai0.rectCount }),
+    'G2-0 AI 钮定位 + 纯文字契约（无 svg、可见「AI 对话」、aria-label 含键位、aria-pressed=false）',
+    ai0 !== null && ai0.hasSvg === false && ai0.text === 'AI 对话' && ai0.pressed === 'false',
+    ai0 === null ? 'NULL' : JSON.stringify({ text: ai0.text, hasSvg: ai0.hasSvg, pressed: ai0.pressed, cls: ai0.cls }),
   );
   const clip = { x: Math.floor(ai0.buttonBox.x), y: Math.floor(ai0.buttonBox.y), width: 28, height: 28 };
   const zoomBuf = await shotZoom('t58-01-ai-closed-zoom8x.png', clip, 8);
   info('AI 钮 8× 放大截图', `bytes=${String(zoomBuf === null ? -1 : zoomBuf.length)} clip=${JSON.stringify(clip)}`);
   let pixelReport = null;
-  if (zoomBuf !== null && ai0 !== null) {
+  if (zoomBuf !== null && ai0 !== null && ai0.hasSvg === true) {
     const img = decodePng(zoomBuf);
     const fg = rgbTuple(ai0.color);
     const bg = rgbTuple(await page.evaluate(() => getComputedStyle(document.querySelector('.sc-shell__topbar')).backgroundColor));
@@ -485,28 +488,27 @@ try {
       `不等格数=${String(mismatch)}`,
     );
   } else {
-    check('G2-1 硬边证明：8× 放大图已落盘并解码', false, 'zoomBuf 为空');
-    check('G2-2 像素级证据：掩码 == 资产矩阵', false, '未取得放大图');
+    // 09-29 SUPERSEDED：顶栏已无 glyph → 掩码比对不再适用（AiRobot 资产 QC 移交单测）
+    check('G2-1 SUPERSEDED：顶栏 8× glyph 掩码比对（老板令后顶栏无图标，不再评判）', true, `hasSvg=${String(ai0 === null ? null : ai0.hasSvg)} zoomBytes=${String(zoomBuf === null ? -1 : zoomBuf.length)}`);
+    check('G2-2 SUPERSEDED：钝化说明见 G2-1（AiRobot 几何基线 = t58-ai-button.test.tsx ③）', true, 'moved-to-unit-test');
   }
 
   // --- G3 AI 钮两态 ---------------------------------------------------------
   STEP = 'G3|ai-two-state';
-  const closedEye = ai0.eyeOpacity;
-  const closedAntenna = ai0.antennaOpacity;
   check(
-    'G3-1 关态明暗实测（getComputedStyle）：眼 = 0.35、天线 = 0.55',
-    closedEye === '0.35' && closedAntenna === '0.55',
-    `eye=${String(closedEye)} antenna=${String(closedAntenna)} aria-pressed=${String(ai0.pressed)}`,
+    'G3-1 关态：aria-pressed=false、钮内无 svg、可见文字 = 「AI 对话」（面板收起）',
+    ai0.pressed === 'false' && ai0.hasSvg === false && ai0.text === 'AI 对话',
+    `pressed=${String(ai0.pressed)} hasSvg=${String(ai0.hasSvg)} text=${JSON.stringify(ai0.text)}`,
   );
-  const geometryOf = (probe) => JSON.stringify(probe.allRects);
   await clickAi();
   await wait(1200);
   const ai1 = await AI_PROBE();
   phases.aiOpen = ai1;
+  const panelOpenAfterClick = await page.evaluate(() => document.querySelector('.ai-chat') !== null);
   check(
-    'G3-2 开态明暗实测：眼 = 1、天线 = 1（与关态唯一差别是明暗，几何完全一致）',
-    ai1 !== null && ai1.eyeOpacity === '1' && ai1.antennaOpacity === '1' && geometryOf(ai1) === geometryOf(ai0) && ai1.pressed === 'true',
-    ai1 === null ? 'NULL' : `eye=${String(ai1.eyeOpacity)} antenna=${String(ai1.antennaOpacity)} 几何同=${String(geometryOf(ai1) === geometryOf(ai0))} pressed=${String(ai1.pressed)}`,
+    'G3-2 开态：aria-pressed=true 且面板已出现（开合语义与旧图标钮完全一致）',
+    ai1 !== null && ai1.pressed === 'true' && panelOpenAfterClick === true,
+    ai1 === null ? 'NULL' : `pressed=${String(ai1.pressed)} panel=${String(panelOpenAfterClick)}`,
   );
   const panelState = await page.evaluate(() => {
     const panel = document.querySelector('.ai-chat');
@@ -522,10 +524,11 @@ try {
   await clickAi();
   await wait(1000);
   const ai2 = await AI_PROBE();
+  const panelClosedAfterSecondClick = await page.evaluate(() => document.querySelector('.ai-chat') === null);
   check(
-    'G3-4 再点回关态：眼/天线明暗回 0.35/0.55 且面板已收起（两态可反复往返）',
-    ai2 !== null && ai2.eyeOpacity === '0.35' && ai2.antennaOpacity === '0.55' && ai2.pressed === 'false',
-    ai2 === null ? 'NULL' : `eye=${String(ai2.eyeOpacity)} antenna=${String(ai2.antennaOpacity)} pressed=${String(ai2.pressed)}`,
+    'G3-4 再点回关态：aria-pressed=false 且面板已收起（开合可反复往返）',
+    ai2 !== null && ai2.pressed === 'false' && panelClosedAfterSecondClick === true,
+    ai2 === null ? 'NULL' : `pressed=${String(ai2.pressed)} panelClosed=${String(panelClosedAfterSecondClick)}`,
   );
 
   // --- G4 截图（≥4 张） -----------------------------------------------------
@@ -550,9 +553,9 @@ try {
   const darkAudit = await AI_PROBE();
   phases.aiDark = darkAudit;
   check(
-    'G4-1 深色主题下同为像素族且两态明暗按同一 CSS 档生效（关态 0.35/0.55）',
-    darkTheme === 'dark' && darkAudit !== null && darkAudit.viewBox === '0 0 16 16' && darkAudit.eyeOpacity === '0.35',
-    `data-theme=${String(darkTheme)} eye=${String(darkAudit?.eyeOpacity)} antenna=${String(darkAudit?.antennaOpacity)}`,
+    'G4-1 深色主题下顶栏钮仍是纯文字钮（无 svg、文字非空、状态可读）',
+    darkTheme === 'dark' && darkAudit !== null && darkAudit.hasSvg === false && darkAudit.text.length > 0,
+    `data-theme=${String(darkTheme)} text=${JSON.stringify(darkAudit?.text)} hasSvg=${String(darkAudit?.hasSvg)}`,
   );
   const b3 = await shot('t58-01-editor-dark.png');
   shotsTaken.push({ file: 't58-01-editor-dark.png', ok: b3 !== null });
@@ -578,7 +581,7 @@ try {
   });
   info('设置页/整屏图标族抽样', JSON.stringify(settingsAudit));
   check(
-    'G4-2 整屏图标（侧栏 + 顶栏 + 设置页）零漏网：全部是像素族几何（无 phosphor 混族残留）',
+    'G4-2 整屏残留图标（侧栏 + 设置页；顶栏 09-29 起无图标）零漏网：全部是像素族几何',
     settingsAudit.count > 0 && settingsAudit.allPixel === true,
     JSON.stringify(settingsAudit),
   );

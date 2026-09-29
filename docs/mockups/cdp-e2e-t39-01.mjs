@@ -171,7 +171,7 @@ const canon = (v) => {
 
 // 退出设置页：顶栏齿轮钮是 toggle（App.tsx:291）
 const exitSettings = async (page) => {
-  const gear = page.locator('.sc-iconbtn[aria-label="设置"]').first();
+  const gear = page.locator('.sc-topbtn[aria-label="设置"]').first();
   if ((await gear.count()) > 0) {
     await gear.click().catch(() => {});
     await wait(1100);

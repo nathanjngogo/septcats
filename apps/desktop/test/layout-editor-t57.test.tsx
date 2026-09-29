@@ -412,7 +412,8 @@ describe('T57-01 §1.1/§1.2/§1.3 视图状态机（App 集成）', () => {
   it('顶栏「布局」钮在设置钮左侧；点击开弹框（aria-pressed 同步）→ Esc 关闭（editor 不动）', async () => {
     const container = await renderApp();
 
-    const order = [...container.querySelectorAll('.sc-shell__actions .sc-iconbtn')].map((node) =>
+    // 09-29 老板令「图标去掉」：顶栏 actions 已无图标钮 → 取纯文字钮（aria-label 不变）
+    const order = [...container.querySelectorAll('.sc-shell__actions .sc-topbtn')].map((node) =>
       node.getAttribute('aria-label') ?? '',
     );
     const layoutIndex = order.indexOf('布局');

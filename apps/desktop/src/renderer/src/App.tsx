@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { setGlobalThemeMode, ToastViewport } from '@septcats/ui';
 import {
-  AiRobot,
   AppShell,
   Breadcrumb,
-  GearSix,
   IconButton,
-  MagnifyingGlass,
-  PixelShopGlyph,
-  Plus,
   SidebarSimple,
 } from '@septcats/ui';
 import { AiChatPanel } from './ai/AiChatPanel';
@@ -597,10 +592,9 @@ export function App() {
                 TemplateMarketPage）。glyph 曾为应用层局部自绘，T74-01 已收编进
                 @septcats/ui（packages/ui/src/icons.tsx），调用点零改动。 */}
             {/* 09-29 老板令：顶栏「同步状态那一行」按键全部换成中文按键 →
-                图标钮升级为「像素 glyph + 中文文字」钮（TopBarButton）。
+                「图标去掉」= 纯中文文字钮（TopBarButton，无 glyph）。
                 aria-label / data-testid / aria-pressed 语义原样保留。 */}
             <TopBarButton
-              icon={PixelShopGlyph}
               label={t('app.workbenchMarketLabel')}
               text={t('app.marketText')}
               pressed={view === 'market'}
@@ -608,7 +602,6 @@ export function App() {
               onClick={openWorkbenchMarket}
             />
             <TopBarButton
-              icon={MagnifyingGlass}
               label={t('app.searchLabel')}
               text={t('app.searchText')}
               onClick={() => {
@@ -620,7 +613,6 @@ export function App() {
                 T58-01 §1.2：ICON 换像素机器人头（开=眼亮 / 关=眼暗，见 pixelIcons.css） */}
             {aiHidden ? null : (
               <TopBarButton
-                icon={AiRobot}
                 label={t('app.aiChatLabel')}
                 text={t('app.aiText')}
                 pressed={chatOpen}
@@ -633,7 +625,6 @@ export function App() {
                 文案走 sync.* 双语键（键已存在，无需新增）。 */}
             <SyncStatusButton />
             <TopBarButton
-              icon={Plus}
               label={t('importWizard.title')}
               text={t('importWizard.title')}
               pressed={inImport}
@@ -644,7 +635,6 @@ export function App() {
             {/* T57-01 §1.1：顶栏「布局」钮（设置钮左边，顺序 Sync→Plus→Layout→Gear）——
                 弹像素快选框；aria-pressed = 弹框打开态 */}
             <TopBarButton
-              icon={SidebarSimple}
               label={t('app.layoutLabel')}
               text={t('app.layoutLabel')}
               pressed={layoutPickerOpen}
@@ -654,7 +644,6 @@ export function App() {
               }}
             />
             <TopBarButton
-              icon={GearSix}
               label={t('app.settingsLabel')}
               text={t('app.settingsLabel')}
               pressed={inSettings}
