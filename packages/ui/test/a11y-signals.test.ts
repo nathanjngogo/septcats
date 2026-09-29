@@ -15,13 +15,21 @@ import { resolvePkgFile } from './pkg-root';
 
 const css = readFileSync(resolvePkgFile('src/looks.css'), 'utf8');
 
-/** 取某个媒体块（从 @media 行到匹配收尾），粗粒度按下一个顶层 @media/文件尾切。 */
+/** 取某个媒体块（花括号配平，只取该块本身——防止吃到后续追加的无关规则）。 */
 function mediaBlock(feature: string): string {
   const start = css.indexOf(`@media (${feature})`);
   expect(start, `looks.css 缺 @media (${feature})`).toBeGreaterThanOrEqual(0);
-  const rest = css.slice(start + 1);
-  const next = rest.indexOf('@media (');
-  return next === -1 ? rest : rest.slice(0, next);
+  const open = css.indexOf('{', start);
+  expect(open, `@media (${feature}) 缺块体`).toBeGreaterThanOrEqual(0);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth += 1;
+    else if (css[i] === '}') {
+      depth -= 1;
+      if (depth === 0) return css.slice(start, i + 1);
+    }
+  }
+  return css.slice(start);
 }
 
 describe('UI 评估 · 无障碍三信号（Apple §14）', () => {

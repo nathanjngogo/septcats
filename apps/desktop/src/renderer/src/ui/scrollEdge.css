@@ -1,0 +1,76 @@
+/**
+ * scrollEdge.css —— 滚动边缘渐隐（UI 评估 P1① · Apple 准则 §12 scroll edge effect）。
+ *
+ * 准则：内容与浮动 chrome（面板头/列表头）交界处不要硬分割线，用一小段**渐隐**；
+ * 且只在真的滚动时才出现（未滚动不显）。
+ *
+ * 机制（零 JS、零新元素）：给滚动容器本体上 `mask-image`——渐变里那段「透明→不透明」
+ * 的**边带高度**由一个注册过的自定义属性 `--sc-edge-band` 驱动：
+ *   band = 0px  → 渐变退化为「透明 0 → 不透明 0」＝ 全不透明 ＝ **完全无遮罩**；
+ *   band = 24px → 顶部 24px 内容向上淡出，其余照旧不透明。
+ * 边带高度由滚动驱动动画（`scroll(self block)`，0→32px 滚动量内长满）推进。
+ *
+ * 四条实证教训（T94-01 逐版抓出来的，勿回退）：
+ *   ① 遮罩挂在滚动容器**本体**时，时间轴用 `self`；写 `nearest` 会落到根滚动器
+ *      （窗口不滚 → 进度恒 0 → 遮罩永远长不出来）。反向：把它挂到「容器内的伪元素」时
+ *      `self` 又不对（伪元素不是滚动容器）。
+ *   ② **绝不能**用 `mask-size: 100% 0` + `mask-repeat: no-repeat` 表达「无遮罩」：
+ *      遮罩图以外的区域会被判为完全透明 → **整块内容被遮掉**（实测 deep 区内容对比度
+ *      归零 = 侧栏列表几乎不可见；t93 那类只看 DOM 的探针抓不到，必须像素级验）。
+ *      故 `mask-size` 恒为 `100% 100%`（全覆盖），只动渐变里的边带长度。
+ *   ③ 边带长度必须走 `@property` 注册的 `<length>` 自定义属性才能在关键帧里插值
+ *      （未注册的自定义属性是离散量，动画会跳变）。
+ *   ④ 不用「滚动容器内的 sticky 薄膜」代替：那层薄膜会画在列表行背景**之下**
+ *      （妖色探针实测：洋红只从行间隙透出几像素），内容不会被洗掉 = 效果为零。
+ *
+ * mask 只作用于滚动容器的内容，**不动 chrome 面**（父层底色/磨砂/框线全保留），
+ * 故 pixel/linear/glass 三档共用一个实现、无需配色 token。
+ * 兜底：不支持滚动驱动动画的引擎 → 动画不跑 → band 保持 0 → 无遮罩、零影响。
+ *
+ * 落点（只在真有浮动头的地方）：侧栏页面树 / 知识库面板 / AI 面板消息列表。
+ * 编辑器正文（.pv-root）**不做**：T52 标签融合红线要求活动标签与正文顶边连成一体，
+ * 顶部渐隐会破坏这条观感契约。
+ */
+
+@property --sc-edge-band {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@supports (animation-timeline: scroll()) {
+  .app-side-scroll,
+  .kb-panel__scroll,
+  .ai-chat__list {
+    --sc-edge-band: 0px;
+    /* 全尺寸遮罩：渐变只有顶部那一段是淡的，band=0 时整幅不透明 = 无遮罩 */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgb(0 0 0) var(--sc-edge-band));
+    mask-image: linear-gradient(to bottom, transparent 0, rgb(0 0 0) var(--sc-edge-band));
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: sc-edge-band linear both;
+    animation-timeline: scroll(self block);
+    /* 约一个边带高（xl + sm = 32px）的滚动量内长满，再滚保持 */
+    animation-range: 0 calc(var(--sc-space-xl) + var(--sc-space-sm));
+  }
+
+  @keyframes sc-edge-band {
+    from {
+      --sc-edge-band: 0px;
+    }
+    to {
+      --sc-edge-band: var(--sc-space-xl);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* 渐隐是「遮挡过渡」的功能性提示（非自主运动），保留；位置驱动不产生动效负担。 */
+    .app-side-scroll,
+    .kb-panel__scroll,
+    .ai-chat__list {
+      transition: none;
+    }
+  }
+}

@@ -18,6 +18,8 @@ import { TopBarButton } from './layout/TopBarButton';
 import { NavRail, type RailKey } from './nav/NavRail';
 import { KnowledgePanel } from './nav/KnowledgePanel';
 import { navActions, useNav } from './nav/navState';
+// UI 评估 P1①：滚动边缘渐隐（Apple §12，只在浮动头与内容交界处）
+import './ui/scrollEdge.css';
 import { TitleBarBand } from './menu/TitleBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';

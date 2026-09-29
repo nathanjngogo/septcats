@@ -123,8 +123,21 @@ Windows 的「透明效果」开关会被 Chromium 映射成 `prefers-reduced-tr
 | 4 | 修 2 处「spacing token 当字距」（2px→0.02em） | `PageLockDialog.css` / `PageLockScreen.css` |
 | 5 | 一级轨 + 知识库行补按下即反馈 | `NavRail.css` / `KnowledgePanel.css` |
 
+### 已完成（P1 三项，老板「按你的建议来」后落地）
+| # | 项 | 实现 | 证据 |
+|---|---|---|---|
+| ① | 滚动边缘渐隐 | 滚动容器 mask + `--sc-edge-band`（`@property <length>`）+ `scroll(self block)` 滚动驱动；侧栏树/知识库面板/AI 消息列表（编辑器正文因 T52 融合红线不做） | T94-01 S1–S3（同位置对照：顶部对比度 22.85→5.76，深部两态 28.52 = 内容未被遮掉） |
+| ②④ | vibrancy 加彩度维 | 冲突判定扩为「亮度 + 彩度」：彩度 ≥36 挂 `chroma` 中等纱（chrome 40%/正文 74%/浮层 72%），亮度冲突优先 | 单测 4 例 + T94-01 S6（chroma 规则进包） |
+| ③ | 隐形命中内衬 | 顶栏文字钮 `::after` 纵向 ±6px（横向不扩，防相邻钮互抢） | T94-01 S5（视觉盒上方 4px 命中仍归属该钮） |
+
+**三条实测教训（已写进 scrollEdge.css 头注，勿回退）**：
+① 遮罩挂容器本体时时间轴用 `self`（`nearest` 落根滚动器 → 永不激活）；
+② **绝不能**用 `mask-size: 100% 0` 表达「无遮罩」——遮罩图以外被判全透明 → 内容整块被遮掉
+（T94 deep 区内容对比度归零实证；只看 DOM 的探针完全抓不到，必须像素级验）；
+③ 边带长度须走 `@property` 注册才能插值。
+
 ### 待办（按价值/成本排序）
-- **P1** ① 滚动边缘渐隐（侧栏树 / 主区顶部与浮动 chrome 交界）；② 玻璃档 chrome 次级文字的 vibrancy 处理（提亮一档 + 微字距）；③ 28px 级钮加 4px 隐形命中内衬；④ vibrancy 判定加色相/彩度维。
+- **P1 剩余** 玻璃档 chrome 次级文字的 vibrancy 处理（提亮一档 + 微字距）、渐隐扩到编辑器/设置等其余滚动容器；
 - **P2** ① 侧栏 / AI 面板开合换**弹簧**（Apple §4/§5：可打断 + 速度交接），替换 CSS transition；② look 切换的「材质成形」（blur+scale 同步过渡）；③ UI 12–14px 字距收进 token（消 ad-hoc）；④ px → rem 的 Dynamic Type 化；⑤ 浮层族的「更大面更厚」再核一档（当前 28 vs 30 差距偏小）。
 
 ### 明确不动（老板红线）

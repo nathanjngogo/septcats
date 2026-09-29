@@ -224,6 +224,30 @@
   background: color-mix(in srgb, var(--sc-color-surface-raised) 88%, transparent);
 }
 
+/* UI 评估 P1②/④（Apple §12 vibrancy）：亮度同侧但壁纸**彩度高** → 中等纱。
+   深灰/浅灰文字压在彩色块上的辨识度会掉（亮度相同也可能难读），补一档「振动」处理：
+   chrome 40%（保留壁纸彩，但压住色噪）/ 正文 74% / 浮层 72%。 */
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-shell__topbar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-shell__sidebar,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .menub_band,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .titleb_band {
+  background: color-mix(in srgb, var(--sc-color-canvas) 40%, transparent);
+}
+
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-shell__main {
+  background: color-mix(in srgb, var(--sc-color-content) 74%, transparent);
+}
+
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-dialog,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-menu,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-popover__panel,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-toast__item,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-select__listbox,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .sc-tooltip__bubble,
+[data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='chroma'] .palette {
+  background: color-mix(in srgb, var(--sc-color-surface-raised) 72%, transparent);
+}
+
 /* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）
    随质感收细为 1px 并降为半透明墨（像素态保持 2px 实墨 = T59 锚定不动）===== */
 [data-look='linear'] .sc-shell__sidebar::after,
@@ -283,3 +307,4 @@
     backdrop-filter: none;
   }
 }
+

@@ -7,6 +7,8 @@
  * token，三轴（明暗/配色/质感）随主题；无描边（整排一致的无边框 ghost）。
  */
 .sc-topbtn {
+  /* UI 评估 P1③：命中内衬锚点（Apple §10 命中区 ≥ 视觉盒） */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -59,4 +61,12 @@
   .sc-topbtn {
     transition: none;
   }
+}
+
+/* UI 评估 P1③ 隐形命中内衬：顶栏行高 > 钮高，上下空档正好补满（纵向扩；横向不扩——
+   相邻钮 gap 仅 2px，横扩会互相抢点击，比小目标更糟）。尺寸走 token 派生，不写裸 px。 */
+.sc-topbtn::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * (var(--sc-space-xs) + var(--sc-space-xxs))) 0;
 }
