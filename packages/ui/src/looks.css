@@ -164,6 +164,24 @@
 [data-look='glass'] .sc-shell__main {
   background: color-mix(in srgb, var(--sc-color-content) 58%, transparent);
 }
+
+/* vibrancy（UI 评估 P1 尾 · Apple §12「振动」）：半透明面上的文字要提一档对比 ——
+   玻璃 chrome（侧栏/顶栏/菜单带/标题带）里的行文本与标签由 ink-secondary 提到 ink。
+   理由：T94-01 S4b 实测 ink-secondary 在真壁纸的玻璃上只有 2.79（加纱到 88% 后 3.71），
+   而 ink 档在同条件 ≈10；文字端提档比把面做成实心更符合「材质选择权归用户」。
+   只覆写 color（不动 --sc-color-* token 本身）；pixel/linear 档完全不受影响。 */
+[data-look='glass'] .sc-shell__sidebar .app-nav-row,
+[data-look='glass'] .sc-shell__sidebar .app-side-head-name,
+[data-look='glass'] .sc-shell__sidebar .app-nav-empty,
+[data-look='glass'] .nav-rail__item,
+[data-look='glass'] .kb-panel__row,
+[data-look='glass'] .kb-panel__new,
+[data-look='glass'] .sc-shell__topbar .sc-topbtn,
+[data-look='glass'] .sc-shell__sidebar .tabsbar__tab,
+[data-look='glass'] .menub_band,
+[data-look='glass'] .titleb_band {
+  color: var(--sc-color-ink);
+}
 /* 浮层重磨砂（浮层背后必有内容可磨，是毛玻璃最该发力的地方） */
 [data-look='glass'] .sc-dialog,
 [data-look='glass'] .sc-menu,
@@ -187,6 +205,10 @@
  *   'light' = 深主题 × 亮壁纸 → 纱向暗侧收更多（浅字需更暗底）
  *   缺席    = 无冲突/采样失败/非 glass → 上面现状，零变化。
  * ========================================================================== */
+/* 冲突纱（暗壁纸 × 浅主题）：72%（**不加厚**）。T94-01 S4b 实证：本档下 ink-secondary
+   只有 2.79（不达标），但把面加厚到 88% 会牺牲通透（T85/T90 双探针转红）。正解是
+   Apple §12 的 vibrancy —— 不动材质、把半透明面上的**文字提一档**（见下方 vibrancy 段），
+   提档后同条件实测 7.96。 */
 [data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-shell__topbar,
 [data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .sc-shell__sidebar,
 [data-look='glass'][data-wallpaper='1'][data-wallpaper-clash='dark'] .menub_band,

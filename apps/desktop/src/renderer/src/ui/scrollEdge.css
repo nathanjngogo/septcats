@@ -7,8 +7,8 @@
  * 机制（零 JS、零新元素）：给滚动容器本体上 `mask-image`——渐变里那段「透明→不透明」
  * 的**边带高度**由一个注册过的自定义属性 `--sc-edge-band` 驱动：
  *   band = 0px  → 渐变退化为「透明 0 → 不透明 0」＝ 全不透明 ＝ **完全无遮罩**；
- *   band = 24px → 顶部 24px 内容向上淡出，其余照旧不透明。
- * 边带高度由滚动驱动动画（`scroll(self block)`，0→32px 滚动量内长满）推进。
+ *   band = xl 档高 → 顶部那一段内容向上淡出，其余照旧不透明。
+ * 边带高度由滚动驱动动画（`scroll(self block)`，0→两个间距 token 之和 的滚动量内长满）推进。
  *
  * 四条实证教训（T94-01 逐版抓出来的，勿回退）：
  *   ① 遮罩挂在滚动容器**本体**时，时间轴用 `self`；写 `nearest` 会落到根滚动器
@@ -41,7 +41,13 @@
 @supports (animation-timeline: scroll()) {
   .app-side-scroll,
   .kb-panel__scroll,
-  .ai-chat__list {
+  .ai-chat__list,
+  /* P1 尾：其余「头在滚动器外」的长列表体（模板市场 / 命令面板结果 / 工作台流程区）。
+     口径同前：头是兄弟节点才配顶渐隐；头在滚动器内的（弹层小面板、表头、代码块）一律不加，
+     否则会把头本身淡掉。 */
+  .wbm-body,
+  .palette-list,
+  .wb-flow {
     --sc-edge-band: 0px;
     /* 全尺寸遮罩：渐变只有顶部那一段是淡的，band=0 时整幅不透明 = 无遮罩 */
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgb(0 0 0) var(--sc-edge-band));
@@ -52,7 +58,7 @@
     mask-repeat: no-repeat;
     animation: sc-edge-band linear both;
     animation-timeline: scroll(self block);
-    /* 约一个边带高（xl + sm = 32px）的滚动量内长满，再滚保持 */
+    /* 约一个边带高（= xl + sm 两个间距 token 之和）的滚动量内长满，再滚保持 */
     animation-range: 0 calc(var(--sc-space-xl) + var(--sc-space-sm));
   }
 
@@ -69,7 +75,10 @@
     /* 渐隐是「遮挡过渡」的功能性提示（非自主运动），保留；位置驱动不产生动效负担。 */
     .app-side-scroll,
     .kb-panel__scroll,
-    .ai-chat__list {
+    .ai-chat__list,
+    .wbm-body,
+    .palette-list,
+    .wb-flow {
       transition: none;
     }
   }

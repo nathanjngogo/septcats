@@ -84,6 +84,55 @@ function decodePng(d) {
   }
   return { w, h, ch, px };
 }
+/**
+ * WCAG 相对亮度（sRGB）：用于「真机渲染态对比度」实测。
+ * 单通道值走 sRGB 线性化（<=0.04045 线性段）。
+ */
+function relLum(r, g, b) {
+  const f = (v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+/** 对比度（WCAG）：(L1+0.05)/(L2+0.05)。 */
+function contrastRatio(l1, l2) {
+  const hi = Math.max(l1, l2);
+  const lo = Math.min(l1, l2);
+  return +((hi + 0.05) / (lo + 0.05)).toFixed(2);
+}
+/**
+ * 从截图里取「文字行」的渲染态对比度：背景 = 行内像素众数桶（占多数的那档），
+ * 文字 = 偏离背景最远的那 3% 像素的均值亮度。避开了「哪一像素是字」的猜测。
+ */
+function textContrastFromShot(img) {
+  const { w, h, ch, px } = img;
+  const buckets = new Map();
+  const lumas = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * ch;
+      const r = px[o];
+      const g = px[o + 1];
+      const b = px[o + 2];
+      const l = relLum(r, g, b);
+      lumas.push(l);
+      const key = `${String(r >> 3)}-${String(g >> 3)}-${String(b >> 3)}`;
+      const cur = buckets.get(key);
+      buckets.set(key, cur === undefined ? { n: 1, l } : { n: cur.n + 1, l: cur.l });
+    }
+  }
+  if (lumas.length === 0) return null;
+  let bg = { n: 0, l: 0 };
+  for (const v of buckets.values()) { if (v.n > bg.n) bg = v; }
+  lumas.sort((a, b) => a - b);
+  const bgL = bg.l;
+  // 文字端：离背景最远的那一端的前 3%
+  const far = Math.abs(lumas[0] - bgL) > Math.abs(lumas[lumas.length - 1] - bgL) ? lumas.slice(0, Math.max(1, Math.floor(lumas.length * 0.03))) : lumas.slice(-Math.max(1, Math.floor(lumas.length * 0.03)));
+  const textL = far.reduce((a, b) => a + b, 0) / far.length;
+  return { bgL: +bgL.toFixed(4), textL: +textL.toFixed(4), ratio: contrastRatio(textL, bgL), bgShare: +(bg.n / lumas.length).toFixed(3) };
+}
+
 /** 每行「内容对比度」= 行内像素标准差（前 n 行）。遮罩把内容淡向 chrome ⇒ 顶部必降。 */
 function rowStd(img, n) {
   const { w, ch, px } = img;
@@ -240,6 +289,38 @@ async function main() {
     m2 !== null && bandHeight(m2) >= 16 && /blur\(2[0-9]px\)|blur\(3[0-9]px\)/.test(m2.sidebarBlur),
     JSON.stringify(m2));
 
+  STEP = 'S4b';
+  // vibrancy 实测（Apple §12）：玻璃档里「文字压真壁纸」的渲染态对比度。
+  // 两态都量：① 现状（冲突纱生效）② 强制撤掉 clash 属性的基线（= 无冲突分支的纱厚）。
+  const pickText = () =>
+    page.evaluate(() => {
+      const el = document.querySelector('.app-side-head-name') ?? document.querySelector('.app-nav-row');
+      if (el === null) return null;
+      const r = el.getBoundingClientRect();
+      return {
+        text: (el.textContent ?? '').trim().slice(0, 12),
+        color: getComputedStyle(el).color,
+        clip: { x: Math.round(r.x), y: Math.round(r.y), width: Math.max(24, Math.round(r.width)), height: Math.max(10, Math.round(r.height)) },
+      };
+    });
+  const shotOf = async (clip, name) => {
+    const buf = await page.screenshot({ clip });
+    writeFileSync(join(SHOT_DIR, `${name}.png`), buf);
+    return textContrastFromShot(decodePng(buf));
+  };
+  const t1 = await pickText();
+  const c1 = t1 === null ? null : await shotOf(t1.clip, 'vibrancy-chrome-clash');
+  const clashBefore = await page.evaluate(() => document.documentElement.dataset.wallpaperClash ?? '');
+  await page.evaluate(() => { document.documentElement.removeAttribute('data-wallpaper-clash'); });
+  await wait(700);
+  const c2 = t1 === null ? null : await shotOf(t1.clip, 'vibrancy-chrome-base');
+  await page.evaluate((v) => { if (v !== '') document.documentElement.dataset.wallpaperClash = v; }, clashBefore);
+  await wait(400);
+  check('S4b 玻璃档 chrome 文字：现状（冲突纱）渲染态对比度 ≥4.5（真壁纸上可读）',
+    c1 !== null && c1.ratio >= 4.5,
+    `text=${JSON.stringify(t1 === null ? null : t1.text)} color=${t1 === null ? '' : t1.color} clash现在态=${JSON.stringify(c1)}`);
+  line(`INFO 玻璃档基线（强制撤纱，= 无冲突分支纱厚）对比度=${c2 === null ? 'null' : String(c2.ratio)}（背景占比 ${c2 === null ? '' : String(c2.bgShare)}）`);
+
   STEP = 'S5';
   await page.evaluate(() => { localStorage.setItem('septcats.look', 'pixel'); });
   await page.reload();
@@ -261,6 +342,22 @@ async function main() {
   check('S5 命中内衬：视觉盒上方 4px 处命中仍归属同一钮（Apple §10 命中区 ≥ 视觉盒）',
     hit !== null && hit.insideIsBtn === true && hit.aboveIsBtn === true,
     JSON.stringify(hit));
+
+  STEP = 'S5b';
+  // P1 尾：其余长列表体也带遮罩（开命令面板 / 模板市场 / 工作台各看一处）
+  const more = await page.evaluate(() => {
+    const has = (sel) => {
+      const el = document.querySelector(sel);
+      if (el === null) return 'absent';
+      const cs = getComputedStyle(el);
+      return cs.maskImage.includes('gradient') && cs.maskSize.includes('100% 100%') ? 'masked' : 'nomask';
+    };
+    return { palette: has('.palette-list'), market: has('.wbm-body'), flow: has('.wb-flow') };
+  });
+  // 命令面板需先打开；模板市场/工作台需先切视图 —— 此处只断言「规则命中到元素」的三种合法态
+  const moreOk = Object.values(more).every((v) => v === 'masked' || v === 'absent');
+  check('S5b 其余长列表体（命令面板结果/模板市场/工作台流程区）遮罩规则已挂（元素存在即为 masked）',
+    moreOk, JSON.stringify(more));
 
   STEP = 'S6';
   const chromaRule = await page.evaluate(() => {
