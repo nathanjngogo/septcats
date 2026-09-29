@@ -28,7 +28,7 @@
 
 .titleb_name {
   font-weight: 600;
-  letter-spacing: 0.2px;
+  letter-spacing: var(--sc-tracking-ui);
   opacity: 0.92;
 }
 

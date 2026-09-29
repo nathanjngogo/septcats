@@ -63,11 +63,12 @@ describe('T30-01 布局不变量：滚动只发生在内部容器', () => {
 });
 
 describe('T30-01 布局不变量：折叠 = 完全收起', () => {
-  it('折叠态侧栏 display:none、body 单列 1fr（窄轨列不占位）', () => {
+  it('折叠态侧栏宽度归零 + visibility:hidden（T95-01 弹簧开合；窄轨列早已退役）', () => {
     const sidebar = ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__sidebar');
-    expect(sidebar, '折叠态侧栏必须 display:none').toContain('display: none');
+    expect(sidebar, '折叠态侧栏必须退出 tab 序（visibility: hidden）').toContain('visibility: hidden');
+    expect(sidebar, 'T95-01 起不再硬切（保留列结构做弹簧）').not.toContain('display: none');
     const body = ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__body');
-    expect(body).toMatch(/grid-template-columns:\s*1fr/);
+    expect(body, '折叠 = 侧栏列宽归零').toMatch(/--sc-shell-sidebar-w:\s*0px/);
     expect(body).not.toContain('--sc-layout-sidebar-collapsed');
   });
 });

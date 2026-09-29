@@ -24,7 +24,7 @@
   background: transparent;
   color: var(--sc-color-ink-secondary);
   font: var(--sc-text-ui-xs);
-  letter-spacing: 0.2px;
+  letter-spacing: var(--sc-tracking-ui);
   /* 两字竖排观感：不换行，窄轨里居中 */
   white-space: nowrap;
   cursor: pointer;

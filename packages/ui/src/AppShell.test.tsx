@@ -88,14 +88,16 @@ describe('AppShell', () => {
     const railBody = /\.sc-shell--rail\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
     expect(railBody, '缺 rail 三列规则').not.toBeNull();
     expect(railBody?.[1] ?? '').toContain('--sc-layout-rail');
-    expect(railBody?.[1] ?? '').toContain('--sc-layout-sidebar');
+    // T95-01 起侧栏列宽是注册变量（弹簧驱动），不再是裸 token
+    expect(railBody?.[1] ?? '').toContain('--sc-shell-sidebar-w');
     // 三列下侧栏必须落在第 2 列（与 rail 抢第 1 列 = 真机「rail 点不到」事故形态）
     const railSidebar = /\.sc-shell--rail\s+\.sc-shell__sidebar\s*\{([^}]*)\}/.exec(css);
     expect(railSidebar, '缺 rail 态侧栏列规则').not.toBeNull();
     expect(railSidebar?.[1] ?? '').toContain('grid-column: 2');
+    // T95-01 起折叠不再另写列定义：侧栏列宽由 --sc-shell-sidebar-w 归零（rail 列恒在），
+    // 故 rail 三列规则在折叠态同样成立（列宽 56|0|1fr），不该再出现「rail + 1fr」两列版本。
     const railCollapsed = /\.sc-shell--rail\.sc-shell--collapsed\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
-    expect(railCollapsed, '缺 rail 折叠态规则').not.toBeNull();
-    expect(railCollapsed?.[1] ?? '').toMatch(/grid-template-columns:\s*var\(--sc-layout-rail\)\s*1fr/);
+    expect(railCollapsed, 'T95-01 后不应再有 rail 折叠专属列定义（列宽由变量驱动）').toBeNull();
     // rail 自身跨两行（通高），与侧栏同口径
     const railEl = /\.sc-shell__rail\s*\{([^}]*)\}/.exec(css);
     expect(railEl?.[1] ?? '').toContain('grid-row: 1 / 3');
@@ -104,15 +106,24 @@ describe('AppShell', () => {
   // TASK-T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨占位。
   // jsdom 不做布局，这里按 css-discipline 同范式对 AppShell.css 源面做静态契约断言；
   // 真机数值断言（getBoundingClientRect().width === 0）由 docs/mockups/cdp-audit-t30-after.mjs 覆盖。
-  it('折叠态 CSS 契约：侧栏 display:none、body 单列 1fr（主区占满）', () => {
+  it('折叠态 CSS 契约：列宽归零 + visibility:hidden + 弹簧过渡（T95-01）', () => {
     const css = readFileSync(resolvePkgFile('src/AppShell.css'), 'utf8');
     const collapsedSidebar = /\.sc-shell--collapsed\s+\.sc-shell__sidebar\s*\{([^}]*)\}/.exec(css);
     expect(collapsedSidebar, '缺折叠态侧栏规则').not.toBeNull();
-    expect(collapsedSidebar?.[1] ?? '').toContain('display: none');
+    // T95-01：不再 display:none 硬切 —— 折叠靠「列宽归零 + visibility:hidden（延迟到动画结束）」
+    expect(collapsedSidebar?.[1] ?? '').toContain('visibility: hidden');
+    expect(collapsedSidebar?.[1] ?? '').toContain('--sc-motion-drawer');
+    expect(collapsedSidebar?.[1] ?? '').not.toContain('display: none');
     const collapsedBody = /\.sc-shell--collapsed\s+\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
     expect(collapsedBody, '缺折叠态 body 列规则').not.toBeNull();
-    // 单列 1fr：窄轨列（--sc-layout-sidebar-collapsed）不再占位
-    expect(collapsedBody?.[1] ?? '').toMatch(/grid-template-columns:\s*1fr/);
+    // 归零的是注册属性（<length> 才能过渡），窄轨 token 早已退役
+    expect(collapsedBody?.[1] ?? '').toMatch(/--sc-shell-sidebar-w:\s*0px/);
     expect(collapsedBody?.[1] ?? '').not.toContain('--sc-layout-sidebar-collapsed');
+    // 基态列宽吃变量 + 弹簧过渡装在 body（属性变化的那一层）
+    const baseBody = /\.sc-shell__body\s*\{([^}]*)\}/.exec(css);
+    expect(baseBody?.[1] ?? '').toContain('grid-template-columns: var(--sc-shell-sidebar-w) 1fr');
+    expect(baseBody?.[1] ?? '').toMatch(/transition:\s*--sc-shell-sidebar-w\s+var\(--sc-motion-drawer\)/);
+    // 注册属性：未注册的自定义属性是离散量、过渡不插值
+    expect(css).toContain("syntax: '<length>'");
   });
 });

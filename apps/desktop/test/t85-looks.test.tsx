@@ -5,7 +5,7 @@
  * 覆盖：持久化 roundtrip / 野值回退 pixel / 应用器写根属性 / setLook 即时应用 /
  * 设置页质感行在位 + 点选生效（data-look 落 documentElement）。老板 09-27 取消画廊后改口径。
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { ThemeSection } from '../src/renderer/src/theme/ThemeSection';
 import { configurePaletteCommands } from '../src/renderer/src/palette/commands';
@@ -139,6 +139,29 @@ describe('命令面板 · 质感切换（T85-01）', () => {
     ).map((c) => c.id);
     for (const id of ['theme.look.pixel', 'theme.look.linear', 'theme.look.glass']) {
       expect(withLook, `缺 ${id}`).toContain(id);
+    }
+  });
+
+  // TASK-T95-02（Apple §12「材质要形成，不是啪一下出现」）：换档才播，首屏不播，同值不重播。
+  it('T95-02 材质成形：换档挂 data-look-settling，450ms 后摘除（首屏/同值不播）', () => {
+    vi.useFakeTimers();
+    try {
+      delete document.documentElement.dataset.look;
+      delete document.documentElement.dataset.lookSettling; // 前一用例的计时器可能未到点
+      applyLookToRoot('glass'); // 首屏 init：不播
+      expect(document.documentElement.dataset.lookSettling).toBeUndefined();
+      lookActions.setLook('pixel'); // 换档：播
+      expect(document.documentElement.dataset.lookSettling).toBe('1');
+      vi.advanceTimersByTime(449);
+      expect(document.documentElement.dataset.lookSettling).toBe('1');
+      vi.advanceTimersByTime(1);
+      expect(document.documentElement.dataset.lookSettling).toBeUndefined();
+      applyLookToRoot('pixel'); // 同值：不重播
+      expect(document.documentElement.dataset.lookSettling).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+      delete document.documentElement.dataset.look;
+      delete document.documentElement.dataset.lookSettling;
     }
   });
 });

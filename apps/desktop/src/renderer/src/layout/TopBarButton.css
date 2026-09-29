@@ -19,7 +19,7 @@
   background: transparent;
   color: var(--sc-color-ink-secondary);
   font: var(--sc-text-ui-xs);
-  letter-spacing: 0.2px;
+  letter-spacing: var(--sc-tracking-ui);
   white-space: nowrap;
   cursor: pointer;
   transition:

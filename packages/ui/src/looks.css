@@ -149,6 +149,27 @@
   background: color-mix(in srgb, var(--sc-color-content) 68%, transparent);
 }
 
+/* ===== T95-02「材质成形」（Apple §12：材质要形成，不是啪一下出现） =====
+   换到玻璃档时，模糊与饱和从 0 长到目标（450ms、--sc-ease-out），材质像「凝」出来。
+   实现：把两个模糊档收进 token，再让玻璃的 backdrop-filter 乘一个注册数
+   --sc-materialize（1 = 成形；0 = 无模糊）。只在换档后 450ms 内由 JS 挂
+   data-look-settling 触发（首屏不播，避免启动时闪一下；pixel/linear 档无材质可言，不参与）。
+   注：--sc-materialize 不在关键帧里写死数值，因此三档/明暗/配色任意组合下最终态都由 token 决定。 */
+@property --sc-materialize {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+[data-look='glass'] {
+  --sc-materialize: 1;
+  --sc-glass-blur-chrome: 30px;
+  --sc-glass-blur-overlay: 28px;
+  --sc-glass-sat-chrome: 2.6;
+  --sc-glass-sat-overlay: 2.2;
+}
+
+
 /* chrome 真玻璃（T88 再通透一档）：32% 面板 + 30px 模糊 + 饱和 2.4 ——
  * alpha 从 42→32：底光可透；saturate 1.9→2.4：磨出的彩光才「看得见」。 */
 [data-look='glass'] .sc-shell__topbar,
@@ -156,8 +177,9 @@
 [data-look='glass'] .menub_band,
 [data-look='glass'] .titleb_band {
   background: color-mix(in srgb, var(--sc-color-canvas) 14%, transparent);
-  -webkit-backdrop-filter: blur(30px) saturate(2.6);
-  backdrop-filter: blur(30px) saturate(2.6);
+  /* 模糊/饱和都乘注册数 --sc-materialize（1 = 成形）——见下方「材质成形」段。 */
+  -webkit-backdrop-filter: blur(calc(var(--sc-glass-blur-chrome) * var(--sc-materialize))) saturate(calc(1 + (var(--sc-glass-sat-chrome) - 1) * var(--sc-materialize)));
+  backdrop-filter: blur(calc(var(--sc-glass-blur-chrome) * var(--sc-materialize))) saturate(calc(1 + (var(--sc-glass-sat-chrome) - 1) * var(--sc-materialize)));
 }
 /* 主区 72%（T88：86→72）：正文底下透出环境光 = 通透感主战场；
  * 72% content 底对正文对比度损耗 <15%，可读性不破线（t85 像素门复验）。 */
@@ -191,8 +213,8 @@
 [data-look='glass'] .sc-tooltip__bubble,
 [data-look='glass'] .palette {
   background: color-mix(in srgb, var(--sc-color-surface-raised) 60%, transparent);
-  -webkit-backdrop-filter: blur(28px) saturate(2.2);
-  backdrop-filter: blur(28px) saturate(2.2);
+  -webkit-backdrop-filter: blur(calc(var(--sc-glass-blur-overlay) * var(--sc-materialize))) saturate(calc(1 + (var(--sc-glass-sat-overlay) - 1) * var(--sc-materialize)));
+  backdrop-filter: blur(calc(var(--sc-glass-blur-overlay) * var(--sc-materialize))) saturate(calc(1 + (var(--sc-glass-sat-overlay) - 1) * var(--sc-materialize)));
 }
 
 /* ============================================================================
@@ -330,3 +352,24 @@
   }
 }
 
+/* ===== T95-02 「材质成形」关键帧（置于文件末尾）=====
+   放在末尾是刻意的：仓内静态锚（packages/ui/test/looks-t85.test.ts 的 rules()）用
+   `([^{}]+)\{([^{}]*)\}` 拆规则 —— 嵌套花括号（@keyframes 里的 from/to 块）会让它错位，
+   把后面的规则体读串。这里不动解析器，改为把唯一的嵌套块排到最后。 */
+@keyframes sc-materialize {
+  from { --sc-materialize: 0; }
+  to { --sc-materialize: 1; }
+}
+
+/* 成形触发选择器（同样排到末尾：仓内静态锚用 `.find(sel.includes('.sc-shell__topbar'))`
+   取**第一条**匹配规则当「chrome 底」，插在前面会把它读成这条 animation-only 规则）。 */
+[data-look='glass'][data-look-settling='1'] .sc-shell__topbar,
+[data-look='glass'][data-look-settling='1'] .sc-shell__sidebar,
+[data-look='glass'][data-look-settling='1'] .menub_band,
+[data-look='glass'][data-look-settling='1'] .titleb_band,
+[data-look='glass'][data-look-settling='1'] .sc-dialog,
+[data-look='glass'][data-look-settling='1'] .sc-menu,
+[data-look='glass'][data-look-settling='1'] .sc-popover__panel,
+[data-look='glass'][data-look-settling='1'] .palette {
+  animation: sc-materialize var(--sc-motion-drawer) var(--sc-ease-out) both;
+}

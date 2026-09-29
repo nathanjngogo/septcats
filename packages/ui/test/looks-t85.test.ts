@@ -99,9 +99,15 @@ describe('T85-01 L2-L5 质感口径', () => {
     for (const cls of ['.sc-dialog', '.sc-menu', '.palette', '.sc-shell__topbar', '.sc-shell__sidebar']) {
       expect(joinedSel, `glass 磨砂名单缺 ${cls}`).toContain(cls);
     }
-    const blurs = frost.flatMap((r) => [...r.body.matchAll(/backdrop-filter:\s*blur\((\d+)px\)/g)].map((m) => Number(m[1])));
-    expect(blurs.length, 'glass 磨砂块未声明 blur(<n>px)').toBeGreaterThan(0);
-    expect(Math.min(...blurs), '磨砂半径过小（<20px 肉眼几乎无感）').toBeGreaterThanOrEqual(20);
+    // T95-02 起模糊量走 token（blur = token × 注册数 --sc-materialize，换档时从 0 长到目标），
+    // 故半径锚在 token 定义上；同时钉住「磨砂块必须吃这两个 token」（防有人改回裸 px 丢掉落成形）。
+    const literal = frost.flatMap((r) => [...r.body.matchAll(/backdrop-filter:\s*blur\((\d+)px\)/g)].map((m) => Number(m[1])));
+    const tokenRadii = [...css.matchAll(/--sc-glass-blur-(?:chrome|overlay):\s*(\d+)px/g)].map((m) => Number(m[1]));
+    expect(literal.length + tokenRadii.length, 'glass 磨砂半径未声明（裸 px 或 token 皆无）').toBeGreaterThan(0);
+    expect(tokenRadii.length, 'T95-02 起玻璃模糊应走 --sc-glass-blur-* token（材质成形的插值前提）').toBeGreaterThan(0);
+    expect(Math.min(...tokenRadii), '磨砂半径过小（<20px 肉眼几乎无感）').toBeGreaterThanOrEqual(20);
+    const usesTokens = frost.filter((r) => r.body.includes('var(--sc-glass-blur-') && r.body.includes('var(--sc-materialize)'));
+    expect(usesTokens.length, 'glass 磨砂块应同时吃模糊 token 与 --sc-materialize').toBeGreaterThan(0);
     // 环境光底：外壳必须铺渐变，chrome 才「有东西可磨」
     const ambient = lookRules('glass').filter((r) => r.sel.includes('.sc-shell') && !r.sel.includes('__') && r.body.includes('background-image'));
     expect(ambient.length, 'glass 缺外壳环境光背景图（旧版无效磨砂根因）').toBeGreaterThan(0);
@@ -117,8 +123,11 @@ describe('T85-01 L2-L5 质感口径', () => {
     expect(mix, 'chrome 底必须是 canvas color-mix 半透').not.toBeNull();
     expect(Number(mix?.[1]), 'chrome 面板混色占比过高（>30% = 不透）').toBeLessThanOrEqual(30);
     // 饱和提升锚：saturate ≥2.2（1.8 档实测彩光发闷）
-    const sats = frost.flatMap((r) => [...r.body.matchAll(/saturate\(([\d.]+)\)/g)].map((m) => Number(m[1])));
-    expect(Math.max(...sats), 'glass 饱和提升不足（<2.2 彩光透不出）').toBeGreaterThanOrEqual(2.2);
+    // T95-02 起饱和度也走 token（saturate = 1 + (token-1) × --sc-materialize），锚到 token 定义。
+    const satLiterals = frost.flatMap((r) => [...r.body.matchAll(/saturate\(([\d.]+)\)/g)].map((m) => Number(m[1])));
+    const satTokens = [...css.matchAll(/--sc-glass-sat-(?:chrome|overlay):\s*([\d.]+)/g)].map((m) => Number(m[1]));
+    expect(Math.max(...satLiterals, ...satTokens), 'glass 饱和提升不足（<2.2 彩光透不出）').toBeGreaterThanOrEqual(2.2);
+    expect(satTokens.length, 'T95-02 起玻璃饱和度应走 --sc-glass-sat-* token').toBeGreaterThan(0);
   });
 
   it('L6 pixel 档特征：网格纸底 + 弹层硬位移影（0 模糊半径）', () => {

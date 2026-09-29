@@ -56,7 +56,33 @@ export function applyLookToRoot(look: LookId): void {
   if (typeof document === 'undefined') {
     return;
   }
-  document.documentElement.dataset.look = look;
+  const root = document.documentElement;
+  // 只有「真的换了一档」才播材质成形（首屏 init 不播，避免启动时闪一下）
+  const changed = root.dataset.look !== undefined && root.dataset.look !== look;
+  root.dataset.look = look;
+  if (changed) {
+    markLookSettling(root);
+  }
+}
+
+let settlingTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * T95-02「材质成形」标记（Apple §12）：换档后 450ms 内玻璃档的模糊/饱和从 0 长到目标。
+ * 标记由 looks.css 的 [data-look-settling='1'] 段消费；到点自动摘除（连续换档重置计时）。
+ */
+export function markLookSettling(root: HTMLElement): void {
+  root.dataset.lookSettling = '1';
+  if (typeof setTimeout !== 'function') {
+    return;
+  }
+  if (settlingTimer !== undefined) {
+    clearTimeout(settlingTimer);
+  }
+  settlingTimer = setTimeout(() => {
+    delete root.dataset.lookSettling;
+    settlingTimer = undefined;
+  }, 450);
 }
 
 export interface LookStoreState {

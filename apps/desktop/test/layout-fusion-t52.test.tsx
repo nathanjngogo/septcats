@@ -188,13 +188,17 @@ describe('T52-01 ① 侧栏通高 + 顶栏不再通栏（AppShell.css 结构契�
     expect(body).toContain('min-height: 0');
   });
 
-  it('折叠态三件套不回归（T30-01 红线）：侧栏 display:none + body 单列 1fr + 主区/顶栏落第 1 列', () => {
-    expect(ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__sidebar')).toContain('display: none');
-    expect(ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__body')).toMatch(/grid-template-columns:\s*1fr/);
-    // 显式 grid-column: 2 的两个子项都要回第 1 列：只回一个会生成隐式列，
-    // 主区被挤成「窗口宽 − 顶栏内容宽」（真机 cdp-e2e-t52-01 曾实测 894/1184）
-    expect(ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__main')).toContain('grid-column: 1');
-    expect(ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__topbar')).toContain('grid-column: 1');
+  it('折叠态不回归（T30-01 红线，T95-01 换实现）：侧栏宽度归零 + visibility:hidden', () => {
+    // T95-01：折叠从「删列 + display:none」改为「列宽归零 + visibility:hidden」——
+    // 列结构保留后，顶栏/主区**不必**再显式落回第 1 列（那是删列时代的补丁），
+    // 因此也不会再有「只回一个子项 → 隐式列把主区挤窄」的旧事故形态。
+    const collapsedSidebar = ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__sidebar');
+    expect(collapsedSidebar, '折叠态侧栏必须退出 tab 序').toContain('visibility: hidden');
+    expect(collapsedSidebar, '不再硬切（弹簧需要列结构在场）').not.toContain('display: none');
+    expect(ruleBody(appShellCss, '.sc-shell--collapsed .sc-shell__body')).toMatch(/--sc-shell-sidebar-w:\s*0px/);
+    expect(appShellCss, '折叠态不应再改写顶栏/主区列号').not.toMatch(
+      /\.sc-shell--collapsed\s+\.sc-shell__(main|topbar)\s*\{[^}]*grid-column:\s*1/,
+    );
   });
 
   it('侧栏头与顶栏同高（两列 chrome 面横向分界对齐）', () => {

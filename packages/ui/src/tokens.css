@@ -42,6 +42,9 @@
   --sc-text-ui-sm: 500 13px/1.5 var(--sc-font-ui);
   --sc-text-ui-md: 450 14px/1.5 var(--sc-font-ui);
   --sc-text-ui-xs: 450 12px/1.5 var(--sc-font-ui);
+  /* 小字字距（11–12px 中文标签/按键）：0.017em ≡ 0.2px @12px，走 em 随字号缩放。
+     中文小字加极小正字距是刻意的观感（此前散在三个组件里裸写 0.2px）。 */
+  --sc-tracking-ui: 0.017em;
   --sc-text-code: 400 14px/1.6 var(--sc-font-mono);
 
   /* rounded */
@@ -79,6 +82,12 @@
   --sc-motion-spring-stiffness: 100;
   --sc-motion-spring-damping: 20;
   --sc-ease-out: cubic-bezier(0.16,1,0.3,1);
+  /* T95-01 开合弹簧（Apple「Fluid Interfaces」抽屉口径：response ≈0.3s、约 4% 过冲）。
+     linear() 采样自欠阻尼弹簧解析解 x(t)=1-e^(-ζω₀t)(cos ω_d t + ζω₀/ω_d·sin ω_d t)，
+     ζ=0.72、ω₀=2π/0.3，26 点 / 450ms，峰值 1.0399（有生命感但不晃）。
+     过冲是「有生命感」的来源；reduced-motion 由 tokens.css 的全局块统一压掉。 */
+  --sc-motion-drawer: 450ms;
+  --sc-ease-spring: linear(0.0, 0.0592, 0.1957, 0.3623, 0.5284, 0.6762, 0.7973, 0.8898, 0.9557, 0.9989, 1.0243, 1.0365, 1.0399, 1.0376, 1.0324, 1.026, 1.0196, 1.0139, 1.0093, 1.0057, 1.0032, 1.0015, 1.0005, 1.0, 0.9999, 1.0);
 
   /* layout（解析自 DESIGN.md「Layout」章节） */
   --sc-layout-topbar: 40px;

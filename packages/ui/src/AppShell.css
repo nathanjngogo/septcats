@@ -14,10 +14,14 @@
  */
 .sc-shell__body {
   display: grid;
-  grid-template-columns: var(--sc-layout-sidebar) 1fr;
+  grid-template-columns: var(--sc-shell-sidebar-w) 1fr;
   grid-template-rows: var(--sc-layout-topbar) 1fr;
   height: 100%;
   min-height: 0;
+  /* 侧栏列宽 = 弹簧驱动的开合（T95-01）。展开态初值 = 原 --sc-layout-sidebar，
+     故首帧与旧行为逐像素一致；过渡装在**属性变化的那一层**（.sc-shell__body）。 */
+  --sc-shell-sidebar-w: var(--sc-layout-sidebar);
+  transition: --sc-shell-sidebar-w var(--sc-motion-drawer) var(--sc-ease-spring);
 }
 
 .sc-shell__topbar {
@@ -87,24 +91,31 @@
   background: var(--sc-color-content);
 }
 
-/* T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨 —— 侧栏不渲染占位、不响应点击，
- * 主区占满剩余宽度；顶部按钮（aria-expanded）可再展开。 */
+/* T30-01 §①：折叠 = 完全收起（宽度 0），不再是窄轨 —— 侧栏不占位、不响应点击，
+ * 主区占满剩余宽度；顶部按钮（aria-expanded）可再展开。
+ *
+ * T95-01 开合弹簧（老板「直接做到底」令）：折叠不再 display:none 硬切 —— 侧栏列宽走
+ * **注册属性** `--sc-shell-sidebar-w`（@property <length> 才能过渡）+ 弹簧缓动
+ * （--sc-ease-spring，约 4% 过冲）。收起后列宽 0 + visibility: hidden（退出 tab 序与
+ * 无障碍树，T30「不响应点击」语义不变；延迟到宽度动画结束才切，于是观感是「列在缩、
+ * 内容还在」而不是内容先消失再留空）。
+ * 速度换手：CSS transition 从**当前计算值**续跑 —— 动画中途再点一次即从半途反向，
+ * 不需要 JS，也无所谓（无手势场景本就不存在）初始速度。
+ * 折叠态**保留**列结构（只是列宽 0）⇒ 顶栏/主区不必再显式落回第 1 列（旧写法是因为
+ * 列被删掉才需要，否则 grid-column: 2 会凭空生成隐式列）。 */
+@property --sc-shell-sidebar-w {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
 .sc-shell--collapsed .sc-shell__body {
-  grid-template-columns: 1fr;
+  --sc-shell-sidebar-w: 0px;
 }
 
 .sc-shell--collapsed .sc-shell__sidebar {
-  display: none;
-}
-
-/* T52-01：折叠态只剩单列 —— 显式固定列/行的两个子项都落回第 1 列（否则 grid-column: 2
- * 会凭空生成一个隐式列，把主区挤成「窗口宽 − 顶栏内容宽」）。 */
-.sc-shell--collapsed .sc-shell__main {
-  grid-column: 1;
-}
-
-.sc-shell--collapsed .sc-shell__topbar {
-  grid-column: 1;
+  visibility: hidden;
+  transition: visibility 0s linear var(--sc-motion-drawer);
 }
 
 /* ===== T93-01 一级导航轨（Rail）：可选第三列 =====
@@ -121,7 +132,7 @@
 }
 
 .sc-shell--rail .sc-shell__body {
-  grid-template-columns: var(--sc-layout-rail) var(--sc-layout-sidebar) 1fr;
+  grid-template-columns: var(--sc-layout-rail) var(--sc-shell-sidebar-w) 1fr;
 }
 
 .sc-shell--rail .sc-shell__topbar,
@@ -135,11 +146,5 @@
   grid-column: 2;
 }
 
-.sc-shell--rail.sc-shell--collapsed .sc-shell__body {
-  grid-template-columns: var(--sc-layout-rail) 1fr;
-}
-
-.sc-shell--rail.sc-shell--collapsed .sc-shell__topbar,
-.sc-shell--rail.sc-shell--collapsed .sc-shell__main {
-  grid-column: 2;
-}
+/* 折叠（含 rail）无需另一套列定义：侧栏列宽由 --sc-shell-sidebar-w 归零，
+   顶栏/主区的列号（2 或 3）保持不变。 */
