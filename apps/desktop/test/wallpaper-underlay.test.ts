@@ -5,7 +5,7 @@
  * 其余一律双撤——绝不裸开透明链，实心保命态）。
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { syncWallpaperUnderlay } from '../src/renderer/src/theme/wallpaperUnderlay';
+import { getWallpaperDataUrl, invalidateWallpaperCache, syncWallpaperUnderlay } from '../src/renderer/src/theme/wallpaperUnderlay';
 
 const DATA_URL = 'data:image/jpeg;base64,AAAA';
 
@@ -45,5 +45,20 @@ describe('T90-01B syncWallpaperUnderlay', () => {
     syncWallpaperUnderlay('pixel', DATA_URL);
     expect(document.documentElement.dataset.wallpaper).toBeUndefined();
     expect(document.documentElement.style.getPropertyValue('--sc-wallpaper')).toBe('');
+  });
+
+  it('focus 重拉（T90-01C）：清缓存后再读 = 重新 IPC 拉最新壁纸', async () => {
+    let calls = 0;
+    const fake = { wallpaper: () => { calls += 1; return Promise.resolve(DATA_URL); } };
+    const orig = window.septcats;
+    Object.defineProperty(window, 'septcats', { configurable: true, value: { theme: fake } });
+    invalidateWallpaperCache();
+    await getWallpaperDataUrl();
+    await getWallpaperDataUrl(); // 第二次走缓存
+    expect(calls).toBe(1);
+    invalidateWallpaperCache();
+    await getWallpaperDataUrl(); // focus 清缓存后重拉
+    expect(calls).toBe(2);
+    Object.defineProperty(window, 'septcats', { configurable: true, value: orig });
   });
 });

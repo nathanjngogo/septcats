@@ -21,7 +21,11 @@ function currentLook(): string {
   return document.documentElement.dataset.look ?? 'pixel';
 }
 
-/** 拉一次壁纸并缓存（同会话壁纸不变；null 也缓存，避免反复重试 reg/IO）。 */
+/**
+ * 拉一次壁纸并缓存（同会话壁纸不变；null 也缓存，避免反复重试 reg/IO）。
+ * 失效钩子=窗口 focus：换壁纸必然去了资源管理器/设置（应用失焦），回到应用
+ * 即重拉（老板验收动作「换张壁纸看看」不会被打回；本地 IPC 代价可忽）。
+ */
 let wallpaperCache: Promise<string | null> | null = null;
 
 export function getWallpaperDataUrl(): Promise<string | null> {
@@ -31,6 +35,11 @@ export function getWallpaperDataUrl(): Promise<string | null> {
       .catch(() => null);
   }
   return wallpaperCache;
+}
+
+/** 测试与 focus 共用：清缓存（下次读重拉）。 */
+export function invalidateWallpaperCache(): void {
+  wallpaperCache = null;
 }
 
 /**
@@ -53,11 +62,14 @@ export function syncWallpaperUnderlay(
 
 export function useWallpaperUnderlay(): void {
   useEffect(() => {
-    const apply = (): void => {
+    const apply = (force = false): void => {
       const look = currentLook();
       if (look !== 'glass') {
         syncWallpaperUnderlay(look, null);
         return;
+      }
+      if (force) {
+        invalidateWallpaperCache();
       }
       void getWallpaperDataUrl().then((dataUrl) => {
         // 竞态护栏：异步回来时档位可能已切走
@@ -67,13 +79,18 @@ export function useWallpaperUnderlay(): void {
       });
     };
     apply();
-    const observer = new MutationObserver(apply);
+    const observer = new MutationObserver(() => apply());
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['data-look'],
     });
+    // focus 重拉：换壁纸的必经路径 = 离开应用（失焦）→ 回应用即 focus，此时清缓存
+    // 重读 reg/文件，衬底跟着刷新（不监听系统壁纸事件——跨平台碎+高成本）。
+    const onFocus = (): void => apply(true);
+    window.addEventListener('focus', onFocus);
     return () => {
       observer.disconnect();
+      window.removeEventListener('focus', onFocus);
     };
   }, []);
 }
