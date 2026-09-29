@@ -138,6 +138,7 @@ import {
 import { createDbGcService, type DbGcService } from './dbgc';
 import { createAssetGcService, type AssetGcService } from './assetGc';
 import { createShellService, registerShellIpc } from './shell';
+import { attachNavigationGuard } from './navigationGuard';
 import {
   createImporterService,
   toImporterError,
@@ -278,6 +279,35 @@ function createWindow(): void {
     },
   });
 
+  /*
+   * T96-01 外链与导航兜底（0.6.9 静态包审 A8 发现）：renderer 里 `window.open` /
+   * `<a target="_blank">` / 未被应用拦下的 `<a href>`，在 Electron 默认行为下会新开一个
+   * 真窗口，或把主窗直接导航到远端页面 —— 两条路都绕过 shell:openExternal 的协议白名单
+   * 唯一出口（T73-01）。此处按 navigationGuard 的规则收口：站内放行；站外 http(s) 转交
+   * 系统浏览器后拦下；其他协议拦下且不外发。审计只记 host/protocol、不落 URL 原文。
+   */
+  const devServerUrl = process.env['ELECTRON_RENDERER_URL'] ?? '';
+  const isAppPage = (url: string): boolean =>
+    url.startsWith('file://') || (devServerUrl.length > 0 && url.startsWith(devServerUrl));
+  // 内部协议（asset:/attachment:）是应用自己的图床/附件视图：**导航**放行，
+  // 但不开新窗（实测：放行 window.open 会留下空白窗）。
+  const isInternalUrl = (url: string): boolean =>
+    isAppPage(url) || url.startsWith(`${ASSET_SCHEME}:`) || url.startsWith(`${ATTACHMENT_SCHEME}:`);
+  const guardLogger = platformContext?.logger.forModule('main');
+  attachNavigationGuard(
+    window.webContents as unknown as Parameters<typeof attachNavigationGuard>[0],
+    {
+      isInternal: isInternalUrl,
+      isWindowOpenAllowed: isAppPage,
+      routeExternal: (url) => {
+        void shell.openExternal(url);
+      },
+      audit: (event, reason, host, protocol) => {
+        guardLogger?.info(`导航守卫：${event} ${reason}`, { host, protocol });
+      },
+    },
+  );
+
   window.once('ready-to-show', () => {
     window.show();
     platformContext?.logger.forModule('main').info('window ready-to-show');
@@ -353,8 +383,7 @@ function createWindow(): void {
   window.on('maximize', pushGeometry);
   window.on('unmaximize', pushGeometry);
 
-  const devServerUrl = process.env['ELECTRON_RENDERER_URL'];
-  if (devServerUrl !== undefined && devServerUrl.length > 0) {
+  if (devServerUrl.length > 0) {
     void window.loadURL(devServerUrl);
   } else {
     void window.loadFile(join(__dirname, '../renderer/index.html'));

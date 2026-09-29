@@ -16,6 +16,32 @@
 
 ### 技术说明
 - DWM acrylic 路线在本机实测不可达（Electron backdrop 恒死灰，acrylic/mica×transparent 真假×E37/38 全验），已固化为 `desktopWallpaper.ts` 头注与探针注释；壁纸衬底路线 Chromium 自合成，capturePage/截图双通道可客观验收。
+### 追加（老板「做完之后你自己再用debugging技能对整个安装包审核一遍」：包审 + A8 真缺陷修复）
+- **包审结果**：静态包审 **17/17**（`docs/mockups/audit-package-0.6.9.mjs`）+ 载荷/已装状态审计
+  **5/5**（`docs/mockups/audit-payload-0.6.9.mjs`，含 NSIS 解包逐字节比对）+ 真机守卫探针
+  **T96-01 5/5**。日志入仓 `docs/mockups/screens-audit-069/`。
+- **A8 = 真缺陷（已修，T96-01）**：构建产物的主进程**既无 `setWindowOpenHandler` 也无
+  `will-navigate` 拦截** —— renderer 里 `window.open` / `<a target="_blank">` / 未被应用拦下的
+  `<a href>` 会**新开一个真窗口**，或**把主窗直接导航到远端页面**，两条路都绕过
+  `shell:openExternal` 的协议白名单唯一出口（T73-01）。修复：新增 `main/navigationGuard.ts`
+  （纯函数 + 薄接线，单测 14 例）+ `createWindow` 接线 —— 站内（file:// / dev server）放行；
+  站外 http(s) 转交系统浏览器后拦下；其他协议拦下且**不外发**；**内部协议（asset:/attachment:）
+  可导航但不许开新窗**（首版实测坑：放行 `window.open('asset://…')` 会留下空白窗）。
+  审计只记 host/protocol、不落 URL 原文。真机实测：站外 window.open 返回 null 且无新窗口、
+  主窗未被导航；站外导航被拦后应用仍活着；**站内 reload 照常**（守卫没把站内导航一起拦死）。
+- **载荷审计（P1–P3）**：Setup = NSIS-3 Unicode，内嵌 `app-64.7z` + 卸载器；解包载荷与
+  `win-unpacked` **逐字节一致**（80 件全同、零漏件）⇒「用户装到的字节 = 本包审过的字节」。
+- **两条留档项（INFO，非发版阻断）**：① 本机已装 0.6.9 是**更早候选**（app.asar 65,362,568 B
+  vs 终包 65,393,300 B）⇒ 要验证本轮终包必须重装 dist 里的 Setup exe；② 安装目录名为
+  `@septcatsdesktop`（包名 `@septcats/desktop` 净化而来）——改名要动 productName，而
+  productName 同时决定 `app.getPath('userData')`，会波及老用户窗口状态/设置（迁移风险），
+  本版**刻意不动**、留后续版本。
+- **未做且说明原因**：静默安装/卸载往返未跑 —— 老板机上已装 0.6.9（per-user，卸载项
+  766c4907…），往返会抹掉他的现有安装（破坏性且未经批准）；改以「解包载荷逐字节比对 +
+  已装状态只读审计」取证。卸载器/卸载项/`deleteAppDataOnUninstall:false` 三件已核。
+- 验证：T96-01 5/5 + 回归 **121 项**全绿（T95 11·T94 9·T93 7·T92 11·T91 8·T90 6·T89 7·
+  T85 22·T87-01 11·T87-02 14·T65 15）；门禁 desktop **1361/121**·ui 185·tsc 0·no-magic 0·
+  框线越界 0·纪律 94/0。
 ### 追加（老板「你直接做到底」：P2 首批 —— 开合弹簧 / 材质成形 / 字距收 token）
 - **T95-01 侧栏开合弹簧**：折叠从「删列 + `display:none` 硬切」改为**列宽走注册属性**
   `--sc-shell-sidebar-w`（`@property <length>`，未注册的自定义属性是离散量、不插值）+ 弹簧缓动
