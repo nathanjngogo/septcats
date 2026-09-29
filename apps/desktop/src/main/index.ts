@@ -951,11 +951,9 @@ let currentChromeTheme: ChromeTheme = 'light';
  */
 function regQueryValue(key: string, name: string): string | null {
   try {
-    // chcp 65001：reg.exe 默认跟随 ANSI 码页（简中=GBK），latin1 解码会把中文
-    // 壁纸路径 mojibake → existsSync 必败（09-29 审核 B-1 实证）。切 UTF-8 码页
-    // 后输出恒 UTF-8，decodeRegOutput 无损解（ASCII/中文都对）。
-    // 键名含空格（Control Panel\Desktop）——cmd 拼接必须加引号，否则 "Invalid key name"。
-    const out = execFileSync('cmd.exe', ['/c', `chcp 65001 >nul && reg query "${key}" /v "${name}"`], {
+    // 09-29 审核 B-1：直调 reg（不经 cmd/chcp——Node→cmd 引号规则会吃掉键路径
+    // 反斜杠）；输出字节流三段解码 utf8→gbk→latin1，中文壁纸路径无损。
+    const out = execFileSync('reg', ['query', key, '/v', name], {
       encoding: 'buffer',
       timeout: 2000,
       windowsHide: true,
@@ -1254,8 +1252,9 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
     const canvas = typeof rec['canvas'] === 'string' ? rec['canvas'] : '';
     const ink = typeof rec['ink'] === 'string' ? rec['ink'] : '';
     const look = typeof rec['look'] === 'string' ? rec['look'] : 'pixel';
-    // 审核 B-2：glass 档按钮区底色全透明透出带体壁纸色；预绘底色恒实心。
-    const overlay = resolveChromeOverlay({ canvas, ink, look }, currentChromeTheme);
+    const canvasTint = typeof rec['canvasTint'] === 'string' ? rec['canvasTint'] : null;
+    // 审核 B-2：glass 档按钮区=带体等效实色（壁纸混色）；预绘底色恒实心。
+    const overlay = resolveChromeOverlay({ canvas, ink, look, canvasTint }, currentChromeTheme);
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win === null) {
       return false;

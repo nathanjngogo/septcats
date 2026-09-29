@@ -67,26 +67,30 @@ describe('T89-01 resolveChromeOverlay', () => {
     expect(resolveChromeOverlay({ canvas: '#F5F5F5', ink: 'nope' }, 'light').symbolColor).toBe('#2B2620');
   });
 
-  // 审核 B-2（09-29 发版前）：glass 档带体=canvas 14% 叠壁纸衬底，OS 按钮区吃实心
-  // canvas 会在右上角出补丁 → glass 时按钮区底色全透明（OS overlay 实证吃 alpha，
-  // combo G）透出底下带体；预绘底色恒实心（窗体绝不留 alpha 底——黑窗教训）。
-  it('B-2 glass：按钮区全透明 + 符号色用 ink + 预绘底色恒实心', () => {
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass' }, 'light')).toEqual({
-      color: '#00000000',
+  // 审核 B-2（09-29 真机证伪）：OS 按钮区不吃全透明（#00000000 → Win11 回退实心
+  // #F5F5F5 补丁）。glass 档改吃 canvasTint=带体等效实色（壁纸混色），符号色按
+  // 混色亮度反转保对比；预绘底色恒实心（alpha 底黑窗教训）。
+  it('B-2 glass+canvasTint：按钮区=混色实色，浅混色用暗符号', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: '#F0E8DC' }, 'light')).toEqual({
+      color: '#F0E8DC',
       symbolColor: '#2B2620',
       windowBackground: '#F4EFE6',
     });
   });
 
-  it('B-2 非 glass 档不吃透明（pixel/linear 维持实心 canvas 按钮区）', () => {
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'pixel' }, 'light').color).toBe('#F4EFE6');
-    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'linear' }, 'light').color).toBe('#F4EFE6');
+  it('B-2 glass+深混色：符号回亮字（暗壁纸保按钮可见）', () => {
+    const r = resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: '#101418' }, 'light');
+    expect(r.color).toBe('#101418');
+    expect(r.symbolColor).toBe('#EDE6D8');
   });
 
-  it('B-2 glass 但 canvas 非法：预绘回明暗 token、按钮区仍透明（带体总有底色）', () => {
-    const r = resolveChromeOverlay({ canvas: '', ink: '#2B2620', look: 'glass' }, 'dark');
-    expect(r.color).toBe('#00000000');
-    expect(r.windowBackground).toBe('#141414');
+  it('B-2 glass 无混色（采样失败）：回落实心 canvas 按钮区（=审核前行为）', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass' }, 'light').color).toBe('#F4EFE6');
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'glass', canvasTint: 'nope' }, 'light').color).toBe('#F4EFE6');
+  });
+
+  it('B-2 非 glass 档无视 canvasTint（pixel/linear 维持实心 canvas）', () => {
+    expect(resolveChromeOverlay({ canvas: '#F4EFE6', ink: '#2B2620', look: 'pixel', canvasTint: '#101418' }, 'light').color).toBe('#F4EFE6');
   });
 });
 

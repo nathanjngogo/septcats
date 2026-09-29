@@ -15,6 +15,7 @@
  */
 
 import { useEffect } from 'react';
+import { updateGlassTint } from './wallpaperTint';
 
 /** 质感真相在 documentElement[data-look]（lookState 唯一挂点）。 */
 function currentLook(): string {
@@ -54,9 +55,13 @@ export function syncWallpaperUnderlay(
   if (look === 'glass' && dataUrl !== null && dataUrl !== '') {
     root.style.setProperty('--sc-wallpaper', `url("${dataUrl}")`);
     root.dataset.wallpaper = '1';
+    // 审核 B-2：OS 按钮区不吃透明 → 同步算「带体等效实色」混色（异步，变化会
+    // 经 onGlassTintChange 通知 TitleBarBand 重推）。采样失败自动清混色。
+    void updateGlassTint(dataUrl);
   } else {
     delete root.dataset.wallpaper;
     root.style.removeProperty('--sc-wallpaper');
+    void updateGlassTint(null);
   }
 }
 
@@ -82,7 +87,9 @@ export function useWallpaperUnderlay(): void {
     const observer = new MutationObserver(() => apply());
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-look'],
+      // palette 也在列：canvas token 随配色变 → B-2 混色要跟着重算（14% 权重，
+      // 不同配色差值可达 ~10 级，肉眼可见，必须重混）
+      attributeFilter: ['data-look', 'data-palette'],
     });
     // focus 重拉：换壁纸的必经路径 = 离开应用（失焦）→ 回应用即 focus，此时清缓存
     // 重读 reg/文件，衬底跟着刷新（不监听系统壁纸事件——跨平台碎+高成本）。

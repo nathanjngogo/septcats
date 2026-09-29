@@ -26,17 +26,22 @@ const MIME_BY_EXT: Readonly<Record<string, string>> = {
 };
 
 /**
- * reg.exe 输出解码：先按 UTF-8 解——调用方一律经 `cmd /c chcp 65001` 切码页
- * （09-29 发版前审核 B-1 实证：默认 GBK 码页下 latin1 解码中文壁纸路径会 mojibake
- * → existsSync 必败 → 中文路径用户永远实心，衬底整体失效；chcp 65001 + utf8 解码
- * 对 ASCII/中文路径均无损）。老系统/异常输出回 latin1 兜底（ASCII 无损、绝不抛错）。
+ * reg.exe 输出字节流解码（09-29 发版前审核 B-1）。reg 跟随 ANSI 码页（简中=GBK），
+ * 直接 latin1 解码会把中文壁纸路径 mojibake → existsSync 必败 → 中文路径用户
+ * 永远实心。三段阶梯（本机 E2E 实证）：UTF-8 fatal 试解 → GBK 试解 → latin1 兜底
+ * **绝不抛错**（任何异常字节序列都能落成字符串）。不走 `cmd /c chcp`：Node→cmd
+ * 参数引号会把 `HKCU\\Control Panel` 的反斜杠吃掉（实测 `HKCUControl Panel` =
+ * Invalid key name），chcp 对已重定向的管道输出也无效——直调 reg 才是稳的。
  */
 export function decodeRegOutput(buf: Buffer): string {
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch {
-    return buf.toString('latin1');
-  }
+  const tryDecode = (enc: string): string | null => {
+    try {
+      return new TextDecoder(enc, { fatal: true }).decode(buf);
+    } catch {
+      return null;
+    }
+  };
+  return tryDecode('utf-8') ?? tryDecode('gbk') ?? buf.toString('latin1');
 }
 
 /**

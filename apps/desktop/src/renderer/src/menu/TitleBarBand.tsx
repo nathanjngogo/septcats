@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from 'react';
 import { isWindowsShell } from './MenuBarBand';
+import { getGlassCanvasTint, onGlassTintChange } from '../theme/wallpaperTint';
 import './TitleBarBand.css';
 
 /** OS titleBarOverlay 标准预留宽（三按钮 ×46px，Electron 文档值）。 */
@@ -41,8 +42,9 @@ export function readTokenHex(name: string): string {
 }
 
 /**
- * 把当前主题实测色 + 质感档推给 main（OS 按钮区色 + 窗口预绘底色）。
- * look 供 main 判 glass 档：按钮区底色全透明透出带体（审核 B-2 消实心补丁）。
+ * 把当前主题实测色 + 质感档 + 带体混色推给 main（OS 按钮区色 + 窗口预绘底色）。
+ * canvasTint=壁纸均色混入后的带体等效实色（审核 B-2：OS 按钮区实测不吃全透明，
+ * 实心 canvas 补丁会露——混实色让它与 14% 半透带体同色）。
  */
 export function pushChromeToOs(): void {
   void window.septcats.theme
@@ -50,6 +52,7 @@ export function pushChromeToOs(): void {
       canvas: readTokenHex('--sc-color-canvas'),
       ink: readTokenHex('--sc-color-ink'),
       look: document.documentElement.dataset.look ?? 'pixel',
+      canvasTint: getGlassCanvasTint(),
     })
     .catch(() => undefined);
 }
@@ -81,8 +84,12 @@ export function TitleBarBand(): React.ReactElement | null {
     });
     // 首推（属性挂点可能早于本组件挂载，observer 不会回溯）
     pushChromeToOs();
+    // 审核 B-2：壁纸混色异步算好会晚于首推 → 变化即重推（订阅在 wallpaperUnderlay
+    // 拉壁纸之后到达，attribute 幂等不怕重复）。
+    const offTint = onGlassTintChange(pushChromeToOs);
     return () => {
       offState();
+      offTint();
       observer.disconnect();
       cancelAnimationFrame(raf);
     };
