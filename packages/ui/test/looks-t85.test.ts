@@ -66,11 +66,27 @@ describe('T85-01 L1/L7 looks.css 结构', () => {
 });
 
 describe('T85-01 L2-L5 质感口径', () => {
-  it('L2 任何规则块不覆写 --sc-color-*（只许引用色板；覆写=作为声明左侧出现，色板归 themes.css）', () => {
+  it('L2 规则块不覆写 --sc-color-*（色板归 themes.css）；唯一例外＝instrument 档的强调色族', () => {
+    /** 例外（方向 B 落地时台账化，非静默放宽）：
+     *  themes.css 头注写死「配色块禁碰语义色」，而 B 的荧光主色是其质感身份的一部分
+     *  ⇒ 主色族只能住在 look 里。本门禁**只放行这 5 个键**，并要求：
+     *  ① 仅 instrument 档可声明；② 恰好这 5 个（不得扩大）；
+     *  ③ 两基底（浅/深）齐备且过 AA（由 contrast.test.ts「instrument look 主色族」把守）。 */
+    const ALLOWED = new Set(['accent', 'accent-soft', 'on-accent', 'selection', 'focus-ring']);
+    const isInstrument = (sel: string): boolean => sel.includes("[data-look='instrument']");
     const offenders = ALL.flatMap((r) =>
-      [...r.body.matchAll(/(?:^|;)\s*(--sc-color-[a-z-]+)\s*:/g)].map((m) => `${r.sel} → ${m[1]}`),
+      [...r.body.matchAll(/(?:^|;)\s*(--sc-color-[a-z-]+)\s*:/g)]
+        .map((m) => ({ sel: r.sel, name: m[1]!.replace('--sc-color-', '') }))
+        .filter((o) => !(isInstrument(o.sel) && ALLOWED.has(o.name)))
+        .map((o) => `${o.sel} → --sc-color-${o.name}`),
     );
     expect(offenders).toEqual([]);
+    const declared = new Set(
+      ALL.filter((r) => isInstrument(r.sel)).flatMap((r) =>
+        [...r.body.matchAll(/(?:^|;)\s*--sc-color-([a-z-]+)\s*:/g)].map((m) => m[1]!),
+      ),
+    );
+    expect([...declared].sort(), '例外不得扩大：instrument 只许覆写这 5 个主色键').toEqual([...ALLOWED].sort());
   });
 
   it('L3 边框谱：pixel 2px 实墨；linear/glass 1px 半透明墨（占比 ≤45%）', () => {
@@ -162,5 +178,48 @@ describe('T85-01 L8/L9 零回归锚', () => {
     const sels = thin.map((r) => r.sel).join(' ');
     expect(sels).toContain("[data-look='linear']");
     expect(sels).toContain("[data-look='glass']");
+    // 方向 B（instrument）也走 1px 结构线 ⇒ 接缝条同收细
+    expect(sels).toContain("[data-look='instrument']");
+  });
+});
+
+describe('方向 B「夜航仪表」· instrument 档特征（老板 2026-10-01 选定）', () => {
+  it('L10a 结构线 1px（细于 pixel 的 2px）+ 圆角 2~4px（大于 pixel 的 0、小于 linear 的 4~14）', () => {
+    const block = lookBlock('instrument');
+    expect(block, 'looks.css 缺 [data-look=instrument] 块').not.toBe('');
+    expect(block, 'instrument 结构线必须是 1px 半透 ink-edge').toMatch(
+      /--sc-border-edge:\s*1px solid color-mix\(in srgb,\s*var\(--sc-color-ink-edge\)\s*34%/,
+    );
+    const rs = radii('instrument');
+    expect(rs.length, 'instrument 未声明圆角').toBeGreaterThanOrEqual(4);
+    expect(Math.min(...rs), 'instrument 圆角下限').toBeGreaterThanOrEqual(1);
+    expect(Math.max(...rs), 'instrument 圆角上限（>4 就不是仪表档了）').toBeLessThanOrEqual(4);
+    expect(Math.max(...rs), 'instrument 必须与 pixel 的 0 圆角可分').toBeGreaterThan(0);
+  });
+
+  it('L10b 零模糊：instrument 任何规则不得出现 backdrop-filter；浮层近实心', () => {
+    const frost = lookRules('instrument').filter((r) => r.body.includes('backdrop-filter'));
+    const real = frost.filter((r) => !r.body.includes('backdrop-filter: none'));
+    expect(real.map((r) => r.sel), 'instrument 不得有磨砂（与 glass 判别）').toEqual([]);
+    const dialog = lookRules('instrument').filter((r) => r.sel.includes('.sc-dialog'));
+    expect(dialog.length, 'instrument 缺浮层近实心块').toBeGreaterThan(0);
+    expect(dialog.map((r) => r.body).join(' '), '浮层必须是近实心面').toContain('var(--sc-color-surface-raised)');
+  });
+
+  it('L10c 主色族住在 look（荧光青 / 日间深青），深色基底有显式覆写', () => {
+    const base = lookBlock('instrument');
+    expect(base, 'instrument 缺浅色基底主色').toMatch(/--sc-color-accent:\s*#0E7C6E/);
+    const darkBlock = ALL.find((r) => r.sel.includes("[data-theme='dark'][data-look='instrument']") || r.sel.includes('[data-theme="dark"][data-look="instrument"]'));
+    expect(darkBlock, '缺 instrument 深色基底覆写块').toBeDefined();
+    expect(darkBlock?.body ?? '', '深色基底主色必须换成荧光青').toMatch(/--sc-color-accent:\s*#35E0C8/);
+  });
+
+  it('L10d 仪器材料：扫描线底纹 + 全壳等宽数字', () => {
+    const scan = lookRules('instrument').filter(
+      (r) => r.sel.includes('.sc-shell__main') && r.body.includes('repeating-linear-gradient'),
+    );
+    expect(scan.length, 'instrument 缺主区扫描线底纹').toBeGreaterThan(0);
+    const mono = lookRules('instrument').filter((r) => r.body.includes('font-variant-numeric: tabular-nums'));
+    expect(mono.length, 'instrument 缺等宽数字声明（B 的第一原则：数据要对齐）').toBeGreaterThan(0);
   });
 });

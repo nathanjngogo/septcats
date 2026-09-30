@@ -246,10 +246,12 @@ const PALETTE_SWITCH_ALIASES: Record<PaletteId, readonly string[]> = {
   paper: ['zhizhang', 'paper'],
   slate: ['shimo', 'shimoohui', 'slate', 'graphite'],
   moss: ['taiqing', 'moss'],
+  instrument: ['yibiao', 'yibiaolengui', 'instrument', 'night'],
 };
 
-/** T85-01：三条「切到 X 质感」命令（与配色切换同门）。 */
+/** T85-01：四条「切到 X 质感」命令（与配色切换同门）。方向 B = instrument（老板 10-01 默认档）。 */
 const LOOK_SWITCH_ALIASES: Record<LookId, readonly string[]> = {
+  instrument: ['yehang', 'yehangyibiao', 'yibiao', 'instrument', 'night'],
   pixel: ['xiangsu', 'pixel', 'ps'],
   linear: ['linear', 'xianxing', 'lx'],
   glass: ['maoboli', 'glass', 'boli', 'mb'],

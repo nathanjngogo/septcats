@@ -12,9 +12,12 @@
 import { useEffect } from 'react';
 import { createStore, useStore } from '../state/store';
 
-/** 质感派系 id（pixel = 现状默认，显式挂属性也走 looks.css 同值块）。 */
-export const LOOK_IDS = ['pixel', 'linear', 'glass'] as const;
+/** 质感派系 id（老板 2026-10-01 选定方向 B「夜航仪表」＝新的默认档；旧三档全保留可切回）。 */
+export const LOOK_IDS = ['instrument', 'pixel', 'linear', 'glass'] as const;
 export type LookId = (typeof LOOK_IDS)[number];
+
+/** 新装/未设置时的默认档（B 落地即默认，老板装完直接看到重设计）。 */
+export const DEFAULT_LOOK: LookId = 'instrument';
 
 /** localStorage 键（旁路，与 septcats.theme / septcats.palette / septcats.layout 并列）。 */
 export const LOOK_STORAGE_KEY = 'septcats.look';
@@ -45,10 +48,35 @@ function safeSetItem(key: string, value: string): void {
   }
 }
 
-/** 读存储；缺失/野值 → 'pixel'（默认 = 现状像素风）。 */
+/**
+ * 外观档一次性迁移戳（look 与 palette 共用；见 readLook 头注）。
+ * ⚠ 语义必须是「**首次运行本版本**才做一次」，**不是**「值等于老默认就改」——
+ *   后者会把用户显式选的 pixel 也改回 instrument（真机探针实测：显式设 pixel 后
+ *   data-look 仍是 instrument、pixel↔linear 像素差 0.15% ⇒ 假档、观感门全废）。
+ */
+export const APPEARANCE_STAMP_KEY = 'septcats.appearance.v2';
+
+/** 旧默认档（迁移判据：只有它会在首次运行本版本时被升级为新默认）。 */
+export const LEGACY_DEFAULT_LOOK: LookId = 'pixel';
+
+/**
+ * 读存储。首次运行本版本（无戳）时：
+ *   · 没存过 / 存的是**旧默认**（pixel）→ 升级为新默认（老板要看到方向 B）；
+ *   · 存的是用户显式选过的别的档（linear/glass…）→ **保留**（不吃掉用户选择）；
+ *   两种情况都盖章，之后一律以存储为准（野值 → 默认）。
+ */
 export function readLook(): LookId {
   const raw = safeGetItem(LOOK_STORAGE_KEY);
-  return isLookId(raw) ? raw : 'pixel';
+  if (safeGetItem(APPEARANCE_STAMP_KEY) !== '1') {
+    safeSetItem(APPEARANCE_STAMP_KEY, '1');
+    const adopt = !isLookId(raw) || raw === LEGACY_DEFAULT_LOOK;
+    if (adopt) {
+      safeSetItem(LOOK_STORAGE_KEY, DEFAULT_LOOK);
+      return DEFAULT_LOOK;
+    }
+    return raw as LookId;
+  }
+  return isLookId(raw) ? raw : DEFAULT_LOOK;
 }
 
 /** 把 look 挂到根元素（'pixel' 也显式挂——画廊选中态与 CSS 属性一致，便于探针）。 */
@@ -89,7 +117,7 @@ export interface LookStoreState {
   look: LookId;
 }
 
-export const lookStore = createStore<LookStoreState>({ look: 'pixel' });
+export const lookStore = createStore<LookStoreState>({ look: DEFAULT_LOOK });
 
 export function useLookState<T>(selector: (state: LookStoreState) => T): T {
   return useStore(lookStore, selector);

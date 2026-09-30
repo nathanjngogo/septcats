@@ -9,8 +9,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ThemeSection } from '../src/renderer/src/theme/ThemeSection';
-import { isPaletteDisabled, paletteActions, paletteStore } from '../src/renderer/src/theme/paletteState';
-import { lookActions, lookStore } from '../src/renderer/src/theme/lookState';
+import { isPaletteDisabled, PALETTE_IDS, paletteActions, paletteStore } from '../src/renderer/src/theme/paletteState';
+import { LOOK_IDS, lookActions, lookStore } from '../src/renderer/src/theme/lookState';
 import { configurePaletteCommands } from '../src/renderer/src/palette/commands';
 
 const noop = (): void => {};
@@ -64,14 +64,20 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
     cleanup();
   });
 
-  it('两行都在：配色 6 项 + 质感 3 项（含老板点名的「毛玻璃」「Linear 极简」）', () => {
+  it('两行都在：配色 7 项 + 质感 4 项（含老板点名的「毛玻璃」「Linear 极简」与方向 B「夜航仪表」）', () => {
     render(<ThemeSection />);
     const paletteRow = screen.getByTestId('theme-section');
     const lookRow = screen.getByTestId('theme-look-section');
-    expect(within(paletteRow).getAllByRole('radio')).toHaveLength(6);
-    expect(within(lookRow).getAllByRole('radio')).toHaveLength(3);
-    for (const name of ['像素', 'Linear 极简', '毛玻璃']) {
+    expect(within(paletteRow).getAllByRole('radio'), '配色数量 = PALETTE_IDS 长度').toHaveLength(PALETTE_IDS.length);
+    expect(within(lookRow).getAllByRole('radio'), '质感数量 = LOOK_IDS 长度').toHaveLength(LOOK_IDS.length);
+    expect(PALETTE_IDS.length).toBe(7);
+    expect(LOOK_IDS.length).toBe(4);
+    for (const name of ['像素', 'Linear 极简', '毛玻璃', '夜航仪表']) {
       expect(within(lookRow).getByText(name), `质感缺 ${name}`).toBeTruthy();
+    }
+    // 老板点名的两条永远不许被删（方向 B 落地后仍须在列）
+    for (const keep of ['像素', 'Linear 极简']) {
+      expect(within(lookRow).getByText(keep), `老板点名的 ${keep} 被删了`).toBeTruthy();
     }
   });
 
@@ -127,7 +133,7 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
 });
 
 describe('命令面板：画廊命令下线，切派系/切质感仍在', () => {
-  it('无 theme.palette；六条 theme.switch.* 与三条 theme.look.* 齐备', () => {
+  it('无 theme.palette；七条 theme.switch.* 与四条 theme.look.* 齐备', () => {
     const ids = configurePaletteCommands(fullDeps(), true).map((c) => c.id);
     expect(ids).not.toContain('theme.palette');
     for (const id of ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss']) {

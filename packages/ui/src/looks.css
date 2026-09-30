@@ -295,7 +295,8 @@
 /* ===== linear/glass：侧栏右缘接缝条（AppShell ::after 定位条，非 border 属性）
    随质感收细为 1px 并降为半透明墨（像素态保持 2px 实墨 = T59 锚定不动）===== */
 [data-look='linear'] .sc-shell__sidebar::after,
-[data-look='glass'] .sc-shell__sidebar::after {
+[data-look='glass'] .sc-shell__sidebar::after,
+[data-look='instrument'] .sc-shell__sidebar::after {
   width: 1px;
   background: color-mix(in srgb, var(--sc-color-ink-edge) 30%, transparent);
 }
@@ -350,6 +351,86 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+}
+
+/* ============================================================================
+ * ===== instrument（夜航仪表 · 老板 2026-10-01 选定方向 B）=====
+ * 立场：把界面从「装饰层」改回「读数层」——每个像素要么表达状态，要么表达层级。
+ * 材料（与三档明确可分）：
+ *   · 结构线 1px（比 pixel 的 2px 硬框细、比 glass 的 26% 更实：34% ink-edge）；
+ *   · **零模糊**：无 backdrop-filter、无柔影——层次只走「1px 描边环 + 极短暗晕」；
+ *   · 圆角 2~4px（> pixel 的 0、< linear 的 4~14）；
+ *   · 扫描线底纹（3% ink-edge，1px/3px）＝ B 的签名材料。
+ * 主色：荧光青。⚠ 本仓规矩「themes.css 只覆写中性，不碰语义色」⇒ B 的主色族挂在本
+ *   look 上（换回 pixel/linear/glass 即回中性主色，回退干净、无需改配色）。
+ *   对比度已按 AA 选值（深底荧光青上的 on-accent 11.6:1；浅底深青 on-accent 5.2:1）。
+ * 动效：点亮/熄灭（不播材质成形、不走弹簧过冲——仪器不做「呼吸」）。
+ * ========================================================================== */
+[data-look='instrument'] {
+  --sc-border-edge: 1px solid color-mix(in srgb, var(--sc-color-ink-edge) 34%, transparent);
+  --sc-border-edge-dashed: 1px dashed color-mix(in srgb, var(--sc-color-ink-edge) 30%, transparent);
+  --sc-radius-xs: 2px;
+  --sc-radius-sm: 2px;
+  --sc-radius-md: 3px;
+  --sc-radius-lg: 4px;
+  /* 内凹/凸起/浮层：1px 环 + 极短暗晕，全部 0 模糊 */
+  --sc-bevel-in: inset 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 22%, transparent);
+  --sc-bevel-out: 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 20%, transparent);
+  --sc-pixel-out: 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 26%, transparent),
+    0 10px 22px -20px var(--sc-color-shadow-pixel);
+  --sc-pixel-flat: 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 18%, transparent);
+  --sc-shadow-modal: 0 0 0 1px color-mix(in srgb, var(--sc-color-ink-edge) 30%, transparent),
+    0 28px 64px -34px var(--sc-color-shadow-pixel);
+  /* 浅色基底 = 日间仪表（深青，白字过 AA） */
+  --sc-color-accent: #0E7C6E;
+  --sc-color-accent-soft: #D6EDE9;
+  --sc-color-on-accent: #FFFFFF;
+  --sc-color-selection: #CFE3E0;
+  --sc-color-focus-ring: #0E7C6E;
+}
+/* 深色基底 = 夜航（荧光青，深字过 AA） */
+[data-theme='dark'][data-look='instrument'] {
+  --sc-color-accent: #35E0C8;
+  --sc-color-accent-soft: #12302E;
+  --sc-color-on-accent: #04120F;
+  --sc-color-selection: #1F3B38;
+  --sc-color-focus-ring: #35E0C8;
+}
+/* chrome 面：canvas 向 ink-edge 收 8%（≈ 夜航 #111820 / 日间 #F2F5F7 略实，与 linear 的 7% 拉开） */
+[data-look='instrument'] .sc-shell__sidebar,
+[data-look='instrument'] .sc-shell__topbar,
+[data-look='instrument'] .menub_band,
+[data-look='instrument'] .titleb_band {
+  background: color-mix(in srgb, var(--sc-color-ink-edge) 8%, var(--sc-color-canvas));
+}
+/* 仪表面板底纹：1px 扫描线（3px 周期）× 32px 刻度格网。
+   挂 **.sc-shell 与 .sc-shell__main 两处**（pixel 的网格纸底同样挂 .sc-shell——
+   真机实测：只挂 __main 会被内容面盖住，纹理等于没画）。 */
+[data-look='instrument'] .sc-shell,
+[data-look='instrument'] .sc-shell__main {
+  background-image:
+    repeating-linear-gradient(180deg,
+      color-mix(in srgb, var(--sc-color-ink-edge) 3%, transparent) 0 1px,
+      transparent 1px 3px),
+    repeating-linear-gradient(0deg,
+      color-mix(in srgb, var(--sc-color-ink-edge) 5%, transparent) 0 1px,
+      transparent 1px 32px),
+    repeating-linear-gradient(90deg,
+      color-mix(in srgb, var(--sc-color-ink-edge) 5%, transparent) 0 1px,
+      transparent 1px 32px);
+}
+/* B 的第一原则：数据要能对齐 ⇒ 全壳走等宽数字 */
+[data-look='instrument'] .sc-shell {
+  font-variant-numeric: tabular-nums;
+}
+/* 浮层：1px 环 + 近实心（无磨砂、无柔影） */
+[data-look='instrument'] .sc-dialog,
+[data-look='instrument'] .sc-menu,
+[data-look='instrument'] .sc-popover__panel,
+[data-look='instrument'] .palette {
+  background: var(--sc-color-surface-raised);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* ===== T95-02 「材质成形」关键帧（置于文件末尾）=====

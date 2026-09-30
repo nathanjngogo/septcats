@@ -17,10 +17,14 @@
  */
 import { useEffect } from 'react';
 import { createStore, useStore } from '../state/store';
+import { APPEARANCE_STAMP_KEY } from './lookState';
 
 /** 派系 id（mono = tokens.css 现状默认，无覆写块）。 */
-export const PALETTE_IDS = ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss'] as const;
+export const PALETTE_IDS = ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss', 'instrument'] as const;
 export type PaletteId = (typeof PALETTE_IDS)[number];
+
+/** 新装/未设置时的默认配色（instrument = 老板 10-01 选定方向 B 的中性平面族）。 */
+export const DEFAULT_PALETTE: PaletteId = 'instrument';
 
 /** localStorage 键（旁路，与 septcats.theme / septcats.layout 并列）。 */
 export const PALETTE_STORAGE_KEY = 'septcats.palette';
@@ -51,10 +55,22 @@ function safeSetItem(key: string, value: string): void {
   }
 }
 
-/** 读存储；缺失/野值 → 'mono'（非法不落属性 = 天然按 tokens.css 渲染）。 */
+/** 旧默认配色（迁移判据；口径同 lookState.readLook）。 */
+export const LEGACY_DEFAULT_PALETTE: PaletteId = 'mono';
+
+/** 读存储；首次运行本版本时：旧默认/未设置 → 升级为新默认，显式选过的别的档保留；都盖章。 */
 export function readPalette(): PaletteId {
   const raw = safeGetItem(PALETTE_STORAGE_KEY);
-  return isPaletteId(raw) ? raw : 'mono';
+  if (safeGetItem(APPEARANCE_STAMP_KEY) !== '1') {
+    safeSetItem(APPEARANCE_STAMP_KEY, '1');
+    const adopt = !isPaletteId(raw) || raw === LEGACY_DEFAULT_PALETTE;
+    if (adopt) {
+      safeSetItem(PALETTE_STORAGE_KEY, DEFAULT_PALETTE);
+      return DEFAULT_PALETTE;
+    }
+    return raw as PaletteId;
+  }
+  return isPaletteId(raw) ? raw : DEFAULT_PALETTE;
 }
 
 /** 把 palette 挂到根元素（'mono' 也显式挂——画廊选中态与 CSS 属性一致，便于探针）。 */
@@ -69,7 +85,7 @@ export interface PaletteStoreState {
   palette: PaletteId;
 }
 
-export const paletteStore = createStore<PaletteStoreState>({ palette: 'mono' });
+export const paletteStore = createStore<PaletteStoreState>({ palette: DEFAULT_PALETTE });
 
 export function usePaletteState<T>(selector: (state: PaletteStoreState) => T): T {
   return useStore(paletteStore, selector);

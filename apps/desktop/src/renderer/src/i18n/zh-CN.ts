@@ -623,7 +623,7 @@ export const zhCN = {
       langEn: 'English',
       // T65-01 §1：配色派系（六选，画廊预览即时切换；含「跟随明暗三态」既有主题开关）
       palette: '配色派系',
-      paletteDesc: '六套中性配色，点一下即时切换并记住',
+      paletteDesc: '七套中性配色，点一下即时切换并记住',
       paletteCurrent: '当前',
       paletteDisabledOled: '纯黑仅深色背景生效',
       paletteNames: {
@@ -633,14 +633,16 @@ export const zhCN = {
         paper: '纸张',
         slate: '石墨',
         moss: '苔青',
+        instrument: '仪表冷灰',
       },
       // T85-01：质感派系（三选，与配色/明暗正交；Linear 风 + 毛玻璃风入画廊）
       look: '质感风格',
-      lookDesc: '像素 / Linear 极简 / 毛玻璃，整窗即时换肤',
+      lookDesc: '夜航仪表 / 像素 / Linear 极简 / 毛玻璃，整窗即时换肤',
       lookNames: {
         pixel: '像素',
         linear: 'Linear 极简',
         glass: '毛玻璃',
+        instrument: '夜航仪表',
       },
     },
     // T54-01：关闭行为——点窗口关闭按钮时的动作（询问框「记住我的选择」写这里，可改回）

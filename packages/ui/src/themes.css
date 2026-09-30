@@ -147,3 +147,35 @@
   --sc-color-hairline: #293026;
   --sc-color-hairline-strong: #3B4438;
 }
+
+/* ===== instrument（夜航仪表 · 老板 10-01 选定的方向 B）=====
+   规矩不变：本文件只覆写**中性**（五级平面 / 文字四档 / 发丝线）。
+   B 的荧光主色与发光材料属于「质感身份」，放 looks.css 的 [data-look='instrument']，
+   于是「换回 pixel/linear/glass」能一键退回中性主色——对比与回退都干净。
+   深色 = 夜航（仪表面）；浅色 = 日间仪表（同语义、同层次，只是基底翻亮）。 */
+[data-theme="light"][data-palette="instrument"] {
+  --sc-color-canvas: #E8ECEF;
+  --sc-color-surface: #F2F5F7;
+  --sc-color-surface-raised: #FFFFFF;
+  --sc-color-content: #FBFCFD;
+  --sc-color-surface-active: #DCE3E8;
+  --sc-color-ink: #101619;
+  --sc-color-ink-secondary: #46545E;
+  --sc-color-ink-faint: #5A6873;
+  --sc-color-icon-faint: #8A979F;
+  --sc-color-hairline: #C9D3D9;
+  --sc-color-hairline-strong: #A9B6BE;
+}
+[data-theme="dark"][data-palette="instrument"] {
+  --sc-color-canvas: #0C1116;
+  --sc-color-surface: #111820;
+  --sc-color-surface-raised: #16202A;
+  --sc-color-content: #080B0E;
+  --sc-color-surface-active: #1D2833;
+  --sc-color-ink: #D3DFE7;
+  --sc-color-ink-secondary: #A7B6C2;
+  --sc-color-ink-faint: #8B9BA8;
+  --sc-color-icon-faint: #5C6B77;
+  --sc-color-hairline: #22303C;
+  --sc-color-hairline-strong: #31414F;
+}

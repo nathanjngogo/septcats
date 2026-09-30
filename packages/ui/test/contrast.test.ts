@@ -198,3 +198,116 @@ describe('对比度红线（DESIGN.md ↔ tokens.css ↔ WCAG AA）', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// 扩展（方向 B「夜航仪表」落地时补齐的门禁缺口）：
+//   themes.css 的「配色派系」块此前**不在门禁内**——只有 tokens.css 的两主题被验过。
+//   本组把每个 [data-theme][data-palette] 块按同口径逐对验一遍（缺键回落 tokens.css），
+//   并单独验 instrument **look** 覆写的强调色族（本仓规矩：配色块禁碰语义色 ⇒ 主色住在 look 里）。
+// ---------------------------------------------------------------------------
+
+interface PaletteBlock {
+  key: string;
+  theme: 'light' | 'dark';
+  palette: string;
+  colors: Record<string, string>;
+}
+
+/** 抽 themes.css 的 [data-theme=X][data-palette=Y] 块；未覆写的键回落 tokens.css 同主题值。 */
+function parseThemesPalettes(
+  css: string,
+  fallback: { light: Record<string, string>; dark: Record<string, string> },
+): PaletteBlock[] {
+  const out: PaletteBlock[] = [];
+  for (const m of css.matchAll(/\[data-theme="(light|dark)"\]\[data-palette="([a-z-]+)"\]\s*\{([^}]*)\}/g)) {
+    const theme = m[1] as 'light' | 'dark';
+    const palette = m[2]!;
+    const colors: Record<string, string> = { ...fallback[theme] };
+    for (const c of m[3]!.matchAll(/--sc-color-([a-z-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
+      colors[c[1]!] = c[2]!;
+    }
+    out.push({ key: `${theme}/${palette}`, theme, palette, colors });
+  }
+  return out;
+}
+
+/** 抽某个选择器块里的 --sc-color-* hex（用于 look 里覆写的强调色族）。
+ *  ⚠ 必须带 `{` 一起匹配：looks.css 里 [data-look='instrument'] 作为**后代选择器前缀**
+ *  出现在多条规则里（接缝条等），只用 indexOf(选择器) 会命中第一条无关规则。 */
+function parseLookColors(css: string, sel: string): Record<string, string> {
+  const idx = css.indexOf(`${sel} {`);
+  if (idx < 0) {
+    return {};
+  }
+  const open = css.indexOf('{', idx);
+  const close = css.indexOf('}', open);
+  const colors: Record<string, string> = {};
+  for (const m of css.slice(open + 1, close).matchAll(/--sc-color-([a-z-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
+    colors[m[1]!] = m[2]!;
+  }
+  return colors;
+}
+
+describe('对比度扩展 · 配色派系 + instrument look 主色族', () => {
+  const fromCss = parseTokensCss(readFileSync(resolvePkgFile('src/tokens.css'), 'utf8'));
+  const themesCss = readFileSync(resolvePkgFile('src/themes.css'), 'utf8');
+  const looksCss = readFileSync(resolvePkgFile('src/looks.css'), 'utf8');
+  const palettes = parseThemesPalettes(themesCss, { light: fromCss.light, dark: fromCss.dark });
+
+  it('themes.css 每个配色块都被解析到（防门禁空转：解析失败 ⇒ 假绿）', () => {
+    // mono 无覆写块（走 tokens.css）；oled 只有深色一支（浅色基底无意义）⇒ 6 配色共 11 块
+    expect(palettes.length, `解析到 ${String(palettes.length)} 个配色块`).toBeGreaterThanOrEqual(11);
+    const names = new Set(palettes.map((p) => p.palette));
+    for (const need of ['oled', 'contrast', 'paper', 'slate', 'moss', 'instrument']) {
+      expect(names.has(need), `缺配色块：${need}`).toBe(true);
+    }
+    const instr = palettes.filter((p) => p.palette === 'instrument');
+    expect(instr.length, 'instrument 应有 light + dark 两支').toBe(2);
+  });
+
+  it('每个配色块 × 两主题：ink 三档 × 四面全 ≥4.5', () => {
+    const fails: string[] = [];
+    for (const p of palettes) {
+      for (const fg of TEXT_TOKENS) {
+        for (const bg of BACKDROPS) {
+          const f = p.colors[fg];
+          const b = p.colors[bg];
+          if (f === undefined || b === undefined) {
+            fails.push(`${p.key}: 缺 token ${fg}/${bg}`);
+            continue;
+          }
+          const r = contrastRatio(f, b);
+          if (r < THRESHOLD) {
+            fails.push(`${p.key}: ${fg}(${f}) on ${bg}(${b}) = ${r.toFixed(2)}`);
+          }
+        }
+      }
+    }
+    expect(fails, fails.join('  |  ')).toEqual([]);
+  });
+
+  it('instrument look 主色族：on-accent 对 accent、ink 对 accent-soft 全 ≥4.5（两主题）', () => {
+    const lookLight = parseLookColors(looksCss, "[data-look='instrument']");
+    const lookDark = parseLookColors(looksCss, "[data-theme='dark'][data-look='instrument']");
+    const palLight = palettes.find((p) => p.palette === 'instrument' && p.theme === 'light');
+    const palDark = palettes.find((p) => p.palette === 'instrument' && p.theme === 'dark');
+    expect(lookLight['accent'], '浅色基底缺 accent').toBeDefined();
+    expect(lookDark['accent'], '深色基底缺 accent').toBeDefined();
+    expect(palLight, '缺 instrument 浅色配色块').toBeDefined();
+    expect(palDark, '缺 instrument 深色配色块').toBeDefined();
+    const pairs: ReadonlyArray<readonly [string, string, string]> = [
+      ['浅色 on-accent/accent', lookLight['on-accent']!, lookLight['accent']!],
+      ['深色 on-accent/accent', lookDark['on-accent']!, lookDark['accent']!],
+      ['浅色 ink/accent-soft', palLight!.colors['ink']!, lookLight['accent-soft']!],
+      ['深色 ink/accent-soft', palDark!.colors['ink']!, lookDark['accent-soft']!],
+    ];
+    const fails: string[] = [];
+    for (const [label, fg, bg] of pairs) {
+      const r = contrastRatio(fg, bg);
+      if (r < THRESHOLD) {
+        fails.push(`${label} = ${r.toFixed(2)} (${fg}/${bg})`);
+      }
+    }
+    expect(fails, fails.join('  |  ')).toEqual([]);
+  });
+});

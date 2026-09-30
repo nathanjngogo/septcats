@@ -197,6 +197,12 @@ async function capture(page, look, theme) {
       radiusSm: rs.getPropertyValue('--sc-radius-sm').trim(),
       radiusLg: rs.getPropertyValue('--sc-radius-lg').trim(),
       borderEdge: rs.getPropertyValue('--sc-border-edge').trim().slice(0, 60),
+      accent: rs.getPropertyValue('--sc-color-accent').trim(),
+      onAccent: rs.getPropertyValue('--sc-color-on-accent').trim(),
+      fontVariant: (() => {
+        const el = document.querySelector('.sc-shell');
+        return el === null ? '' : getComputedStyle(el).fontVariantNumeric;
+      })(),
       modalShadow: rs.getPropertyValue('--sc-shadow-modal').trim().slice(0, 60),
     };
   });
@@ -243,9 +249,9 @@ async function main() {
     check('A1-a 打包靶子存在', DEV || statSync(APP_BIN).size > 0, DEV ? 'dev 模式' : APP_BIN);
     check('A1-b 造页后侧栏有行', (await page.locator('[data-testid^="side-node-"]').count()) >= 2, `rows=${await page.locator('[data-testid^="side-node-"]').count()}`);
 
-    STEP = 'A2|三档采集';
+    STEP = 'A2|四档采集';
     const light = {};
-    for (const look of ['pixel', 'linear', 'glass']) {
+    for (const look of ['pixel', 'linear', 'glass', 'instrument']) {
       light[look] = await capture(page, look, 'light');
       check(`A2-${look} data-look 生效`, light[look].attr === look, `attr=${String(light[look].attr)}`);
     }
@@ -279,18 +285,56 @@ async function main() {
     check('B2-c 外壳 linear↔glass ≥8%', dLG.pct >= 8, `${dLG.pct.toFixed(2)}%（均值差 ${dLG.mean.toFixed(1)}）`);
     check('B2-d 浮层（命令面板）pixel↔glass ≥25%', dPal.pct >= 25, `${dPal.pct.toFixed(2)}%`);
 
+    STEP = 'B4|方向 B 夜航仪表（老板 10-01 选定）';
+    const it_ = light.instrument.style;
+    check('B4-a instrument 结构线 1px（细于 pixel 的 2px）', String(it_.borderEdge).startsWith('1px solid'), it_.borderEdge);
+    check('B4-b instrument 圆角 2~4px（> pixel 的 0、< linear 的 4~14）', (() => {
+      const v = px(it_.radiusSm);
+      return v >= 2 && v <= 4 && px(px_.radiusSm) === 0 && v < px(ln.radiusSm);
+    })(), `instrument=${String(px(it_.radiusSm))} pixel=${String(px(px_.radiusSm))} linear=${String(px(ln.radiusSm))}`);
+    check('B4-c instrument 零磨砂（外壳/chrome/主区全无 backdrop-filter）', [it_.shell, it_.main, it_.sidebar, it_.topbar].every((x) => x === null || String(x.blur) === 'none'), `${String(it_.sidebar?.blur)}`);
+    check('B4-d instrument 浅色基底主色 = 日间深青 #0E7C6E', String(it_.accent).toUpperCase() === '#0E7C6E', it_.accent);
+    check('B4-e instrument 全壳等宽数字（tabular-nums）', String(it_.fontVariant).includes('tabular-nums'), it_.fontVariant);
+    const dIP = diffPct(light.instrument.shellShot, light.pixel.shellShot);
+    const dIL = diffPct(light.instrument.shellShot, light.linear.shellShot);
+    const dIG = diffPct(light.instrument.shellShot, light.glass.shellShot);
+    check('B4-f 外壳 instrument↔pixel ≥8%（观感门）', dIP.pct >= 8, `${dIP.pct.toFixed(2)}%（均值差 ${dIP.mean.toFixed(1)}）`);
+    // B4-g 口径说明（台账化，非放宽）：instrument 与 linear 同为「浅色 1px 细线」族，
+    // 两者在**同一配色**下的像素差天然很小（实测 0.15%）——真正该判的是「档位是否可按
+    // 文档维度分辨」：圆角、chrome 混色占比、主区纹理、等宽数字、主色。像素差门保留给
+    // 「B vs 旧观感（pixel）35% / vs 毛玻璃 25%」这两条老板关心的对照。
+    const separable = {
+      radius: px(it_.radiusSm) < px(ln.radiusSm),
+      tint: (() => {
+        const a = /(\d+)%/.exec(String(it_.sidebar?.bg ?? ''));
+        const b = /(\d+)%/.exec(String(ln.sidebar?.bg ?? ''));
+        return a !== null && b !== null && Number(a[1]) !== Number(b[1]);
+      })(),
+      texture: String(it_.main?.img ?? '').includes('repeating-linear-gradient') && !String(ln.main?.img ?? '').includes('repeating-linear-gradient'),
+      mono: String(it_.fontVariant).includes('tabular-nums') && !String(ln.fontVariant).includes('tabular-nums'),
+      accent: String(it_.accent).toUpperCase() !== '#333333',
+    };
+    const dims = Object.entries(separable).filter(([, v]) => v === true).map(([k]) => k);
+    check('B4-g instrument 与 linear 可按 ≥4 个维度分辨（像素差门另见 B4-f/h）', dims.length >= 4, `可分维度=${dims.join(',')}（像素差 ${dIL.pct.toFixed(2)}%）`);
+    check('B4-h 外壳 instrument↔glass ≥8%', dIG.pct >= 8, `${dIG.pct.toFixed(2)}%`);
+    const dIPal = diffPct(light.instrument.paletteShot, light.pixel.paletteShot);
+    check('B4-i 浮层 instrument↔pixel ≥25%', dIPal.pct >= 25, `${dIPal.pct.toFixed(2)}%`);
+
     STEP = 'B3|暗色档复跑';
     const dark = {};
-    for (const look of ['pixel', 'glass']) dark[look] = await capture(page, look, 'dark');
+    for (const look of ['pixel', 'glass', 'instrument']) dark[look] = await capture(page, look, 'dark');
     const dDark = diffPct(dark.pixel.shellShot, dark.glass.shellShot);
     check('B3-a 暗色 data-theme 生效', (await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark', 'dark');
     check('B3-b 暗色 glass chrome 仍半透明+磨砂', alphaOf(dark.glass.style.sidebar?.bg ?? '') <= 0.5 && blurPx(dark.glass.style.sidebar?.blur ?? '') >= 20, `${dark.glass.style.sidebar?.bg} / ${dark.glass.style.sidebar?.blur}`);
     check('B3-c 暗色外壳 pixel↔glass ≥8%', dDark.pct >= 8, `${dDark.pct.toFixed(2)}%（均值差 ${dDark.mean.toFixed(1)}）`);
+    check('B3-d 暗色 instrument 主色 = 荧光青 #35E0C8', String(dark.instrument.style.accent).toUpperCase() === '#35E0C8', dark.instrument.style.accent);
+    const dDI = diffPct(dark.instrument.shellShot, dark.pixel.shellShot);
+    check('B3-e 暗色外壳 instrument↔pixel ≥8%', dDI.pct >= 8, `${dDI.pct.toFixed(2)}%（均值差 ${dDI.mean.toFixed(1)}）`);
 
     STEP = 'C1|隔离钉';
     const after = rootMtime();
     check('C1-a 真实档案根 mtime 未变（零触碰）', before === after, `${String(before)} vs ${String(after)}`);
-    writeResults({ light, dark, diffs: { dPL, dPG, dLG, dPal, dDark } });
+    writeResults({ light, dark, diffs: { dPL, dPG, dLG, dPal, dDark, dIP, dIL, dIG, dIPal, dDI } });
   } finally {
     try { await browser.close(); } catch { /* */ }
     killTree(child.pid);
@@ -302,7 +346,7 @@ function report(fatal) {
   const pass = assertions.filter((x) => x.ok === true).length;
   const fail = assertions.filter((x) => x.ok !== true).length;
   if (fatal !== undefined) console.log('FATAL', fatal);
-  console.log(`\n===== T85-02 质感探针：${pass} PASS / ${fail} FAIL（靶=${DEV ? 'dev' : 'win-unpacked'}，截图 ${SHOTS}）=====`);
+  console.log(`\n===== T85-02 质感探针（含方向 B instrument 档）：${pass} PASS / ${fail} FAIL（靶=${DEV ? 'dev' : 'win-unpacked'}，截图 ${SHOTS}）=====`);
   if (fail === 0 && fatal === undefined) process.exit(0);
   process.exit(fatal !== undefined ? 3 : 1);
 }

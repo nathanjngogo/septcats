@@ -621,7 +621,7 @@ export const enUS = {
       langEn: 'English',
       // T65-01 §1: color palettes (six to choose; live preview in gallery)
       palette: 'Color palette',
-      paletteDesc: 'Six neutral palettes; pick one to switch and remember',
+      paletteDesc: 'Seven neutral palettes; pick one to switch and remember',
       paletteCurrent: 'Current',
       paletteDisabledOled: 'Pure Black only applies on dark background',
       paletteNames: {
@@ -631,14 +631,16 @@ export const enUS = {
         paper: 'Paper',
         slate: 'Graphite',
         moss: 'Moss',
+        instrument: 'Instrument',
       },
       // T85-01: texture looks (pixel / linear / glass), orthogonal to palette
       look: 'Texture',
-      lookDesc: 'Pixel / Linear minimal / Frosted glass — live restyle',
+      lookDesc: 'Instrument night / Pixel / Linear minimal / Frosted glass — live restyle',
       lookNames: {
         pixel: 'Pixel',
         linear: 'Linear Minimal',
         glass: 'Frosted Glass',
+        instrument: 'Instrument Night',
       },
     },
     // T54-01: closing behavior — what the window close button does (the dialog's
