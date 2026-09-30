@@ -61,9 +61,10 @@ describe('MIGRATIONS 表', () => {
   it('LATEST_SCHEMA_VERSION 等于最后一条迁移 id', () => {
     expect(LATEST_SCHEMA_VERSION).toBe(MIGRATIONS[MIGRATIONS.length - 1]!.id);
     // TASK-T15-01：版本断言一律 LATEST_SCHEMA_VERSION 参数化，不硬编码 id；
-    // 最新迁移语义由名称锁死（T67-01-B1-01：v10-page-lock；前值 v9-page-link-index 逐次顺延）
-    // DEVIATION D2：追加 #10 后末条名随动为 v10-page-lock（原写死 v9-page-link-index 已更新）。
-    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v10-page-lock');
+    // 最新迁移语义由名称锁死（前值 v10-page-lock 逐次顺延）
+        // DEVIATION D2：追加 #10 后末条名随动为 v10-page-lock（原写死 v9-page-link-index 已更新）。
+        // DEVIATION D3：追加 #11（T97-01 日历 / T98-01 待办）后末条名随动为 v11-calendar-todo。
+        expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v11-calendar-todo');
   });
 
   it('#1..#5 未被改动：v1 仍是建表语句，v2/v3 只做追加，v4 只重建触发器+回填，v5 只建导入表', () => {

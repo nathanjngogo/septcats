@@ -1145,6 +1145,105 @@ WHERE id = @id`,
       updated_at: nullableTimestamp,
     }),
   },
+  // ---- calendar / todo（TASK-T97-01 / T98-01 · 设备本地派生态）-------------
+  // 同 lock 口径：全部 STRICT 表、白名单语句；写路径不经 Op 账本（本地功能，不参与同步）。
+  // 排序与过滤写在 SQL 里，服务层不做二次排序（口径唯一）。
+  'calendar.list': {
+    kind: 'all',
+    sql: `SELECT id, title, start_at, end_at, all_day, note, created_at, updated_at
+FROM calendar_event
+WHERE start_at < @to AND end_at >= @from
+ORDER BY start_at ASC, id ASC`,
+    params: z.object({ from: z.number().int(), to: z.number().int() }),
+  },
+  'calendar.get': {
+    kind: 'get',
+    sql: `SELECT id, title, start_at, end_at, all_day, note, created_at, updated_at FROM calendar_event WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
+  'calendar.insert': {
+    kind: 'run',
+    sql: `INSERT INTO calendar_event (id, title, start_at, end_at, all_day, note, created_at, updated_at)
+VALUES (@id, @title, @start_at, @end_at, @all_day, @note, @created_at, @updated_at)`,
+    params: z.object({
+      id: idText,
+      title: z.string(),
+      start_at: z.number().int(),
+      end_at: z.number().int(),
+      all_day: z.number().int().min(0).max(1).default(0),
+      note: z.string().default(''),
+      created_at: z.number().int().nonnegative(),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'calendar.update': {
+    kind: 'run',
+    sql: `UPDATE calendar_event SET
+  title = @title, start_at = @start_at, end_at = @end_at, all_day = @all_day, note = @note, updated_at = @updated_at
+WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      title: z.string(),
+      start_at: z.number().int(),
+      end_at: z.number().int(),
+      all_day: z.number().int().min(0).max(1),
+      note: z.string(),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'calendar.delete': {
+    kind: 'run',
+    sql: `DELETE FROM calendar_event WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
+  'todo.list': {
+    kind: 'all',
+    sql: `SELECT id, title, done, due_at, priority, note, created_at, updated_at
+FROM todo_item
+WHERE (@include_done = 1 OR done = 0)
+ORDER BY done ASC, (due_at IS NULL) ASC, due_at ASC, created_at ASC, id ASC`,
+    params: z.object({ include_done: z.number().int().min(0).max(1).default(0) }),
+  },
+  'todo.get': {
+    kind: 'get',
+    sql: `SELECT id, title, done, due_at, priority, note, created_at, updated_at FROM todo_item WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
+  'todo.insert': {
+    kind: 'run',
+    sql: `INSERT INTO todo_item (id, title, done, due_at, priority, note, created_at, updated_at)
+VALUES (@id, @title, @done, @due_at, @priority, @note, @created_at, @updated_at)`,
+    params: z.object({
+      id: idText,
+      title: z.string(),
+      done: z.number().int().min(0).max(1).default(0),
+      due_at: z.number().int().nullable().default(null),
+      priority: z.string(),
+      note: z.string().default(''),
+      created_at: z.number().int().nonnegative(),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'todo.update': {
+    kind: 'run',
+    sql: `UPDATE todo_item SET
+  title = @title, done = @done, due_at = @due_at, priority = @priority, note = @note, updated_at = @updated_at
+WHERE id = @id`,
+    params: z.object({
+      id: idText,
+      title: z.string(),
+      done: z.number().int().min(0).max(1),
+      due_at: z.number().int().nullable(),
+      priority: z.string(),
+      note: z.string(),
+      updated_at: z.number().int().nonnegative(),
+    }),
+  },
+  'todo.delete': {
+    kind: 'run',
+    sql: `DELETE FROM todo_item WHERE id = @id`,
+    params: z.object({ id: idText }),
+  },
 } satisfies Record<string, StatementDefinition>;
 
 export type SqlId = keyof typeof STATEMENTS;

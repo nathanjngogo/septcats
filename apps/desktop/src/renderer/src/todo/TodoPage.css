@@ -1,0 +1,263 @@
+/*
+ * TodoPage.css —— T98-01 待办一级页面（子 Agent C 完整实现）。
+ * 纪律：只用 var(--sc-*) token（no-magic 拦裸 hex / 重复裸 px）；框线一律
+ * var(--sc-border-edge)；过渡走 var(--sc-motion-fast) 且带 reduced-motion 兜底。
+ * 行语言照 DESIGN.md「侧栏列表行」：28px 行高、2px 微圆角、悬停 surface 面。
+ */
+.todo-page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-md);
+  width: 100%;
+  max-width: var(--sc-space-editor-measure);
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  padding: var(--sc-space-lg) var(--sc-space-xl) var(--sc-space-xxl);
+  overflow: auto;
+  background: var(--sc-color-content);
+}
+
+.todo-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sc-space-md);
+}
+
+.todo-head__title {
+  margin: 0;
+  font: var(--sc-text-h2);
+  color: var(--sc-color-ink);
+}
+
+.todo-head__count {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+}
+
+/* ------------------------------------------------------------------ 快速添加 */
+
+.todo-addbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.todo-addbar__input {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--sc-size-control-md);
+  padding: 0 var(--sc-space-md);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  transition: box-shadow var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.todo-addbar__input:hover {
+  box-shadow: var(--sc-bevel-in);
+}
+
+.todo-addbar__input::placeholder {
+  color: var(--sc-color-ink-faint);
+}
+
+.todo-addbar__btn {
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ 工具行 */
+
+.todo-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.todo-tools__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--sc-layout-row-h);
+  padding: 0 var(--sc-space-md);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.todo-tools__btn:hover:not(:disabled) {
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+}
+
+.todo-tools__btn:active:not(:disabled) {
+  background: var(--sc-color-accent-soft);
+}
+
+.todo-tools__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.todo-error {
+  margin: 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-danger);
+}
+
+/* ------------------------------------------------------------------ 列表 */
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) var(--sc-space-md);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.todo-item:hover {
+  background: var(--sc-color-surface);
+}
+
+/* 完成态：淡化 + 划线（PRD §5「视觉划线 + 淡化」） */
+.todo-item--done {
+  opacity: 0.6;
+}
+
+.todo-item--done .todo-item__title {
+  color: var(--sc-color-ink-faint);
+  text-decoration: line-through;
+}
+
+.todo-item__check {
+  position: relative;
+  flex: none;
+}
+
+/* 命中内衬：ui Checkbox 的 input 视觉隐藏（1px + clip），这里把它铺满行内的勾选盒，
+   使指针/探针直接点框即命中 input 本体（label 转发是第二重保险）。 */
+.todo-item__check .sc-cbx__input {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  clip: auto;
+  cursor: pointer;
+}
+
+.todo-item__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  background: transparent;
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-md);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.todo-item__edit {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-md);
+}
+
+/* 优先级色点（与二级栏同色系：high=danger / mid=accent / low=ink-faint） */
+.todo-item__dot {
+  flex: none;
+  width: var(--sc-space-sm);
+  height: var(--sc-space-sm);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-ink-faint);
+}
+
+.todo-item__dot--high {
+  background: var(--sc-color-danger);
+}
+
+.todo-item__dot--mid {
+  background: var(--sc-color-accent);
+}
+
+.todo-item__duetag {
+  flex: none;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.todo-item__due,
+.todo-item__pri {
+  box-sizing: border-box;
+  flex: none;
+  height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-xs);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+}
+
+.todo-item__pri {
+  cursor: pointer;
+}
+
+.todo-item__pri--high {
+  color: var(--sc-color-danger);
+}
+
+.todo-item__del {
+  flex: none;
+}
+
+.todo-empty {
+  margin: 0;
+  padding: var(--sc-space-md) 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-addbar__input,
+  .todo-item,
+  .todo-tools__btn {
+    transition: none;
+  }
+}

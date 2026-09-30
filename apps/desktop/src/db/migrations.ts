@@ -28,6 +28,7 @@ import { SCHEMA_V7_STATEMENTS } from './schema.v7';
 import { SCHEMA_V8_ADDED_COLUMNS } from './schema.v8';
 import { SCHEMA_V9_STATEMENTS } from './schema.v9';
 import { SCHEMA_V10_STATEMENTS } from './schema.v10';
+import { SCHEMA_V11_STATEMENTS } from './schema.v11';
 
 /** better-sqlite3 的连接类型（只做类型引用，不在本模块顶层加载原生模块）。 */
 export type SqliteDatabase = Database.Database;
@@ -261,6 +262,22 @@ function applySchemaV10(db: SqliteDatabase): void {
  * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
  * （改了会让已升级用户的库与代码描述不一致）。
  */
+/**
+ * migration #11（T97-01 日历 / T98-01 待办）：建 calendar_event / todo_item 两表 + 索引。
+ * 幂等：语句全 `IF NOT EXISTS`（见 schema.v11.ts）。两表是**设备本地派生态**，
+ * 不参与 Op 账本与同步；旧库直接打开（MIN_SUPPORTED 不变）。
+ */
+function applySchemaV11(db: SqliteDatabase): void {
+  for (const statement of SCHEMA_V11_STATEMENTS) {
+    db.exec(statement);
+  }
+  setMeta(db, 'schema_version', '11');
+}
+
+/**
+ * 全部迁移，按 id 升序。**只允许追加**，不允许修改已发布的条目
+ * （改了会让已升级用户的库与代码描述不一致）。
+ */
 export const MIGRATIONS: readonly Migration[] = [
   { id: 1, name: 'v1-schema', up: applySchemaV1 },
   { id: 2, name: 'v2-page-tree', up: applySchemaV2 },
@@ -272,7 +289,8 @@ export const MIGRATIONS: readonly Migration[] = [
   { id: 8, name: 'v8-page-type', up: applySchemaV8 },
   { id: 9, name: 'v9-page-link-index', up: applySchemaV9 },
   { id: 10, name: 'v10-page-lock', up: applySchemaV10 },
-];
+    { id: 11, name: 'v11-calendar-todo', up: applySchemaV11 },
+  ];
 
 /** 最新 schema 版本 = 迁移表最后一项的 id。 */
 export const LATEST_SCHEMA_VERSION: number =

@@ -133,8 +133,8 @@ describeDb('T67 迁移 · v10 升级 v9 夹具', (ctor) => {
       const result = await migrate(db);
       expect(result.from).toBe(9);
       expect(result.to).toBe(LATEST_SCHEMA_VERSION);
-      expect(LATEST_SCHEMA_VERSION).toBe(10);
-      expect(result.applied).toEqual([10]);
+      expect(LATEST_SCHEMA_VERSION).toBe(11);
+      expect(result.applied).toEqual([10, 11]);
 
       const names = tableNames(db);
       for (const table of SCHEMA_V10_TABLES) {
@@ -389,10 +389,10 @@ describeDb('T67 FTS · 锁页不出现在搜索结果', (ctor) => {
 // --- SCHEMA_VERSION 双轴钉点 -------------------------------------------------
 
 describe('T67 SCHEMA_VERSION 双轴钉点', () => {
-  it('内部迁移轴 LATEST_SCHEMA_VERSION = 10（仅追加 #10，无手改常量）', () => {
-    expect(LATEST_SCHEMA_VERSION).toBe(10);
-    expect(MIGRATIONS[MIGRATIONS.length - 1]!.id).toBe(10);
-    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v10-page-lock');
+  it('内部迁移轴 LATEST_SCHEMA_VERSION = 11（追加 #11 日历/待办；无手改常量）', () => {
+    expect(LATEST_SCHEMA_VERSION).toBe(11);
+    expect(MIGRATIONS[MIGRATIONS.length - 1]!.id).toBe(11);
+    expect(MIGRATIONS[MIGRATIONS.length - 1]!.name).toBe('v11-calendar-todo');
   });
 
   it('wire 轴 packages/core SCHEMA_VERSION = 3 冻结未动（红线）', () => {

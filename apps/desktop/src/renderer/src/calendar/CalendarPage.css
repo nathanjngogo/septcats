@@ -1,0 +1,247 @@
+/* CalendarPage.css —— T97-01 日历页（B 角色完整实现）。
+   纪律：只用 token（no-magic 会拦裸 hex / 重复裸 px）；字体随 token（思源黑体）。
+   行语言照 DESIGN.md：日格 = 描边卡面，日程条 = 小圆角软底；悬停/焦点与既有列表一致。 */
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-lg) var(--sc-space-xl);
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--sc-color-content);
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-md);
+  flex: none;
+}
+
+.calendar-title {
+  margin: 0;
+  font: var(--sc-text-h2);
+  color: var(--sc-color-ink);
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
+
+.calendar-navbtn,
+.calendar-today {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  padding: 0 var(--sc-space-sm);
+  min-height: var(--sc-size-control-sm);
+  cursor: pointer;
+  transition:
+    background var(--sc-motion-fast) var(--sc-ease-out),
+    color var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.calendar-navbtn:hover,
+.calendar-today:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.calendar-navbtn {
+  min-width: var(--sc-size-control-sm);
+  font: var(--sc-text-ui-md);
+}
+
+.calendar-month {
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink-secondary);
+  min-width: calc(var(--sc-space-xxl) * 2);
+  text-align: center;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--sc-space-sm);
+}
+
+.calendar-weekdays {
+  flex: none;
+}
+
+.calendar-wd {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  letter-spacing: var(--sc-tracking-ui);
+  text-align: center;
+}
+
+.calendar-grid {
+  /* 6 行恒满高：切月时网格不跳（跨月补白淡化而非隐藏）。 */
+  grid-auto-rows: minmax(var(--sc-space-xxl), 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.calendar-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  min-width: 0;
+  min-height: var(--sc-space-xxl);
+  padding: var(--sc-space-xs);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  transition: background var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.calendar-cell:hover {
+  background: var(--sc-color-surface);
+}
+
+/* 跨月补白：淡化而非隐藏（保留网格形状与可点性）。 */
+.calendar-cell--out {
+  opacity: 0.45;
+}
+
+/* 今天：**底部强调下划线**（pixel 风：不靠改描边色 —— T62-01 框线纪律要求轮廓恒吃 ink-edge，
+   语义色只能落在背景/阴影等非 border 通道上，故用 inset 阴影画 2px 强调条）。 */
+.calendar-cell--today {
+  background: var(--sc-color-accent-soft);
+  box-shadow: inset 0 calc(-1 * var(--sc-space-xxs)) 0 0 var(--sc-color-accent);
+  color: var(--sc-color-ink);
+}
+
+.calendar-cell--today .calendar-daynum {
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+}
+
+.calendar-daynum {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  letter-spacing: var(--sc-tracking-ui);
+}
+
+.calendar-chip {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--sc-space-xs);
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-xs);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.calendar-chip:hover {
+  background: var(--sc-color-surface-active);
+}
+
+.calendar-more {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-faint);
+}
+
+.calendar-empty {
+  margin: 0;
+  padding: var(--sc-space-xl);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- 表单 */
+.calendar-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-md);
+}
+
+.calendar-form__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  width: 100%;
+}
+
+/* 删除靠左离组，保存/取消留在右侧（危险动作不挨着主操作）。 */
+.calendar-form__delete {
+  margin-right: auto;
+}
+
+.calendar-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-sm);
+}
+
+.calendar-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  min-width: 0;
+  flex: 1;
+}
+
+.calendar-field__label {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  letter-spacing: var(--sc-tracking-ui);
+}
+
+.calendar-field__control {
+  width: 100%;
+  min-height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+}
+
+.calendar-field__control--area {
+  min-height: var(--sc-size-control-md);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  resize: vertical;
+}
+
+.calendar-check {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  cursor: pointer;
+}
+
+.calendar-form__error {
+  margin: 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-navbtn,
+  .calendar-today,
+  .calendar-cell,
+  .calendar-chip {
+    transition: none;
+  }
+}

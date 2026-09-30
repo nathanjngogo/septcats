@@ -98,6 +98,8 @@ import {
 } from './dbview';
 import { createSearchService, registerSearchIpc, type SearchService } from './search';
 import { createLockService, type LockService } from './lock';
+import { createCalendarService, type CalendarService, registerCalendarIpc } from './calendar';
+import { createTodoService, type TodoService, registerTodoIpc } from './todo';
 import { registerLockIpc } from './lockIpc';
 import {
   createBlocksService,
@@ -507,6 +509,10 @@ interface DatabaseServices {
   templates: TemplatesService;
   links: LinksService;
   lock: LockService;
+  /** T97-01 日历：设备本地派生态（同 lock 口径，走 handle 不经 Op 装饰器）。 */
+  calendar: CalendarService;
+  /** T98-01 待办：同口径本地派生态。 */
+  todo: TodoService;
   /** R27（T79-01）：页面导出 Markdown（只读消费；写盘只落用户选定目录）。 */
   pageExport: PageExportService;
   /** R28（T80-01）：便携包导出（zip；只读消费 + 原子写包本身）。 */
@@ -649,6 +655,10 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
     // T67-01-B1-01：页面密码锁核心服务（DK 仅存会话 Map，落库只存盐/校验/包络密文）。
     // 与 blocks 共享同一会话实例——blocks:list 读路径接线（B2 范围0）依赖它判定解锁态。
     const lock = createLockService({ executor: handle });
+    // T97-01 日历 / T98-01 待办：设备本地派生态（同 lock 口径，走 handle 不走 Op 装饰器）。
+    // 老板 09-30 令：「在知识库功能下方增加日历功能，增加待办功能」。
+    const calendar = createCalendarService({ executor: handle });
+    const todo = createTodoService({ executor: handle });
     return {
       pages,
       db: createDbViewService({ executor, actor }),
@@ -666,6 +676,8 @@ async function bootstrapDatabase(ctx: PlatformContext): Promise<DatabaseServices
         },
       }),
       lock,
+      calendar,
+      todo,
       // T21-01：块服务——写路径复用同一装饰后 executor（commitOps 成功即进攒段器）；
       // T28-01：actor 是设备身份唯一真源，blocks:commit 写入前按它权威改写 op；
       // T67-01-B2-01 范围0：注入同一个 lock 服务，blocks:list 锁页返回 locked:true。
@@ -1481,6 +1493,10 @@ function registerIpcHandlers(ctx: PlatformContext, services: DatabaseServices | 
   registerDbViewIpc(services?.db ?? null, dbViewRegistrar());
   registerSearchIpc(services?.search ?? null, dbViewRegistrar());
   registerLockIpc(services?.lock ?? null, dbViewRegistrar());
+  // 日历（T97-01）：calendar:list/create/update/remove
+  registerCalendarIpc(services?.calendar ?? null, dbViewRegistrar());
+  // 待办（T98-01）：todo:list/create/update/setDone/remove
+  registerTodoIpc(services?.todo ?? null, dbViewRegistrar());
   registerImporterIpc(services?.importer ?? null);
   // 块读写（T21-01）：blocks:list / blocks:commit；blocks:changed 只保留通道名不推送
   registerBlocksIpc(services?.blocks ?? null, dbViewRegistrar());

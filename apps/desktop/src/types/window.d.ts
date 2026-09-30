@@ -23,6 +23,25 @@ import type {
 } from '../shared/pageExport';
 import type { SearchInput, SearchResponse } from '../shared/search';
 import type {
+  CalendarCreateInput,
+  CalendarEvent,
+  CalendarListInput,
+  CalendarListResult,
+  CalendarOkResult,
+  CalendarRemoveInput,
+  CalendarUpdateInput,
+} from '../shared/calendar';
+import type {
+  TodoCreateInput,
+  TodoItem,
+  TodoListInput,
+  TodoListResult,
+  TodoOkResult,
+  TodoRemoveInput,
+  TodoSetDoneInput,
+  TodoUpdateInput,
+} from '../shared/todo';
+import type {
   PortableExportConfirmResponse,
   PortableExportInput,
   PortableExportPreview,
@@ -595,12 +614,33 @@ export interface SeptcatsAssetGcApi {
   run(): Promise<AssetGcRunResult>;
 }
 
+/** 日历（T97-01）：四个通道，全部返回契约对象；失败抛「code: message」。 */
+export interface SeptcatsCalendarApi {
+  list(input: CalendarListInput): Promise<CalendarListResult>;
+  create(input: CalendarCreateInput): Promise<{ event: CalendarEvent }>;
+  update(input: CalendarUpdateInput): Promise<{ event: CalendarEvent }>;
+  remove(input: CalendarRemoveInput): Promise<CalendarOkResult>;
+}
+
+/** 待办（T98-01）：五个通道（含 setDone 勾选快捷路径）。 */
+export interface SeptcatsTodoApi {
+  list(input: TodoListInput): Promise<TodoListResult>;
+  create(input: TodoCreateInput): Promise<{ item: TodoItem }>;
+  update(input: TodoUpdateInput): Promise<{ item: TodoItem }>;
+  setDone(input: TodoSetDoneInput): Promise<{ item: TodoItem }>;
+  remove(input: TodoRemoveInput): Promise<TodoOkResult>;
+}
+
 export interface SeptcatsApi {
   /** IPC 自检：主进程返回当前时间戳字符串。 */
   ping(): Promise<string>;  /** 应用元信息（名称/版本/schema 版本）。 */
   appMeta(): Promise<SeptcatsAppMeta>;
   /** 块数据通道（T21-01：main 侧已实现 list/commit；changed 本期不推送）。 */
   blocks: SeptcatsBlocksApi;
+  /** 日历（T97-01）。 */
+  calendar: SeptcatsCalendarApi;
+  /** 待办（T98-01）。 */
+  todo: SeptcatsTodoApi;
   pages: SeptcatsPagesApi;
   favorites: SeptcatsFavoritesApi;
   recent: SeptcatsRecentApi;

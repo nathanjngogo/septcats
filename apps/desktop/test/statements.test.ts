@@ -169,7 +169,7 @@ describe('v2 白名单（页面树/回收站/收藏/最近）', () => {
     for (const id of Object.keys(V2_HAPPY)) {
       expect(getStatement(id), `缺少语句 ${id}`).not.toBeNull();
     }
-    expect(SQL_IDS.length).toBeLessThan(100);
+    expect(SQL_IDS.length).toBeLessThan(115);
     expect(SQL_IDS.length).toBeGreaterThanOrEqual(39);
   });
 
@@ -251,8 +251,8 @@ describe('v5 白名单（import_source）', () => {
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(95); // 89 + T83-02 assetgc.* 六条
-    expect(SQL_IDS.length).toBeLessThan(100);
+    expect(SQL_IDS.length).toBe(105); // 95 + T97-01 calendar.* 五条 + T98-01 todo.* 五条
+    expect(SQL_IDS.length).toBeLessThan(115);
   });
 
   it('每条 happy 参数通过校验，kind 与读写语义一致（run/get）', () => {

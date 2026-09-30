@@ -34,7 +34,9 @@ import {
   SETTINGS_CHANNELS,
   SHELL_CHANNELS,
   SYNC_CHANNELS,
+  CALENDAR_CHANNELS,
   TEMPLATES_CHANNELS,
+  TODO_CHANNELS,
   LINKS_CHANNELS,
   WORKSPACES_CHANNELS,
   LOCK_CHANNELS,
@@ -209,6 +211,28 @@ const api: SeptcatsApi = {
     apply: (input) =>
       ipcRenderer.invoke(COLLAB_CHANNELS.apply, input) as ReturnType<SeptcatsApi['collab']['apply']>,
     onUpdate: (listener) => subscribe(COLLAB_CHANNELS.update, listener),
+  },
+  calendar: {
+    list: (input) =>
+      ipcRenderer.invoke(CALENDAR_CHANNELS.list, input) as ReturnType<SeptcatsApi['calendar']['list']>,
+    create: (input) =>
+      ipcRenderer.invoke(CALENDAR_CHANNELS.create, input) as ReturnType<SeptcatsApi['calendar']['create']>,
+    update: (input) =>
+      ipcRenderer.invoke(CALENDAR_CHANNELS.update, input) as ReturnType<SeptcatsApi['calendar']['update']>,
+    remove: (input) =>
+      ipcRenderer.invoke(CALENDAR_CHANNELS.remove, input) as ReturnType<SeptcatsApi['calendar']['remove']>,
+  },
+  todo: {
+    list: (input) =>
+      ipcRenderer.invoke(TODO_CHANNELS.list, input) as ReturnType<SeptcatsApi['todo']['list']>,
+    create: (input) =>
+      ipcRenderer.invoke(TODO_CHANNELS.create, input) as ReturnType<SeptcatsApi['todo']['create']>,
+    update: (input) =>
+      ipcRenderer.invoke(TODO_CHANNELS.update, input) as ReturnType<SeptcatsApi['todo']['update']>,
+    setDone: (input) =>
+      ipcRenderer.invoke(TODO_CHANNELS.setDone, input) as ReturnType<SeptcatsApi['todo']['setDone']>,
+    remove: (input) =>
+      ipcRenderer.invoke(TODO_CHANNELS.remove, input) as ReturnType<SeptcatsApi['todo']['remove']>,
   },
   templates: {
     list: (input) =>
