@@ -147,7 +147,7 @@ const BITABLE = () => ({
   rowTexts: [...document.querySelectorAll('[data-testid^="bitable-row-"]')].map((e) => (e.textContent ?? '').trim()),
   kanban: document.querySelector('[data-testid="bitable-kanban"]') !== null,
   kanbanCols: [...document.querySelectorAll('[data-testid^="bitable-kanban-col-"]')].map((e) => (e.getAttribute('data-testid') ?? '').replace('bitable-kanban-col-', '')),
-  cards: [...document.querySelectorAll('[data-testid^="bitable-card-"]')].map((e) => (e.getAttribute('data-testid') ?? '').replace('bitable-card-', '')),
+  cards: [...document.querySelectorAll('article.bitable-card')].map((e) => (e.getAttribute('data-testid') ?? '').replace('bitable-card-', '')),
   empty: document.querySelector('[data-testid="bitable-empty"]') !== null,
 });
 
@@ -258,7 +258,7 @@ async function main() {
     for (const col of cols) {
       const colKey = (col.getAttribute('data-testid') ?? '').replace('bitable-kanban-col-', '');
       if (colKey === key) continue;
-      const card = col.querySelector('[data-testid^="bitable-card-"]');
+      const card = col.querySelector('article.bitable-card');
       if (card !== null) {
         picked = { recordId: (card.getAttribute('data-testid') ?? '').replace('bitable-card-', ''), from: colKey, card };
         break;

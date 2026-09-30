@@ -17,6 +17,7 @@
  *
  * 纪律：主进程桥用 vi.stubGlobal 假桥（断言落假桥调用与 DOM）；不写真实档案目录。
  */
+import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarPage, localDateKey } from '../src/renderer/src/calendar/CalendarPage';
@@ -414,5 +415,25 @@ describe('T97-01 渲染层容错 · 主进程不可用', () => {
     );
     await waitFor(() => expect(screen.getByTestId('calendar-empty')).toBeDefined());
     expect(screen.getByTestId('calendar-side-empty')).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 收口复查（PM）：跨月补白的对比度契约 —— 防「看着更淡」把可读性改回不合格
+// ---------------------------------------------------------------------------
+
+describe('日历 · 跨月补白对比度契约', () => {
+  it('补白走整格 opacity，取值必须 ≥0.7（低于此日期数字掉出 AA 4.5:1）', () => {
+    const css = readFileSync('src/renderer/src/calendar/CalendarPage.css', 'utf8');
+    const block = /\.calendar-cell--out\s*\{([^}]*)\}/.exec(css);
+    expect(block, '找不到 .calendar-cell--out 规则').not.toBeNull();
+    const inner = block?.[1] ?? '';
+    const opacity = /opacity:\s*([0-9.]+)/.exec(inner);
+    expect(opacity, '补白规则必须显式声明 opacity').not.toBeNull();
+    const value = Number(opacity?.[1] ?? 'NaN');
+    // 实测（WCAG 相对亮度，两主题）：0.45 → 2.79:1（浅）/3.87:1（深）= 不合格；
+    // 0.72 → 6.4:1 / 8.7:1 = 合格且仍与当月格有层次差。
+    expect(value).toBeGreaterThanOrEqual(0.7);
+    expect(value).toBeLessThan(1);
   });
 });

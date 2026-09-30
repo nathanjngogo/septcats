@@ -89,7 +89,7 @@ function main() {
     ymlSize === exeSize && ymlSha === sha512b64,
     `size ${String(ymlSize)}=${String(exeSize)} sha512 匹配=${String(ymlSha === sha512b64)}`);
   check('A1c Setup 体积/哈希与「审核时终包」逐字节一致（每次重打后需同步本锚）',
-    exeSize === 102709893 && exeSha.startsWith('4da17a1d'),
+    exeSize === 102711258 && exeSha.startsWith('72f6ee98'),
     `size=${String(exeSize)} sha256=${exeSha.slice(0, 16)}…`);
 
   // ---------- A2 PE 元数据 ----------
@@ -132,7 +132,7 @@ function main() {
     Object.values(needed).every(Boolean), JSON.stringify(needed));
   const pkgEntry = entries.find((e) => e.path.replace(/\\/g, '/') === '/package.json');
   const inner = JSON.parse(readEntry(pkgEntry).toString('utf8'));
-  check('A4b asar 内 package.json 版本 = 0.6.9 且声明了 main',
+  check('A4b asar 内 package.json 版本 = 0.6.10 且声明了 main',
     inner.version === VERSION && typeof inner.main === 'string',
     `version=${inner.version} main=${String(inner.main)}`);
   const mainNorm = `/${String(inner.main ?? '').replace(/\\/g, '/').replace(/^\.\//, '')}`;
@@ -226,7 +226,7 @@ function main() {
   const fail = checks.length - pass;
   writeFileSync(join(OUT, 'static-audit.log'),
     checks.map((c) => `${c.ok ? 'PASS' : 'FAIL'} [${c.id}] ${c.name} — ${c.raw}`).join('\n') + '\n', 'utf8');
-  console.log(`===== 0.6.9 静态包审：${String(pass)} PASS / ${String(fail)} FAIL（${String(checks.length)} 项）=====`);
+  console.log(`===== 0.6.10 静态包审：${String(pass)} PASS / ${String(fail)} FAIL（${String(checks.length)} 项）=====`);
   if (fail > 0) for (const c of checks.filter((x) => !x.ok)) console.log(`FAILED ${c.id} ${c.name} — ${c.raw}`);
   process.exitCode = fail === 0 ? 0 : 1;
 }

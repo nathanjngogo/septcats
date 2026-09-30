@@ -418,6 +418,41 @@ describe('DbView', () => {
     expect(container.querySelector('.sc-agg')).not.toBeNull();
   });
 
+  it('视图条白名单（T99-01）：未给 viewTypes → 表格与看板视图都在视图菜单里', () => {
+    const withKanban = collectionEntitySchema.parse({
+      ...COLLECTION,
+      views: [defaultView('v1', '表格'), { ...defaultView('v2', '看板'), type: 'kanban', groupPid: 'p_title' }],
+    });
+    render(<DbView {...dbProps} collection={withKanban} />);
+    expect(screen.getByText(/2 个视图/)).toBeDefined();
+    // 视图切换按钮的可访问名 = 当前视图名（Menu 的 aria-label「视图」在弹出层上）
+    fireEvent.click(screen.getByRole('button', { name: '表格' }));
+    const menu = screen.getByRole('menu', { name: '视图' });
+    const labels = within(menu).getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels).toHaveLength(2);
+    expect(labels.some((label) => label.includes('看板'))).toBe(true);
+  });
+
+  it('视图条白名单（T99-01）：viewTypes=[table] → 看板视图被挡在视图条外，也不会被选为当前视图', () => {
+    const withKanban = collectionEntitySchema.parse({
+      ...COLLECTION,
+      views: [
+        // 看板排在最前：白名单若不生效，它会成为「当前视图」并让用户看到一张表格形态的看板
+        { ...defaultView('v2', '看板'), type: 'kanban', groupPid: 'p_title' },
+        defaultView('v1', '表格'),
+      ],
+    });
+    render(<DbView {...dbProps} collection={withKanban} viewTypes={['table']} />);
+    expect(screen.getByText(/1 个视图/)).toBeDefined();
+    expect(screen.getByText(/当前视图「表格」/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: '表格' }));
+    const menu = screen.getByRole('menu', { name: '视图' });
+    const labels = within(menu).getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels).toHaveLength(1);
+    expect(labels[0]).toContain('表格');
+    expect(labels.some((label) => label.includes('看板'))).toBe(false);
+  });
+
   it('筛选后无匹配：显示提示且不算空态（EmptyState 不出现）', () => {
     const filtered = collectionEntitySchema.parse({
       ...COLLECTION,

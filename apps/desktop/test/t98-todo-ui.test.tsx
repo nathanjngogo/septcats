@@ -366,15 +366,32 @@ describe('待办页 · 工具行', () => {
     expect(await screen.findByTestId('todo-item-td-c')).toBeDefined();
   });
 
-  it('清除已完成：逐条 remove，完成行全消失、未完成留存，按钮转禁用', async () => {
+  it('清除已完成：二次确认（首次点击只上膛不删，再次点击才逐条 remove）', async () => {
     render(<TodoPage />);
     await screen.findByTestId('todo-item-td-c');
-    fireEvent.click(screen.getByTestId('todo-clear-done'));
+    const btn = screen.getByTestId('todo-clear-done');
+    fireEvent.click(btn);
+    // 上膛：**不得删**（不可撤销的批量删除防误触），文案换成带条数的确认语
+    expect(bridge.remove).not.toHaveBeenCalled();
+    await waitFor(() => expect(btn.textContent).toContain(t('todo.confirmClear')));
+    expect(btn.textContent).toContain(String(1));
+
+    fireEvent.click(btn);
     await waitFor(() => expect(bridge.remove).toHaveBeenCalledWith({ id: 'td-c' }));
     expect(bridge.remove).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.queryByTestId('todo-item-td-c')).toBeNull());
     expect(screen.getByTestId('todo-item-td-a')).toBeDefined();
     expect((screen.getByTestId('todo-clear-done') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('清除已完成的「上膛」可退出：失焦回到原文案，且不误删', async () => {
+    render(<TodoPage />);
+    await screen.findByTestId('todo-item-td-c');
+    const btn = screen.getByTestId('todo-clear-done');
+    fireEvent.click(btn);
+    fireEvent.blur(btn);
+    expect(bridge.remove).not.toHaveBeenCalled();
+    expect(btn.textContent).toContain(t('todo.clearDone'));
   });
 
   it('隐藏已完成后仅剩完成项 → 空态出现（列表仍在）', async () => {

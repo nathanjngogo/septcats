@@ -98,6 +98,8 @@ export function TodoPage(): ReactNode {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showDone, setShowDone] = useState(true);
+  /** 「清除已完成」二次确认的上膛态（不可撤销的批量删除防误触）。 */
+  const [clearArmed, setClearArmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** 编辑态去重：Enter 提交后紧随的 blur 不再二次提交。 */
   const editedRef = useRef(false);
@@ -314,11 +316,20 @@ export function TodoPage(): ReactNode {
           className="todo-tools__btn"
           data-testid="todo-clear-done"
           disabled={doneCount === 0}
+          aria-live="polite"
+          onBlur={() => { setClearArmed(false); }}
           onClick={() => {
+            // 批量删除是**不可撤销**的（通道层无批量删、无回收站）→ 二次点击确认，防误触。
+            // 首次点击只「上膛」并明示条数；移开焦点或第二次点击才真正执行。
+            if (!clearArmed) {
+              setClearArmed(true);
+              return;
+            }
+            setClearArmed(false);
             void clearDone();
           }}
         >
-          {t('todo.clearDone')}
+          {clearArmed ? `${t('todo.confirmClear')} ${String(doneCount)}${t('todo.itemSuffix')}` : t('todo.clearDone')}
         </button>
       </div>
 

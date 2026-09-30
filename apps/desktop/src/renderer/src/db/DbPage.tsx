@@ -27,6 +27,13 @@ import type { SeptcatsApi, SeptcatsAiApi } from '../../../types/window';
 import { useDbPage } from './useDbPage';
 import './DbPage.css';
 
+/**
+ * 本页只画表格 → 视图条白名单固定为 `table`（T99-01）。
+ * 看板视图由多维表格一级页渲染；若不挡，用户在这里切到看板会看到一张「表格形态的看板」。
+ * 模块级常量：引用稳定，避免 DbView 内部的收敛 effect 每次渲染都跑。
+ */
+const TABLE_VIEW_TYPES = ['table'] as const;
+
 export interface DbPageProps {
   pageId: string;
 }
@@ -323,6 +330,7 @@ export function DbPage({ pageId }: DbPageProps) {
         collection={collection}
         records={records}
         status="ready"
+        viewTypes={TABLE_VIEW_TYPES}
         onRetry={db.reload}
         onCreateRecord={handleCreateRecord}
         onDeleteRecords={(ids) => {

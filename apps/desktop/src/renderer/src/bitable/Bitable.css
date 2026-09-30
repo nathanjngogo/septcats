@@ -185,3 +185,9 @@
 }
 
 .bitable-card:active { cursor: grabbing; }
+
+.bitable-card-title { display: block; margin-bottom: var(--sc-space-sm); }
+
+.bitable-card-move { display: flex; align-items: center; gap: var(--sc-space-sm); }
+.bitable-card-move-label { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+.bitable-card-move select { font: var(--sc-text-ui-xs); }

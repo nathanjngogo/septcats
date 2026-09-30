@@ -212,6 +212,30 @@ describe('T99-01 主区：视图条 / 看板 / 表格', () => {
     }));
   });
 
+  it('看板卡片「移到」下拉 = 拖动的键盘等价路径（改 select → 同一个 recordUpdate）', async () => {
+    bitableStore.setState(() => ({ tableId: TABLE_A }));
+    const { container } = render(<BitablePage />);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-view-chip-v2"]')).not.toBeNull());
+    fireEvent.click(container.querySelector('[data-testid="bitable-view-chip-v2"]')!);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-card-r1"]')).not.toBeNull());
+
+    const move = container.querySelector('[data-testid="bitable-move-r1"]')!;
+    expect(move.tagName).toBe('SELECT');
+    // 未分组桶在 options 里存在且带「未选择」标签（与拖动落到 __none__ 同一语义）
+    expect([...move.querySelectorAll('option')].map((o) => o.getAttribute('value'))).toContain('__none__');
+
+    fireEvent.change(move, { target: { value: 's-doing' } });
+    await waitFor(() => expect(api.recordUpdate).toHaveBeenCalledWith({
+      pageId: TABLE_A, recordId: 'r1', patch: { p_status: 's-doing' },
+    }));
+
+    api.recordUpdate.mockClear();
+    fireEvent.change(move, { target: { value: '__none__' } });
+    await waitFor(() => expect(api.recordUpdate).toHaveBeenCalledWith({
+      pageId: TABLE_A, recordId: 'r1', patch: { p_status: null },
+    }));
+  });
+
   it('切换分组字段 → saveView 带上新 groupPid（且不丢原视图其它配置）', async () => {
     bitableStore.setState(() => ({ tableId: TABLE_A }));
     const { container } = render(<BitablePage />);

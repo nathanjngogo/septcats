@@ -287,7 +287,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
             </select>
           </label>
         ) : (
-          <span className="bitable-toolbar-hint">{t('bitable.fields')} · {t('bitable.filter')} · {t('bitable.sort')}</span>
+          <span className="bitable-toolbar-hint">{t('bitable.gridHint')}</span>
         )}
         <button type="button" className="bitable-btn" data-testid="bitable-export" onClick={exportCsv}>
           {t('bitable.export')}
@@ -300,7 +300,12 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
             {t('bitable.groupByNone')} · {t('bitable.emptyHint')}
           </p>
         ) : (
-          <KanbanBoard groups={groups} schema={collection.schema} onMove={moveCard} />
+          <KanbanBoard
+            groups={groups}
+            options={groups.map((g) => ({ key: g.key, label: g.label }))}
+            schema={collection.schema}
+            onMove={moveCard}
+          />
         )
       ) : null}
 
@@ -315,6 +320,8 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
 }
 
 interface KanbanBoardProps {
+  /** 分组列（可选项 + 未分组桶）：卡片上的「移到」下拉直接用它的 key/label。 */
+  options: readonly { key: string; label: string }[];
   groups: ReturnType<typeof kanbanGroups>;
   /** 卡片标题取标题列：必须带上表 schema（缺 schema 会退化成显示记录 id —— 不是我们要的观感）。 */
   schema: CollectionSchema;
@@ -322,7 +329,7 @@ interface KanbanBoardProps {
 }
 
 /** 看板：列 = 分组，卡片 = 记录；拖动卡片到另一列 = 改分组字段值（语义来自引擎纯函数）。 */
-function KanbanBoard({ groups, schema, onMove }: KanbanBoardProps): ReactNode {
+function KanbanBoard({ groups, options, schema, onMove }: KanbanBoardProps): ReactNode {
   const [dragId, setDragId] = useState<string | null>(null);
   return (
     <div className="bitable-kanban" data-testid="bitable-kanban">
@@ -354,7 +361,23 @@ function KanbanBoard({ groups, schema, onMove }: KanbanBoardProps): ReactNode {
                 onDragStart={() => { setDragId(record.id); }}
                 onDragEnd={() => { setDragId(null); }}
               >
-                {recordTitle(schema, record.values, record.id)}
+                <span className="bitable-card-title">{recordTitle(schema, record.values, record.id)}</span>
+                {/* 键盘 / 无拖拽设备的等价路径：拖动是鼠标专属操作，只给拖动等于把看板对键盘用户关掉
+                    （a11y 红线）。每张卡片一个「移到」下拉 —— 与拖动共用同一个 onMove。 */}
+                <label className="bitable-card-move">
+                  <span className="bitable-card-move-label">{t('bitable.moveTo')}</span>
+                  <select
+                    data-testid={`bitable-move-${record.id}`}
+                    value={group.key}
+                    onChange={(event) => { onMove(record.id, event.target.value); }}
+                  >
+                    {options.map((option) => (
+                      <option key={option.key} value={option.key}>
+                        {option.key === NONE_GROUP_KEY ? t('bitable.groupByNone') : option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </article>
             ))}
           </div>

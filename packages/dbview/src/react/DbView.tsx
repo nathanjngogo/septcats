@@ -24,6 +24,7 @@ import {
   type DbView as DbViewEntity,
   type FieldType,
   type RecordEntity,
+  type ViewType,
 } from '../types';
 import { isEmptyValue } from '../values';
 import { applyView } from '../view';
@@ -58,6 +59,12 @@ function rememberFocusedCell(collectionId: string, rowId: string, prop: string):
 
 export interface DbViewProps {
   collection: CollectionEntity;
+  /**
+   * 视图条只显示这些类型的视图（缺省 = 全部）。
+   * T99-01：看板视图由多维表格一级页自己渲染，而本组件只会画表格 —— 宿主（DbPage）传
+   * `['table']` 把看板视图挡在视图条外，否则用户在这里切到看板会看到一张「表格形态的看板」。
+   */
+  viewTypes?: readonly ViewType[] | undefined;
   records: readonly RecordEntity[];
   status: DbTableStatus;
   error?: (string | null) | undefined;
@@ -122,10 +129,13 @@ export function DbView(props: DbViewProps) {
     onUpdateAiPrompt,
     relationCandidates = [],
     viewportHeight = 480,
+    viewTypes,
   } = props;
 
   const schema = collection.schema;
-  const [activeVid, setActiveVid] = useState<string>(collection.views[0]?.vid ?? '');
+  // 视图条白名单（T99-01）：宿主可把本组件画不了的视图类型挡在视图条外（见 DbViewProps.viewTypes）。
+  const visibleViews = viewTypes === undefined ? collection.views : collection.views.filter((view) => viewTypes.includes(view.type));
+  const [activeVid, setActiveVid] = useState<string>(visibleViews[0]?.vid ?? '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ rowIndex: number; prop: string } | null>(null);
   const [editingCell, setEditingCell] = useState<{ rowIndex: number; prop: string } | null>(null);
@@ -133,14 +143,15 @@ export function DbView(props: DbViewProps) {
   const [aiBusyIds, setAiBusyIds] = useState<ReadonlySet<string>>(new Set());
   const aiBusyRef = useRef<ReadonlySet<string>>(new Set());
 
-  const activeView = collection.views.find((view) => view.vid === activeVid) ?? collection.views[0];
+  const activeView = visibleViews.find((view) => view.vid === activeVid) ?? visibleViews[0];
 
   // collection 切换（多标签页/跨页跳转）时收敛瞬时状态
   useEffect(() => {
-    setActiveVid(collection.views[0]?.vid ?? '');
+    setActiveVid(visibleViews[0]?.vid ?? '');
     setSelectedIds(new Set());
     setEditingCell(null);
-  }, [collection.id, collection.views]);
+    // visibleViews 由 collection.views + viewTypes 派生：依赖这两者即可（避免新数组引用导致每次都跑）
+  }, [collection.id, collection.views, viewTypes]);
 
   // TASK-T47-01：焦点格只在**换库**时收敛。宿主每次写库后 reload 都会换 `views`
   // 数组引用（structured clone），若把 focusedCell 一并清掉，勾选格的 Enter/Space
@@ -277,13 +288,13 @@ export function DbView(props: DbViewProps) {
         <h1 className="sc-db__title">{collection.name.length === 0 ? '未命名数据库' : collection.name}</h1>
       </div>
       <p className="sc-db__sub">
-        {records.length} 条记录 · {collection.views.length} 个视图
+        {records.length} 条记录 · {visibleViews.length} 个视图
         {activeView === undefined ? null : ` · 当前视图「${activeView.name}」`}
       </p>
 
       <PropBar
         schema={schema}
-        views={collection.views}
+        views={visibleViews}
         activeVid={activeView?.vid ?? ''}
         onSwitchView={setActiveVid}
         filter={activeView?.filter ?? { op: 'and', clauses: [] }}
