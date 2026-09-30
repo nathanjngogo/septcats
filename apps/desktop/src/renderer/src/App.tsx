@@ -17,6 +17,10 @@ import { TopBarButton } from './layout/TopBarButton';
 // T93-01：一级导航轨 + 「知识库」二级栏（老板 09-29 令：侧栏再加一级区分一级菜单）
 import { NavRail, type RailKey } from './nav/NavRail';
 import { KnowledgePanel } from './nav/KnowledgePanel';
+import { CalendarPage } from './calendar/CalendarPage';
+import { CalendarSidePanel } from './calendar/CalendarSidePanel';
+import { TodoPage } from './todo/TodoPage';
+import { TodoSidePanel } from './todo/TodoSidePanel';
 import { navActions, useNav } from './nav/navState';
 // UI 评估 P1①：滚动边缘渐隐（Apple §12，只在浮动头与内容交界处）
 import './ui/scrollEdge.css';
@@ -570,7 +574,11 @@ export function App() {
           ? 'trash'
           : railPanel === 'kb'
             ? 'kb'
-            : 'notes';
+            : railPanel === 'calendar'
+              ? 'calendar'
+              : railPanel === 'todo'
+                ? 'todo'
+                : 'notes';
   const onRailSelect = useCallback(
     (key: RailKey): void => {
       if (key === 'home') {
@@ -589,6 +597,12 @@ export function App() {
       workbenchActions.closeHome();
       if (key === 'trash') {
         pagesActions.showTrash();
+        return;
+      }
+      if (key === 'calendar' || key === 'todo') {
+        // 一级项互斥：进日历/待办先离开回收站等页面视图（二级栏与主区一起换）
+        pagesActions.showPages();
+        navActions.setPanel(key);
         return;
       }
       navActions.setPanel(key === 'kb' ? 'kb' : 'notes');
@@ -704,7 +718,15 @@ export function App() {
           // 把手随之不可见，无需额外条件；把手自身也按 position='collapsed' 早退）。
           // T93-01：二级栏按一级项分流 —— 「知识库」显示库列表，其余显示页面树。
           <>
-            {railActive === 'kb' ? <KnowledgePanel /> : <SidebarTree />}
+            {railActive === 'kb' ? (
+              <KnowledgePanel />
+            ) : railActive === 'calendar' ? (
+              <CalendarSidePanel />
+            ) : railActive === 'todo' ? (
+              <TodoSidePanel />
+            ) : (
+              <SidebarTree />
+            )}
             <ResizeHandle side="sidebar" />
           </>
         }
@@ -739,7 +761,15 @@ export function App() {
               <TabsBar showTabs={tabsVisible} leading={sidebarToggle} />
               {/* T66-01 §1.1：home 覆盖编辑区（标签条/侧栏/顶栏保持可见可点——
                   点页面行/页签经 App 兜底闸先收 home 再走原语义；Esc/关闭钮回 pages） */}
-              {workbenchView === 'home' ? <WorkbenchPage onClose={closeWorkbench} /> : <PageView />}
+              {railActive === 'calendar' ? (
+                <CalendarPage />
+              ) : railActive === 'todo' ? (
+                <TodoPage />
+              ) : workbenchView === 'home' ? (
+                <WorkbenchPage onClose={closeWorkbench} />
+              ) : (
+                <PageView />
+              )}
             </div>
             {/* T61-01 §2：AI 面板左缘拖拽把手（position='right' 才由组件自身渲染；
                 bottom/hidden 不挂——宽度对纵向布局无意义）。 */}

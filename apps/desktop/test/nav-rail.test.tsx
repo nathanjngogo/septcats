@@ -3,13 +3,18 @@
  * nav-rail.test.tsx —— T93-01 一级导航轨（NavRail）App 集成。
  *
  * 老板 09-29 令：「在左侧边栏再加一级侧边栏，用来区分笔记、知识库等一级菜单。」
- * 钉五件事：
- *  ① 一级轨在位：五项（笔记/知识库/工作台/模板/回收站），默认「笔记」当前；
+ * 老板 09-30 令：「在知识库功能下方增加日历功能，增加待办功能」→ 一级轨变七项
+ * （笔记/知识库/日历/待办/工作台/模板/回收站），日历与待办紧随知识库。
+ *
+ * 钉七件事：
+ *  ① 一级轨在位：七项（含日历/待办，顺序紧随知识库），默认「笔记」当前；
  *  ② 二级栏分流：点「知识库」→ 二级栏换成库列表（kb-panel），点回「笔记」→ 页面树；
  *  ③ 点库条目 → 走既有 workspaces.switch 通道切库（不新造协议）；
  *  ④ 高亮单真源：工作台/模板/回收站三项由既有视图状态派生高亮；
  *  ⑤ 结构契约：一级轨不在 .sc-shell__sidebar 内（折叠二级栏不会把一级导航折掉）；
- *     分流选择持久化到 localStorage `septcats.nav.panel`。
+ *     分流选择持久化到 localStorage `septcats.nav.panel`；
+ *  ⑦ 日历/待办两条新一级项：二级栏换各自的 side 面板、主区渲染各自页面、选择持久化、
+ *     且与工作台/回收站互斥（切过去会退出那些视图）。
  */
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -175,7 +180,7 @@ function railItem(container: HTMLElement, key: string): HTMLButtonElement {
 }
 
 describe('T93-01 一级导航轨（App 集成）', () => {
-  it('① 一级轨在位：五项中文标签，默认「笔记」为当前项（aria-current=page）', async () => {
+  it('① 一级轨在位：七项中文标签（含日历/待办），默认「笔记」为当前项（aria-current=page）', async () => {
     const container = await renderApp();
     const rail = container.querySelector('.sc-shell__rail');
     expect(rail, 'rail 未挂进 AppShell').not.toBeNull();
@@ -184,6 +189,8 @@ describe('T93-01 一级导航轨（App 集成）', () => {
     expect(items.map((b) => (b.textContent ?? '').trim())).toEqual([
       '笔记',
       '知识库',
+      '日历',
+      '待办',
       '工作台',
       '模板',
       '回收站',
@@ -250,6 +257,37 @@ describe('T93-01 一级导航轨（App 集成）', () => {
     expect(sidebar).not.toBeNull();
     expect(sidebar!.contains(rail!)).toBe(false);
     expect(rail!.parentElement?.className).toContain('sc-shell__body');
+  });
+
+  it('⑦ 日历 / 待办：二级栏换各自面板、主区渲染各自页面、选择持久化、与工作台互斥', async () => {
+    const container = await renderApp();
+
+    fireEvent.click(railItem(container, 'calendar'));
+    await waitFor(() => expect(container.querySelector('[data-testid="calendar-page"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="calendar-side"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="kb-panel"]')).toBeNull();
+    expect(railItem(container, 'calendar').getAttribute('aria-current')).toBe('page');
+    expect(window.localStorage.getItem(NAV_PANEL_KEY)).toBe('calendar');
+    // 日历在主区取代编辑器正文（不是叠在上面）
+    expect(container.querySelector('.pv-root')).toBeNull();
+
+    fireEvent.click(railItem(container, 'todo'));
+    await waitFor(() => expect(container.querySelector('[data-testid="todo-page"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="todo-side"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="calendar-page"]')).toBeNull();
+    expect(window.localStorage.getItem(NAV_PANEL_KEY)).toBe('todo');
+    // 与工作台互斥：从工作台切过来必须落回编辑器视图
+    fireEvent.click(railItem(container, 'home'));
+    await waitFor(() => expect(railItem(container, 'home').getAttribute('aria-current')).toBe('page'));
+    fireEvent.click(railItem(container, 'todo'));
+    await waitFor(() => expect(container.querySelector('[data-testid="todo-page"]')).not.toBeNull());
+    expect(railItem(container, 'home').getAttribute('aria-current')).toBeNull();
+
+    // 回笔记：日历/待办页面让位给编辑器，二级栏回页面树
+    fireEvent.click(railItem(container, 'notes'));
+    await waitFor(() => expect(container.querySelector('[data-testid="side-new-page"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="todo-page"]')).toBeNull();
+    expect(window.localStorage.getItem(NAV_PANEL_KEY)).toBe('notes');
   });
 
   it('⑥ 「新建库…」复用既有弹框（不新造通道）', async () => {

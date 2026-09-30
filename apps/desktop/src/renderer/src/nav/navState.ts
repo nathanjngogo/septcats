@@ -10,13 +10,16 @@
  */
 import { createStore, useStore } from '../state/store';
 
-export type RailPanel = 'notes' | 'kb';
+export type RailPanel = 'notes' | 'kb' | 'calendar' | 'todo';
+
+const PANELS: readonly RailPanel[] = ['notes', 'kb', 'calendar', 'todo'];
 
 const STORAGE_KEY = 'septcats.nav.panel';
 
 function readPanel(): RailPanel {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'kb' ? 'kb' : 'notes';
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return PANELS.includes(raw as RailPanel) ? (raw as RailPanel) : 'notes';
   } catch {
     return 'notes';
   }

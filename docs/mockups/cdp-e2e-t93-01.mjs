@@ -2,12 +2,13 @@
  * （老板 09-29 令：「请在左侧边栏再加一级侧边栏，用来区分笔记、知识库等一级菜单。」）
  *
  * 方案：AppShell 新增可选 rail 插槽（不传时两列网格零影响）→ 三列 = rail(56) | 侧栏(240) | 主区；
- * 一级五项 = 笔记 / 知识库 / 工作台 / 模板 / 回收站（纯中文短标签，无图标）；
+ * 一级七项 = 笔记 / 知识库 / 日历 / 待办 / 工作台 / 模板 / 回收站（纯中文短标签，无图标）；
+ * （日历/待办是 09-30 令新增的一级项，紧随知识库之后——R2 的标签序列一并升级。）
  * 「知识库」的二级栏 = 本机库列表（切换 / 新建），其余一级项的二级栏保持页面树。
  *
  * 判据（全部 DOM/几何客观量）：
  *   R1 三列几何：rail 宽 = 56±1、侧栏宽 = 240±2、主区右缘 = 窗口右缘；rail 在最左（rail.right ≤ sidebar.left+1）。
- *   R2 一级轨五项中文标签齐全、默认「笔记」为当前项（aria-current=page）、整排无 svg。
+ *   R2 一级轨七项中文标签齐全（含日历/待办）、默认「笔记」为当前项（aria-current=page）、整排无 svg。
  *   R3 二级栏分流：点「知识库」→ kb-panel 出现且页面树消失；点「笔记」→ 复原。
  *   R4 库列表内容：条目数 ≥ 1 且当前库带「当前」标记；「新建库…」入口在位。
  *   R5 折叠二级栏后一级轨保留（rail 仍在、宽度不变；侧栏列消失）。
@@ -149,12 +150,12 @@ async function main() {
     `rail=${JSON.stringify(d0.rail)} sidebar=${JSON.stringify(d0.sidebar)} main=${JSON.stringify(d0.main)} winW=${String(d0.winW)}`);
 
   STEP = 'R2';
-  const itemsOk = d0.items.length === 5 &&
-    d0.items.map((i) => i.text).join('|') === '笔记|知识库|工作台|模板|回收站' &&
+  const itemsOk = d0.items.length === 7 &&
+    d0.items.map((i) => i.text).join('|') === '笔记|知识库|日历|待办|工作台|模板|回收站' &&
     d0.items.every((i) => i.hasSvg === false) &&
     d0.items.filter((i) => i.current === 'page').length === 1 &&
     d0.items[0].current === 'page';
-  check('R2 一级轨：五项中文标签齐全、整排无图标、默认「笔记」为当前项',
+  check('R2 一级轨：七项中文标签齐全（含日历/待办）、整排无图标、默认「笔记」为当前项',
     itemsOk, JSON.stringify(d0.items));
 
   const shot1 = await shot(page, 'rail-notes');

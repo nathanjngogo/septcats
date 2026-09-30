@@ -3,7 +3,8 @@
  * 用来区分笔记、知识库等一级菜单」）。
  *
  * 一级 = 去哪块地；二级 = 那块地里的内容（页面树 / 库列表）。五项：
- *   笔记 / 知识库 / 工作台 / 模板 / 回收站。
+ *   笔记 / 知识库 / 日历 / 待办 / 工作台 / 模板 / 回收站。
+ * （老板 09-30 令：「在知识库功能下方增加日历功能，增加待办功能」→ 日历/待办紧随知识库。）
  * 纯中文短标签（延续 09-29「图标去掉」口径，不挂 glyph）；当前项 aria-current
  * 高亮；键盘可达（Tab 序在页面树之前，天然满足——rail 是 DOM 里侧栏区第一个）。
  *
@@ -14,7 +15,7 @@ import type { ReactNode } from 'react';
 import { t } from '../i18n';
 import './NavRail.css';
 
-export type RailKey = 'notes' | 'kb' | 'home' | 'templates' | 'trash';
+export type RailKey = 'notes' | 'kb' | 'calendar' | 'todo' | 'home' | 'templates' | 'trash';
 
 interface RailItem {
   key: RailKey;
@@ -27,6 +28,8 @@ interface RailItem {
 const ITEMS: readonly RailItem[] = [
   { key: 'notes', labelKey: 'nav.notes', hintKey: 'nav.notesHint' },
   { key: 'kb', labelKey: 'nav.kb', hintKey: 'nav.kbHint' },
+  { key: 'calendar', labelKey: 'nav.calendar', hintKey: 'nav.calendarHint' },
+  { key: 'todo', labelKey: 'nav.todo', hintKey: 'nav.todoHint' },
   { key: 'home', labelKey: 'nav.home', hintKey: 'nav.homeHint' },
   { key: 'templates', labelKey: 'nav.templates', hintKey: 'nav.templatesHint' },
   { key: 'trash', labelKey: 'nav.trash', hintKey: 'nav.trashHint' },

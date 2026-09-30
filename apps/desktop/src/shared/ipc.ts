@@ -16,6 +16,22 @@ export const CHANNEL_BLOCKS_LIST = 'blocks:list';
 /** 订阅远端/其它窗口的块变更推送。 */
 export const CHANNEL_BLOCKS_CHANGED = 'blocks:changed';
 
+// T97-01 日历 / T98-01 待办（老板 09-30 令）：通道名冻结在此，主进程注册与 preload 暴露各自引用。
+export const CALENDAR_CHANNELS = {
+  list: 'calendar:list',
+  create: 'calendar:create',
+  update: 'calendar:update',
+  remove: 'calendar:remove',
+} as const;
+
+export const TODO_CHANNELS = {
+  list: 'todo:list',
+  create: 'todo:create',
+  update: 'todo:update',
+  setDone: 'todo:setDone',
+  remove: 'todo:remove',
+} as const;
+
 export const BLOCKS_CHANNELS = {
   commit: CHANNEL_BLOCKS_COMMIT,
   list: CHANNEL_BLOCKS_LIST,
