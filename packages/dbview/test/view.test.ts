@@ -35,6 +35,7 @@ import {
   compareSortKey,
   danglingReferences,
   groupBySelect,
+  NONE_GROUP_KEY,
   matchesClause,
   normalizeView,
   relationWritePlan,
@@ -537,8 +538,18 @@ describe('aggregate', () => {
     expect(aggregate(rows, P_NUMBER, 'none').text).toBe('');
   });
 
-  it('groupBySelect 二期未实现（恒 undefined）', () => {
-    expect(groupBySelect(rows, P_SELECT)).toBeUndefined();
+  it('groupBySelect 二期已落地（T99-01）：按选项顺序分组 + 未分组桶置末', () => {
+    const groups = groupBySelect(rows, P_SELECT);
+    expect(groups).toBeDefined();
+    const g = groups ?? [];
+    expect(g.length).toBe(SELECT_OPTIONS.length + 1);
+    expect(g[g.length - 1]!.key).toBe(NONE_GROUP_KEY);
+    expect(g.slice(0, SELECT_OPTIONS.length).map((x) => x.key)).toEqual(SELECT_OPTIONS.map((o) => o.id));
+    // 单选语义：每条记录恰好出现在一个组里（合计 = 行数）
+    expect(g.reduce((sum, x) => sum + x.records.length, 0)).toBe(rows.length);
+    // 非 select 属性 / 缺属性 → undefined（调用方据此回退表格视图）
+    expect(groupBySelect(rows, P_TEXT)).toBeUndefined();
+    expect(groupBySelect(rows, undefined)).toBeUndefined();
   });
 
   it('matchesClause 对未知属性/非法算子安全返回', () => {

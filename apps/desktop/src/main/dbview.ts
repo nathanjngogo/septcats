@@ -32,6 +32,7 @@ import {
   relationWritePlan,
   toCsv,
   dateValueSchema,
+  VIEW_TYPES,
   type CollectionEntity,
   type CollectionSchema,
   type DbView,
@@ -1405,10 +1406,14 @@ function parseViewInput(raw: unknown): DbView {
     .object({
       vid: z.string().min(1),
       name: z.string(),
-      type: z.literal('table'),
+      // T99-01：视图类型白名单与引擎同源（别再写死 z.literal('table') —— 看板视图会在此被毙掉）。
+      type: z.enum(VIEW_TYPES),
       filter: z.unknown(),
       sort: z.array(z.object({ prop: z.string().min(1), dir: z.enum(['asc', 'desc']) })),
       widths: z.record(z.string(), z.number()),
+      // T99-01 看板/隐藏列：可选，缺省 = 旧视图形状（normalizeView 负责清洗与保留）。
+      groupPid: z.string().optional(),
+      hiddenPids: z.array(z.string()).optional(),
     })
     .safeParse(raw);
   if (!parsed.success) {

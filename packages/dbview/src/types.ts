@@ -207,7 +207,7 @@ export type SortKey = z.infer<typeof sortKeySchema>;
 // 视图
 // ---------------------------------------------------------------------------
 
-export const VIEW_TYPES = ['table'] as const;
+export const VIEW_TYPES = ['table', 'kanban'] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
 
 /**
@@ -221,6 +221,10 @@ export const dbViewSchema = z.object({
   filter: filterGroupSchema,
   sort: z.array(sortKeySchema),
   widths: z.record(z.string(), z.number()),
+  /** T99-01 看板：分组字段（必须是 select / multi_select；非法 → 渲染层回退表格并提示）。 */
+  groupPid: z.string().optional(),
+  /** T99-01 视图内隐藏的列（pid 列表）。 */
+  hiddenPids: z.array(z.string()).optional(),
 });
 export type DbView = z.infer<typeof dbViewSchema>;
 

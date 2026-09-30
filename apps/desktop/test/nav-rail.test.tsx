@@ -292,6 +292,28 @@ describe('T93-01 一级导航轨（App 集成）', () => {
     expect(window.localStorage.getItem(NAV_PANEL_KEY)).toBe('notes');
   });
 
+  it('⑧ 多维表格：一级项紧随日历，二级栏换 bitable-side、主区换 bitable-page、选择持久化', async () => {
+    const container = await renderApp();
+
+    fireEvent.click(railItem(container, 'bitable'));
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-page"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="bitable-side"]')).not.toBeNull();
+    expect(railItem(container, 'bitable').getAttribute('aria-current')).toBe('page');
+    expect(window.localStorage.getItem(NAV_PANEL_KEY)).toBe('bitable');
+    // 日历/待办的页面都要让位
+    expect(container.querySelector('[data-testid="calendar-page"]')).toBeNull();
+    expect(container.querySelector('[data-testid="todo-page"]')).toBeNull();
+    // 与工作台互斥
+    fireEvent.click(railItem(container, 'home'));
+    await waitFor(() => expect(railItem(container, 'home').getAttribute('aria-current')).toBe('page'));
+    fireEvent.click(railItem(container, 'bitable'));
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-page"]')).not.toBeNull());
+    // 回笔记：让位给编辑器
+    fireEvent.click(railItem(container, 'notes'));
+    await waitFor(() => expect(container.querySelector('[data-testid="side-new-page"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="bitable-page"]')).toBeNull();
+  });
+
   it('⑥ 「新建库…」复用既有弹框（不新造通道）', async () => {
     const container = await renderApp();
     fireEvent.click(railItem(container, 'kb'));

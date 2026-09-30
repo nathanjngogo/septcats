@@ -452,18 +452,118 @@ function formatDateText(value: DateValue): string {
 }
 
 // ---------------------------------------------------------------------------
-// 分组（二期预留）
+// 分组 / 看板（T99-01：二期落地）
 // ---------------------------------------------------------------------------
 
+/** 「未分组」桶的键（渲染层据此本地化标签，引擎不掺文案）。 */
+export const NONE_GROUP_KEY = '__none__';
+
+export interface SelectGroup {
+  /** 选项 id；未分组桶为 NONE_GROUP_KEY。 */
+  readonly key: string;
+  /** 选项名；未分组桶为空串（文案归渲染层）。 */
+  readonly label: string;
+  readonly records: RecordEntity[];
+}
+
 /**
- * 按 select 属性分组 —— 二期（看板视图）预留，一期**不实现**：
- * 恒返回 `undefined`，调用方据此隐藏分组入口（见报告 DEVIATIONS）。
+ * 按 select / multi_select 属性分组 —— T99-01 看板视图的引擎面。
+ *
+ * 语义（与 PRD-多维表格 第 4.1 节一致）：
+ * - 组顺序 = 属性 `options` 的声明顺序；**未分组桶恒置末**；
+ * - 多选（multi_select）里一条记录可同时出现在多个组（值 = 选项 id[]）；
+ * - 值缺失 / 空数组 / 未在 options 内的野值 → 归入未分组桶；
+ * - `property` 缺省或类型不是 select/multi_select → 返回 `undefined`
+ *   （调用方据此隐藏分组入口 / 回退表格视图）。
+ * 纯函数：不改入参，零 IO。
  */
 export function groupBySelect(
-  _rows: readonly RecordEntity[],
-  _property: Property | undefined,
-): undefined {
-  return undefined;
+  rows: readonly RecordEntity[],
+  property: Property | undefined,
+): SelectGroup[] | undefined {
+  if (property === undefined) {
+    return undefined;
+  }
+  if (property.type !== 'select' && property.type !== 'multi_select') {
+    return undefined;
+  }
+  const options = property.options ?? [];
+  const groups = new Map<string, SelectGroup>();
+  for (const option of options) {
+    groups.set(option.id, { key: option.id, label: option.name, records: [] });
+  }
+  const none: SelectGroup = { key: NONE_GROUP_KEY, label: '', records: [] };
+  const known = new Set(options.map((option) => option.id));
+
+  for (const record of rows) {
+    const raw = record.values[property.id];
+    const ids = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
+    const hit = ids.filter((id): id is string => typeof id === 'string' && known.has(id));
+    if (hit.length === 0) {
+      none.records.push(record);
+      continue;
+    }
+    // 多选：同一记录进多个组；单选：天然只有一个命中。
+    for (const id of hit) {
+      groups.get(id)?.records.push(record);
+    }
+  }
+
+  const ordered = options.map((option) => groups.get(option.id)).filter((g): g is SelectGroup => g !== undefined);
+  return [...ordered, none];
+}
+
+export interface KanbanGroup extends SelectGroup {
+  /** 分组字段 pid。 */
+  readonly pid: string;
+}
+
+/**
+ * 看板分组：解析视图的 `groupPid`（缺省 = schema 里第一个 select/multi_select），
+ * 再把记录分桶。无法分组（无合适字段）→ `[]`，渲染层据此回退表格视图。
+ */
+export function kanbanGroups(
+  schema: CollectionSchema,
+  rows: readonly RecordEntity[],
+  view: DbView,
+): KanbanGroup[] {
+  const properties = propertyList(schema);
+  const byPid = properties.find((p) => p.id === view.groupPid && (p.type === 'select' || p.type === 'multi_select'));
+  const fallback = properties.find((p) => p.type === 'select' || p.type === 'multi_select');
+  const property = byPid ?? fallback;
+  if (property === undefined) {
+    return [];
+  }
+  const groups = groupBySelect(rows, property);
+  if (groups === undefined) {
+    return [];
+  }
+  return groups.map((g) => ({ pid: property.id, key: g.key, label: g.label, records: g.records }));
+}
+
+/**
+ * 拖动卡片到某组时应写入的值（纯计算，不含 IO）：
+ * - 落到未分组桶（NONE_GROUP_KEY）→ `null`（清空该字段；多选 → `[]`）；
+ * - select → 该选项 id；
+ * - multi_select → `[id]`（拖动 = 把该选项设为其归属，避免「拖不动」的歧义）；
+ * - `key` 不在 options 内 → `undefined`（调用方跳过写入，不写脏值）。
+ */
+export function moveCardToGroup(
+  property: Property | undefined,
+  key: string,
+): RecordValues[string] | undefined {
+  if (property === undefined || (property.type !== 'select' && property.type !== 'multi_select')) {
+    return undefined;
+  }
+  const multi = property.type === 'multi_select';
+  if (key === NONE_GROUP_KEY) {
+    return multi ? [] : null;
+  }
+  const known = (property.options ?? []).some((option) => option.id === key);
+  if (!known) {
+    return undefined;
+  }
+  return multi ? [key] : key;
 }
 
 // ---------------------------------------------------------------------------
@@ -534,7 +634,9 @@ export function normalizeSort(sort: unknown): SortKey[] {
   return out;
 }
 
-/** 视图规范化：filter/sort 过一遍、widths 只保留正有限数。 */
+/** 视图规范化：filter/sort 过一遍、widths 只保留正有限数。
+ *  T99-01：`groupPid`（非空字符串才保留）与 `hiddenPids`（只留字符串、去重、保持顺序）
+ *  必须原样带过 —— 早期实现只挑 6 个字段重建对象，会让看板配置在 saveView 时被静默丢弃。 */
 export function normalizeView(view: DbView): DbView {
   const widths: Record<string, number> = {};
   for (const [pid, width] of Object.entries(view.widths)) {
@@ -544,7 +646,7 @@ export function normalizeView(view: DbView): DbView {
   }
   const filter = normalizeFilter(view.filter);
   const sort = normalizeSort(view.sort);
-  return {
+  const out: DbView = {
     vid: view.vid,
     name: view.name,
     type: view.type,
@@ -552,6 +654,23 @@ export function normalizeView(view: DbView): DbView {
     sort,
     widths,
   };
+  if (typeof view.groupPid === 'string' && view.groupPid.length > 0) {
+    out.groupPid = view.groupPid;
+  }
+  if (Array.isArray(view.hiddenPids)) {
+    const seen = new Set<string>();
+    const hidden: string[] = [];
+    for (const pid of view.hiddenPids) {
+      if (typeof pid === 'string' && pid.length > 0 && !seen.has(pid)) {
+        seen.add(pid);
+        hidden.push(pid);
+      }
+    }
+    if (hidden.length > 0) {
+      out.hiddenPids = hidden;
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

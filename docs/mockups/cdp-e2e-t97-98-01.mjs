@@ -2,7 +2,8 @@
  * （老板 09-30 令：「在知识库功能下方增加日历功能，增加待办功能」）
  *
  * 一个文件覆盖两个功能（同一次启动里连着验，省一次冷启动）：
- *   R1 一级轨位置：序列 = 笔记|知识库|**日历**|**待办**|工作台|模板|回收站（新增两项紧随知识库）。
+ *   R1 一级轨位置：序列 = 笔记|知识库|日历|**多维表格**|**待办**|工作台|模板|回收站
+ *      （日历/待办紧随知识库；多维表格是 09-30 后追加的一级项，位于日历与待办之间）。
  *   R2 日历页：月标签 = 当前年月、网格 42 格、今天格高亮唯一、空态在、二级栏 calendar-side 在。
  *   R3 日历 CRUD 落库：点今天格 → 写标题 → 保存 → 该格出现日程；**重启后仍在**（证明进 SQLite 而非内存）。
  *   R4 待办页：添加 → 列表出现（data-done=0）→ 勾选 → data-done=1 → 清除已完成 → 列表空；二级栏 todo-side 在。
@@ -165,12 +166,12 @@ async function main() {
   // ---------- R1 一级轨位置 ----------
   STEP = 'R1';
   const rail = await page.evaluate(RAIL);
-  const railOk = rail.map((i) => i.text).join('|') === '笔记|知识库|日历|待办|工作台|模板|回收站';
+  const railOk = rail.map((i) => i.text).join('|') === '笔记|知识库|日历|多维表格|待办|工作台|模板|回收站';
   await page.evaluate(() => { document.querySelector('[data-testid="nav-rail-calendar"]').click(); });
   await wait(700);
   const railAfter = await page.evaluate(RAIL);
-  check('R1 一级轨七项（日历/待办紧随知识库）且点日历后 aria-current=page',
-    railOk && rail.length === 7 && railAfter.find((i) => i.key === 'calendar')?.current === 'page',
+  check('R1 一级轨八项（日历紧随知识库、多维表格在其后）且点日历后 aria-current=page',
+    railOk && rail.length === 8 && railAfter.find((i) => i.key === 'calendar')?.current === 'page',
     JSON.stringify({ rail: rail.map((i) => i.text), active: railAfter.find((i) => i.key === 'calendar')?.current }));
 
   // ---------- R2 日历页结构 ----------

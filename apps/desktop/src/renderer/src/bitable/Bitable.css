@@ -38,3 +38,150 @@
   cursor: pointer;
 }
 .bitable-side-empty { margin: 0; font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+/* ===== T99-01：表列表 / 视图条 / 工具条 / 看板（全部走 token，no-magic 必过） ===== */
+.bitable-side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+  min-height: 0;
+  overflow: auto;
+}
+
+.bitable-side-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+  width: 100%;
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bitable-side-item--active {
+  background: var(--sc-color-accent-soft);
+}
+
+.bitable-side-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bitable-side-count { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-faint); }
+
+.bitable-count { font: var(--sc-text-ui-sm); color: var(--sc-color-ink-faint); }
+
+.bitable-link {
+  border: 0;
+  background: none;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bitable-btn {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-xs);
+  min-height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-sm);
+  cursor: pointer;
+}
+
+.bitable-btn:disabled { color: var(--sc-color-ink-faint); cursor: default; }
+
+.bitable-chip {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  min-height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-md);
+  cursor: pointer;
+  max-width: var(--sc-space-editor-measure);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bitable-chip--active { background: var(--sc-color-accent-soft); }
+
+.bitable-chip-input {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  min-height: var(--sc-size-control-sm);
+  padding: 0 var(--sc-space-md);
+}
+
+.bitable-groupby {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.bitable-toolbar-hint { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-faint); }
+
+.bitable-kanban {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sc-space-md);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--sc-space-md);
+}
+
+.bitable-kcol {
+  flex: 0 0 auto;
+  width: var(--sc-space-editor-measure);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+}
+
+.bitable-kcol-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.bitable-kcol-count { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-faint); }
+
+.bitable-kcol-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+  min-height: var(--sc-space-xl);
+}
+
+.bitable-card {
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  cursor: grab;
+}
+
+.bitable-card:active { cursor: grabbing; }

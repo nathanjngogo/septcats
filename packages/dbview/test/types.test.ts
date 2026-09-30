@@ -160,7 +160,9 @@ describe('视图 schema / 助手', () => {
     expect(view).toEqual({ vid: 'v1', name: '表格', type: 'table', filter: emptyFilter(), sort: [], widths: {} });
     expect(JSON.parse(JSON.stringify(view))).toEqual(view);
     expect(dbViewSchema.safeParse(view).success).toBe(true);
-    expect(dbViewSchema.safeParse({ ...view, type: 'kanban' }).success).toBe(false);
+    // T99-01：kanban 已落地（VIEW_TYPES 第二档）→ 合法；未登记的类型仍须被拒。
+    expect(dbViewSchema.safeParse({ ...view, type: 'kanban' }).success).toBe(true);
+    expect(dbViewSchema.safeParse({ ...view, type: 'gantt' }).success).toBe(false);
     expect(dbViewSchema.safeParse({ ...view, sort: [{ prop: 'p', dir: 'sideways' }] }).success).toBe(false);
   });
 
