@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Septcats 重设计 · 方向 C「新粗野」</title>
+<style>
+/* canvas-bg */
+html{background:linear-gradient(0deg,transparent 31px,#D9D5C7 31px 32px),linear-gradient(90deg,transparent 31px,#D9D5C7 31px 32px) #EDEAE0;background-size:32px 32px}
+</style>
+<style>
+/* ============================================================================
+   方向 C · 新粗野（Neo-Brutalist）
+   立场：界面就是一堆实体积木。不做错觉（无模糊/无渐变/无玻璃），
+   只做"边框即结构 + 硬影即层次 + 撞色即语义"。
+   材料 = 2~3px 纯黑硬边 + 6~10px 偏移实心影（零模糊）+ 纯色块。
+   圆角 = 0（唯一的圆是状态圆点，用来和方块形成对比）。
+   动效 = 位移，不用缓动曲线（按下即位移，松开即回弹，走 60ms 阶跃）。
+   ========================================================================== */
+:root{
+  --cream:#FFFDF5; --paper:#FFFFFF; --ink:#0B0B0B; --grey:#EDEAE0; --grey-2:#D9D5C7;
+  --yellow:#FFE600; --blue:#2B4CFF; --tomato:#FF4B3E; --mint:#7BF1A8; --violet:#C9A0FF;
+  --sans:"Inter","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+  --sd:6px; /* 影偏移 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--grey);font-family:var(--sans);color:var(--ink);padding:26px;
+  background-image:linear-gradient(0deg,transparent 31px,var(--grey-2) 31px 32px),
+                   linear-gradient(90deg,transparent 31px,var(--grey-2) 31px 32px);
+  background-size:32px 32px}
+.board{display:flex;flex-direction:column;gap:26px;max-width:1520px;margin:0 auto}
+.cap{display:flex;align-items:center;gap:12px;font:800 11px/1 var(--mono);letter-spacing:.18em;
+  text-transform:uppercase}
+.cap b{font:900 16px/1 var(--sans);letter-spacing:-.01em;background:var(--yellow);
+  border:3px solid var(--ink);padding:5px 9px;box-shadow:var(--sd) var(--sd) 0 var(--ink)}
+.cap i{flex:1;height:3px;background:var(--ink)}
+.cap span{font:800 11px/1 var(--mono);letter-spacing:.14em;background:var(--ink);color:var(--cream);padding:4px 7px}
+
+.app{background:var(--cream);border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink)}
+/* ---------- 顶栏 ---------- */
+.top{display:flex;align-items:center;height:56px;border-bottom:3px solid var(--ink);background:var(--cream);padding-left:0}
+.logo{height:56px;display:flex;align-items:center;padding:0 16px;border-right:3px solid var(--ink);
+  font:900 15px/1 var(--sans);letter-spacing:-.02em;background:var(--ink);color:var(--cream)}
+.tnav{display:flex;height:56px}
+.tnav span{height:56px;display:flex;align-items:center;padding:0 15px;border-right:3px solid var(--ink);
+  font:800 13px/1 var(--sans)}
+.tnav span.on{background:var(--yellow);box-shadow:inset 0 -6px 0 var(--ink)}
+.tnav span:hover{background:var(--mint)}
+.sync{margin-left:auto;height:56px;display:flex;align-items:center;gap:9px;padding:0 15px;
+  border-left:3px solid var(--ink);font:800 12px/1 var(--mono)}
+.sync em{width:12px;height:12px;border-radius:50%;background:var(--mint);border:2px solid var(--ink);display:block}
+.win{display:flex;height:56px;border-left:3px solid var(--ink)}
+.win b{width:46px;display:grid;place-items:center;border-left:3px solid var(--ink);font:900 13px/1 var(--mono)}
+.win b:first-child{border-left:0}
+.win b:hover{background:var(--yellow)}
+.win b.x:hover{background:var(--tomato)}
+
+/* ---------- 三列 ---------- */
+.body{display:grid;grid-template-columns:70px 250px 1fr}
+.rail{border-right:3px solid var(--ink);background:var(--grey)}
+.rail div{height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  border-bottom:3px solid var(--ink);font:800 12px/1 var(--sans);position:relative}
+.rail div u{font:800 10px/1 var(--mono);text-decoration:none;color:#8C8878}
+.rail div.on{background:var(--blue);color:var(--cream)}
+.rail div.on u{color:rgba(255,255,255,.65)}
+.rail div.on::after{content:"";position:absolute;right:-3px;top:50%;transform:translateY(-50%);
+  border-left:10px solid var(--blue);border-top:9px solid transparent;border-bottom:9px solid transparent}
+.side{border-right:3px solid var(--ink);background:var(--paper)}
+.side h4{font:900 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:14px 15px;
+  border-bottom:3px solid var(--ink);background:var(--yellow)}
+.side .it{padding:12px 14px;border-bottom:2px solid var(--ink);position:relative}
+.side .it b{display:block;font:800 14px/1.3 var(--sans)}
+.side .it small{font:700 10.5px/1.5 var(--mono);color:#6E6A5C}
+.side .it.on{background:var(--ink);color:var(--cream)}
+.side .it.on small{color:var(--mint)}
+.side .it.on::before{content:"◀";position:absolute;right:8px;top:14px;font-size:11px}
+
+/* ---------- 屏 1：编辑器 ---------- */
+.ed{display:grid;grid-template-rows:auto 1fr}
+.edbar{display:flex;align-items:center;gap:0;height:44px;border-bottom:3px solid var(--ink);background:var(--cream)}
+.edbar b{height:44px;display:flex;align-items:center;padding:0 14px;border-right:3px solid var(--ink);
+  font:900 11px/1 var(--mono);letter-spacing:.1em;background:var(--tomato);color:var(--cream)}
+.edbar span{height:44px;display:flex;align-items:center;padding:0 13px;border-right:2px solid var(--ink);
+  font:700 12px/1 var(--mono)}
+.edbar .sp{margin-left:auto;border-right:0;border-left:3px solid var(--ink);background:var(--mint);font-weight:800}
+.doc{padding:34px 36px 44px;max-width:820px}
+.kick{display:inline-block;font:900 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  background:var(--blue);color:var(--cream);border:3px solid var(--ink);padding:6px 9px;
+  box-shadow:4px 4px 0 var(--ink);margin-bottom:20px;transform:rotate(-1.5deg)}
+h1{font:900 54px/1.02 var(--sans);letter-spacing:-.035em;margin-bottom:14px}
+h1 mark{background:var(--yellow);box-shadow:inset 0 -.16em 0 var(--ink);padding:0 4px}
+.sub{font:800 12.5px/1 var(--mono);letter-spacing:.08em;margin-bottom:26px;padding-bottom:14px;
+  border-bottom:4px solid var(--ink)}
+.lead{font:700 19px/1.62 var(--sans);margin-bottom:18px}
+p{font:500 16px/1.72 var(--sans);color:#26241C;margin-bottom:15px}
+h3{display:inline-block;font:900 20px/1 var(--sans);letter-spacing:-.02em;margin:24px 0 12px;
+  border-bottom:4px solid var(--ink);padding-bottom:5px}
+.quote{margin:20px 0;padding:16px 18px;border:3px solid var(--ink);background:var(--violet);
+  box-shadow:6px 6px 0 var(--ink);font:800 17px/1.5 var(--sans)}
+code{font:700 13.5px/1 var(--mono);background:var(--ink);color:var(--mint);padding:3px 6px}
+.todos{margin-top:22px;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);background:var(--paper)}
+.todos header{display:flex;align-items:center;gap:10px;padding:10px 13px;border-bottom:3px solid var(--ink);
+  background:var(--yellow);font:900 13px/1 var(--sans)}
+.todos header em{font:800 10.5px/1 var(--mono);font-style:normal;background:var(--ink);color:var(--cream);padding:3px 6px}
+.todos .r{display:flex;align-items:center;gap:12px;padding:11px 13px;border-bottom:2px solid var(--ink)}
+.todos .r:last-child{border-bottom:0}
+.todos .cb{width:19px;height:19px;border:3px solid var(--ink);display:grid;place-items:center;font:900 11px/1 var(--mono);
+  background:var(--paper)}
+.todos .r.done .cb{background:var(--mint)}
+.todos .r .t{flex:1;font:700 14px/1.4 var(--sans)}
+.todos .r.done .t{text-decoration:line-through;color:#8C8878}
+.stick{font:800 10px/1 var(--mono);letter-spacing:.1em;border:2px solid var(--ink);padding:4px 6px;background:var(--paper)}
+.stick.h{background:var(--tomato);color:var(--cream)}
+
+/* ---------- 屏 2：看板（积木） ---------- */
+.data{padding:24px 28px 34px}
+.dh{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:4px solid var(--ink)}
+.dh h2{font:900 30px/1 var(--sans);letter-spacing:-.03em}
+.dh .meta{font:800 11.5px/1 var(--mono);background:var(--grey);border:2px solid var(--ink);padding:5px 8px}
+.seg{display:flex;margin-left:auto;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink)}
+.seg b{padding:8px 14px;border-left:3px solid var(--ink);font:800 12.5px/1 var(--sans)}
+.seg b:first-child{border-left:0;background:var(--yellow)}
+.bcols{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}
+.bcol{border:3px solid var(--ink);background:var(--paper);box-shadow:7px 7px 0 var(--ink)}
+.bcol>header{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:3px solid var(--ink);
+  font:900 13px/1 var(--sans);background:var(--grey)}
+.bcol>header em{margin-left:auto;font:900 11px/1 var(--mono);background:var(--ink);color:var(--cream);padding:4px 6px}
+.bcol.c2>header{background:var(--mint)} .bcol.c3>header{background:var(--tomato);color:var(--cream)}
+.bcol.c4>header{background:var(--blue);color:var(--cream)}
+.bcol .stack{padding:12px;display:flex;flex-direction:column;gap:12px}
+.bc{border:3px solid var(--ink);background:var(--cream);padding:11px;box-shadow:4px 4px 0 var(--ink)}
+.bc b{display:block;font:800 15px/1.3 var(--sans);letter-spacing:-.01em;margin-bottom:9px}
+.bc .row{display:flex;align-items:center;gap:7px;font:700 11px/1 var(--mono);color:#5C594D}
+.bc .tag{font:800 10px/1 var(--mono);letter-spacing:.08em;border:2px solid var(--ink);padding:4px 6px;background:var(--yellow)}
+.bc .tag.b{background:var(--blue);color:var(--cream)} .bc .tag.t{background:var(--tomato);color:var(--cream)}
+.bc .bar{margin-top:10px;height:12px;border:2px solid var(--ink);background:var(--paper)}
+.bc .bar i{display:block;height:100%;background:var(--violet);border-right:2px solid var(--ink)}
+.bc .grip{margin-top:10px;display:flex;justify-content:space-between;align-items:center}
+.bc .mv{font:800 10px/1 var(--mono);border:2px solid var(--ink);background:var(--paper);padding:4px 6px}
+
+/* ---------- 屏 3：日历 + 待办 ---------- */
+.two{display:grid;grid-template-columns:1.6fr 1fr}
+.cal{padding:22px 26px 30px;border-right:3px solid var(--ink)}
+.ch{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:4px solid var(--ink)}
+.ch h2{font:900 26px/1 var(--sans);letter-spacing:-.03em}
+.ch .w{font:800 11px/1 var(--mono);background:var(--mint);border:2px solid var(--ink);padding:4px 6px}
+.ch .nav{margin-left:auto;display:flex;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.ch .nav b{width:38px;height:30px;display:grid;place-items:center;border-left:3px solid var(--ink);font:800 12px/1 var(--mono)}
+.ch .nav b:first-child{border-left:0}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);margin-top:16px}
+.wk b{padding:8px 0;text-align:center;font:900 11px/1 var(--mono);letter-spacing:.1em;border:3px solid var(--ink);background:var(--grey);border-right:0}
+.wk b:last-child{border-right:3px solid var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);border:3px solid var(--ink);border-top:0}
+.day{min-height:74px;padding:7px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink)}
+.day:nth-child(7n){border-right:0}
+.day:nth-last-child(-n+7){border-bottom:0}
+.day u{font:900 12px/1 var(--mono);text-decoration:none}
+.day.out{background:var(--grey)} .day.out u{color:#A29E90}
+.day.today{background:var(--yellow)}
+.day.today u{display:inline-block;background:var(--ink);color:var(--yellow);padding:2px 5px}
+.ev{display:block;margin-top:6px;border:2px solid var(--ink);padding:4px 5px;font:800 10.5px/1.35 var(--sans);background:var(--paper)}
+.ev.b{background:var(--blue);color:var(--cream)} .ev.t{background:var(--tomato);color:var(--cream)}
+.todos{padding:22px 24px 30px;background:var(--cream)}
+.todos h2{font:900 22px/1 var(--sans);letter-spacing:-.03em;padding-bottom:12px;border-bottom:4px solid var(--ink);
+  display:flex;align-items:center;gap:10px}
+.todos h2 em{font:800 11px/1 var(--mono);font-style:normal;background:var(--tomato);color:var(--cream);border:2px solid var(--ink);padding:4px 6px}
+.tr{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:2px solid var(--ink)}
+.tr .cb{margin-top:2px;width:20px;height:20px;border:3px solid var(--ink);background:var(--paper);display:grid;place-items:center;font:900 11px/1 var(--mono)}
+.tr .tx{flex:1}
+.tr .tx b{display:block;font:800 15px/1.35 var(--sans)}
+.tr .tx small{font:700 10.5px/1.5 var(--mono);color:#6E6A5C}
+.pri{font:900 10px/1 var(--mono);letter-spacing:.1em;border:2px solid var(--ink);padding:4px 6px}
+.pri.h{background:var(--tomato);color:var(--cream)} .pri.m{background:var(--yellow)} .pri.l{background:var(--grey)}
+.note{margin-top:18px;border:3px solid var(--ink);background:var(--violet);padding:12px 13px;
+  box-shadow:5px 5px 0 var(--ink);font:800 12.5px/1.6 var(--sans)}
+.note b{background:var(--cream)}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="cap"><b>C · 新粗野</b><span>Neo-Brutalist</span><i></i><span>边框即结构 · 硬影即层次 · 撞色即语义</span></div>
+
+  <!-- ============ 屏 1 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="logo">Sepctats</div>
+      <nav class="tnav"><span>模板市场</span><span class="on">搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="sync"><em></em>已同步 12:04</div>
+      <div class="win"><b>—</b><b>▢</b><b class="x">✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div class="on"><u>01</u>笔记</div><div><u>02</u>知识库</div><div><u>03</u>日历</div><div><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>页面 / 5</h4>
+        <div class="it on"><b>产品路线图 2026</b><small>2.4k 字 · 3 分钟前</small></div>
+        <div class="it"><b>会议纪要 · 视觉重设计</b><small>860 字 · 昨天</small></div>
+        <div class="it"><b>读书笔记《设计中的设计》</b><small>1.2k 字 · 10-28</small></div>
+        <div class="it"><b>客户访谈逐字稿</b><small>5.8k 字 · 10-27</small></div>
+        <div class="it"><b>周报合集 / 第 41 周</b><small>320 字 · 10-26</small></div>
+      </aside>
+      <main class="ed">
+        <div class="edbar">
+          <b>长文</b><span>产品路线图 2026</span><span>改于 12:04</span><span class="sp">已存盘</span>
+        </div>
+        <article class="doc">
+          <span class="kick">专题 · Product</span>
+          <h1>产品路线图 <mark>2026</mark></h1>
+          <div class="sub">SEPTCATS 编辑部 · 2026-10-01 · 阅读 6 分钟</div>
+          <p class="lead">把界面当积木：边框就是结构，影子就是层级，颜色就是语义。三个都是实心的，一眼可数。</p>
+          <p>这一版删掉了所有错觉：没有模糊、没有渐变、没有半透明。你要么看见一个东西，要么看不见它——中间态一律不允许。</p>
+          <h3>三条硬规矩</h3>
+          <p>圆角一律 <code>0</code>；边框只有 <code>2px</code> 与 <code>3px</code> 两档；影子永远是纯黑偏移 <code>6px</code>，绝不用模糊。</p>
+          <div class="quote">"如果它看起来像能按下去，那它就必须真的能按下去。"</div>
+          <div class="todos">
+            <header>清单 <em>3 项</em></header>
+            <div class="r done"><span class="cb">✓</span><span class="t">硬边与硬影收进 token</span><span class="stick">已完成</span></div>
+            <div class="r"><span class="cb"></span><span class="t">撞色语义表（黄=活动 / 蓝=进行 / 红=阻断）</span><span class="stick h">今天</span></div>
+            <div class="r"><span class="cb"></span><span class="t">按下位移全部走 60ms 阶跃</span><span class="stick">本周</span></div>
+          </div>
+        </article>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 2 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="logo">Sepctats</div>
+      <nav class="tnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="sync"><em></em>已同步 12:04</div>
+      <div class="win"><b>—</b><b>▢</b><b class="x">✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div><u>03</u>日历</div><div class="on"><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>数据表 / 3</h4>
+        <div class="it on"><b>内容排期</b><small>24 条记录 · 3 视图</small></div>
+        <div class="it"><b>选题池</b><small>86 条记录</small></div>
+        <div class="it"><b>外部作者</b><small>12 条记录</small></div>
+      </aside>
+      <main class="data">
+        <div class="dh">
+          <h2>内容排期</h2><span class="meta">24 条 · 9 字段</span>
+          <div class="seg"><b>看板</b><b>表格</b><b>画册</b><b>甘特</b></div>
+        </div>
+        <div class="bcols">
+          <div class="bcol c1">
+            <header>选题 <em>2</em></header>
+            <div class="stack">
+              <div class="bc"><b>玻璃质感为什么总做假</b><div class="row"><span class="tag">视觉</span><span>10-30</span></div><div class="grip"><span class="mv">移到 ▾</span><span class="tag b">待采访</span></div></div>
+              <div class="bc"><b>桌面软件的键盘债</b><div class="row"><span class="tag">交互</span><span>11-02</span></div><div class="grip"><span class="mv">移到 ▾</span><span class="tag b">已立项</span></div></div>
+            </div>
+          </div>
+          <div class="bcol c2">
+            <header>撰写 <em>1</em></header>
+            <div class="stack">
+              <div class="bc"><b>排版基线网格实践</b><div class="row"><span class="tag">排版</span><span>11-05</span></div><div class="bar"><i style="width:62%"></i></div><div class="grip"><span class="mv">移到 ▾</span><span class="tag">62%</span></div></div>
+            </div>
+          </div>
+          <div class="bcol c3">
+            <header>待审 <em>1</em></header>
+            <div class="stack">
+              <div class="bc"><b>多维表格与表格的区别</b><div class="row"><span class="tag">产品</span><span>11-08</span></div><div class="grip"><span class="mv">移到 ▾</span><span class="tag t">等终审</span></div></div>
+            </div>
+          </div>
+          <div class="bcol c4">
+            <header>已发 <em>1</em></header>
+            <div class="stack">
+              <div class="bc"><b>0.6.10 版本说明</b><div class="row"><span class="tag">版本</span><span>09-30</span></div><div class="grip"><span class="mv">移到 ▾</span><span class="tag b">已发布</span></div></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 3 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="logo">Sepctats</div>
+      <nav class="tnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="sync"><em></em>已同步 12:04</div>
+      <div class="win"><b>—</b><b>▢</b><b class="x">✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div class="on"><u>03</u>日历</div><div><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>近 7 天 / 5 场</h4>
+        <div class="it on"><b>今天 · 2 场</b><small>下一场 14:00 设计评审</small></div>
+        <div class="it"><b>10-02 · 1 场</b><small>选题会 10:00</small></div>
+        <div class="it"><b>10-06 · 1 场</b><small>外部作者访谈</small></div>
+        <div class="it"><b>10-09 · 1 场</b><small>发版窗口</small></div>
+      </aside>
+      <main class="two">
+        <section class="cal">
+          <div class="ch"><h2>2026-10</h2><span class="w">W40</span>
+            <div class="nav"><b>‹</b><b>今天</b><b>›</b></div>
+          </div>
+          <div class="wk"><b>MON</b><b>TUE</b><b>WED</b><b>THU</b><b>FRI</b><b>SAT</b><b>SUN</b></div>
+          <div class="grid">
+            <div class="day out"><u>28</u></div><div class="day out"><u>29</u></div><div class="day out"><u>30</u></div>
+            <div class="day today"><u>01</u><span class="ev t">14:00 设计评审</span></div>
+            <div class="day"><u>02</u><span class="ev">10:00 选题会</span></div>
+            <div class="day"><u>03</u></div><div class="day"><u>04</u></div>
+            <div class="day"><u>05</u></div><div class="day"><u>06</u><span class="ev b">15:30 访谈</span></div>
+            <div class="day"><u>07</u><span class="ev">10:00 选题会</span></div>
+            <div class="day"><u>08</u></div><div class="day"><u>09</u><span class="ev t">发版窗口</span></div>
+            <div class="day"><u>10</u></div><div class="day"><u>11</u></div>
+          </div>
+        </section>
+        <section class="todos">
+          <h2>待办 <em>4 项</em></h2>
+          <div class="tr"><span class="cb"></span><span class="tx"><b>硬边与硬影收进 token</b><small>今天 18:00</small></span><span class="pri h">高</span></div>
+          <div class="tr"><span class="cb"></span><span class="tx"><b>撞色语义表定稿</b><small>明天</small></span><span class="pri h">高</span></div>
+          <div class="tr"><span class="cb"></span><span class="tx"><b>按下位移走 60ms 阶跃</b><small>本周五</small></span><span class="pri m">中</span></div>
+          <div class="tr"><span class="cb"></span><span class="tx"><b>回收站空态文案</b><small>无截止</small></span><span class="pri l">低</span></div>
+          <div class="note">这一版最激进：<b>没有一处半透明</b>。如果你要"通透"，它会是最先被否决的方向——但它的信息密度与可扫读性最高。</div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+</div>
+<div style="height:2px;background:#FFE600"></div><!-- closing-rule -->
+</body>
+</html>

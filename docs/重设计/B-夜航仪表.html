@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Septcats 重设计 · 方向 B「夜航仪表」</title>
+<style>
+/* canvas-bg */
+html{background:radial-gradient(120% 80% at 50% 0%,#101A22,#05080A 70%);background-size:32px 32px}
+</style>
+<style>
+/* ============================================================================
+   方向 B · 夜航仪表（Instrument Dark）
+   立场：工作台 = 仪表盘。界面按"读数"组织，不按"装饰"组织。
+   材料 = 实色层 + 1px 内发光边 + 极淡扫描线 + 网格刻度；零模糊、零渐变。
+   主色 = 单色荧光青（青=活动/在线，琥珀=注意，红=阻断）。
+   字体 = 等宽为主（数据必须对齐），中文走无衬线。
+   ========================================================================== */
+:root{
+  --void:#080B0E; --bg:#0C1116; --panel:#111820; --panel-2:#16202A; --line:#22303C;
+  --glow:#35E0C8; --amber:#FFB43A; --red:#FF5A5F; --violet:#9C8CFF;
+  --fg:#D3DFE7; --fg-2:#8B9BA8; --fg-3:#5C6B77;
+  --mono:"JetBrains Mono",Consolas,"Cascadia Mono",ui-monospace,monospace;
+  --sans:"Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --scan:repeating-linear-gradient(to bottom,rgba(255,255,255,.022) 0 1px,transparent 1px 3px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(120% 80% at 50% 0%,#101A22,#05080A 70%);font-family:var(--mono);
+  color:var(--fg);padding:24px}
+.board{display:flex;flex-direction:column;gap:20px;max-width:1520px;margin:0 auto}
+.cap{display:flex;align-items:center;gap:12px;font:500 11px/1 var(--mono);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--fg-3)}
+.cap b{font:700 14px/1 var(--sans);letter-spacing:.06em;color:var(--glow);text-transform:none}
+.cap i{flex:1;height:1px;background:var(--line)}
+
+.app{position:relative;background:var(--bg);border:1px solid var(--line);
+  box-shadow:0 0 0 1px rgba(53,224,200,.06),0 18px 50px -30px #000 inset}
+.app::after{content:"";position:absolute;inset:0;background-image:var(--scan);pointer-events:none}
+
+/* ---------- 顶栏 = 状态条 ---------- */
+.top{display:flex;align-items:center;height:48px;border-bottom:1px solid var(--line);background:var(--panel);padding-left:14px}
+.brand{font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--glow);padding-right:16px;
+  border-right:1px solid var(--line);height:48px;display:flex;align-items:center}
+.tnav{display:flex;height:48px}
+.tnav span{display:flex;align-items:center;padding:0 14px;font:500 12px/1 var(--sans);color:var(--fg-2);
+  border-right:1px solid var(--line)}
+.tnav span.on{color:var(--glow);background:linear-gradient(180deg,rgba(53,224,200,.12),transparent);
+  box-shadow:inset 0 -2px 0 var(--glow)}
+.readouts{margin-left:auto;display:flex;height:48px;align-items:stretch}
+.ro{padding:0 14px;display:flex;flex-direction:column;justify-content:center;gap:3px;border-left:1px solid var(--line)}
+.ro small{font:500 9px/1 var(--mono);letter-spacing:.18em;color:var(--fg-3);text-transform:uppercase}
+.ro b{font:700 12px/1 var(--mono);color:var(--fg)}
+.ro b i{font-style:normal;color:var(--glow)}
+.ro b i.warn{color:var(--amber)} .ro b i.bad{color:var(--red)}
+.lamp{width:26px;display:grid;place-items:center;border-left:1px solid var(--line);color:var(--fg-3);font-size:11px}
+.lamp:hover{color:var(--glow)}
+
+/* ---------- 主体三列 ---------- */
+.body{display:grid;grid-template-columns:68px 244px 1fr;min-height:0}
+.rail{border-right:1px solid var(--line);background:var(--panel)}
+.rail div{height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  font:500 11.5px/1 var(--sans);color:var(--fg-3);border-bottom:1px solid var(--line)}
+.rail div u{font:700 9px/1 var(--mono);letter-spacing:.1em;text-decoration:none;color:#394854}
+.rail div.on{color:var(--void);background:var(--glow);box-shadow:0 0 22px -6px var(--glow)}
+.rail div.on u{color:rgba(8,11,14,.6)}
+.side{border-right:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--bg))}
+.side h4{font:500 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--fg-3);
+  padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.side .item{padding:11px 16px;border-bottom:1px solid rgba(34,48,60,.7);position:relative}
+.side .item b{display:block;font:500 13px/1.3 var(--sans);color:var(--fg)}
+.side .item small{font:400 10px/1.4 var(--mono);color:var(--fg-3)}
+.side .item.on{background:var(--panel-2)}
+.side .item.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--glow)}
+.meter{height:3px;background:#1C2732;margin-top:8px}
+.meter i{display:block;height:100%;background:var(--glow)}
+.meter i.w{background:var(--amber)}
+
+/* ---------- 屏 1：编辑器（读数 + 正文） ---------- */
+.ed{display:grid;grid-template-rows:auto 1fr}
+.edbar{display:flex;align-items:center;gap:18px;height:38px;border-bottom:1px solid var(--line);
+  background:var(--panel-2);padding:0 20px;font:500 10.5px/1 var(--mono);letter-spacing:.12em;color:var(--fg-3)}
+.edbar b{color:var(--glow)} .edbar span.dim{color:var(--fg-3)}
+.edbar .sp{margin-left:auto;display:flex;gap:16px}
+.doc{padding:30px 34px 40px;display:grid;grid-template-columns:1fr 208px;gap:30px}
+.doc .main{max-width:660px}
+.doc h1{font:700 30px/1.24 var(--sans);letter-spacing:-.01em;margin-bottom:6px}
+.meta{font:400 11px/1 var(--mono);color:var(--fg-3);letter-spacing:.08em;margin-bottom:20px;
+  padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.doc h3{font:700 15px/1.3 var(--sans);color:var(--glow);margin:22px 0 9px;letter-spacing:.02em}
+.doc h3::before{content:"▍";margin-right:7px;color:var(--glow);opacity:.5}
+.doc p{font:400 14.5px/1.85 var(--sans);color:var(--fg-2);margin-bottom:13px}
+.doc p b{color:var(--fg);font-weight:600}
+code{font:400 12.5px/1 var(--mono);background:#0A1015;border:1px solid var(--line);color:var(--glow);padding:2px 5px}
+.bars{margin:16px 0 0;border:1px solid var(--line);background:#0A1015}
+.bars div{display:flex;align-items:center;gap:10px;padding:8px 11px;border-bottom:1px solid var(--line)}
+.bars div:last-child{border-bottom:0}
+.bars .tick{width:12px;height:12px;border:1px solid var(--glow);display:grid;place-items:center;color:var(--glow);font-size:9px}
+.bars .off .tick{border-color:var(--fg-3)}
+.bars .t{flex:1;font:400 12.5px/1.4 var(--sans);color:var(--fg-2)}
+.bars .off .t{color:var(--fg-3);text-decoration:line-through}
+.bars .v{font:700 11px/1 var(--mono);color:var(--amber)}
+/* 右栏 = 遥测 */
+.telemetry{border-left:1px solid var(--line);padding-left:18px}
+.telemetry h5{font:500 9.5px/1 var(--mono);letter-spacing:.2em;color:var(--fg-3);text-transform:uppercase;
+  padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.tel{margin-bottom:14px}
+.tel small{display:flex;justify-content:space-between;font:500 10px/1 var(--mono);color:var(--fg-3);letter-spacing:.1em}
+.tel small b{color:var(--glow)}
+.tel .meter{margin-top:6px}
+.spark{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:14px}
+.spark i{flex:1;background:linear-gradient(180deg,var(--glow),rgba(53,224,200,.15));display:block}
+.legend{margin-top:12px;font:400 10px/1.7 var(--mono);color:var(--fg-3)}
+.legend em{color:var(--glow);font-style:normal}
+
+/* ---------- 屏 2：多维表格（仪表式看板） ---------- */
+.data{padding:20px 26px 30px}
+.dhead{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.dhead h2{font:700 20px/1 var(--sans)}
+.dhead .kpi{display:flex;gap:0;border:1px solid var(--line)}
+.dhead .kpi div{padding:6px 12px;border-left:1px solid var(--line);font:500 10.5px/1 var(--mono);color:var(--fg-3)}
+.dhead .kpi div:first-child{border-left:0}
+.dhead .kpi div b{color:var(--glow);font-weight:700}
+.seg{display:flex;margin-left:auto;border:1px solid var(--line)}
+.seg b{padding:7px 12px;border-left:1px solid var(--line);font:500 11px/1 var(--mono);color:var(--fg-2)}
+.seg b:first-child{border-left:0;background:var(--glow);color:var(--void);font-weight:700}
+.kcols{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.kcol{border:1px solid var(--line);background:#0A1015}
+.kcol>header{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--line);
+  font:500 10.5px/1 var(--mono);letter-spacing:.14em;color:var(--fg-2);text-transform:uppercase}
+.kcol>header em{font-style:normal;margin-left:auto;color:var(--glow);font-weight:700}
+.kcol>header .dot{width:6px;height:6px;background:var(--glow)}
+.kcol>header .dot.a{background:var(--amber)} .kcol>header .dot.r{background:var(--red)} .kcol>header .dot.v{background:var(--violet)}
+.kcol .stack{padding:10px;display:flex;flex-direction:column;gap:9px}
+.kc{border:1px solid var(--line);background:var(--panel);border-left:2px solid var(--glow);padding:9px 10px}
+.kc.a{border-left-color:var(--amber)} .kc.r{border-left-color:var(--red)} .kc.v{border-left-color:var(--violet)}
+.kc b{display:block;font:600 13px/1.35 var(--sans);color:var(--fg);margin-bottom:6px}
+.kc .row{display:flex;justify-content:space-between;font:400 10px/1 var(--mono);color:var(--fg-3)}
+.kc .meter{margin-top:7px}
+.kc .chips{display:flex;gap:5px;margin-top:8px}
+.kc .chips span{font:500 9px/1 var(--mono);letter-spacing:.1em;padding:3px 5px;border:1px solid var(--line);color:var(--fg-2)}
+.kc .chips span.on{border-color:var(--glow);color:var(--glow)}
+
+/* ---------- 屏 3：日历 + 待办 ---------- */
+.two{display:grid;grid-template-columns:1.6fr 1fr}
+.cal{padding:20px 24px 26px;border-right:1px solid var(--line)}
+.chead{display:flex;align-items:center;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+.chead h2{font:700 18px/1 var(--sans)}
+.chead .w{font:500 10.5px/1 var(--mono);color:var(--fg-3);letter-spacing:.16em}
+.chead .nav{margin-left:auto;display:flex;border:1px solid var(--line)}
+.chead .nav b{width:32px;height:26px;display:grid;place-items:center;border-left:1px solid var(--line);
+  font:500 11px/1 var(--mono);color:var(--fg-2)}
+.chead .nav b:first-child{border-left:0}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);margin-top:12px;font:500 9.5px/1 var(--mono);
+  letter-spacing:.18em;color:var(--fg-3);text-transform:uppercase}
+.wk b{padding-bottom:7px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-right:0;border-bottom:0}
+.day{min-height:66px;padding:6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);position:relative}
+.day u{font:500 10.5px/1 var(--mono);color:var(--fg-2);text-decoration:none;letter-spacing:.06em}
+.day.out u{color:#3E4A55}
+.day.today{background:rgba(53,224,200,.07)}
+.day.today u{color:var(--void);background:var(--glow);padding:2px 4px;font-weight:700}
+.ev{display:block;margin-top:5px;padding:3px 5px;font:500 9.5px/1.3 var(--mono);color:var(--glow);
+  border-left:2px solid var(--glow);background:rgba(53,224,200,.08)}
+.ev.a{color:var(--amber);border-left-color:var(--amber);background:rgba(255,180,58,.08)}
+.ev.r{color:var(--red);border-left-color:var(--red);background:rgba(255,90,95,.08)}
+.todos{padding:20px 22px 26px}
+.todos h2{font:700 15px/1 var(--sans);padding-bottom:10px;border-bottom:1px solid var(--line);
+  display:flex;align-items:baseline;gap:10px}
+.todos h2 em{font:500 10px/1 var(--mono);font-style:normal;color:var(--amber);letter-spacing:.16em}
+.tr{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid rgba(34,48,60,.65)}
+.tr .tick{margin-top:2px;width:13px;height:13px;border:1px solid var(--fg-3);display:grid;place-items:center;font-size:9px;color:var(--glow)}
+.tr .tx{flex:1}
+.tr .tx b{display:block;font:500 13px/1.4 var(--sans);color:var(--fg)}
+.tr .tx small{font:400 10px/1.5 var(--mono);color:var(--fg-3)}
+.tr.done .tx b{color:var(--fg-3);text-decoration:line-through}
+.tr .p{font:700 9px/1 var(--mono);letter-spacing:.12em;padding:4px 5px;border:1px solid currentColor}
+.p.h{color:var(--red)} .p.m{color:var(--amber)} .p.l{color:var(--fg-3)}
+.hint{margin-top:14px;border:1px dashed var(--line);padding:10px 11px;font:400 10.5px/1.6 var(--mono);color:var(--fg-3)}
+.hint em{color:var(--glow);font-style:normal}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="cap"><b>B · 夜航仪表</b><span>Instrument Dark</span><i></i><span>数据优先 · 单色荧光 · 等宽对齐 · 零模糊</span></div>
+
+  <!-- ============ 屏 1 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="brand">SEPTCATS</div>
+      <nav class="tnav"><span>模板市场</span><span class="on">搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="readouts">
+        <div class="ro"><small>同步</small><b><i>在线</i> 12:04</b></div>
+        <div class="ro"><small>待办</small><b>4 <i class="warn">↑</i></b></div>
+        <div class="ro"><small>本月写作</small><b>18.2k <i>字</i></b></div>
+      </div>
+      <div class="lamp">—</div><div class="lamp">▢</div><div class="lamp">✕</div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div class="on"><u>01</u>笔记</div><div><u>02</u>知识库</div><div><u>03</u>日历</div><div><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>活跃文档 · 5</h4>
+        <div class="item on"><b>产品路线图 2026</b><small>2.4k 字 · 3 分钟前</small><div class="meter"><i style="width:82%"></i></div></div>
+        <div class="item"><b>会议纪要 · 视觉重设计</b><small>860 字 · 昨天</small><div class="meter"><i class="w" style="width:34%"></i></div></div>
+        <div class="item"><b>读书笔记《设计中的设计》</b><small>1.2k 字 · 10-28</small><div class="meter"><i style="width:48%"></i></div></div>
+        <div class="item"><b>客户访谈逐字稿</b><small>5.8k 字 · 10-27</small><div class="meter"><i style="width:96%"></i></div></div>
+        <div class="item"><b>周报合集 / 第 41 周</b><small>320 字 · 10-26</small><div class="meter"><i style="width:12%"></i></div></div>
+      </aside>
+      <main class="ed">
+        <div class="edbar">
+          <b>DOC-2481</b><span class="dim">产品路线图 2026</span><span class="dim">/</span><span>改于 12:04</span>
+          <div class="sp"><span>块 214</span><span>链接 6</span><span>附件 2</span><span class="dim">已存盘</span></div>
+        </div>
+        <div class="doc">
+          <div class="main">
+            <h1>产品路线图 2026</h1>
+            <div class="meta">SEPTCATS / ROADMAP / 2026-Q4 &nbsp;·&nbsp; 阅读 6 分钟 &nbsp;·&nbsp; 上次自动保存 00:03</div>
+            <h3>这一版的目标</h3>
+            <p>把界面从"装饰层"改回<b>读数层</b>：每个像素要么表达状态，要么表达层级，其余删掉。</p>
+            <h3>三条工程约束</h3>
+            <p>所有面板共用一套 <code>1px</code> 描边与荧光单色；数据一律等宽右对齐；动效只允许"点亮/熄灭"两种。</p>
+            <div class="bars">
+              <div><span class="tick">✓</span><span class="t">描边与荧光色收进 token</span><span class="v">DONE</span></div>
+              <div><span class="tick">✓</span><span class="t">等宽数字表（字阶 6 档）</span><span class="v">DONE</span></div>
+              <div class="off"><span class="tick"></span><span class="t">看板列读数与阈值色条</span><span class="v">DOING</span></div>
+              <div class="off"><span class="tick"></span><span class="t">深色纸上荧光可读性实测</span><span class="v">TODO</span></div>
+            </div>
+          </div>
+          <aside class="telemetry">
+            <h5>遥测</h5>
+            <div class="tel"><small>写作节奏 <b>1.8k/日</b></small><div class="meter"><i style="width:72%"></i></div></div>
+            <div class="tel"><small>双链密度 <b>0.31</b></small><div class="meter"><i style="width:31%"></i></div></div>
+            <div class="tel"><small>库容量 <b>412 MB</b></small><div class="meter"><i class="w" style="width:41%"></i></div></div>
+            <div class="spark">
+              <i style="height:26%"></i><i style="height:44%"></i><i style="height:32%"></i><i style="height:61%"></i>
+              <i style="height:52%"></i><i style="height:78%"></i><i style="height:66%"></i><i style="height:92%"></i>
+              <i style="height:70%"></i><i style="height:84%"></i><i style="height:58%"></i><i style="height:74%"></i>
+            </div>
+            <div class="legend">近 12 日写作量<br><em>▍</em> 峰值 2.6k / 10-29</div>
+            <div class="hint" style="margin-top:16px">仪表口径：<em>只显示可核对的事实</em>，不显示"感觉良好"类指标。</div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 2 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="brand">SEPTCATS</div>
+      <nav class="tnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="readouts">
+        <div class="ro"><small>同步</small><b><i>在线</i></b></div>
+        <div class="ro"><small>记录</small><b>24</b></div>
+        <div class="ro"><small>阻塞</small><b><i class="bad">1</i></b></div>
+      </div>
+      <div class="lamp">—</div><div class="lamp">▢</div><div class="lamp">✕</div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div><u>03</u>日历</div><div class="on"><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>数据表 · 3</h4>
+        <div class="item on"><b>内容排期</b><small>24 记录 · 3 视图</small><div class="meter"><i style="width:60%"></i></div></div>
+        <div class="item"><b>选题池</b><small>86 记录</small><div class="meter"><i style="width:88%"></i></div></div>
+        <div class="item"><b>外部作者</b><small>12 记录</small><div class="meter"><i style="width:22%"></i></div></div>
+      </aside>
+      <main class="data">
+        <div class="dhead">
+          <h2>内容排期</h2>
+          <div class="kpi"><div>记录 <b>24</b></div><div>视图 <b>3</b></div><div>字段 <b>9</b></div></div>
+          <div class="seg"><b>看板</b><b>表格</b><b>画册</b><b>甘特</b></div>
+        </div>
+        <div class="kcols">
+          <div class="kcol">
+            <header><span class="dot"></span>选题 <em>2</em></header>
+            <div class="stack">
+              <div class="kc"><b>玻璃质感为什么总做假</b><div class="row"><span>10-30</span><span>视觉</span></div><div class="chips"><span class="on">待采访</span><span>高</span></div></div>
+              <div class="kc"><b>桌面软件的键盘债</b><div class="row"><span>11-02</span><span>交互</span></div><div class="chips"><span class="on">已立项</span><span>中</span></div></div>
+            </div>
+          </div>
+          <div class="kcol">
+            <header><span class="dot a"></span>撰写 <em>1</em></header>
+            <div class="stack">
+              <div class="kc a"><b>排版基线网格实践</b><div class="row"><span>11-05</span><span>排版</span></div><div class="meter"><i class="w" style="width:62%"></i></div><div class="chips"><span class="on">62%</span><span>高</span></div></div>
+            </div>
+          </div>
+          <div class="kcol">
+            <header><span class="dot r"></span>待审 <em>1</em></header>
+            <div class="stack">
+              <div class="kc r"><b>多维表格与表格的区别</b><div class="row"><span>11-08</span><span>产品</span></div><div class="chips"><span class="on">等终审</span><span>阻塞 2 天</span></div></div>
+            </div>
+          </div>
+          <div class="kcol">
+            <header><span class="dot v"></span>已发 <em>1</em></header>
+            <div class="stack">
+              <div class="kc v"><b>0.6.10 版本说明</b><div class="row"><span>09-30</span><span>版本</span></div><div class="chips"><span class="on">已发布</span></div></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 3 ============ -->
+  <section class="app">
+    <div class="top">
+      <div class="brand">SEPTCATS</div>
+      <nav class="tnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="readouts">
+        <div class="ro"><small>同步</small><b><i>在线</i></b></div>
+        <div class="ro"><small>今日</small><b>2 <i class="warn">事件</i></b></div>
+        <div class="ro"><small>时钟</small><b>12:04:36</b></div>
+      </div>
+      <div class="lamp">—</div><div class="lamp">▢</div><div class="lamp">✕</div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div class="on"><u>03</u>日历</div><div><u>04</u>多维表</div>
+        <div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>日程通道 · 近 7 天</h4>
+        <div class="item on"><b>今天 · 2 场</b><small>下一场 14:00 设计评审</small></div>
+        <div class="item"><b>10-02 · 1 场</b><small>选题会 10:00</small></div>
+        <div class="item"><b>10-06 · 1 场</b><small>外部作者访谈 15:30</small></div>
+        <div class="item"><b>10-09 · 1 场</b><small>发版窗口 全天</small></div>
+      </aside>
+      <main class="two">
+        <section class="cal">
+          <div class="chead"><h2>2026-10</h2><span class="w">W40 · 周一始</span>
+            <div class="nav"><b>‹</b><b>今天</b><b>›</b></div>
+          </div>
+          <div class="wk"><b>MO</b><b>TU</b><b>WE</b><b>TH</b><b>FR</b><b>SA</b><b>SU</b></div>
+          <div class="grid">
+            <div class="day out"><u>28</u></div><div class="day out"><u>29</u></div><div class="day out"><u>30</u></div>
+            <div class="day today"><u>01</u><span class="ev r">14:00 设计评审</span></div>
+            <div class="day"><u>02</u><span class="ev">10:00 选题会</span></div>
+            <div class="day"><u>03</u></div><div class="day"><u>04</u></div>
+            <div class="day"><u>05</u></div><div class="day"><u>06</u><span class="ev a">15:30 访谈</span></div>
+            <div class="day"><u>07</u><span class="ev">10:00 选题会</span></div>
+            <div class="day"><u>08</u></div><div class="day"><u>09</u><span class="ev r">发版窗口</span></div>
+            <div class="day"><u>10</u></div><div class="day"><u>11</u></div>
+          </div>
+        </section>
+        <section class="todos">
+          <h2>待办 <em>4 OPEN / 1 DONE</em></h2>
+          <div class="tr"><span class="tick"></span><span class="tx"><b>把描边与荧光收进 token</b><small>今天 18:00 截止</small></span><span class="p h">HIGH</span></div>
+          <div class="tr"><span class="tick"></span><span class="tx"><b>深色纸上荧光文字可读性实测</b><small>明天</small></span><span class="p h">HIGH</span></div>
+          <div class="tr"><span class="tick"></span><span class="tx"><b>看板列头加计数与阈值色条</b><small>本周五</small></span><span class="p m">MED</span></div>
+          <div class="tr"><span class="tick"></span><span class="tx"><b>回收站空态文案</b><small>无截止</small></span><span class="p l">LOW</span></div>
+          <div class="tr done"><span class="tick">✓</span><span class="tx"><b>字阶收敛到 6 档</b><small>已完成 · 11:20</small></span></div>
+          <div class="hint">阈值口径：列内卡片 <em>&gt;5</em> 转琥珀、<em>&gt;9</em> 转红——让"堵住了"一眼可见。</div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+</div>
+<div style="height:2px;background:#35E0C8"></div><!-- closing-rule -->
+</body>
+</html>

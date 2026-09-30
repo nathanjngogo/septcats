@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Septcats 重设计 · 方向 A「印刷所」</title>
+<style>
+/* canvas-bg */
+html{background:linear-gradient(135deg,#E9E3D5,#D6CEBB);background-size:32px 32px}
+</style>
+<style>
+/* ============================================================================
+   方向 A · 印刷所（Editorial Press）
+   立场：知识库 = 出版。纸是本体，玻璃/像素都不存在。
+   材料 = 纸纹 + 套印偏移 + 双线分隔；零模糊、零圆角（0-2px）、零投影。
+   主色 = 朱红（CMYK 印刷红）；高亮靠"套印不准"的蓝青描边表达。
+   ========================================================================== */
+:root{
+  --paper:#F7F3EA; --paper-2:#EFE9DB; --paper-3:#E4DCC9;
+  --ink:#14110C; --ink-2:#4A4237; --ink-3:#8A8071;
+  --red:#C2402A; --indigo:#1F3A5F; --cyan:#2E7D8F; --gold:#A8801F;
+  --rule:#14110C;
+  --serif:Georgia,"Source Han Serif SC","Noto Serif SC","Songti SC",SimSun,serif;
+  --sans:"Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --mono:Consolas,"Cascadia Mono",ui-monospace,monospace;
+  --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='.28'/></svg>");
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#DED7C6;font-family:var(--sans);color:var(--ink);padding:26px;
+  background-image:radial-gradient(circle at 20% 10%,#E9E3D5,#D6CEBB 70%)}
+.board{display:flex;flex-direction:column;gap:22px;max-width:1500px;margin:0 auto}
+.cap{font:600 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:#6A6252;
+  display:flex;align-items:baseline;gap:12px}
+.cap b{font:700 15px/1 var(--serif);letter-spacing:.02em;color:var(--ink);text-transform:none}
+.cap i{flex:1;height:12px;border-bottom:1px solid #B9B09A;border-top:1px solid #B9B09A}
+
+/* ---------- 应用外壳（三屏共用） ---------- */
+.app{background:var(--paper);background-image:var(--noise);border:1px solid var(--ink);
+  box-shadow:0 2px 0 0 #B4AB95, 0 14px 0 -8px rgba(20,17,12,.10)}
+.topbar{display:flex;align-items:center;gap:0;height:46px;border-bottom:2px solid var(--rule);
+  padding:0 0 0 14px;background:var(--paper-2)}
+.masthead{font:700 13px/1 var(--serif);letter-spacing:.14em;text-transform:uppercase;
+  border-right:1px solid var(--rule);padding:0 14px 0 0;height:46px;display:flex;align-items:center}
+.topnav{display:flex;height:46px}
+.topnav span{padding:0 13px;height:46px;display:flex;align-items:center;font:500 12.5px/1 var(--sans);
+  letter-spacing:.06em;border-right:1px solid rgba(20,17,12,.14);color:var(--ink-2)}
+.topnav span.on{background:var(--red);color:var(--paper);border-right-color:var(--rule)}
+.sync{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 14px;height:46px;
+  border-left:1px solid rgba(20,17,12,.14);font:500 12px/1 var(--mono);color:var(--ink-3)}
+.sync em{width:7px;height:7px;background:var(--cyan);display:block;transform:rotate(45deg)}
+.winbtns{display:flex;border-left:1px solid var(--rule);height:46px}
+.winbtns b{width:38px;display:grid;place-items:center;border-left:1px solid rgba(20,17,12,.14);
+  font:500 11px/1 var(--mono);color:var(--ink-2)}
+
+.body{display:grid;grid-template-columns:64px 236px 1fr;min-height:0}
+/* 一级轨：像书脊/目录签 */
+.rail{border-right:1px solid var(--rule);background:var(--paper-2)}
+.rail div{height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  font:500 12px/1 var(--sans);letter-spacing:.14em;color:var(--ink-3);border-bottom:1px solid rgba(20,17,12,.10);
+  writing-mode:horizontal-tb}
+.rail div u{font:700 9px/1 var(--mono);letter-spacing:.1em;text-decoration:none;color:#B3A992}
+.rail div.on{background:var(--indigo);color:var(--paper)}
+.rail div.on u{color:#9FB6D0}
+/* 二级栏：刊物目录 */
+.side{border-right:1px solid var(--rule);padding:16px 0 0;background:var(--paper)}
+.side h4{font:700 10px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3);
+  padding:0 16px 12px;border-bottom:1px solid rgba(20,17,12,.14);margin-bottom:10px}
+.side li{list-style:none;padding:9px 16px 9px 30px;font:400 13.5px/1.35 var(--serif);color:var(--ink-2);
+  position:relative;border-bottom:1px dotted rgba(20,17,12,.16)}
+.side li::before{content:"§";position:absolute;left:14px;color:var(--ink-3);font-size:11px}
+.side li.on{background:var(--paper-3);color:var(--ink);font-weight:700}
+.side li.on::before{content:"▸";color:var(--red)}
+.side li small{display:block;font:400 10.5px/1.3 var(--mono);color:var(--ink-3);margin-top:2px}
+
+/* ---------- 屏 1：编辑器（刊首） ---------- */
+.editor{padding:0;display:grid;grid-template-rows:auto 1fr}
+.runhead{display:flex;align-items:center;gap:14px;padding:12px 40px;border-bottom:1px solid var(--rule);
+  background:var(--paper-2);font:500 10.5px/1 var(--mono);letter-spacing:.16em;color:var(--ink-3)}
+.runhead b{color:var(--red);font-weight:700}
+.doc{padding:38px 40px 46px;max-width:760px}
+.kicker{font:700 10.5px/1 var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--red);
+  padding-bottom:8px;border-bottom:3px double var(--rule);margin-bottom:20px}
+h1{font:700 46px/1.06 var(--serif);letter-spacing:-.01em;margin-bottom:12px}
+h1 span{color:var(--red);text-shadow:-1px 0 0 rgba(46,125,143,.55),1px 0 0 rgba(194,64,42,.35)}
+.byline{font:400 12px/1 var(--mono);letter-spacing:.1em;color:var(--ink-3);margin-bottom:24px}
+.lede{font:400 17.5px/1.72 var(--serif);color:var(--ink-2);margin-bottom:18px}
+.lede::first-letter{float:left;font:700 62px/.82 var(--serif);padding:6px 10px 0 0;color:var(--red)}
+p{font:400 15.5px/1.78 var(--serif);color:var(--ink-2);margin-bottom:14px}
+h3{font:700 19px/1.3 var(--serif);margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(20,17,12,.22)}
+blockquote{margin:18px 0;padding:12px 0 12px 18px;border-left:4px solid var(--red);
+  font:italic 400 16px/1.6 var(--serif);color:var(--ink)}
+code{font:400 13.5px/1 var(--mono);background:var(--paper-3);padding:2px 5px;border:1px solid rgba(20,17,12,.16)}
+.todolist{margin:16px 0 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.todolist div{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px dotted rgba(20,17,12,.18);
+  font:400 13.5px/1.4 var(--serif)}
+.todolist div:last-child{border-bottom:0}
+.box{width:13px;height:13px;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:10px}
+.done{color:var(--ink-3);text-decoration:line-through}
+.margin-note{float:right;width:180px;margin:0 0 12px 18px;padding:10px 0 10px 12px;
+  border-top:3px double var(--rule);border-bottom:1px solid rgba(20,17,12,.2);
+  font:400 11.5px/1.5 var(--mono);color:var(--ink-3)}
+.margin-note b{display:block;color:var(--red);letter-spacing:.14em;font-size:10px;margin-bottom:5px}
+
+/* ---------- 屏 2：多维表格看板（出版物排期表） ---------- */
+.data{padding:26px 40px 34px}
+.dt-head{display:flex;align-items:flex-end;gap:16px;padding-bottom:12px;border-bottom:3px double var(--rule)}
+.dt-head h2{font:700 30px/1 var(--serif)}
+.dt-head span{font:400 11px/1 var(--mono);color:var(--ink-3);letter-spacing:.12em;padding-bottom:4px}
+.seg{display:flex;margin-left:auto;border:1px solid var(--rule)}
+.seg b{padding:7px 13px;font:600 11.5px/1 var(--mono);letter-spacing:.08em;border-left:1px solid var(--rule);color:var(--ink-2)}
+.seg b:first-child{border-left:0;background:var(--ink);color:var(--paper)}
+.cols{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:22px;border-top:1px solid var(--rule)}
+.col{border-right:1px solid rgba(20,17,12,.22);padding:14px 14px 20px}
+.col:last-child{border-right:0}
+.col>h5{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2);
+  padding-bottom:9px;margin-bottom:12px;border-bottom:1px solid var(--ink);display:flex;justify-content:space-between}
+.col>h5 em{font-style:normal;color:var(--red)}
+.card{border:1px solid var(--rule);background:var(--paper-2);padding:10px 11px;margin-bottom:10px;
+  box-shadow:2px 2px 0 rgba(20,17,12,.16)}
+.card h6{font:700 13.5px/1.3 var(--serif);margin-bottom:7px}
+.card p{font:400 11.5px/1.45 var(--mono);color:var(--ink-3);margin:0}
+.tag{display:inline-block;margin-top:8px;font:700 9.5px/1 var(--mono);letter-spacing:.12em;
+  padding:4px 6px;border:1px solid currentColor}
+.t-red{color:var(--red)} .t-ind{color:var(--indigo)} .t-cy{color:var(--cyan)} .t-gold{color:var(--gold)}
+.progress{margin-top:9px;height:4px;background:var(--paper-3);border:1px solid rgba(20,17,12,.25)}
+.progress i{display:block;height:100%;background:var(--red)}
+
+/* ---------- 屏 3：日历 + 待办 ---------- */
+.two{display:grid;grid-template-columns:1.55fr 1fr;gap:0}
+.cal{padding:24px 34px 30px;border-right:1px solid var(--rule)}
+.cal-head{display:flex;align-items:baseline;gap:12px;padding-bottom:10px;border-bottom:3px double var(--rule)}
+.cal-head h2{font:700 26px/1 var(--serif)}
+.cal-head span{font:400 11px/1 var(--mono);color:var(--ink-3);letter-spacing:.14em}
+.cal-head .nav{margin-left:auto;display:flex;gap:0;border:1px solid var(--rule)}
+.cal-head .nav b{width:30px;height:26px;display:grid;place-items:center;font:400 13px/1 var(--mono)}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);margin-top:14px;
+  font:700 10px/1 var(--mono);letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.wk b{padding:0 0 8px;border-bottom:1px solid var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid rgba(20,17,12,.16);border-left:1px solid rgba(20,17,12,.16)}
+.day{min-height:62px;border-right:1px solid rgba(20,17,12,.16);border-bottom:1px solid rgba(20,17,12,.16);
+  padding:6px 6px 4px;position:relative}
+.day u{font:700 11px/1 var(--mono);letter-spacing:.06em;text-decoration:none;color:var(--ink-2)}
+.day.out u{color:#B9B09A}
+.day.today{background:var(--paper-3)}
+.day.today u{background:var(--red);color:var(--paper);padding:2px 4px}
+.ev{display:block;margin-top:4px;font:400 10px/1.25 var(--sans);padding:3px 4px;border-left:3px solid var(--indigo);
+  background:rgba(31,58,95,.08);color:var(--ink)}
+.ev.red{border-left-color:var(--red);background:rgba(194,64,42,.09)}
+.ev.cy{border-left-color:var(--cyan);background:rgba(46,125,143,.10)}
+.todos{padding:24px 26px 30px}
+.todos h2{font:700 20px/1 var(--serif);padding-bottom:10px;border-bottom:3px double var(--rule);margin-bottom:14px}
+.todos h2 em{font:700 11px/1 var(--mono);font-style:normal;color:var(--red);letter-spacing:.14em}
+.todos .row{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px dotted rgba(20,17,12,.2)}
+.todos .row .box{margin-top:2px}
+.todos .row .tx{flex:1}
+.todos .row .tx b{display:block;font:700 13.5px/1.35 var(--serif)}
+.todos .row .tx small{font:400 10.5px/1.4 var(--mono);color:var(--ink-3)}
+.pri{font:700 9px/1 var(--mono);letter-spacing:.14em;padding:3px 5px;border:1px solid currentColor}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="cap"><b>A · 印刷所</b><span>Editorial Press</span><i></i><span>纸是本体 · 零模糊 · 零圆角 · 套印朱红</span></div>
+
+  <!-- ============ 屏 1：编辑器 ============ -->
+  <section class="app">
+    <div class="topbar">
+      <div class="masthead">Septcats</div>
+      <nav class="topnav">
+        <span class="on">模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span>
+      </nav>
+      <div class="sync"><em></em>已同步 · 12:04</div>
+      <div class="winbtns"><b>—</b><b>▢</b><b>✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div class="on"><u>01</u>笔记</div>
+        <div><u>02</u>知识库</div>
+        <div><u>03</u>日历</div>
+        <div><u>04</u>多维表</div>
+        <div><u>05</u>待办</div>
+        <div><u>06</u>工作台</div>
+        <div><u>07</u>模板</div>
+        <div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>本期目录 · No.12</h4>
+        <ul>
+          <li class="on">产品路线图 2026<small>改于 3 分钟前 · 2.4k 字</small></li>
+          <li>会议纪要 · 视觉重设计<small>昨天 · 860 字</small></li>
+          <li>读书笔记《设计中的设计》<small>10-28 · 1.2k 字</small></li>
+          <li>客户访谈逐字稿<small>10-27 · 5.8k 字</small></li>
+          <li>周报合集 / 第 41 周<small>10-26 · 320 字</small></li>
+        </ul>
+      </aside>
+      <main class="editor">
+        <div class="runhead">
+          <b>长文</b><span>产品路线图 2026</span><span>·</span><span>最后编辑 12:04</span>
+          <span style="margin-left:auto">阅读 6 分钟</span>
+        </div>
+        <article class="doc">
+          <div class="kicker">专题 · Product</div>
+          <h1>产品路线图 <span>2026</span></h1>
+          <div class="byline">SEPTCATS 编辑部 · 2026 年 10 月 1 日</div>
+          <aside class="margin-note"><b>边注</b>排版先定基线网格，再谈颜色——否则每一版重设计都要重排。</aside>
+          <p class="lede">我们不再把界面当"皮肤"来换。这一版把信息当成印刷品来编排：先定栏线、再定字号阶梯，最后才让颜色进场。</p>
+          <p>编辑器是最该安静的地方。它不该有玻璃、不该有渐变、不该有任何在你打字时呼吸的东西——只该有纸、墨与一条精确的基线。</p>
+          <h3>三条版式纪律</h3>
+          <p>字号阶梯只允许六个档位；正文行宽锁在 <code>66ch</code>；所有分隔线要么是 3px 双线（分刊），要么是 1px 点线（分条），不允许出现第三种。</p>
+          <blockquote>"好的排版是透明的：读者只记得内容，不记得字体。"</blockquote>
+          <div class="todolist">
+            <div><span class="box">✓</span><span class="done">确定纸张与墨色（纸白 #F7F3EA / 墨黑 #14110C）</span></div>
+            <div><span class="box">✓</span><span class="done">朱红套印偏移：标题描边 1px</span></div>
+            <div><span class="box"></span><span>基线与栏线落地到 token</span></div>
+          </div>
+        </article>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 2：多维表格看板 ============ -->
+  <section class="app">
+    <div class="topbar">
+      <div class="masthead">Septcats</div>
+      <nav class="topnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="sync"><em></em>已同步 · 12:04</div>
+      <div class="winbtns"><b>—</b><b>▢</b><b>✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div><u>03</u>日历</div>
+        <div class="on"><u>04</u>多维表</div><div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>刊物排期表</h4>
+        <ul>
+          <li class="on">内容排期<small>24 条记录 · 3 视图</small></li>
+          <li>选题池<small>86 条记录</small></li>
+          <li>外部作者<small>12 条记录</small></li>
+        </ul>
+      </aside>
+      <main class="data">
+        <div class="dt-head">
+          <h2>内容排期</h2><span>24 条记录 · 当前视图「按阶段」</span>
+          <div class="seg"><b>看板</b><b>表格</b><b>画册</b><b>甘特</b></div>
+        </div>
+        <div class="cols">
+          <div class="col">
+            <h5>选题 <em>2</em></h5>
+            <div class="card"><h6>玻璃质感为什么总做假</h6><p>10-30 · 视觉</p><span class="tag t-ind">待采访</span></div>
+            <div class="card"><h6>桌面软件的键盘债</h6><p>11-02 · 交互</p><span class="tag t-cy">已立项</span></div>
+          </div>
+          <div class="col">
+            <h5>撰写 <em>1</em></h5>
+            <div class="card"><h6>排版基线网格实践</h6><p>11-05 · 排版</p><div class="progress"><i style="width:62%"></i></div><span class="tag t-gold">62%</span></div>
+          </div>
+          <div class="col">
+            <h5>待审 <em>1</em></h5>
+            <div class="card"><h6>多维表格与表格的区别</h6><p>11-08 · 产品</p><span class="tag t-red">等终审</span></div>
+          </div>
+          <div class="col">
+            <h5>已发 <em>1</em></h5>
+            <div class="card"><h6>0.6.10 版本说明</h6><p>09-30 · 版本</p><span class="tag t-cy">已发布</span></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ============ 屏 3：日历 + 待办 ============ -->
+  <section class="app">
+    <div class="topbar">
+      <div class="masthead">Septcats</div>
+      <nav class="topnav"><span>模板市场</span><span>搜索</span><span>AI 对话</span><span>导入</span><span>布局</span><span>设置</span></nav>
+      <div class="sync"><em></em>已同步 · 12:04</div>
+      <div class="winbtns"><b>—</b><b>▢</b><b>✕</b></div>
+    </div>
+    <div class="body">
+      <nav class="rail">
+        <div><u>01</u>笔记</div><div><u>02</u>知识库</div><div class="on"><u>03</u>日历</div>
+        <div><u>04</u>多维表</div><div><u>05</u>待办</div><div><u>06</u>工作台</div><div><u>07</u>模板</div><div><u>08</u>回收站</div>
+      </nav>
+      <aside class="side">
+        <h4>日程栏目</h4>
+        <ul>
+          <li class="on">近 7 天<small>6 场</small></li>
+          <li>选题会<small>每周二 10:00</small></li>
+          <li>发版窗口<small>双周四</small></li>
+        </ul>
+      </aside>
+      <main class="two">
+        <section class="cal">
+          <div class="cal-head">
+            <h2>2026 年 10 月</h2><span>W40</span>
+            <div class="nav"><b>‹</b><b>今天</b><b>›</b></div>
+          </div>
+          <div class="wk"><b>一</b><b>二</b><b>三</b><b>四</b><b>五</b><b>六</b><b>日</b></div>
+          <div class="grid">
+            <div class="day out"><u>28</u></div><div class="day out"><u>29</u></div><div class="day out"><u>30</u></div>
+            <div class="day today"><u>01</u><span class="ev red">设计评审 14:00</span></div>
+            <div class="day"><u>02</u><span class="ev">选题会 10:00</span></div>
+            <div class="day"><u>03</u></div><div class="day"><u>04</u></div>
+            <div class="day"><u>05</u></div><div class="day"><u>06</u><span class="ev cy">外部作者访谈</span></div>
+            <div class="day"><u>07</u><span class="ev">选题会 10:00</span></div>
+            <div class="day"><u>08</u></div><div class="day"><u>09</u><span class="ev red">发版窗口</span></div>
+            <div class="day"><u>10</u></div><div class="day"><u>11</u></div>
+          </div>
+        </section>
+        <section class="todos">
+          <h2>待办 <em>4 项未完成</em></h2>
+          <div class="row"><span class="box"></span><span class="tx"><b>把栏线与基线写进 DESIGN.md</b><small>今天 18:00 截止</small></span><span class="pri t-red">高</span></div>
+          <div class="row"><span class="box"></span><span class="tx"><b>朱红套印在深色纸上的可读性</b><small>明天</small></span><span class="pri t-red">高</span></div>
+          <div class="row"><span class="box"></span><span class="tx"><b>看板卡片信息层级重排</b><small>本周五</small></span><span class="pri t-gold">中</span></div>
+          <div class="row"><span class="box"></span><span class="tx"><b>回收站空态文案</b><small>无截止</small></span><span class="pri t-cy">低</span></div>
+          <div class="row"><span class="box">✓</span><span class="tx"><b class="done">纸与墨色定稿</b><small>已完成</small></span></div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+</div>
+<div style="height:2px;background:#C2402A"></div><!-- closing-rule -->
+</body>
+</html>
