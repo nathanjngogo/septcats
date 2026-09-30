@@ -535,6 +535,18 @@ export const enUS = {
     emptyNoWorkspace: 'No vault available, search is unavailable',
     emptyNoMatch: 'No matching content. Try a shorter keyword.',
   },
+  // Direction B structural layer: top-bar readouts (verifiable facts only)
+  readouts: {
+    label: 'Status readouts',
+    sync: 'Sync',
+    todo: 'To-do',
+    pages: 'Pages',
+    syncOk: 'Synced',
+    syncBusy: 'Syncing',
+    syncError: 'Sync failed',
+    syncOff: 'Off',
+    syncUnknown: '—',
+  },
   palette: {
     title: 'Command Palette',
     inputAria: 'Search or type a command',
@@ -635,9 +647,8 @@ export const enUS = {
       },
       // T85-01: texture looks (pixel / linear / glass), orthogonal to palette
       look: 'Texture',
-      lookDesc: 'Instrument night / Pixel / Linear minimal / Frosted glass — live restyle',
+      lookDesc: 'Instrument night / Linear minimal / Frosted glass — live restyle',
       lookNames: {
-        pixel: 'Pixel',
         linear: 'Linear Minimal',
         glass: 'Frosted Glass',
         instrument: 'Instrument Night',

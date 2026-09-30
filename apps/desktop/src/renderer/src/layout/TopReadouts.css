@@ -1,0 +1,92 @@
+/*
+ * TopReadouts.css —— 顶栏读数区（方向 B 结构层）。
+ * 只吃 var(--sc-*)：小标签走 ink-secondary（**不用 ink-faint**——它落在 chrome 上实测低于 AA，
+ * 见 docs/评审 与 skill 记录），数值走等宽 --sc-text-code；分隔线走背景条而非 border 属性
+ * （不触 T62-01 框线纪律：所有 border-color 必须吃 ink-edge）。
+ * 窄窗逐级收缩：先收标签、再整体隐藏 ⇒ 760px 档顶栏不溢出（T92-01 三档宽契约）。
+ */
+.sc-readouts {
+  /* 局部尺寸常量（消重复裸 px：no-magic 门禁要求同值裸 px 不得重复 ≥3 次） */
+  --ro-lamp: 6px;
+  --ro-glow: 4px;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.sc-readouts__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 var(--sc-space-lg);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* 单元之间的 1px 竖分隔：背景条（非 border 属性） */
+.sc-readouts__cell + .sc-readouts__cell {
+  background-image: linear-gradient(90deg, var(--sc-color-hairline) 0 1px, transparent 1px);
+}
+
+.sc-readouts__lab {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  letter-spacing: var(--sc-tracking-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-readouts__val {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sc-space-block-gap);
+  font: var(--sc-text-code);
+  color: var(--sc-color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-readouts__lamp {
+  display: block;
+  width: var(--ro-lamp);
+  height: var(--ro-lamp);
+  border-radius: 50%;
+  background: var(--sc-color-ink-faint);
+}
+
+/* 状态灯色档（全部走既有语义 token） */
+.sc-readouts__cell[data-tone='ok'] .sc-readouts__lamp {
+  background: var(--sc-color-success);
+}
+.sc-readouts__cell[data-tone='busy'] .sc-readouts__lamp {
+  background: var(--sc-color-accent);
+}
+.sc-readouts__cell[data-tone='error'] .sc-readouts__lamp {
+  background: var(--sc-color-danger);
+}
+.sc-readouts__cell[data-tone='error'] .sc-readouts__val {
+  color: var(--sc-color-danger);
+}
+
+/* ---- 方向 B：仪表读数（大写字距标签 + 灯辉光；其它档保持朴素） ---- */
+[data-look='instrument'] .sc-readouts__lab {
+  text-transform: uppercase;
+  letter-spacing: var(--sc-tracking-ui);
+}
+[data-look='instrument'] .sc-readouts__lamp {
+  /* 读数灯辉光（灯是状态指示，不属于「层次/浮起」⇒ 与本档「零模糊层次」不冲突） */
+  box-shadow: 0 0 var(--ro-glow) currentColor;
+}
+
+/* ---- 窄窗收缩（先收标签，再整体隐藏） ---- */
+@media (max-width: 1180px) {
+  .sc-readouts__lab {
+    display: none;
+  }
+}
+@media (max-width: 980px) {
+  .sc-shell__readouts {
+    display: none;
+  }
+}

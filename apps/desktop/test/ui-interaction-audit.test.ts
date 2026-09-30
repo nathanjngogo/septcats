@@ -148,15 +148,30 @@ describe('S4 批次 3 巡检：空态一致性（T27-01 §0.B.3）', () => {
     ['TrashList.css', 'trash-empty', 'page'],
     ['SearchPage.css', 'search-empty', 'page'],
     ['templates.css', 'tpl-empty', 'inline'],
-    ['App.css', 'app-nav-empty', 'inline'],
     ['CommandPalette.css', 'palette-empty', 'inline'],
   ];
 
-  it('六个空态类的 font/color 同一 token 组合（ui-sm + ink-faint）', () => {
+  /**
+   * 台账化例外（方向 B 结构层，10-01）：侧栏空态落在 **chrome 面**——look 档会给 chrome 上色
+   * （linear 7% / glass / instrument 14%），实测落在淡化 chrome 上的 ink-faint ≤AA
+   * （7% 时 4.26:1、14% 时 ≈3.9:1）⇒ 该处提一档到 ink-secondary（14% chrome 上浅 5.1 / 深 6.5）。
+   * 这是「文字提档」而非加厚材质；其余五个空态在内容面，AA 成立，仍走统一口径。
+   */
+  const CHROME_EMPTY: ReadonlyArray<readonly [string, string]> = [['App.css', 'app-nav-empty']];
+
+  it('五个内容面空态类的 font/color 同一 token 组合（ui-sm + ink-faint）', () => {
     for (const [file, cls] of emptyStates) {
       const body = ruleBody(fileOf(file), cls);
       expect(body, `${cls} 缺 font token`).toContain(EMPTY_FONT);
       expect(body, `${cls} 缺 color token`).toContain(EMPTY_COLOR);
+    }
+  });
+  it('chrome 面空态（app-nav-empty）：ui-sm + ink-secondary，且**不得**回退到 ink-faint', () => {
+    for (const [file, cls] of CHROME_EMPTY) {
+      const body = ruleBody(fileOf(file), cls);
+      expect(body, `${cls} 缺 font token`).toContain(EMPTY_FONT);
+      expect(body, `${cls} 缺 color token（chrome 面提档）`).toContain('color: var(--sc-color-ink-secondary)');
+      expect(body, `${cls} 在淡化 chrome 上不得再用 ink-faint（AA 不成立）`).not.toContain('color: var(--sc-color-ink-faint)');
     }
   });
 

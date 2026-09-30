@@ -14,6 +14,7 @@ import { BatchDeleteDialog } from './pages/BatchDeleteDialog';
 // T87-02：Win/Linux 自绘菜单带（原生菜单栏不吃应用 CSS，老板 09-28 令整窗随主题变）
 import { MenuBarBand } from './menu/MenuBarBand';
 import { TopBarButton } from './layout/TopBarButton';
+import { TopReadouts } from './layout/TopReadouts';
 // T93-01：一级导航轨 + 「知识库」二级栏（老板 09-29 令：侧栏再加一级区分一级菜单）
 import { NavRail, type RailKey } from './nav/NavRail';
 import { KnowledgePanel } from './nav/KnowledgePanel';
@@ -26,6 +27,7 @@ import { TodoSidePanel } from './todo/TodoSidePanel';
 import { navActions, useNav } from './nav/navState';
 // UI 评估 P1①：滚动边缘渐隐（Apple §12，只在浮动头与内容交界处）
 import './ui/scrollEdge.css';
+import './ui/instrument.css';
 import { TitleBarBand } from './menu/TitleBarBand';
 import { PageLockDialog } from './pages/PageLockDialog';
 import { PageExportDialog } from './pages/PageExportDialog';
@@ -648,6 +650,7 @@ export function App() {
         sidebarCollapsed={collapsed}
         onToggleSidebar={toggleSidebar}
         breadcrumb={breadcrumb}
+        readouts={<TopReadouts />}
         actions={
           <>
             {/* T72-01 §范围1：顶栏房子钮 = 工作台模板市场入口（Alt+H / 命令面板同效）。

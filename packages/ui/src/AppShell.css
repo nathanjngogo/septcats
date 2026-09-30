@@ -43,6 +43,18 @@
   margin-left: var(--sc-space-sm);
 }
 
+.sc-shell__readouts {
+  /* 结构层读数区（可选插槽）：占满中间余量并右对齐，紧贴动作钮；
+     不传时不渲染 ⇒ 动作钮的 margin-left:auto 布局语义零变化（既有探针不受影响）。 */
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .sc-shell__actions {
   display: flex;
   align-items: center;

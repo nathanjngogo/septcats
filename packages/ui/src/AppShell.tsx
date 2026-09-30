@@ -8,6 +8,11 @@ export interface AppShellProps {
   breadcrumb?: ReactNode;
   /** 顶栏右侧动作（搜索/同步/设置…） */
   actions?: ReactNode;
+  /**
+   * 顶栏「读数」区（方向 B 结构层，老板 10-01）：面包屑与动作钮之间的数据格。
+   * 不传时**不渲染任何节点**（既有顶栏几何/探针零影响）。
+   */
+  readouts?: ReactNode;
   sidebar?: ReactNode;
   /**
    * T93-01 一级导航轨（NavRail）插槽：不传时网格仍是两列（零影响）；
@@ -32,6 +37,7 @@ export interface AppShellProps {
 export function AppShell({
   breadcrumb,
   actions,
+  readouts,
   sidebar,
   rail,
   sidebarCollapsed = false,
@@ -59,6 +65,11 @@ export function AppShell({
             onClick={onToggleSidebar}
           />
           <div className="sc-shell__crumb">{breadcrumb ?? null}</div>
+          {readouts === undefined ? null : (
+            <div className="sc-shell__readouts" data-testid="shell-readouts">
+              {readouts}
+            </div>
+          )}
           <div className="sc-shell__actions">{actions ?? null}</div>
         </header>
         <main className="sc-shell__main">{children}</main>

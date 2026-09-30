@@ -1,0 +1,93 @@
+/*
+ * instrument.css —— 方向 B「夜航仪表」**结构层**（老板 2026-10-01：「你要把结构层都补上」）。
+ *
+ * 与 looks.css 的分工：looks.css 管「材料」（线宽/圆角/影/纹理/主色族），本文件管
+ * **结构在哪儿看得见**——选中态实心、计数与日期等宽、面板与卡片 1px 环、列表 1px 分隔。
+ *
+ * 纪律：
+ *  ① 全部规则挂 `[data-look='instrument']`（极简/毛玻璃零影响）；
+ *  ② 颜色只引用 token（no-magic：无字面 hex）；数值走等宽 `--sc-text-code`；
+ *  ③ **分隔线与色条用背景图，不用 border 属性**——T62-01 框线纪律要求所有
+ *     border-color 吃 ink-edge，用背景条既避开该纪律、又能精确控制 2px 色条；
+ *  ④ 弱字档（ink-faint）不落在 chrome 上：小标签一律 ink-secondary
+ *     （浅色 chrome 淡化后 faint 实测 <AA，见 skill 记录）。
+ */
+
+/* ===== 一级轨：两位编号（::before + attr(data-num)，不进 DOM 文本）+ 选中主色实心 =====
+   为什么用 ::before：编号若写成子元素文本，`.nav-rail__item` 的 textContent 会变成「01笔记」，
+   既有导轨断言与真机探针（按 textContent 取标签）全红 —— CSS 生成内容不进 textContent。 */
+[data-look='instrument'] .nav-rail__item::before {
+  content: attr(data-num);
+  display: block;
+  font: var(--sc-text-code);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: var(--sc-tracking-ui);
+  color: var(--sc-color-ink-secondary);
+}
+
+[data-look='instrument'] .nav-rail__item--on {
+  background: var(--sc-color-accent);
+  color: var(--sc-color-on-accent);
+  font-weight: 600;
+}
+
+[data-look='instrument'] .nav-rail__item--on::before {
+  color: var(--sc-color-on-accent);
+  opacity: 0.72;
+}
+
+/* ===== 看板：列头等宽大写 + 计数徽标 + 卡片主色左条 ===== */
+[data-look='instrument'] .bitable-kcol {
+  box-shadow: var(--sc-pixel-flat);
+}
+
+[data-look='instrument'] .bitable-kcol-head {
+  font: var(--sc-text-code);
+  text-transform: uppercase;
+  letter-spacing: var(--sc-tracking-ui);
+}
+
+[data-look='instrument'] .bitable-kcol-count {
+  padding: 1px 6px;
+  border-radius: var(--sc-radius-xs);
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-code);
+}
+
+[data-look='instrument'] .bitable-card {
+  /* 主色左条：背景图 2px（非 border ⇒ 不触框线纪律） */
+  background-image: linear-gradient(90deg, var(--sc-color-accent) 0 2px, transparent 2px);
+  box-shadow: var(--sc-pixel-flat);
+}
+
+/* ===== 多维表格侧栏：选中的表 = 主色左条 ===== */
+[data-look='instrument'] .bitable-side-item--active {
+  background-image: linear-gradient(90deg, var(--sc-color-accent) 0 2px, transparent 2px);
+}
+
+/* ===== 日历：日期等宽（月网格里的数字要能对齐） ===== */
+[data-look='instrument'] .calendar-cell__num,
+[data-look='instrument'] .calendar-daynum {
+  font: var(--sc-text-code);
+}
+
+/* ===== 待办：计数与截止徽标等宽 + 行内 1px 分隔 ===== */
+[data-look='instrument'] .todo-head__count,
+[data-look='instrument'] .todo-item__duetag {
+  font: var(--sc-text-code);
+  letter-spacing: var(--sc-tracking-ui);
+}
+
+[data-look='instrument'] .todo-item {
+  background-image: linear-gradient(180deg, transparent calc(100% - 1px), var(--sc-color-hairline) calc(100% - 1px));
+}
+
+/* ===== 数据表：表头等宽大写（与看板列头同一语言） ===== */
+[data-look='instrument'] .sc-dbhead,
+[data-look='instrument'] .sc-propbar__lab {
+  font: var(--sc-text-code);
+  text-transform: uppercase;
+  letter-spacing: var(--sc-tracking-ui);
+}

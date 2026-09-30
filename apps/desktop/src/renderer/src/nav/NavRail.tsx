@@ -45,7 +45,7 @@ export function NavRail({
 }): ReactNode {
   return (
     <nav className="nav-rail" aria-label={t('nav.railLabel')} data-testid="nav-rail">
-      {ITEMS.map((item) => {
+      {ITEMS.map((item, index) => {
         const isActive = item.key === active;
         return (
           <button
@@ -55,6 +55,9 @@ export function NavRail({
             aria-current={isActive ? 'page' : undefined}
             title={`${t(item.labelKey)} —— ${t(item.hintKey)}`}
             data-testid={`nav-rail-${item.key}`}
+            /* 方向 B 结构层：两位编号（01…）由 CSS ::before + attr(data-num) 渲染，
+               **不进 DOM 文本** —— 否则 item.textContent 变「01笔记」，既有导轨断言与探针全红。 */
+            data-num={String(index + 1).padStart(2, '0')}
             onClick={() => {
               onSelect(item.key);
             }}

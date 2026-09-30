@@ -396,12 +396,22 @@
   --sc-color-selection: #1F3B38;
   --sc-color-focus-ring: #35E0C8;
 }
-/* chrome 面：canvas 向 ink-edge 收 8%（≈ 夜航 #111820 / 日间 #F2F5F7 略实，与 linear 的 7% 拉开） */
+/* chrome 面：canvas 向 ink-edge 收 14%（浅）/ 12%（深）——仪表「灰面板」是 B 的可见分档线：
+   与 linear 的 7% 只差 1% 时，真机 chrome 落点像素差不足 8%（「看不出区别」，老板 10-01 原话）。
+   ⚠ 加深的前提是先治「淡化面 × 弱字」：落在 chrome 上的 ink-faint 已统一提到 ink-secondary
+   （App.css），否则 14% 会把弱字压到 ≈3.9:1 < AA。 */
 [data-look='instrument'] .sc-shell__sidebar,
 [data-look='instrument'] .sc-shell__topbar,
 [data-look='instrument'] .menub_band,
 [data-look='instrument'] .titleb_band {
-  background: color-mix(in srgb, var(--sc-color-ink-edge) 8%, var(--sc-color-canvas));
+  background: color-mix(in srgb, var(--sc-color-ink-edge) 14%, var(--sc-color-canvas));
+}
+
+[data-theme='dark'][data-look='instrument'] .sc-shell__sidebar,
+[data-theme='dark'][data-look='instrument'] .sc-shell__topbar,
+[data-theme='dark'][data-look='instrument'] .menub_band,
+[data-theme='dark'][data-look='instrument'] .titleb_band {
+  background: color-mix(in srgb, var(--sc-color-ink-edge) 12%, var(--sc-color-canvas));
 }
 /* 仪表面板底纹：1px 扫描线（3px 周期）× 32px 刻度格网。
    挂 **.sc-shell 与 .sc-shell__main 两处**（pixel 的网格纸底同样挂 .sc-shell——

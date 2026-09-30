@@ -13,28 +13,28 @@
       "raw": "rows=2"
     },
     {
-      "step": "A2|四档采集",
-      "name": "A2-pixel data-look 生效",
+      "step": "A2|三档采集（+ 下线档基线）",
+      "name": "A2-instrument data-look 生效",
       "ok": true,
-      "raw": "attr=pixel"
+      "raw": "attr=instrument"
     },
     {
-      "step": "A2|四档采集",
+      "step": "A2|三档采集（+ 下线档基线）",
       "name": "A2-linear data-look 生效",
       "ok": true,
       "raw": "attr=linear"
     },
     {
-      "step": "A2|四档采集",
+      "step": "A2|三档采集（+ 下线档基线）",
       "name": "A2-glass data-look 生效",
       "ok": true,
       "raw": "attr=glass"
     },
     {
-      "step": "A2|四档采集",
-      "name": "A2-instrument data-look 生效",
+      "step": "A2|三档采集（+ 下线档基线）",
+      "name": "A2-基线 旧观感(pixel) 可作对照挂载",
       "ok": true,
-      "raw": "attr=instrument"
+      "raw": "attr=pixel"
     },
     {
       "step": "B1|机制层",
@@ -86,21 +86,21 @@
     },
     {
       "step": "B1|圆角三档",
-      "name": "B1-i 圆角严格递增 pixel < linear < glass",
+      "name": "B1-i 圆角严格递增 instrument(2) < linear(6) < glass(≥10)",
       "ok": true,
-      "raw": "{\"pixel\":0,\"linear\":6,\"glass\":10}"
+      "raw": "{\"instrument\":2,\"linear\":6,\"glass\":10}"
     },
     {
       "step": "B2|像素差（观感门）",
       "name": "B2-a 外壳 pixel↔linear ≥8%",
       "ok": true,
-      "raw": "34.72%（均值差 6.7）"
+      "raw": "34.69%（均值差 6.7）"
     },
     {
       "step": "B2|像素差（观感门）",
       "name": "B2-b 外壳 pixel↔glass ≥8%",
       "ok": true,
-      "raw": "27.40%（均值差 9.4）"
+      "raw": "27.37%（均值差 9.3）"
     },
     {
       "step": "B2|像素差（观感门）",
@@ -112,7 +112,7 @@
       "step": "B2|像素差（观感门）",
       "name": "B2-d 浮层（命令面板）pixel↔glass ≥25%",
       "ok": true,
-      "raw": "61.95%"
+      "raw": "60.31%"
     },
     {
       "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
@@ -148,25 +148,37 @@
       "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
       "name": "B4-f 外壳 instrument↔pixel ≥8%（观感门）",
       "ok": true,
-      "raw": "31.09%（均值差 7.1）"
+      "raw": "31.67%（均值差 10.5）"
     },
     {
       "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
-      "name": "B4-g instrument 与 linear 可按 ≥4 个维度分辨（像素差门另见 B4-f/h）",
+      "name": "B4-g instrument 与 linear：chrome 落点像素差 ≥8%（全图差被内容稀释，故按落点比）+ 可按 ≥3 维分辨",
       "ok": true,
-      "raw": "可分维度=radius,texture,mono,accent（像素差 0.23%）"
+      "raw": "chrome 差 80.95%（全图 29.39%）｜可分维度=radius,texture,mono,accent"
     },
     {
       "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
       "name": "B4-h 外壳 instrument↔glass ≥8%",
       "ok": true,
-      "raw": "24.68%"
+      "raw": "26.89%"
+    },
+    {
+      "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
+      "name": "B4-j 结构层：顶栏读数区在位（3 格）+ 导轨八项编号 data-num",
+      "ok": true,
+      "raw": "cells=readout-sync,readout-todo,readout-pages nums=01,02,03…"
+    },
+    {
+      "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
+      "name": "B4-k 结构层：导轨选中态为主色实心（= 该档 --sc-color-accent，非 surface-active 淡底）",
+      "ok": true,
+      "raw": "测得 rgb(14, 124, 110)｜期望 accent=#0E7C6E"
     },
     {
       "step": "B4|方向 B 夜航仪表（老板 10-01 选定）",
       "name": "B4-i 浮层 instrument↔pixel ≥25%",
       "ok": true,
-      "raw": "34.61%"
+      "raw": "31.45%"
     },
     {
       "step": "B3|暗色档复跑",
@@ -184,7 +196,7 @@
       "step": "B3|暗色档复跑",
       "name": "B3-c 暗色外壳 pixel↔glass ≥8%",
       "ok": true,
-      "raw": "27.31%（均值差 9.5）"
+      "raw": "27.27%（均值差 9.5）"
     },
     {
       "step": "B3|暗色档复跑",
@@ -196,7 +208,7 @@
       "step": "B3|暗色档复跑",
       "name": "B3-e 暗色外壳 instrument↔pixel ≥8%",
       "ok": true,
-      "raw": "32.86%（均值差 7.3）"
+      "raw": "33.30%（均值差 9.9）"
     },
     {
       "step": "C1|隔离钉",
@@ -206,43 +218,43 @@
     }
   ],
   "light": {
-    "pixel": {
-      "look": "pixel",
+    "instrument": {
+      "look": "instrument",
       "theme": "light",
-      "attr": "pixel",
+      "attr": "instrument",
       "style": {
         "shell": {
           "bg": "rgb(232, 236, 239)",
-          "img": "repeating-linear-gradient(0deg, color(sr",
+          "img": "repeating-linear-gradient(color(srgb 0.1",
           "blur": "none"
         },
         "main": {
           "bg": "rgb(251, 252, 253)",
-          "img": "repeating-linear-gradient(0deg, color(sr",
+          "img": "repeating-linear-gradient(color(srgb 0.1",
           "blur": "none"
         },
         "sidebar": {
-          "bg": "rgb(232, 236, 239)",
+          "bg": "color(srgb 0.796706 0.810196 0.820314)",
           "img": "none",
           "blur": "none"
         },
         "topbar": {
-          "bg": "rgb(232, 236, 239)",
+          "bg": "color(srgb 0.796706 0.810196 0.820314)",
           "img": "none",
           "blur": "none"
         },
         "clash": "",
         "wallpaper": "",
-        "radiusSm": "0",
-        "radiusLg": "0",
-        "borderEdge": "2px solid #1A1A1A",
-        "accent": "#333333",
+        "radiusSm": "2px",
+        "radiusLg": "4px",
+        "borderEdge": "1px solid color-mix(in srgb, #1A1A1A 34%, transparent)",
+        "accent": "#0E7C6E",
         "onAccent": "#FFFFFF",
-        "fontVariant": "normal",
-        "modalShadow": "8px 8px 0 0 #C6C6C6"
+        "fontVariant": "tabular-nums",
+        "modalShadow": "0 0 0 1px color-mix(in srgb, #1A1A1A 30%, transparent),\n    "
       },
-      "shellShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-pixel-shell.png",
-      "paletteShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-pixel-palette.png",
+      "shellShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-instrument-shell.png",
+      "paletteShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-instrument-palette.png",
       "palFound": 1
     },
     "linear": {
@@ -323,43 +335,43 @@
       "paletteShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-glass-palette.png",
       "palFound": 1
     },
-    "instrument": {
-      "look": "instrument",
+    "pixel": {
+      "look": "pixel",
       "theme": "light",
-      "attr": "instrument",
+      "attr": "pixel",
       "style": {
         "shell": {
           "bg": "rgb(232, 236, 239)",
-          "img": "repeating-linear-gradient(color(srgb 0.1",
+          "img": "repeating-linear-gradient(0deg, color(sr",
           "blur": "none"
         },
         "main": {
           "bg": "rgb(251, 252, 253)",
-          "img": "repeating-linear-gradient(color(srgb 0.1",
+          "img": "repeating-linear-gradient(0deg, color(sr",
           "blur": "none"
         },
         "sidebar": {
-          "bg": "color(srgb 0.845177 0.859608 0.870431)",
+          "bg": "rgb(232, 236, 239)",
           "img": "none",
           "blur": "none"
         },
         "topbar": {
-          "bg": "color(srgb 0.845177 0.859608 0.870431)",
+          "bg": "rgb(232, 236, 239)",
           "img": "none",
           "blur": "none"
         },
         "clash": "",
         "wallpaper": "",
-        "radiusSm": "2px",
-        "radiusLg": "4px",
-        "borderEdge": "1px solid color-mix(in srgb, #1A1A1A 34%, transparent)",
-        "accent": "#0E7C6E",
+        "radiusSm": "0",
+        "radiusLg": "0",
+        "borderEdge": "2px solid #1A1A1A",
+        "accent": "#333333",
         "onAccent": "#FFFFFF",
-        "fontVariant": "tabular-nums",
-        "modalShadow": "0 0 0 1px color-mix(in srgb, #1A1A1A 30%, transparent),\n    "
+        "fontVariant": "normal",
+        "modalShadow": "8px 8px 0 0 #C6C6C6"
       },
-      "shellShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-instrument-shell.png",
-      "paletteShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-instrument-palette.png",
+      "shellShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-pixel-shell.png",
+      "paletteShot": "E:\\Hermes Agent工作空间\\Septcats\\docs\\mockups\\screens-t85\\look-light-pixel-palette.png",
       "palFound": 1
     }
   },
@@ -458,12 +470,12 @@
           "blur": "none"
         },
         "sidebar": {
-          "bg": "color(srgb 0.117647 0.135686 0.153725)",
+          "bg": "color(srgb 0.152941 0.170196 0.187451)",
           "img": "none",
           "blur": "none"
         },
         "topbar": {
-          "bg": "color(srgb 0.117647 0.135686 0.153725)",
+          "bg": "color(srgb 0.152941 0.170196 0.187451)",
           "img": "none",
           "blur": "none"
         },
@@ -484,62 +496,62 @@
   },
   "diffs": {
     "dPL": {
-      "pct": 34.715,
-      "mean": 6.68692486458275,
+      "pct": 34.68833333333333,
+      "mean": 6.679095774999431,
       "w": 300,
       "h": 200
     },
     "dPG": {
-      "pct": 27.401666666666667,
-      "mean": 9.36501448125037,
+      "pct": 27.37333333333333,
+      "mean": 9.34441292708369,
       "w": 300,
       "h": 200
     },
     "dLG": {
-      "pct": 25.243333333333336,
-      "mean": 5.8166813937500566,
+      "pct": 25.241666666666667,
+      "mean": 5.807396652083386,
       "w": 300,
       "h": 200
     },
     "dPal": {
-      "pct": 61.95166666666667,
-      "mean": 18.327790995828632,
+      "pct": 60.315,
+      "mean": 18.15054986457906,
       "w": 300,
       "h": 200
     },
     "dDark": {
-      "pct": 27.308333333333334,
-      "mean": 9.497172690625154,
+      "pct": 27.268333333333334,
+      "mean": 9.462165885416821,
       "w": 300,
       "h": 200
     },
     "dIP": {
-      "pct": 31.08666666666667,
-      "mean": 7.127371611457775,
+      "pct": 31.671666666666663,
+      "mean": 10.528311521875356,
       "w": 300,
       "h": 200
     },
     "dIL": {
-      "pct": 0.22666666666666668,
-      "mean": 0.6983173052083308,
+      "pct": 29.395,
+      "mean": 4.464257532292116,
       "w": 300,
       "h": 200
     },
     "dIG": {
-      "pct": 24.681666666666665,
-      "mean": 5.6273429114583235,
+      "pct": 26.89166666666667,
+      "mean": 6.401841448958276,
       "w": 300,
       "h": 200
     },
     "dIPal": {
-      "pct": 34.61,
-      "mean": 6.758678293749992,
+      "pct": 31.453333333333333,
+      "mean": 8.103726025000004,
       "w": 300,
       "h": 200
     },
     "dDI": {
-      "pct": 32.861666666666665,
-      "mean": 7.290360627083296,
+      "pct": 33.30166666666667,
+      "mean": 9.935104439585261,
       "w": 300,
       "h": 200
     }

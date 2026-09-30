@@ -108,17 +108,22 @@ function lumaGrid(path) {
   return { gw, gh, g };
 }
 /** 差异像素占比（阈值 thr 亮度单位）；两图尺寸不一致时取交集。 */
-function diffPct(pathA, pathB, thr = 6) {
+function diffPct(pathA, pathB, thr = 6, region = 'all') {
   const A = lumaGrid(pathA); const B = lumaGrid(pathB);
   const gw = Math.min(A.gw, B.gw); const gh = Math.min(A.gh, B.gh);
+  // region='chrome'：只看 chrome 落点（左列侧栏/一级轨 + 顶部条带）——「质感档在哪起作用就在哪比」。
+  // 全图口径对「同为浅色 1px 细线族」的两档不公平（差异被大面积内容稀释）。
+  const chromeW = Math.floor(320 / SCALE); const chromeH = Math.floor(64 / SCALE);
+  const inRegion = (x, y) => region === 'all' || x < chromeW || y < chromeH;
   let over = 0; let sum = 0; let n = 0;
   for (let y = 0; y < gh; y += 1) {
     for (let x = 0; x < gw; x += 1) {
+      if (!inRegion(x, y)) continue;
       const d = Math.abs(A.g[y * A.gw + x] - B.g[y * B.gw + x]);
       sum += d; if (d > thr) over += 1; n += 1;
     }
   }
-  return { pct: (over / n) * 100, mean: sum / n, w: gw, h: gh };
+  return { pct: n === 0 ? 0 : (over / n) * 100, mean: n === 0 ? 0 : sum / n, w: gw, h: gh };
 }
 
 async function launch() {
@@ -169,14 +174,21 @@ async function seedContent(page) {
 }
 
 /** 单档采集：设 look(+theme) → reload → 断言 data-look → 记录样式 → 截图（外壳 + 命令面板）。 */
+const SELECTABLE_LOOKS = ['instrument', 'linear', 'glass'];
 async function capture(page, look, theme) {
-  await page.evaluate(([l, t]) => {
-    localStorage.setItem('septcats.look', l);
+  const selectable = SELECTABLE_LOOKS.includes(look);
+  await page.evaluate(([l, t, sel]) => {
+    if (sel) localStorage.setItem('septcats.look', l);
     localStorage.setItem('septcats.theme', t);
-  }, [look, theme]);
+  }, [look, theme, selectable]);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.app-side', { timeout: 30000 });
   await wait(2600);
+  if (!selectable) {
+    // 下线档（pixel）只作**基线对照**：不走选择器/存储，直接挂属性（CSS 兜底块仍在）。
+    await page.evaluate((l) => { document.documentElement.dataset.look = l; }, look);
+    await wait(500);
+  }
   const attr = await page.evaluate(() => document.documentElement.getAttribute('data-look'));
   const style = await page.evaluate(() => {
     const cs = (s) => {
@@ -249,12 +261,14 @@ async function main() {
     check('A1-a 打包靶子存在', DEV || statSync(APP_BIN).size > 0, DEV ? 'dev 模式' : APP_BIN);
     check('A1-b 造页后侧栏有行', (await page.locator('[data-testid^="side-node-"]').count()) >= 2, `rows=${await page.locator('[data-testid^="side-node-"]').count()}`);
 
-    STEP = 'A2|四档采集';
+    STEP = 'A2|三档采集（+ 下线档基线）';
     const light = {};
-    for (const look of ['pixel', 'linear', 'glass', 'instrument']) {
+    for (const look of ['instrument', 'linear', 'glass']) {
       light[look] = await capture(page, look, 'light');
       check(`A2-${look} data-look 生效`, light[look].attr === look, `attr=${String(light[look].attr)}`);
     }
+    light.pixel = await capture(page, 'pixel', 'light'); // 已下线：仅作「旧观感」基线
+    check('A2-基线 旧观感(pixel) 可作对照挂载', light.pixel.attr === 'pixel', `attr=${String(light.pixel.attr)}`);
     const px_ = light.pixel.style; const ln = light.linear.style; const gl = light.glass.style;
 
     STEP = 'B1|机制层';
@@ -272,8 +286,9 @@ async function main() {
     check('B1-g glass 外壳有环境光 radial-gradient（背后无光=磨砂无效）', String(gl.shell?.img).includes('radial-gradient'), gl.shell?.img);
     check('B1-h glass 浮层磨砂 blur ≥20px', blurPx(gl.sidebar?.blur ?? '') >= 20 && light.glass.palFound === 1, `palFound=${String(light.glass.palFound)}`);
     STEP = 'B1|圆角三档';
-    const r = { pixel: px(px_.radiusSm), linear: px(ln.radiusSm), glass: px(gl.radiusSm) };
-    check('B1-i 圆角严格递增 pixel < linear < glass', r.pixel === 0 && r.linear > 0 && r.glass > r.linear, JSON.stringify(r));
+    const itLight = light.instrument.style;
+    const r = { instrument: px(itLight.radiusSm), linear: px(ln.radiusSm), glass: px(gl.radiusSm) };
+    check('B1-i 圆角严格递增 instrument(2) < linear(6) < glass(≥10)', r.instrument < r.linear && r.linear < r.glass, JSON.stringify(r));
 
     STEP = 'B2|像素差（观感门）';
     const dPL = diffPct(light.pixel.shellShot, light.linear.shellShot);
@@ -297,6 +312,7 @@ async function main() {
     check('B4-e instrument 全壳等宽数字（tabular-nums）', String(it_.fontVariant).includes('tabular-nums'), it_.fontVariant);
     const dIP = diffPct(light.instrument.shellShot, light.pixel.shellShot);
     const dIL = diffPct(light.instrument.shellShot, light.linear.shellShot);
+    const dILChrome = diffPct(light.instrument.shellShot, light.linear.shellShot, 6, 'chrome');
     const dIG = diffPct(light.instrument.shellShot, light.glass.shellShot);
     check('B4-f 外壳 instrument↔pixel ≥8%（观感门）', dIP.pct >= 8, `${dIP.pct.toFixed(2)}%（均值差 ${dIP.mean.toFixed(1)}）`);
     // B4-g 口径说明（台账化，非放宽）：instrument 与 linear 同为「浅色 1px 细线」族，
@@ -315,8 +331,32 @@ async function main() {
       accent: String(it_.accent).toUpperCase() !== '#333333',
     };
     const dims = Object.entries(separable).filter(([, v]) => v === true).map(([k]) => k);
-    check('B4-g instrument 与 linear 可按 ≥4 个维度分辨（像素差门另见 B4-f/h）', dims.length >= 4, `可分维度=${dims.join(',')}（像素差 ${dIL.pct.toFixed(2)}%）`);
+    check('B4-g instrument 与 linear：chrome 落点像素差 ≥8%（全图差被内容稀释，故按落点比）+ 可按 ≥3 维分辨', dILChrome.pct >= 8 && dims.length >= 3, `chrome 差 ${dILChrome.pct.toFixed(2)}%（全图 ${dIL.pct.toFixed(2)}%）｜可分维度=${dims.join(',')}`);
     check('B4-h 外壳 instrument↔glass ≥8%', dIG.pct >= 8, `${dIG.pct.toFixed(2)}%`);
+    // 结构层取证（老板 10-01「你要把结构层都补上」）：顶栏读数区 + 导轨编号
+    // ⚠ 必须先切回 instrument：A2 的最后一次采集是 legacy 基线（data-look=pixel），
+    //   直接量会把「像素态的样式」当成仪表态（首版就踩了：选中态量到 surface-active）。
+    await page.evaluate(() => { document.documentElement.dataset.look = 'instrument'; });
+    await wait(400);
+    const struct = await page.evaluate(() => {
+      const ro = document.querySelector('[data-testid="shell-readouts"]');
+      const cells = ro === null ? [] : [...ro.querySelectorAll('[data-testid^="readout-"]')].map((e) => e.getAttribute('data-testid') ?? '');
+      const railNums = [...document.querySelectorAll('.nav-rail__item')].map((e) => e.getAttribute('data-num') ?? '');
+      const railOnBg = (() => {
+        const on = document.querySelector('.nav-rail__item--on');
+        return on === null ? '' : getComputedStyle(on).backgroundColor;
+      })();
+      const kcolCount = document.querySelector('.bitable-kcol-count');
+      return { hasReadouts: ro !== null, cells, railNums, railOnBg, kcolCount: kcolCount !== null };
+    });
+    check('B4-j 结构层：顶栏读数区在位（3 格）+ 导轨八项编号 data-num', struct.hasReadouts && struct.cells.length === 3 && struct.railNums.filter((x) => x !== '').length >= 8, `cells=${struct.cells.join(',')} nums=${struct.railNums.slice(0, 3).join(',')}…`);
+    check('B4-k 结构层：导轨选中态为主色实心（= 该档 --sc-color-accent，非 surface-active 淡底）', (() => {
+      const accent = String(it_.accent).trim(); // 形如 #0E7C6E
+      const want = accent.startsWith('#')
+        ? `rgb(${parseInt(accent.slice(1, 3), 16)}, ${parseInt(accent.slice(3, 5), 16)}, ${parseInt(accent.slice(5, 7), 16)})`
+        : accent;
+      return String(struct.railOnBg).replace(/\s+/g, ' ') === want && String(struct.railOnBg) !== 'rgb(220, 227, 232)';
+    })(), `测得 ${String(struct.railOnBg)}｜期望 accent=${String(it_.accent)}`);
     const dIPal = diffPct(light.instrument.paletteShot, light.pixel.paletteShot);
     check('B4-i 浮层 instrument↔pixel ≥25%', dIPal.pct >= 25, `${dIPal.pct.toFixed(2)}%`);
 

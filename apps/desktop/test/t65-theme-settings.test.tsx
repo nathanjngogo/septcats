@@ -54,7 +54,7 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
     document.documentElement.removeAttribute('data-look');
     delete document.documentElement.dataset.theme; // 默认浅色基底
     paletteStore.setState(() => ({ palette: 'mono' }));
-    lookStore.setState(() => ({ look: 'pixel' }));
+    lookStore.setState(() => ({ look: 'instrument' }));
     // 种子化根属性（与 App 挂载口径一致），否则默认态在 jsdom 根上是空的
     paletteActions.init();
     lookActions.init();
@@ -64,21 +64,19 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
     cleanup();
   });
 
-  it('两行都在：配色 7 项 + 质感 4 项（含老板点名的「毛玻璃」「Linear 极简」与方向 B「夜航仪表」）', () => {
+  it('两行都在：配色 7 项 + 质感 3 项（老板 10-01：极简 / 夜航仪表 / 毛玻璃）', () => {
     render(<ThemeSection />);
     const paletteRow = screen.getByTestId('theme-section');
     const lookRow = screen.getByTestId('theme-look-section');
     expect(within(paletteRow).getAllByRole('radio'), '配色数量 = PALETTE_IDS 长度').toHaveLength(PALETTE_IDS.length);
     expect(within(lookRow).getAllByRole('radio'), '质感数量 = LOOK_IDS 长度').toHaveLength(LOOK_IDS.length);
     expect(PALETTE_IDS.length).toBe(7);
-    expect(LOOK_IDS.length).toBe(4);
-    for (const name of ['像素', 'Linear 极简', '毛玻璃', '夜航仪表']) {
+    expect(LOOK_IDS.length).toBe(3);
+    for (const name of ['Linear 极简', '毛玻璃', '夜航仪表']) {
       expect(within(lookRow).getByText(name), `质感缺 ${name}`).toBeTruthy();
     }
-    // 老板点名的两条永远不许被删（方向 B 落地后仍须在列）
-    for (const keep of ['像素', 'Linear 极简']) {
-      expect(within(lookRow).getByText(keep), `老板点名的 ${keep} 被删了`).toBeTruthy();
-    }
+    // 老板 10-01 令：只保留这三档 ⇒ 像素档必须从界面消失
+    expect(within(lookRow).queryByText('像素'), '像素档必须已下线').toBeNull();
   });
 
   it('点「毛玻璃」立即生效：根属性 data-look=glass + store + localStorage 持久化', () => {
@@ -89,15 +87,17 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
     expect(window.localStorage.getItem('septcats.look')).toBe('glass');
   });
 
-  it('三档互斥单选：Linear → glass → pixel，根属性与 store 同步', () => {
+  it('三档互斥单选：Linear → 夜航仪表 → 毛玻璃，根属性与 store 同步', () => {
     render(<ThemeSection />);
     clickOption('theme-look-section', 'linear');
     expect(document.documentElement.dataset.look).toBe('linear');
+    clickOption('theme-look-section', 'instrument');
+    expect(document.documentElement.dataset.look).toBe('instrument');
     clickOption('theme-look-section', 'glass');
     expect(document.documentElement.dataset.look).toBe('glass');
-    clickOption('theme-look-section', 'pixel');
-    expect(document.documentElement.dataset.look).toBe('pixel');
-    expect(lookStore.getState().look).toBe('pixel');
+    expect(lookStore.getState().look).toBe('glass');
+    // 已下线档：界面无 radio（点不到 ⇒ 状态不可能回到 pixel）
+    expect(document.querySelector('input[value="pixel"]')).toBeNull();
   });
 
   it('配色同理生效（点「苔青」→ data-palette=moss + 持久化）', () => {
@@ -133,15 +133,16 @@ describe('设置→外观 · 主题两项（画廊取消后内联）', () => {
 });
 
 describe('命令面板：画廊命令下线，切派系/切质感仍在', () => {
-  it('无 theme.palette；七条 theme.switch.* 与四条 theme.look.* 齐备', () => {
+  it('无 theme.palette；七条 theme.switch.* 与三条 theme.look.* 齐备', () => {
     const ids = configurePaletteCommands(fullDeps(), true).map((c) => c.id);
     expect(ids).not.toContain('theme.palette');
-    for (const id of ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss']) {
+    for (const id of ['mono', 'oled', 'contrast', 'paper', 'slate', 'moss', 'instrument']) {
       expect(ids, `缺 theme.switch.${id}`).toContain(`theme.switch.${id}`);
     }
-    for (const id of ['pixel', 'linear', 'glass']) {
+    for (const id of ['instrument', 'linear', 'glass']) {
       expect(ids, `缺 theme.look.${id}`).toContain(`theme.look.${id}`);
     }
+    expect(ids, '已下线档不得出现在命令面板').not.toContain('theme.look.pixel');
   });
 
   it('运行命令 → setThemePalette / setThemeLook 被调', () => {

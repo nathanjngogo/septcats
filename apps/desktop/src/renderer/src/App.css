@@ -215,10 +215,13 @@ html, body {
   font-weight: 500;
 }
 
-/* T34-01：分组标题行（收藏/最近）——小字弱化，图标走 icon-faint（文字仍须过 AA，用 ink-faint） */
+/* T34-01：分组标题行（收藏/最近）——小字弱化，图标走 icon-faint。
+   弱字档提档（方向 B 结构层，10-01）：侧栏属 chrome 面，look 档会给 chrome 上色（linear 7% / glass /
+   instrument 14%）⇒ 落在 chrome 上的 ink-faint 实测 ≤AA（7% 时 4.26:1、14% 时 3.9:1），统一提到
+   ink-secondary（14% chrome 上浅 5.1 / 深 6.5）。**问题根因是「淡化面 × 弱字」，与档位无关。** */
 .app-nav-row--head {
   font: var(--sc-text-ui-xs);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
 }
 
 /* T53-01 AA 收敛：选中行底升到 surface-active 后，行内弱化计数提一档到 ink-secondary ——
@@ -283,7 +286,7 @@ html, body {
   margin-left: auto;
   font: var(--sc-text-ui-xs);
   font-family: var(--sc-font-mono);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
 }
 
 /* 行内重命名输入框（T21-02：最小实现，只走既有 token；T53-01 改凹陷面 bevel-in） */
@@ -304,7 +307,7 @@ html, body {
 /* 收藏/最近为空时的空态行（T22-01 §0.C：与 .search-empty/.trash-empty 同 token 组合） */
 .app-nav-empty {
   font: var(--sc-text-ui-sm);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -319,7 +322,7 @@ html, body {
   height: var(--sc-space-lg);
   flex: none;
   border-radius: var(--sc-radius-sm);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
   cursor: pointer;
   /* T53-01：像素立体反馈（hover 凸 / active 凹）；旧的「active 走 accent 色相」退役 */
   transition:
@@ -360,8 +363,8 @@ html, body {
   /* T62-01 §1.2：侧栏底行区隔线 = 1px ink-edge（原 1px hairline） */
   border-top: 1px solid var(--sc-color-ink-edge);
   font: var(--sc-text-ui-xs);
-  /* T34-01：底部工具行（回收站）弱化（ink-faint 仍过 AA） */
-  color: var(--sc-color-ink-faint);
+  /* T34-01：底部工具行（回收站）弱化（chrome 面弱字提档为 ink-secondary，见上） */
+  color: var(--sc-color-ink-secondary);
   /* §0.C 微交互：与行同款 token 化过渡 */
   transition:
     background-color var(--sc-motion-fast) ease-out,

@@ -166,10 +166,14 @@ async function main() {
   const glass = await bandStyle(app.page);
   const gC = rgbOf(glass.bg);
   check('M4-a glass：菜单带吃 chrome 半透明+磨砂', gC !== null && gC.a <= 0.6 && /blur\((\d+)/.test(glass.blur) && Number(/blur\((\d+)/.exec(glass.blur)[1]) >= 20, `bg=${glass.bg} blur=${glass.blur}`);
-  await app.page.evaluate(() => { localStorage.setItem('septcats.look', 'pixel'); });
+  // 像素档已下线（老板 10-01 只留极简/夜航仪表/毛玻璃）⇒ 不能再靠 localStorage 选中它
+  // （readLook 会当野值回默认，探针就测错档）。基线对照直接挂属性，CSS 兼容块仍在。
+  await app.page.evaluate(() => { localStorage.setItem('septcats.look', 'instrument'); });
   await app.page.reload({ waitUntil: 'domcontentloaded' });
   await app.page.waitForSelector('[data-testid="menu-bar-band"]');
   await wait(2200);
+  await app.page.evaluate(() => { document.documentElement.dataset.look = 'pixel'; });
+  await wait(600);
   const backPixel = await bandStyle(app.page);
   const bp = rgbOf(backPixel.bg);
   check('M4-b pixel：菜单带实心（alpha=1、无 blur）', bp !== null && bp.a > 0.98 && backPixel.blur === 'none', `bg=${backPixel.bg} blur=${backPixel.blur}`);

@@ -2,7 +2,7 @@
 /**
  * t85-looks.test.ts —— 质感派系状态（lookState.ts）单测（TASK-T85-01 §测试）。
  *
- * 覆盖：持久化 roundtrip / 野值回退 pixel / 应用器写根属性 / setLook 即时应用 /
+ * 覆盖：持久化 roundtrip / 野值回退 instrument / 应用器写根属性 / setLook 即时应用 /
  * 设置页质感行在位 + 点选生效（data-look 落 documentElement）。老板 09-27 取消画廊后改口径。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,17 +37,17 @@ describe('lookState · 持久化与回退', () => {
     expect(readLook()).toBe(DEFAULT_LOOK);
   });
 
-  it('首次运行本版本：落新默认一次（并盖章）；旧存储的 pixel 被升级为新默认', () => {
+  it('首次运行本版本：落新默认一次（并盖章）；旧存储的 pixel（已下线）被升级为新默认', () => {
     window.localStorage.setItem('septcats.look', 'pixel');
     expect(readLook()).toBe('instrument');
     expect(window.localStorage.getItem('septcats.look')).toBe('instrument');
     expect(window.localStorage.getItem(APPEARANCE_STAMP_KEY)).toBe('1');
   });
 
-  it('盖章之后：一律尊重用户显式选择（pixel 不会被再次改写）', () => {
+  it('盖章之后：一律尊重用户显式选择（linear 不会被再次改写）', () => {
     window.localStorage.setItem(APPEARANCE_STAMP_KEY, '1');
-    window.localStorage.setItem('septcats.look', 'pixel');
-    expect(readLook()).toBe('pixel');
+    window.localStorage.setItem('septcats.look', 'linear');
+    expect(readLook()).toBe('linear');
   });
 
   it('readLook 合法值 roundtrip', () => {
@@ -55,10 +55,10 @@ describe('lookState · 持久化与回退', () => {
     expect(readLook()).toBe('glass');
   });
 
-  it('isLookId 兜底 + LOOK_IDS 清单钉（方向 B 的 instrument 在列，且老板点名的 pixel/linear 未被删）', () => {
-    expect([...LOOK_IDS]).toEqual(['instrument', 'pixel', 'linear', 'glass']);
-    expect([...LOOK_IDS]).toContain('pixel');
-    expect([...LOOK_IDS]).toContain('linear');
+  it('isLookId 兜底 + LOOK_IDS 清单钉（老板 10-01：只留 极简/夜航仪表/毛玻璃 三档，像素档已下线）', () => {
+    expect([...LOOK_IDS]).toEqual(['instrument', 'linear', 'glass']);
+    expect([...LOOK_IDS], '像素档必须不再可选').not.toContain('pixel');
+    expect(isLookId('pixel'), '像素档不再是合法 id（旧存储值走迁移）').toBe(false);
     expect(isLookId('linear')).toBe(true);
     expect(isLookId('nope')).toBe(false);
     expect(isLookId(1)).toBe(false);
@@ -82,7 +82,7 @@ describe('lookState · 持久化与回退', () => {
     expect(window.localStorage.getItem('septcats.look')).toBeNull();
   });
 
-  it('init 读存储并挂根属性（野值回退 pixel）', () => {
+  it('init 读存储并挂根属性（野值回退 instrument）', () => {
     window.localStorage.setItem('septcats.look', 'linear');
     lookActions.init();
     expect(lookStore.getState().look).toBe('linear');
@@ -102,7 +102,7 @@ describe('设置→外观 · 质感行（老板 09-27：取消画廊、内联进
     lookActions.init();
   });
 
-  it('四档选项在位（LOOK_IDS 每条都有对应 radio）', () => {
+  it('三档选项在位（LOOK_IDS 每条都有对应 radio，且无像素档）', () => {
     render(<ThemeSection />);
     const row = document.querySelector('[data-testid="theme-look-section"]');
     expect(row).not.toBeNull();
@@ -118,7 +118,7 @@ describe('设置→外观 · 质感行（老板 09-27：取消画廊、内联进
     const row = document.querySelector('[data-testid="theme-look-section"]') as HTMLElement;
     expect((row.querySelector('input[value="instrument"]') as HTMLInputElement).checked).toBe(true);
     expect((row.querySelector('input[value="glass"]') as HTMLInputElement).checked).toBe(false);
-    expect((row.querySelector('input[value="pixel"]') as HTMLInputElement).checked).toBe(false);
+    expect(row.querySelector('input[value="pixel"]'), '像素档 radio 必须不存在').toBeNull();
     cleanup();
   });
 
@@ -129,7 +129,7 @@ describe('设置→外观 · 质感行（老板 09-27：取消画廊、内联进
     expect(window.localStorage.getItem('septcats.look')).toBe('glass');
     expect(document.documentElement.dataset.look).toBe('glass');
     expect((document.querySelector('input[value="glass"]') as HTMLInputElement).checked).toBe(true);
-    expect((document.querySelector('input[value="pixel"]') as HTMLInputElement).checked).toBe(false);
+    expect(document.querySelector('input[value="pixel"]'), '已下线档不应有 radio').toBeNull();
     cleanup();
   });
 });
@@ -156,7 +156,7 @@ describe('命令面板 · 质感切换（T85-01）', () => {
       { ...baseDeps, setThemePalette: noop, setThemeLook: noop },
       true,
     ).map((c) => c.id);
-    for (const id of ['theme.look.pixel', 'theme.look.linear', 'theme.look.glass']) {
+    for (const id of ['theme.look.instrument', 'theme.look.linear', 'theme.look.glass']) {
       expect(withLook, `缺 ${id}`).toContain(id);
     }
   });
@@ -169,13 +169,13 @@ describe('命令面板 · 质感切换（T85-01）', () => {
       delete document.documentElement.dataset.lookSettling; // 前一用例的计时器可能未到点
       applyLookToRoot('glass'); // 首屏 init：不播
       expect(document.documentElement.dataset.lookSettling).toBeUndefined();
-      lookActions.setLook('pixel'); // 换档：播
+      lookActions.setLook('linear'); // 换档（glass → linear）：播
       expect(document.documentElement.dataset.lookSettling).toBe('1');
       vi.advanceTimersByTime(449);
       expect(document.documentElement.dataset.lookSettling).toBe('1');
       vi.advanceTimersByTime(1);
       expect(document.documentElement.dataset.lookSettling).toBeUndefined();
-      applyLookToRoot('pixel'); // 同值：不重播
+      applyLookToRoot('linear'); // 同值：不重播
       expect(document.documentElement.dataset.lookSettling).toBeUndefined();
     } finally {
       vi.useRealTimers();

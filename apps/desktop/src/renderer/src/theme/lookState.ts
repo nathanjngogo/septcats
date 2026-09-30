@@ -12,8 +12,8 @@
 import { useEffect } from 'react';
 import { createStore, useStore } from '../state/store';
 
-/** 质感派系 id（老板 2026-10-01 选定方向 B「夜航仪表」＝新的默认档；旧三档全保留可切回）。 */
-export const LOOK_IDS = ['instrument', 'pixel', 'linear', 'glass'] as const;
+/** 质感派系 id（老板 10-01：**只保留**极简 / 夜航仪表 / 毛玻璃三档；像素档已下线）。 */
+export const LOOK_IDS = ['instrument', 'linear', 'glass'] as const;
 export type LookId = (typeof LOOK_IDS)[number];
 
 /** 新装/未设置时的默认档（B 落地即默认，老板装完直接看到重设计）。 */
@@ -56,8 +56,8 @@ function safeSetItem(key: string, value: string): void {
  */
 export const APPEARANCE_STAMP_KEY = 'septcats.appearance.v2';
 
-/** 旧默认档（迁移判据：只有它会在首次运行本版本时被升级为新默认）。 */
-export const LEGACY_DEFAULT_LOOK: LookId = 'pixel';
+/** 旧默认档（迁移判据；已下线，只作为「该升级成新默认」的判据保留）。 */
+export const LEGACY_DEFAULT_LOOK = 'pixel';
 
 /**
  * 读存储。首次运行本版本（无戳）时：
@@ -67,9 +67,11 @@ export const LEGACY_DEFAULT_LOOK: LookId = 'pixel';
  */
 export function readLook(): LookId {
   const raw = safeGetItem(LOOK_STORAGE_KEY);
+  // 与已下线档比较：先加宽成 string（pixel 已不在 LookId 联合里，直接比会触发 TS2367）
+  const rawStr: string | null = raw;
   if (safeGetItem(APPEARANCE_STAMP_KEY) !== '1') {
     safeSetItem(APPEARANCE_STAMP_KEY, '1');
-    const adopt = !isLookId(raw) || raw === LEGACY_DEFAULT_LOOK;
+    const adopt = !isLookId(raw) || rawStr === LEGACY_DEFAULT_LOOK;
     if (adopt) {
       safeSetItem(LOOK_STORAGE_KEY, DEFAULT_LOOK);
       return DEFAULT_LOOK;

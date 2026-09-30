@@ -322,8 +322,10 @@ async function main() {
   line(`INFO 玻璃档基线（强制撤纱，= 无冲突分支纱厚）对比度=${c2 === null ? 'null' : String(c2.ratio)}（背景占比 ${c2 === null ? '' : String(c2.bgShare)}）`);
 
   STEP = 'S5';
-  await page.evaluate(() => { localStorage.setItem('septcats.look', 'pixel'); });
+  // 像素档已下线 ⇒ 直接挂属性做基线对照（写 localStorage 会被当野值回默认）
+  await page.evaluate(() => { localStorage.setItem('septcats.look', 'instrument'); });
   await page.reload();
+  await page.evaluate(() => { document.documentElement.dataset.look = 'pixel'; });
   for (let i = 0; i < 20; i++) { await wait(400); if (await page.evaluate(() => document.querySelector('[data-testid="nav-rail"]') !== null)) break; }
   await wait(1500);
   const hit = await page.evaluate(() => {

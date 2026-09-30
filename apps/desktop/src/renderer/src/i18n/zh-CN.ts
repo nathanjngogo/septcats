@@ -540,6 +540,18 @@ export const zhCN = {
     emptyNoWorkspace: '还没有可用的库，无法检索',
     emptyNoMatch: '没有匹配的内容，试试更短的关键词',
   },
+  // 方向 B 结构层：顶栏读数区（只放可核对的事实）
+  readouts: {
+    label: '状态读数',
+    sync: '同步',
+    todo: '待办',
+    pages: '页面',
+    syncOk: '已同步',
+    syncBusy: '同步中',
+    syncError: '同步失败',
+    syncOff: '未启用',
+    syncUnknown: '—',
+  },
   palette: {
     title: '命令面板',
     inputAria: '搜索或输入命令',
@@ -637,9 +649,8 @@ export const zhCN = {
       },
       // T85-01：质感派系（三选，与配色/明暗正交；Linear 风 + 毛玻璃风入画廊）
       look: '质感风格',
-      lookDesc: '夜航仪表 / 像素 / Linear 极简 / 毛玻璃，整窗即时换肤',
+      lookDesc: '夜航仪表 / Linear 极简 / 毛玻璃 三档，整窗即时换肤',
       lookNames: {
-        pixel: '像素',
         linear: 'Linear 极简',
         glass: '毛玻璃',
         instrument: '夜航仪表',
