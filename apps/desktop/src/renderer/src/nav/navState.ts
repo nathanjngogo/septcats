@@ -10,9 +10,9 @@
  */
 import { createStore, useStore } from '../state/store';
 
-export type RailPanel = 'notes' | 'kb' | 'calendar' | 'todo';
+export type RailPanel = 'notes' | 'kb' | 'calendar' | 'bitable' | 'todo';
 
-const PANELS: readonly RailPanel[] = ['notes', 'kb', 'calendar', 'todo'];
+const PANELS: readonly RailPanel[] = ['notes', 'kb', 'calendar', 'bitable', 'todo'];
 
 const STORAGE_KEY = 'septcats.nav.panel';
 

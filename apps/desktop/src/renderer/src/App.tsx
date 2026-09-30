@@ -19,6 +19,8 @@ import { NavRail, type RailKey } from './nav/NavRail';
 import { KnowledgePanel } from './nav/KnowledgePanel';
 import { CalendarPage } from './calendar/CalendarPage';
 import { CalendarSidePanel } from './calendar/CalendarSidePanel';
+import { BitablePage } from './bitable/BitablePage';
+import { BitableSidePanel } from './bitable/BitableSidePanel';
 import { TodoPage } from './todo/TodoPage';
 import { TodoSidePanel } from './todo/TodoSidePanel';
 import { navActions, useNav } from './nav/navState';
@@ -576,6 +578,8 @@ export function App() {
             ? 'kb'
             : railPanel === 'calendar'
               ? 'calendar'
+              : railPanel === 'bitable'
+                ? 'bitable'
               : railPanel === 'todo'
                 ? 'todo'
                 : 'notes';
@@ -599,7 +603,7 @@ export function App() {
         pagesActions.showTrash();
         return;
       }
-      if (key === 'calendar' || key === 'todo') {
+      if (key === 'calendar' || key === 'bitable' || key === 'todo') {
         // 一级项互斥：进日历/待办先离开回收站等页面视图（二级栏与主区一起换）
         pagesActions.showPages();
         navActions.setPanel(key);
@@ -722,6 +726,8 @@ export function App() {
               <KnowledgePanel />
             ) : railActive === 'calendar' ? (
               <CalendarSidePanel />
+            ) : railActive === 'bitable' ? (
+              <BitableSidePanel />
             ) : railActive === 'todo' ? (
               <TodoSidePanel />
             ) : (
@@ -763,6 +769,8 @@ export function App() {
                   点页面行/页签经 App 兜底闸先收 home 再走原语义；Esc/关闭钮回 pages） */}
               {railActive === 'calendar' ? (
                 <CalendarPage />
+              ) : railActive === 'bitable' ? (
+                <BitablePage />
               ) : railActive === 'todo' ? (
                 <TodoPage />
               ) : workbenchView === 'home' ? (
