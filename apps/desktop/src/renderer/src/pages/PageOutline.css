@@ -1,0 +1,50 @@
+/* ---------------------------------------------------------------------------
+ * PageOutline.css —— 页内大纲（IDEA-C）。只吃 token；无框线新增（分隔让给留白）。
+ * 宽度跟随 measure（与洞察条同一右缘语言，大纲在左）。
+ * --------------------------------------------------------------------------- */
+
+.pv-outline {
+  max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
+  margin: 0 auto;
+  padding-bottom: var(--sc-space-xxs);
+}
+
+.pv-outline-toggle {
+  border: 0;
+  background: none;
+  padding: var(--sc-space-xxs) 0;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+}
+
+.pv-outline-toggle:hover { color: var(--sc-color-ink); }
+.pv-outline-toggle:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 1px; }
+
+.pv-outline-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-xs) 0 var(--sc-space-xs) var(--sc-space-xs);
+}
+
+.pv-outline-item {
+  border: 0;
+  background: none;
+  text-align: left;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  cursor: pointer;
+  padding: var(--sc-space-xxs) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-outline-item:hover { color: var(--sc-color-accent); }
+.pv-outline-item:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 1px; }
+
+/* level 缩进分档：2/3 级递进（走空间 token，不用裸 px） */
+.pv-outline-item--l1 { padding-left: 0; }
+.pv-outline-item--l2 { padding-left: calc(var(--sc-space-md) + var(--sc-space-xxs)); }
+.pv-outline-item--l3 { padding-left: calc(var(--sc-space-md) * 2 + var(--sc-space-xxs)); }

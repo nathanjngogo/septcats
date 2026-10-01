@@ -28,6 +28,8 @@ import {
   type BulkSelection,
   type WikilinkClickInfo,
   type WikilinkMenuState,
+  collectHeadings,
+  type HeadingEntry,
   type WritingStats,
   writingStats,
 } from '@septcats/editor';
@@ -64,6 +66,7 @@ import { aliveNodes, pushToast, pageTypeOf, pagesActions, usePages } from '../st
 import { usePageWidth } from '../state/pageWidth';
 import { registerFlushTask } from '../state/flushRegistry';
 import { BacklinksPanel } from './BacklinksPanel';
+import { PageOutline } from './PageOutline';
 import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
@@ -563,6 +566,24 @@ export function PageView({ page }: PageViewProps) {
       editor.off('update', compute);
     };
   }, [editor, rendersEditor]);
+
+  // IDEA-C：页内大纲——同「editor.state 现读」口径；change 与换页都重算。
+  // blocksRevision 进依赖：换页/重载（非 update 事件的 doc 置换）也能刷出来。
+  const [outlineHeadings, setOutlineHeadings] = useState<readonly HeadingEntry[]>([]);
+  useEffect(() => {
+    if (editor === null || !rendersEditor) {
+      setOutlineHeadings([]);
+      return;
+    }
+    const scan = (): void => {
+      setOutlineHeadings(collectHeadings(editor.state.doc as never));
+    };
+    scan();
+    editor.on('update', scan);
+    return () => {
+      editor.off('update', scan);
+    };
+  }, [editor, rendersEditor, blocksRevision, activePageId]);
 
   /**
    * T38-01：AI 对话侧栏的编辑器桥 —— 注册当前页上下文提供者与引用块跳转。
@@ -1594,6 +1615,14 @@ export function PageView({ page }: PageViewProps) {
             blockLabels={editorBlockLabels}
           />
         ) : null}
+        {editor === null ? null : (
+          <PageOutline
+            headings={outlineHeadings}
+            onJump={(blockId) => {
+              jumpToBlockId(editor, blockId);
+            }}
+          />
+        )}
         {writingStatsState === null ? null : (
           <p className="pv-stats" data-testid="pv-stats" aria-live="polite">
             {t('editor.stats')

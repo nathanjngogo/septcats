@@ -538,6 +538,7 @@ export const zhCN = {
       bulkDuplicate: '批量复制',
     },
     stats: '{words} 字 · 约读 {minutes} 分钟',
+    outline: '目录',
   },
   // T64-01：文件夹（page_type='folder' 容器节点）
   folder: {

@@ -229,6 +229,20 @@ async function main() {
     }
     record('编辑器', await page.evaluate(SWEEP));
 
+    // IDEA-C：页内大纲（新面必进扫描）——敲两个标题再展开目录
+    await page.keyboard.press('Control+End');
+    await wait(400);
+    await page.keyboard.type('# 大纲验收甲'); await page.keyboard.press('Enter');
+    await page.keyboard.type('## 大纲验收乙'); await page.keyboard.press('Enter');
+    await wait(1400);
+    await page.evaluate(() => { document.querySelector('[data-testid="pv-outline-toggle"]')?.click(); });
+    await wait(700);
+    if (await page.evaluate(() => document.querySelector('[data-testid="pv-outline-list"]') !== null)) {
+      record('页内大纲', await page.evaluate(SWEEP));
+    } else {
+      record('页内大纲(缺)', await page.evaluate(SWEEP));
+    }
+
     // 一级轨各面
     for (const [key, label] of [
       ['knowledge', '知识库'],

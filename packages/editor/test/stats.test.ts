@@ -17,12 +17,12 @@ describe('writingStats', () => {
   it('纯英文：按词计数（空白/标点切分）', () => {
     expect(writingStats('the quick brown fox')?.words).toBe(4);
     expect(writingStats('a,b;c')?.words).toBe(3);
-    expect(writingStats('2026 is here')?.words).toBe(3, '数字串算一词');
+    expect(writingStats('2026 is here')?.words, '数字串算一词').toBe(3);
   });
 
   it('混合文本：CJK 逐字 + 拉丁词合并计数', () => {
     const s = writingStats('用 React 写笔记');
-    expect(s?.words).toBe(5, '用/写/笔/记=4 字 + React=1 词');
+    expect(s?.words, '用/写/笔/记=4 字 + React=1 词').toBe(5);
   });
 
   it('阅读分钟：300 字/分钟向上取整、最少 1', () => {

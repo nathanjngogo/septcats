@@ -530,6 +530,7 @@ export const enUS = {
       bulkDuplicate: 'Duplicate selected',
     },
     stats: '{words} words · about {minutes} min read',
+    outline: 'Outline',
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {
