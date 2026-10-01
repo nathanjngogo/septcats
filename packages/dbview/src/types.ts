@@ -207,12 +207,77 @@ export type SortKey = z.infer<typeof sortKeySchema>;
 // 视图
 // ---------------------------------------------------------------------------
 
-export const VIEW_TYPES = ['table', 'kanban', 'gallery', 'form'] as const;
+export const VIEW_TYPES = ['table', 'kanban', 'gallery', 'form', 'dashboard', 'automation'] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
+
+// ---------------------------------------------------------------------------
+// 仪表盘磁贴 / 自动化规则（T102，飞书对标；挂在**视图**上而非 schema 顶层 ——
+// schema_json 顶层键会被 parseCollectionSchema 剥掉，视图经 saveView→normalizeView 往返）
+// ---------------------------------------------------------------------------
+
+/** 磁贴五型：指标卡（按选项分组计数）/ 分布（色带占比）/ 数值（字段聚合）/ 文本 / 分隔线。 */
+export const WIDGET_TYPES = ['metric', 'distribution', 'number', 'text', 'divider'] as const;
+export type WidgetType = (typeof WIDGET_TYPES)[number];
+
+/** 磁贴可用的聚合（与 view.ts 的 AGGREGATIONS 交集，去掉展示语义的 `none`）。 */
+export const WIDGET_AGGREGATIONS = ['count', 'sum', 'avg', 'earliest', 'latest'] as const;
+export type WidgetAggregation = (typeof WIDGET_AGGREGATIONS)[number];
+
+/**
+ * 仪表盘磁贴。config 按 type 取用：
+ * - metric / distribution：`groupPid`（必为 select/multi_select，缺失或指向不存在/隐藏字段
+ *   → `resolveWidgets` 剔除该项）；
+ * - number：`pid` + 可选 `agg`（缺省按字段类型可用聚合的第一项）；
+ * - text：`text`；divider：无 config。
+ */
+export const dashboardWidgetSchema = z.object({
+  id: z.string().min(1).max(128),
+  type: z.enum(WIDGET_TYPES),
+  config: z
+    .object({
+      groupPid: z.string().min(1).max(128).optional(),
+      pid: z.string().min(1).max(128).optional(),
+      agg: z.enum(WIDGET_AGGREGATIONS).optional(),
+      text: z.string().max(2000).optional(),
+    })
+    .optional(),
+});
+export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
+
+/** 自动化触发事件类型：记录创建 / 记录更新。 */
+export const AUTOMATION_TRIGGERS = ['create', 'update'] as const;
+export type AutomationTrigger = (typeof AUTOMATION_TRIGGERS)[number];
+
+/**
+ * 自动化规则（一条 = 触发 + 条件 + 动作）：
+ * - `on`：监听 create/update；`pid` 可选 —— 指定时只在**该字段**被写入的事件上触发；
+ * - `if`：当刻记录值 `values[pid]` 与 `eq` 相等（引擎 `equalsValue` 口径，select 传选项 id）；
+ * - `set`：写入 `{pid: to}`（select/multi 的目标选项 id 必须存在，否则主进程跳过该规则）。
+ * 执行与链式不动点在 main 侧（`dbview.ts`），引擎只提供 `evalRules` 纯函数。
+ */
+export const automationRuleSchema = z.object({
+  id: z.string().min(1).max(128),
+  name: z.string(),
+  enabled: z.boolean(),
+  on: z.object({
+    kind: z.enum(AUTOMATION_TRIGGERS),
+    pid: z.string().min(1).max(128).optional(),
+  }),
+  if: z.object({
+    pid: z.string().min(1).max(128),
+    eq: z.unknown(),
+  }),
+  set: z.object({
+    pid: z.string().min(1).max(128),
+    to: z.unknown(),
+  }),
+});
+export type AutomationRule = z.infer<typeof automationRuleSchema>;
 
 /**
  * 视图定义。`widths` 是列宽覆盖（pid → px，拖宽后落盘）。
- * 四型：table（表格）/ kanban（看板）/ gallery（画廊）/ form（表单）。
+ * 六型：table（表格）/ kanban（看板）/ gallery（画廊）/ form（表单）
+ * / dashboard（仪表盘，T102）/ automation（自动化，T102）。
  * 各型专属配置一律**可选**且缺省即老行为 ⇒ 老数据零迁移。
  */
 export const dbViewSchema = z.object({
@@ -237,6 +302,10 @@ export const dbViewSchema = z.object({
   formPids: z.array(z.string()).optional(),
   /** 表单：其中哪些必填（提交校验用；可含标题列）。 */
   formRequired: z.array(z.string()).optional(),
+  /** 仪表盘（T102）：磁贴列表（顺序 = 展示顺序）；清洗与消费见 view.ts。 */
+  widgets: z.array(dashboardWidgetSchema).optional(),
+  /** 自动化（T102）：规则列表（执行在主进程 createRecord/updateRecord）。 */
+  rules: z.array(automationRuleSchema).optional(),
 });
 export type DbView = z.infer<typeof dbViewSchema>;
 
