@@ -1,1 +1,1 @@
-2026-10-01T16:58:04Z CLAIM step-1 (engine types.ts: VIEW_TYPES + dashboardWidgetSchema + automationRuleSchema)
+2026-10-01T17:20:00Z CLAIM step-2 (engine view.ts: normalizeView 清洗 + resolveWidgets + evalRules)

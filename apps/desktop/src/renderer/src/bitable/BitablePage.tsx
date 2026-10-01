@@ -29,11 +29,14 @@ import {
   recordTitle,
   resolveCoverPid,
   type CollectionSchema,
+  type DashboardWidget,
   type DbView,
   type Property,
   type RecordEntity,
 } from '@septcats/dbview';
 import { CellEditor } from '@septcats/dbview/react';
+import { AutomationBoard } from './AutomationBoard';
+import { DashboardBoard } from './DashboardBoard';
 import { Button, Dialog } from '@septcats/ui';
 import { t } from '../i18n';
 import { bitableActions, useBitable } from './state';
@@ -68,6 +71,10 @@ function viewTypeLabel(type: AnyViewType): string {
       return t('bitable.viewGallery');
     case 'form':
       return t('bitable.viewForm');
+    case 'dashboard':
+      return t('bitable.viewDashboard');
+    case 'automation':
+      return t('bitable.viewAutomation');
     default:
       return t('bitable.viewTable');
   }
@@ -116,6 +123,8 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
   const isKanban = activeView?.type === 'kanban';
   const isGallery = activeView?.type === 'gallery';
   const isForm = activeView?.type === 'form';
+  const isDashboard = activeView?.type === 'dashboard';
+  const isAutomation = activeView?.type === 'automation';
   const selectable = useMemo(() => (collection === null ? [] : propertyList(collection.schema).filter((p) => p.type === 'select' || p.type === 'multi_select')), [collection]);
 
   const groups = useMemo(() => {
@@ -148,6 +157,18 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
       if (type === 'form') {
         // 表单标题缺省 = 视图名（表单页面上要有个抬头，且与视图条上的名字一致，不写空占位）
         view = { ...view, formTitle: name };
+      }
+      if (type === 'dashboard') {
+        // 创意：新建仪表盘**预置三块磁贴**（总数卡/分组分布/文本板）——开箱即有所得，而不是空板
+        const props = propertyList(collection.schema);
+        const grp = props.find((x) => x.type === 'select' || x.type === 'multi_select');
+        const stamp = Date.now().toString(36);
+        const tiles: DashboardWidget[] = [
+          { id: `w-${stamp}-a`, type: 'number', config: { pid: props[0]?.id ?? '', agg: 'count' } },
+          ...(grp === undefined ? [] : [{ id: `w-${stamp}-b`, type: 'distribution' as const, config: { groupPid: grp.id } }]),
+          { id: `w-${stamp}-c`, type: 'text', config: { text: t('bitable.dashSeedText') } },
+        ];
+        view = { ...view, widgets: tiles };
       }
       saveView(view);
       setActiveVid(vid);
@@ -327,6 +348,12 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
         <button type="button" className="bitable-btn" data-testid="bitable-view-form" onClick={() => { addView('form'); }}>
           +{t('bitable.viewForm')}
         </button>
+        <button type="button" className="bitable-btn" data-testid="bitable-view-dashboard" onClick={() => { addView('dashboard'); }}>
+          +{t('bitable.viewDashboard')}
+        </button>
+        <button type="button" className="bitable-btn" data-testid="bitable-view-automation" onClick={() => { addView('automation'); }}>
+          +{t('bitable.viewAutomation')}
+        </button>
         <button type="button" className="bitable-btn" data-testid="bitable-view-rename" onClick={() => { setRenameText(activeView?.name ?? ''); setRenaming(true); }}>
           {t('bitable.viewRename')}
         </button>
@@ -372,7 +399,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
               ))}
             </select>
           </label>
-        ) : isForm ? null : (
+        ) : isForm || isDashboard || isAutomation ? null : (
           <span className="bitable-toolbar-hint">{t('bitable.gridHint')}</span>
         )}
         <button type="button" className="bitable-btn" data-testid="bitable-export" onClick={exportCsv}>
@@ -418,10 +445,27 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
         />
       ) : null}
 
-      <div className="bitable-grid" data-testid="bitable-grid" hidden={isKanban || isGallery || isForm}>
+      {isDashboard && activeView !== undefined ? (
+        <DashboardBoard
+          schema={collection.schema}
+          records={records}
+          view={activeView}
+          onPatchWidgets={(next) => { patchActiveView({ widgets: next }); }}
+        />
+      ) : null}
+
+      {isAutomation && activeView !== undefined ? (
+        <AutomationBoard
+          collection={collection}
+          view={activeView}
+          onPatchRules={(next) => { patchActiveView({ rules: next }); }}
+        />
+      ) : null}
+
+      <div className="bitable-grid" data-testid="bitable-grid" hidden={isKanban || isGallery || isForm || isDashboard || isAutomation}>
         <DbPage pageId={pageId} />
       </div>
-      {records.length === 0 && !isKanban && !isGallery && !isForm ? (
+      {records.length === 0 && !isKanban && !isGallery && !isForm && !isDashboard && !isAutomation ? (
         <p className="bitable-empty" data-testid="bitable-empty">{t('bitable.addRowHint')}</p>
       ) : null}
 

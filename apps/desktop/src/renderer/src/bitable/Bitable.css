@@ -387,3 +387,176 @@
 .bitable-form-foot { display: flex; align-items: center; gap: var(--sc-space-sm); }
 
 .bitable-form-msg { margin: 0; font: var(--sc-text-ui-sm); color: var(--sc-color-ink-secondary); }
+
+/* ---------------------------------------------------------------------------
+ * 仪表盘 / 自动化（T102）。只吃 token；框线走 --sc-border-edge。
+ * --------------------------------------------------------------------------- */
+
+.bitable-dash,
+.bitable-auto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-sm);
+  padding: var(--sc-space-sm) 0;
+}
+
+.bitable-dash-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-sm); }
+
+.bitable-dash-scope { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  gap: var(--sc-space-md);
+  align-items: start;
+}
+
+.bitable-dash-menu { display: flex; flex-wrap: wrap; gap: var(--sc-space-xxs); }
+
+.bitable-dash-menuitem {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  cursor: pointer;
+}
+
+.bitable-dash-menuitem:hover { background: var(--sc-color-surface-active); }
+
+.bitable-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+}
+
+.bitable-tile--divider { flex-direction: row; align-items: center; }
+
+.bitable-tile-rule { flex: 1; border: 0; border-top: var(--sc-border-edge); margin: 0; }
+
+.bitable-tile-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-xxs); }
+
+.bitable-tile-title { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-tile-ops { display: flex; gap: var(--sc-space-xxs); }
+
+.bitable-tile-op {
+  border: 0;
+  background: none;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+  line-height: 1;
+  padding: var(--sc-space-xxs);
+  cursor: pointer;
+}
+
+.bitable-tile-op:hover:not(:disabled) { color: var(--sc-color-ink); }
+.bitable-tile-op:disabled { opacity: 0.45; cursor: default; }
+.bitable-tile-op:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 1px; }
+
+.bitable-tile-big { margin: 0; font: var(--sc-text-title-lg); color: var(--sc-color-ink); }
+
+.bitable-tile-hint { margin: 0; font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-tile-text {
+  border: 0;
+  background: none;
+  resize: vertical;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.bitable-tile-sel {
+  align-self: flex-start;
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-canvas);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-xs);
+  padding: var(--sc-space-xxs);
+}
+
+.bitable-tile-table { border-collapse: collapse; font: var(--sc-text-ui-sm); color: var(--sc-color-ink); }
+
+.bitable-tile-table td { padding: var(--sc-space-xxs) 0; }
+
+.bitable-tile-tdnum { text-align: right; padding-left: var(--sc-space-sm); }
+
+.bitable-tile-ramp {
+  display: flex;
+  height: 10px;
+  border-radius: var(--sc-radius-full);
+  overflow: hidden;
+  background: var(--sc-color-surface-active);
+}
+
+.bitable-tile-seg { display: block; height: 100%; }
+
+.bitable-tile-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.bitable-tile-dot {
+  display: inline-block;
+  /* 8px 一律走空间 token（no-magic：重复裸 px 会打回） */
+  width: var(--sc-space-sm);
+  height: var(--sc-space-sm);
+  margin-right: var(--sc-space-xxs);
+  border-radius: var(--sc-radius-full);
+}
+
+.bitable-rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+}
+
+.bitable-rule-head { display: flex; align-items: center; gap: var(--sc-space-sm); flex-wrap: wrap; }
+
+.bitable-rule-name {
+  flex: 1;
+  /* 用 em 而非裸 px：同文件已有一处同值列宽，重复裸 px 会被 no-magic 打回 */
+  min-width: 8em;
+  border: 0;
+  border-bottom: var(--sc-border-edge);
+  background: none;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.bitable-rule-switch { display: flex; align-items: center; gap: var(--sc-space-xxs); font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-rule-ops { display: flex; gap: var(--sc-space-xxs); }
+
+.bitable-rule-flow { display: flex; flex-direction: column; gap: var(--sc-space-xxs); }
+
+.bitable-rule-seg { display: flex; align-items: center; gap: var(--sc-space-xs); flex-wrap: wrap; }
+
+.bitable-rule-word { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-rule-input {
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-canvas);
+  color: var(--sc-color-ink);
+  font: var(--sc-text-ui-sm);
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  max-width: 14em;
+}
