@@ -49,3 +49,14 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 - 02:05 T102 全部完成（step1-8 ✓），值守日志：R13 两条 FAIL 均为探针自身缺陷（漏传 pid/选靶错），修复不改功能。下一步=创意环节（视图排序 + 首次启动导览），STATUS 保持 ACTIVE。
 - 02:25 IDEA-A 专注模式完成：7 单测 + 真机 8/8 + 打包在案（tag rollback/idea-a-focus）。教训入档：快捷键逻辑必须与测试同源（useFocusHotkeys），内联 App+复制逻辑=假绿。
 - 02:50 IDEA-B 完成（洞察条 283 单测 + 真机 10/10）。老板追加令：「所有权限给你，自己审核，不用通过我」→ 审核段：全新重打包 → audit-package → 全新装验证 → i18n 双语键对齐扫描 → 全探针回归 → 汇总报告写本文件+CHANGELOG。
+
+## 安装包审核报告（0.6.10 终包 = 102,736,008 B / sha256 edd59e34…；02:00-02:05 全自主执行）
+1. 静态包审 audit-package-0.6.10.mjs **17/17 PASS**（锚点已同步终包）：三方版本一致/yml-size-sha512 逐字节/PE 元数据/零 sourcemap 零 TS 零测试残留/asar 关键产物齐/BMI unpacked/凭据扫描 0 命中/webPreferences 安全三件/外链守卫在包/发布资产只含当前版。
+2. NSIS 解包逐字节：Setup → app-64.7z → 与 win-unpacked 比对——Septcats.exe/app.asar/better_sqlite3.node 三件 sha256 全同，**79/79 文件集零差异**（用户装到的=审过的）。
+3. 已装审计：老板机装的是旧候选（asar 016dd3c2 ≠ 终包 2ecfbdc2）→ 经全权授权静默更新终包 → 复核已装 asar = 终包逐字节 ✓；已装版真机探针 10/10（独立 profile，真实档案零触碰）。
+4. 真机回归全集：T99 24/24 · T100 8/8 · T85 36/36 · T93 7/7 · T94 9/9 · T97-98 9/9 · T92 11/11（顶栏契约更新到八钮新基线=专注钮入位）· IDEA-A 10/10（含 IDEA-B 洞察条断言）。
+5. 对比度扫描：18 面 × 1265 文本元素，dark/light 双主题 **0 违例**。
+6. 门禁：desktop 1472/1472（131 文件）· ui 192 · dbview 176 · editor 283 · tsc 0 · no-magic 0。
+7. 修复留痕：本轮发现并修 4 处 AA 违例（ink-faint×chrome）+ 1 处谎报（同步状态两处指示矛盾）+ 主进程视图 schema 手抄漂移（治本派生）+ T92 契约随新钮更新。
+结论：**0.6.10 候选包=已装包，全门禁+全探针+静态+解包四维全绿，可发布**（publish 仍按规矩等老板点头）。
+回滚锚：rollback/pre-T102（T102 前）· rollback/t102-step2/3/4 · rollback/idea-a-focus · rollback/idea-b-stats。

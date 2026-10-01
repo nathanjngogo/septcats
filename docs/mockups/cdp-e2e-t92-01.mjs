@@ -151,6 +151,8 @@ const BAR_DUMP = () => {
 };
 
 const LABELS = [
+  // IDEA-A 专注钮（09-29 顶栏整排契约的既有首位新增项：进得去也出得来，故必在 actions）
+  '专注模式（F9）',
   '工作台模板市场',
   '搜索（Ctrl+K）',
   'AI 对话（Ctrl+J）',
@@ -159,7 +161,7 @@ const LABELS = [
   '布局',
   '设置',
 ];
-const TEXTS = ['模板市场', '搜索', 'AI 对话', null, '导入', '布局', '设置'];
+const TEXTS = ['专注', '模板市场', '搜索', 'AI 对话', null, '导入', '布局', '设置'];
 const SYNC_TEXT_RE = /已同步|同步中|同步未开启|同步错误|同步文件夹不可访问|密钥不匹配|同步状态加载中/;
 
 async function topbarShot(page, name) {
@@ -191,15 +193,15 @@ async function main() {
   const labels = bar.rows.map((r) => r.label);
   line(`顶栏 aria-label 清单：${JSON.stringify(labels)}`);
   const mism = LABELS.findIndex((l, i) => labels[i] !== l);
-  check('H1 七钮齐全且顺序 = 模板市场→搜索→AI 对话→同步状态→导入→布局→设置',
-    bar.rows.length === 7 && mism === -1,
+  check('H1 八钮齐全且顺序 = 专注→模板市场→搜索→AI 对话→同步状态→导入→布局→设置',
+    bar.rows.length === 8 && mism === -1,
     `count=${String(bar.rows.length)} mismatchAt=${String(mism)} got=${JSON.stringify(labels)}`);
 
   const textOk = bar.rows.every((r, i) => {
-    if (i === 3) return SYNC_TEXT_RE.test(r.text.trim());
+    if (i === 4) return SYNC_TEXT_RE.test(r.text.trim());
     return (r.text ?? '').trim() === TEXTS[i];
   });
-  check('H2 六钮可见中文文案逐字命中 + 同步钮可见状态文字（中文不再只藏 tooltip）',
+  check('H2 七钮可见中文文案逐字命中 + 同步钮可见状态文字（中文不再只藏 tooltip）',
     textOk, JSON.stringify(bar.rows.map((r) => r.text.trim())));
 
   const noClip = bar.rows.every((r) => r.clipped === false && r.tClipped === false && r.tInside === true);
@@ -210,7 +212,7 @@ async function main() {
 
   // 09-29 老板令「图标去掉」：顶栏 actions 整排不得再有 glyph（同步胶囊本就无 svg）
   const noGlyph = bar.rows.every((r) => r.viewBox === null && r.crisp === null);
-  check('H4 顶栏整排无图标（老板令：图标去掉）—— 7 钮全无 svg',
+  check('H4 顶栏整排无图标（老板令：图标去掉）—— 8 钮全无 svg',
     noGlyph, JSON.stringify(bar.rows.map((r) => `${String(r.viewBox)}/${String(r.crisp)}`)));
 
   const shot1 = await topbarShot(page, 'topbar-light-pixel');
