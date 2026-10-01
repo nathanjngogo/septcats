@@ -322,6 +322,23 @@ async function main() {
       await wait(500);
     }
 
+    // 仪表盘 / 自动化（T102 新面）
+    await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-dashboard"]')?.click(); });
+    await wait(1600);
+    if (await page.evaluate(() => document.querySelector('[data-testid="bitable-dashboard"]') !== null)) {
+      record('多维表格·仪表盘', await page.evaluate(SWEEP));
+    }
+    await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-automation"]')?.click(); });
+    await wait(1600);
+    if (await page.evaluate(() => document.querySelector('[data-testid="bitable-automation"]') !== null)) {
+      record('多维表格·自动化', await page.evaluate(SWEEP));
+    } else {
+      // 该夹具表还没有自动化视图：建一个（+自动化按钮）再扫
+      await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-automation"]')?.click(); });
+      await wait(1600);
+      record('多维表格·自动化', await page.evaluate(SWEEP));
+    }
+
     // 命令面板
     await page.keyboard.press('Control+k');
     await wait(1000);

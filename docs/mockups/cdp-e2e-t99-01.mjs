@@ -512,6 +512,94 @@ async function main() {
     `记录 ${String(before12)}→${String(submitted.count)} hasNew=${String(submitted.hasNew)} msg=「${submitted.msg}」`);
   await shot(page, 'bitable-form');
 
+  // ---------- R13 仪表盘 / 自动化（T102，老板 10-01 第⑤项） ----------
+  STEP = 'R13';
+  // A 界面点「+仪表盘」→ 预置磁贴渲染 + IPC 读回一致
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-dashboard"]')?.click(); });
+  await wait(1700);
+  const dashUi = await page.evaluate(() => ({
+    inPlace: document.querySelector('[data-testid="bitable-dashboard"]') !== null,
+    tiles: document.querySelectorAll('[data-testid^="bitable-dash"] .bitable-tile').length,
+  }));
+  const dashDb = await page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    const dv = loaded.collection.views.find((v) => v.type === 'dashboard');
+    return { widgets: dv === undefined ? [] : (dv.widgets ?? []) };
+  }, built.pageId);
+  check('R13-a 仪表盘：新建即预置磁贴（界面块数 = 库内 widgets 数，开箱有数不是空板）',
+    dashUi.inPlace && dashUi.tiles === dashDb.widgets.length && dashDb.widgets.length >= 2,
+    `ui=${String(dashUi.tiles)} db=${String(dashDb.widgets.length)}`);
+  await shot(page, 'bitable-dashboard');
+
+  // B IPC：加 number 字段 + 自动化视图（规则：当 select=进行中 → 把 number=7）
+  const autoSetup = await page.evaluate(async (a) => {
+    const num = await window.septcats.db.propAdd({ pageId: a.pageId, type: 'number' });
+    const npid = Object.keys(num.collection.schema.properties).find((k) => num.collection.schema.properties[k].type === 'number');
+    const vid = `va${String(Date.now() % 10000)}`;
+    await window.septcats.db.viewSave({
+      pageId: a.pageId,
+      view: {
+        vid, name: '自动化', type: 'automation', filter: { op: 'and', clauses: [] }, sort: [], widths: {},
+        rules: [{ id: 'ar1', name: '进行中自动记7分', enabled: true, on: { kind: 'update', pid: a.pid }, if: { pid: a.pid, eq: a.opt }, set: { pid: npid, to: 7 } }],
+      },
+    });
+    return { npid, vid };
+  }, { pageId: built.pageId, pid: built.pid, opt: built.optionIds[1] });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.sc-shell__body', { timeout: 30000 });
+  await wait(2400);
+  await page.evaluate(() => { document.querySelector('[data-testid="nav-rail-bitable"]')?.click(); });
+  await wait(1500);
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-side-item-${pid}"]`)?.click(); }, built.pageId);
+  await wait(1600);
+
+  // C 界面切到自动化视图 → 规则卡渲染（三段式 + 名称）
+  await page.evaluate((vid) => { document.querySelector(`[data-testid="bitable-view-chip-${vid}"]`)?.click(); }, autoSetup.vid);
+  await wait(1500);
+  const ruleUi = await page.evaluate((rid) => {
+    const card = document.querySelector(`[data-testid="bitable-rule-${rid}"]`);
+    if (card === null) return { present: false, name: '', kind: '' };
+    const name = card.querySelector(`[data-testid="bitable-rule-name-${rid}"]`);
+    const kind = card.querySelector(`[data-testid="bitable-rule-kind-${rid}"]`);
+    return {
+      present: true,
+      name: name === null ? '' : (name).value,
+      kind: kind === null ? '' : (kind).value,
+      enabled: (card.querySelector(`[data-testid="bitable-rule-enabled-${rid}"]`))?.checked === true,
+    };
+  }, 'ar1');
+  check('R13-b 自动化：规则卡渲染（名称/触发类型/启用态与落库一致）',
+    ruleUi.present && ruleUi.name === '进行中自动记7分' && ruleUi.kind === 'update' && ruleUi.enabled,
+    JSON.stringify(ruleUi));
+  await shot(page, 'bitable-automation');
+
+  // D 触发：改某记录 select=进行中 → 规则在**同一次更新**把 number 写 7（版本恰好 +1，零额外 op）
+  const fired = await page.evaluate(async (a) => {
+    const loaded = await window.septcats.db.load({ pageId: a.pageId });
+    const target = loaded.records.find((r) => r.values[a.pid] === a.opt0) ?? loaded.records.find((r) => r.values[a.pid] === undefined);
+    const vBefore = target.version;
+    const upd = await window.septcats.db.recordUpdate({ pageId: a.pageId, recordId: target.id, patch: { [a.pid]: a.opt1 } });
+    const after = await window.septcats.db.load({ pageId: a.pageId });
+    const row = after.records.find((r) => r.id === target.id);
+    return { vBefore, vAfter: upd.record.version, num: row?.values[a.npid] ?? null };
+  }, { pageId: built.pageId, pid: built.pid, npid: autoSetup.npid, opt0: built.optionIds[0], opt1: built.optionIds[1] });
+  check('R13-c 规则执行：更新 select=进行中 → number 同轮写 7、版本恰好 +1（一个 op 落终值）',
+    fired.num === 7 && fired.vAfter === fired.vBefore + 1,
+    JSON.stringify({ vBefore: fired.vBefore, vAfter: fired.vAfter, num: fired.num }));
+
+  // E 禁用即失效：enabled=false 落库后不再触发
+  const offTest = await page.evaluate(async (a) => {
+    const loaded = await window.septcats.db.load({ pageId: a.pageId });
+    const av = loaded.collection.views.find((v) => v.type === 'automation');
+    await window.septcats.db.viewSave({ pageId: a.pageId, view: { ...av, rules: (av.rules ?? []).map((r) => ({ ...r, enabled: false })) } });
+    // 选**分数仍为空**的记录（上一轮被规则写过分的 r1 分数=7 不能当靶：它已非空）
+    const tgt = loaded.records.find((r) => r.values[a.npid] === undefined);
+    if (tgt === undefined) return { why: 'no-target' };
+    const upd = await window.septcats.db.recordUpdate({ pageId: a.pageId, recordId: tgt.id, patch: { [a.pid]: a.opt1 } });
+    return { num: upd.record.values[a.npid] ?? null };
+  }, { pageId: built.pageId, pid: built.pid, npid: autoSetup.npid, opt1: built.optionIds[1] });
+  check('R13-d 禁用规则不触发（number 保持空）', offTest.num === null && offTest.why === undefined, JSON.stringify(offTest));
+
   // ---------- R8 夹具零触碰 ----------
   STEP = 'R8';
   await h.browser.close().catch(() => {});
