@@ -89,7 +89,7 @@ function main() {
     ymlSize === exeSize && ymlSha === sha512b64,
     `size ${String(ymlSize)}=${String(exeSize)} sha512 匹配=${String(ymlSha === sha512b64)}`);
   check('A1c Setup 体积/哈希与「审核时终包」逐字节一致（每次重打后需同步本锚）',
-    exeSize === 102736008 && exeSha.startsWith('edd59e34'),
+    exeSize === 102742454 && exeSha.startsWith('ac09923f'),
     `size=${String(exeSize)} sha256=${exeSha.slice(0, 16)}…`);
 
   // ---------- A2 PE 元数据 ----------
