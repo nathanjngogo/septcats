@@ -529,6 +529,7 @@ export const enUS = {
       bulkDelete: 'Delete selected',
       bulkDuplicate: 'Duplicate selected',
     },
+    stats: '{words} words · about {minutes} min read',
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {

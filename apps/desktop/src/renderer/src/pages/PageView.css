@@ -212,3 +212,12 @@
     transition: none;
   }
 }
+
+/* IDEA-B 写作洞察条：跟随 measure 宽度、右缘弱化（数字是辅助信息，不抢正文） */
+.pv-stats {
+  max-width: var(--sc-layout-measure, var(--sc-space-editor-measure));
+  margin: var(--sc-space-xs) auto 0;
+  text-align: right;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}

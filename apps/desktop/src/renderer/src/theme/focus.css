@@ -22,6 +22,16 @@ html[data-focus='on'] .sc-shell__actions > *:not(.sc-focus-toggle) {
 /* 编辑列**不再二次收窄**：PageView 已有 measure 宽度机制（--sc-layout-measure），
    专注模式再钉一个 max-width 只会与它打架——藏周边就够安静了。 */
 
+/* 页签条让位（写作态只面对当前页；切页要退出专注——刻意保留一步"仪式感"） */
+html[data-focus='on'] .app-tabrow {
+  display: none;
+}
+
+/* 标题行保留（标题是写作语境），但行内动作钮（转为多维表格）让位 */
+html[data-focus='on'] .pv-title-row .sc-btn {
+  display: none;
+}
+
 /* 多维表格专注时收窄整卡（它没有正文列宽概念） */
 html[data-focus='on'] .bitable-page {
   max-width: 72rem;

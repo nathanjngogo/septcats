@@ -28,6 +28,8 @@ import {
   type BulkSelection,
   type WikilinkClickInfo,
   type WikilinkMenuState,
+  type WritingStats,
+  writingStats,
 } from '@septcats/editor';
 import type { SlashItem } from '@septcats/editor';
 import {
@@ -447,6 +449,7 @@ export function PageView({ page }: PageViewProps) {
    * 种子之后，否则投影会把对账结果覆盖回去（见下方 reconcile effect）。
    */
   const [collabReady, setCollabReady] = useState(false);
+  const [writingStatsState, setWritingStatsState] = useState<WritingStats | null>(null);
   useEffect(() => {
     if (editor === null || activePageId === null || !rendersEditor) {
       return;
@@ -541,6 +544,25 @@ export function PageView({ page }: PageViewProps) {
       editor.off('blur', flush);
     };
   }, [editor, session]);
+
+  // IDEA-B：写作洞察条（字数 + 预计阅读分钟）。口径与实现在 packages/editor/stats.ts
+  // （纯函数、可单测）；这里只做「editor update 时现读 PM 文档」——editor.state 现读
+  // 无陈旧文档问题（同 548 行注释的既有口径）。
+  useEffect(() => {
+    if (editor === null || !rendersEditor) {
+      setWritingStatsState(null);
+      return;
+    }
+    const compute = (): void => {
+      const doc = editor.state.doc;
+      setWritingStatsState(writingStats(doc.textBetween(0, doc.content.size, '\n')));
+    };
+    compute();
+    editor.on('update', compute);
+    return () => {
+      editor.off('update', compute);
+    };
+  }, [editor, rendersEditor]);
 
   /**
    * T38-01：AI 对话侧栏的编辑器桥 —— 注册当前页上下文提供者与引用块跳转。
@@ -1572,6 +1594,13 @@ export function PageView({ page }: PageViewProps) {
             blockLabels={editorBlockLabels}
           />
         ) : null}
+        {writingStatsState === null ? null : (
+          <p className="pv-stats" data-testid="pv-stats" aria-live="polite">
+            {t('editor.stats')
+              .replace('{words}', String(writingStatsState.words))
+              .replace('{minutes}', String(writingStatsState.minutes))}
+          </p>
+        )}
         {dropTarget === null ? null : <div className="pv-dropline" data-target={dropTarget} />}
         <SlashMenu
           open={slashOpen}

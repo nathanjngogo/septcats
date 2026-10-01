@@ -121,6 +121,32 @@ async function main() {
     const back = await page.evaluate(PROBE);
     check('③-2 命令进→F9 出：两入口交叉闭环', back.focus === 'off' && back.rail === 'visible', JSON.stringify({ f: back.focus }));
 
+    // IDEA-B：写作洞察条——打字即现字数与阅读分钟（口径单测钉在 packages/editor/test/stats.test.ts，
+    // 这里只验装配：PM 文本 → 条上数字对得上）
+    // 洞察条挂在**页面编辑区**（工作台/回收站等视图没有 .ProseMirror）——先建页进编辑态
+    const hadEditor = await page.locator('.ProseMirror').count() > 0;
+    if (!hadEditor) {
+      await page.evaluate(() => { document.querySelector('[data-testid="side-new-page"]')?.click(); });
+      await wait(1800);
+    }
+    const ed = page.locator('.ProseMirror').first();
+    if (await ed.count() > 0) {
+      await ed.click();
+      await wait(300);
+      await page.keyboard.type('夜航船是一部奇书。'.repeat(3)); // 9 字 ×3 = 27 字（含标点 27+3=30 CJK 族）
+      await wait(1200);
+      const stats = await page.evaluate(() => {
+        const el = document.querySelector('[data-testid="pv-stats"]');
+        return el === null ? null : (el.textContent ?? '').trim();
+      });
+      const m = stats === null ? null : /([\d,]+) 字/u.exec(stats);
+      // 期望：'夜航船是一部奇书。' 每段 9 字符（8 汉字+1 句号）×3 = 27 字；断言条在且数字 ≥20（口径细节归单测）
+      check('IDEA-B 洞察条：打字即现「N 字 · 约读 M 分钟」', stats !== null && m !== null && Number(m[1].replace(/,/g, '')) >= 20, `stats=「${String(stats)}」`);
+      await page.screenshot({ path: join(SHOTS, 'idea-b-stats.png') });
+    } else {
+      check('IDEA-B 洞察条', false, '编辑区未出现（夹具异常）');
+    }
+
     const after = rootMtime();
     check('真实档案零触碰', before === after, `${String(before)} vs ${String(after)}`);
   } finally {
