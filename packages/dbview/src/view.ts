@@ -14,7 +14,10 @@
  * 纪律：零 React、零 IO；排序不修改入参（先拷贝）。
  */
 import {
+  AUTOMATION_TRIGGERS,
   FILTER_KINDS,
+  WIDGET_AGGREGATIONS,
+  WIDGET_TYPES,
   propertyList,
   type CollectionSchema,
   type DbView,
@@ -24,6 +27,8 @@ import {
   type Property,
   type RecordEntity,
   type RecordValues,
+  type AutomationRule,
+  type DashboardWidget,
   type SortKey,
 } from './types';
 import { dateValueSchema, type DateValue } from './types';
@@ -715,6 +720,192 @@ export function missingRequiredPids(
   });
 }
 
+// ---------------------------------------------------------------------------
+// 仪表盘磁贴 / 自动化规则（T102 引擎侧；执行编排在主进程，这里只有纯函数）
+// ---------------------------------------------------------------------------
+
+/** 规则触发事件：create = 新建记录；update = 更新（`pids` = 本次被写入的字段集合）。 */
+export interface AutomationEvent {
+  kind: 'create' | 'update';
+  pids: readonly string[];
+  values: RecordValues;
+}
+
+/**
+ * 评估**一轮**存活规则，返回要写入的合并表（规则顺序 = 覆盖顺序，后写覆盖先写）。
+ *
+ * 跳过条件（全部静默跳过，不抛错——规则是尽力而为的自动化，坏了不该卡住写入）：
+ *  - `enabled === false`；
+ *  - 事件类型不匹配；`on.pid` 指定时：update 事件要求该字段本次被写入，
+ *    create 事件不匹配 pid（「当记录创建时」是整条记录级触发）；
+ *  - `if` 条件不成立（值比较复用 equalsValue：select 传选项 id、空值口径统一）；
+ *  - `set.pid` 指向不存在字段，或 select/multi_select 的目标选项 id 不存在。
+ */
+export function evalRules(
+  schema: CollectionSchema,
+  rules: readonly AutomationRule[],
+  event: AutomationEvent,
+): RecordValues {
+  const patch: RecordValues = {};
+  for (const rule of rules) {
+    if (rule.enabled === false) {
+      continue;
+    }
+    if (rule.on.kind !== event.kind) {
+      continue;
+    }
+    if (event.kind === 'update' && rule.on.pid !== undefined && !event.pids.includes(rule.on.pid)) {
+      continue;
+    }
+    if (!equalsValue(event.values[rule.if.pid], rule.if.eq)) {
+      continue;
+    }
+    const target = schema.properties[rule.set.pid];
+    if (target === undefined) {
+      continue;
+    }
+    if (target.type === 'select') {
+      const ok = (target.options ?? []).some((option) => option.id === String(rule.set.to));
+      if (!ok) {
+        continue;
+      }
+    }
+    if (target.type === 'multi_select') {
+      const ids = Array.isArray(rule.set.to) ? rule.set.to.map(String) : [];
+      const known = new Set((target.options ?? []).map((option) => option.id));
+      if (ids.length === 0 || !ids.every((id) => known.has(id))) {
+        continue;
+      }
+    }
+    patch[rule.set.pid] = rule.set.to;
+  }
+  return patch;
+}
+
+/**
+ * 仪表盘可渲染磁贴（顺序 = 展示顺序）：剔掉引用失效的磁贴 ——
+ * metric/distribution 要求 groupPid 存在、可见且是 select/multi_select；
+ * number 要求 pid 存在且可见；text 要求有文字；divider 恒保留。
+ * 视图类型不是 dashboard 时返回空数组（调用方不需要再判型）。
+ */
+export function resolveWidgets(schema: CollectionSchema, view: DbView): DashboardWidget[] {
+  if (view.type !== 'dashboard') {
+    return [];
+  }
+  const visible = new Set(visibleProperties(schema, view.hiddenPids).map((property) => property.id));
+  const all = schema.properties;
+  const out: DashboardWidget[] = [];
+  for (const widget of view.widgets ?? []) {
+    const config = widget.config ?? {};
+    if (widget.type === 'divider') {
+      out.push(widget);
+      continue;
+    }
+    if (widget.type === 'text') {
+      if (typeof config.text === 'string' && config.text.trim().length > 0) {
+        out.push(widget);
+      }
+      continue;
+    }
+    if (widget.type === 'metric' || widget.type === 'distribution') {
+      const group = config.groupPid === undefined ? undefined : all[config.groupPid];
+      if (
+        group !== undefined
+        && visible.has(group.id)
+        && (group.type === 'select' || group.type === 'multi_select')
+      ) {
+        out.push(widget);
+      }
+      continue;
+    }
+    // number 磁贴
+    const prop = config.pid === undefined ? undefined : all[config.pid];
+    if (prop !== undefined && visible.has(prop.id)) {
+      out.push(widget);
+    }
+  }
+  return out;
+}
+
+/** 清洗磁贴列表：剔非对象/未知类型，id 去重（先到先得）；config 只留白名单键。 */
+function normalizeWidgets(raw: unknown): DashboardWidget[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const seen = new Set<string>();
+  const out: DashboardWidget[] = [];
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') {
+      continue;
+    }
+    const widget = entry as Record<string, unknown>;
+    const id = typeof widget['id'] === 'string' ? widget['id'] : '';
+    const type = typeof widget['type'] === 'string' ? widget['type'] : '';
+    if (id.length === 0 || !WIDGET_TYPES.includes(type as (typeof WIDGET_TYPES)[number]) || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const src = (widget['config'] ?? {}) as Record<string, unknown>;
+    const config: NonNullable<DashboardWidget['config']> = {};
+    for (const key of ['groupPid', 'pid'] as const) {
+      if (typeof src[key] === 'string' && src[key].trim().length > 0) {
+        config[key] = src[key].trim();
+      }
+    }
+    if (typeof src.agg === 'string' && WIDGET_AGGREGATIONS.includes(src.agg as (typeof WIDGET_AGGREGATIONS)[number])) {
+      config.agg = src.agg as NonNullable<DashboardWidget['config']>['agg'];
+    }
+    if (typeof src.text === 'string' && src.text.length > 0) {
+      config.text = src.text.slice(0, 2000);
+    }
+    out.push({ id, type: type as DashboardWidget['type'], ...(Object.keys(config).length === 0 ? {} : { config }) });
+  }
+  return out;
+}
+
+/** 清洗规则列表：结构校验（on.kind/if/set 齐备且 pid 非空），id 去重；enabled 归真。 */
+function normalizeRules(raw: unknown): AutomationRule[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const seen = new Set<string>();
+  const out: AutomationRule[] = [];
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') {
+      continue;
+    }
+    const rule = entry as Record<string, unknown>;
+    const id = typeof rule['id'] === 'string' ? rule['id'] : '';
+    if (id.length === 0 || seen.has(id)) {
+      continue;
+    }
+    const on = (rule['on'] ?? {}) as Record<string, unknown>;
+    const cond = (rule['if'] ?? {}) as Record<string, unknown>;
+    const act = (rule['set'] ?? {}) as Record<string, unknown>;
+    const kind = typeof on['kind'] === 'string' ? on['kind'] : '';
+    if (!AUTOMATION_TRIGGERS.includes(kind as (typeof AUTOMATION_TRIGGERS)[number])) {
+      continue;
+    }
+    if (typeof cond['pid'] !== 'string' || cond['pid'].length === 0) {
+      continue;
+    }
+    if (typeof act['pid'] !== 'string' || act['pid'].length === 0) {
+      continue;
+    }
+    seen.add(id);
+    const pid = typeof on['pid'] === 'string' && on['pid'].length > 0 ? on['pid'] : undefined;
+    out.push({
+      id,
+      name: typeof rule['name'] === 'string' ? rule['name'] : '',
+      enabled: rule['enabled'] !== false,
+      on: { kind: kind as AutomationRule['on']['kind'], ...(pid === undefined ? {} : { pid }) },
+      if: { pid: cond['pid'], eq: cond['eq'] },
+      set: { pid: act['pid'], to: act['to'] },
+    });
+  }
+  return out;
+}
+
 export function normalizeView(view: DbView): DbView {
   const widths: Record<string, number> = {};
   for (const [pid, width] of Object.entries(view.widths)) {
@@ -770,6 +961,14 @@ export function normalizeView(view: DbView): DbView {
   }
   if (typeof view.formDesc === 'string' && view.formDesc.trim().length > 0) {
     out.formDesc = view.formDesc;
+  }
+  const widgets = normalizeWidgets(view.widgets);
+  if (widgets !== undefined && widgets.length > 0) {
+    out.widgets = widgets;
+  }
+  const rules = normalizeRules(view.rules);
+  if (rules !== undefined && rules.length > 0) {
+    out.rules = rules;
   }
   if (Array.isArray(view.hiddenPids)) {
     const seen = new Set<string>();
