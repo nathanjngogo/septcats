@@ -40,6 +40,7 @@ import {
   type PropertyOption,
   type RecordEntity,
   dbViewSchema,
+  evalRules,
 } from '@septcats/dbview';
 import { z } from 'zod';
 import {
@@ -578,6 +579,52 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
     return out;
   }
 
+
+  /**
+   * 自动化不动点执行器（T102）：反复评估本库全部视图上的启用规则，直到没有新写入或达上限。
+   *  - 每轮写入前经 `coercePatch` 归一（规则 to 值可能是 '5' 这类原始形态）；
+   *  - relation 目标直接剔除：反链双写有自己的编排（relationWritePlan），不该被自动化旁路；
+   *  - 上限 5 轮：A→B→A 这类互指规则的保险丝（第 5 轮写入仍生效但不再生效循环）。
+   */
+  function automationFixpoint(
+    views: readonly DbView[],
+    schema: CollectionSchema,
+    values: Record<string, unknown>,
+    kind: 'create' | 'update',
+    triggerPids: readonly string[],
+    coerce: (schema: CollectionSchema, patch: Record<string, unknown>) => Record<string, unknown>,
+  ): Record<string, unknown> {
+    const rulesByView = views.filter((view) => (view.rules?.length ?? 0) > 0);
+    if (rulesByView.length === 0) {
+      return {};
+    }
+    const out: Record<string, unknown> = {};
+    let pids = triggerPids;
+    for (let round = 0; round < 5; round += 1) {
+      const mergedNow: Record<string, unknown> = { ...values, ...out };
+      let writes: Record<string, unknown> = {};
+      for (const view of rulesByView) {
+        for (const [pid, to] of Object.entries(
+          evalRules(schema, view.rules ?? [], { kind, pids, values: mergedNow }),
+        )) {
+          if (schema.properties[pid]?.type === 'relation') {
+            continue;
+          }
+          writes[pid] = to;
+        }
+      }
+      writes = coerce(schema, writes);
+      const fresh = Object.entries(writes).filter(([pid, to]) => out[pid] !== to);
+      if (fresh.length === 0) {
+        break;
+      }
+      for (const [pid, to] of fresh) {
+        out[pid] = to;
+      }
+      pids = fresh.map(([pid]) => pid);
+    }
+    return out;
+  }
   /** 读 page 行（承载类型服务用）：存活页限定 + v8 两列收口（转换/简介共用）。 */
   async function pageRowForType(pageId: string): Promise<PageTypeRow> {
     const data = await executor.get('page.get', { id: pageId });
@@ -753,7 +800,11 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
         );
       }
 
-      const values = coercePatch(schema, input.values ?? {});
+      let values = coercePatch(schema, input.values ?? {});
+      // 自动化（T102）：本库所有视图上的启用规则，在**提交前**评估合并（一个 op 落终值，
+      // 不给半截状态留窗口；链式用不动点循环，上限 5 轮防规则环打转）。
+      const views = decodeViews(row.views_json);
+      values = { ...values, ...automationFixpoint(views, schema, values, 'create', [], coercePatch) };
       const id = nextId('rec-', at);
       const op = recordUpsertOp(id, row.id, values, sortKey, 0, at);
       await commitOps(executor, [op], { workspaceId: row.workspace_id });
@@ -785,7 +836,14 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       const at = meta();
 
       const patch = coercePatch(schema, input.patch);
-      const nextValues: Record<string, unknown> = { ...decodeValuesJson(existing.values_json), ...patch };
+      let nextValues: Record<string, unknown> = { ...decodeValuesJson(existing.values_json), ...patch };
+      // 自动化（T102）：本轮被用户写入的字段作为触发集；链式轮次以「上一轮自动化写入的字段」
+      // 为新触发集直到不动点（上限 5）。relation 目标在主进程侧剔除（反链双写不走自动化）。
+      const updViews = decodeViews(row.views_json);
+      nextValues = {
+        ...nextValues,
+        ...automationFixpoint(updViews, schema, nextValues, 'update', Object.keys(patch), coercePatch),
+      };
       const mainOp = recordUpsertOp(existing.id, row.id, nextValues, existing.sort_key, existing.version, at);
 
       const relationPids = Object.keys(patch).filter((pid) => schema.properties[pid]?.type === 'relation');

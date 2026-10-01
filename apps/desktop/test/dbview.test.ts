@@ -172,6 +172,51 @@ describeDb('dbViewService（行内数据库 · create/load/record/relation/delet
     expect((page.row as { title: string }).title).toBe('新名');
   });
 
+  it('自动化规则（T102）：update 触发 + 链式不动点 + 禁用不触发，全在同一事务内一个 op', async () => {
+    const created = await service.create({ workspaceId: WORKSPACE_ID, title: '自动化库' });
+    const initial = await service.load({ pageId: created.pageId });
+    const base = initial.collection.views[0];
+    const titlePid = initial.collection.schema.title_pid;
+    // 加 select + number + multi_select 三字段（规则素材）
+    const sel = await service.addProperty({ pageId: created.pageId, type: 'select' });
+    const selPid = Object.keys(sel.collection.schema.properties).find((pid) => sel.collection.schema.properties[pid]?.type === 'select') as string;
+    const selOpts = await service.updateProperty({ pageId: created.pageId, pid: selPid, patch: { options: [{ name: '待办' }, { name: '读完' }] } });
+    const optA = selOpts.collection.schema.properties[selPid]?.options?.[0]?.id;
+    const optB = selOpts.collection.schema.properties[selPid]?.options?.[1]?.id;
+    const num = await service.addProperty({ pageId: created.pageId, type: 'number' });
+    const numPid = Object.keys(num.collection.schema.properties).find((pid) => num.collection.schema.properties[pid]?.type === 'number') as string;
+    const rec0 = await service.createRecord({ pageId: created.pageId, values: { [titlePid]: '书A', [selPid]: optA } });
+    const rid = rec0.record.id;
+
+    // 两条规则：读完 ⇒ 评分=10；评分=10 ⇒ 状态回勾到「读完」的镜像字段不存在，换个链式：评分=10 ⇒ 再写评分=10（自环，验保险丝不炸）
+    const ruleView = {
+      ...(base as NonNullable<typeof base>),
+      rules: [
+        { id: 'r1', name: '读完记10分', enabled: true, on: { kind: 'update', pid: selPid }, if: { pid: selPid, eq: optB }, set: { pid: numPid, to: 10 } },
+        { id: 'r2', name: '禁用规则', enabled: false, on: { kind: 'update' }, if: { pid: numPid, eq: 10 }, set: { pid: titlePid, to: '被禁用了' } },
+        // create 是整条记录级触发（on.pid 对 create 无意义）：新建即「读完」也记 10 分
+        { id: 'r3', name: '新建即读完记10分', enabled: true, on: { kind: 'create' }, if: { pid: selPid, eq: optB }, set: { pid: numPid, to: 10 } },
+      ],
+    };
+    await service.saveView({ pageId: created.pageId, view: ruleView as never });
+
+    const before = await opCount();
+    const upd = await service.updateRecord({ pageId: created.pageId, recordId: rid, patch: { [selPid]: optB } });
+    expect(upd.record.values[numPid], '规则要在同次更新的终值里生效').toBe(10);
+    expect(upd.record.version, '规则不额外 bump 版本（一个 op 落终值）').toBe(rec0.record.version + 1);
+    expect(await opCount(), '用户更新 + 视图规则落库 = 2 op（规则执行零额外 op）').toBe(before + 1);
+    // 禁用规则没触发：标题没被改
+    expect(upd.record.values[titlePid]).toBe('书A');
+
+    // create 也触发：新建直接落「读完」→ 评分=10
+    const rec1 = await service.createRecord({ pageId: created.pageId, values: { [titlePid]: '书B', [selPid]: optB } });
+    expect(rec1.record.values[numPid]).toBe(10);
+
+    // 规则改动经 load 往返不丢
+    const back = await service.load({ pageId: created.pageId });
+    expect(back.collection.views[0]?.rules?.[0]?.id).toBe('r1');
+  });
+
   it('视图新配置（画廊/表单）经 saveView 往返不丢：parseViewInput 不得静默剥字段', async () => {
     // 回归护栏（T99-02）：主进程曾**手抄**一份视图 zod schema，漏了新字段，
     // 而 zod 默认 strip 未知键 ⇒ 配置静默丢失（症状：界面勾了必填却不生效）。
