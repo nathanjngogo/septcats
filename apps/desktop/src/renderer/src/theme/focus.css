@@ -1,0 +1,48 @@
+/* ---------------------------------------------------------------------------
+ * focus.css —— 专注模式（IDEA-A）：只藏"周边信息"，绝不动正文可读性。
+ * 生效开关 = html[data-focus='on']（focusState 挂的 dataset）。
+ * 只吃 token；无框线新增。
+ * --------------------------------------------------------------------------- */
+
+/* 一级导轨 / 二级侧栏 / 顶栏读数区与右侧动作钮退场：
+   display:none 而非 opacity —— 藏起来的控件不该再接受 Tab（键盘可达性一致）。 */
+html[data-focus='on'] .sc-shell__rail,
+html[data-focus='on'] .sc-shell__sidebar,
+html[data-focus='on'] .sc-readouts {
+  display: none;
+}
+
+/* 顶栏动作钮群整体让位（模板市场/搜索/AI/同步/导入/布局/设置），
+   **排除法**：只留专注钮（进得去也出得来）。窗控不在 actions 里，不受影响
+   （C 轮红线：min/max/close 是 renderer 自绘的命脉）。 */
+html[data-focus='on'] .sc-shell__actions > *:not(.sc-focus-toggle) {
+  display: none;
+}
+
+/* 编辑列**不再二次收窄**：PageView 已有 measure 宽度机制（--sc-layout-measure），
+   专注模式再钉一个 max-width 只会与它打架——藏周边就够安静了。 */
+
+/* 多维表格专注时收窄整卡（它没有正文列宽概念） */
+html[data-focus='on'] .bitable-page {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+/* 模式提示角标（aria-hidden 纯视觉；退出说明在 aria-live 文案里） */
+html:not([data-focus='on']) .sc-focus-badge {
+  display: none;
+}
+
+.sc-focus-badge {
+  position: fixed;
+  right: var(--sc-space-md);
+  bottom: var(--sc-space-md);
+  z-index: 30;
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-surface);
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-xs);
+  pointer-events: none;
+}

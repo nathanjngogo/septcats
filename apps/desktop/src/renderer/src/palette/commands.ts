@@ -52,6 +52,8 @@ export interface CommandDeps {
   switchToNextWorkspace(): void;
   openTrash(): void;
   openSettings(): void;
+  /** IDEA-A 专注模式：命令面板「切换专注模式」（App 直调 focusState，与 setThemeLook 同门）。 */
+  toggleFocus?(): void;
   /** M12 起接入导入向导；未注入时回退 notify（palette 测试的兼容口径）。 */
   openImport?(): void;
   /**
@@ -186,8 +188,15 @@ export const TOGGLE_FULL_WIDTH_DEF: PaletteCommandDef = {
   aliases: ['quankuan', 'quan', 'qw', 'gudingkuandu', 'gdkd', 'full width', 'fullwidth', 'full'],
 };
 
+export const FOCUS_DEF: PaletteCommandDef = {
+  id: 'app.focus',
+  label: t('commands.app.focus'),
+  hint: t('commandHints.app.focus'),
+  aliases: ['zhuanzhumoshi', 'zzms', 'zhuanzhu', 'focus', 'zen', 'distraction free'],
+};
+
 /**
- * T56-01：「使用说明书」命令定义。**不在静态 COMMAND_DEFS 里**——同 openAiChat
+ * T56-01：「使用说明书」命令定义.**不在静态 COMMAND_DEFS 里**——同 openAiChat
  * 走 deps 门（App 恒注入 openManual → 恒出现；palette 基线测试的 spy deps 不注入
  * → 静态清单/别名基线不受影响）。
  */
@@ -421,6 +430,14 @@ export function bindPaletteCommands(deps: CommandDeps): PaletteCommand[] {
       label: t('commands.app.workbench'),
       hint: t('commandHints.app.workbench'),
       run: deps.openWorkbench,
+    });
+  }
+  if (deps.toggleFocus !== undefined) {
+    commands.push({
+      ...FOCUS_DEF,
+      label: t('commands.app.focus'),
+      hint: t('commandHints.app.focus'),
+      run: deps.toggleFocus,
     });
   }
   // T72-01 §范围1：工作台模板市场命令（App 恒注入 → 恒出现）。

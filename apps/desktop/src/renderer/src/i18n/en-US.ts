@@ -36,6 +36,10 @@ export const enUS = {
     workbenchLabel: 'My Workbench',
     // T72-01 §1: top-bar "Workbench Template Market" entry button (shop glyph; Alt+H opens market)
     workbenchMarketLabel: 'Template Market',
+    focusLabel: 'Focus mode (F9)',
+    focusText: 'Focus',
+    focusOn: 'Focusing',
+    focusExitHint: 'Esc to exit',
   },
   // T66-01: personal workbench (home view) copy.
   workbench: {
@@ -1161,6 +1165,8 @@ export const enUS = {
       workbench: 'My Workbench',
       // T72-01 §1: Workbench Template Market command (Alt+H opens the market)
       workbenchMarket: 'Template Market',
+
+      focus: 'Toggle focus mode',
     },
     theme: {
       light: 'Switch Theme: Light',
@@ -1201,6 +1207,7 @@ export const enUS = {
       // T66-01 §1.2 / T72-01 §1
       workbench: 'Open the personal workbench (card dashboard)',
       workbenchMarket: 'Open the workbench template market (built-in templates and cards, Alt+H)',
+      focus: 'Hide rails and topbar buttons, keep only the text (F9 / Esc)',
     },
     theme: {
       light: 'Interface theme',

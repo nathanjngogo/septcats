@@ -59,6 +59,8 @@ import { TemplateMarketPage } from './workbench/TemplateMarketPage';
 import { layoutActions, layoutStore, nextLayoutPreset, useLayout } from './layout/layoutState';
 import { paletteActions as themePaletteActions } from './theme/paletteState';
 import { lookActions } from './theme/lookState';
+import { toggleFocus } from './theme/focusState';
+import { FocusBadge, FocusToggleButton, useFocusHotkeys } from './layout/FocusMode';
 import { useWallpaperUnderlay } from './theme/wallpaperUnderlay';
 import './App.css';
 
@@ -73,6 +75,7 @@ function useCommandWiring(
   openLayoutEditor: () => void,
   openWorkbench: () => void,
   openWorkbenchMarket: () => void,
+  toggleFocusMode: () => void,
 ): void {
   // T25-01：locale 变化 → 重装配命令（label/hint 在绑定时经 t() 现取）
   const locale = useLocale();
@@ -120,6 +123,8 @@ function useCommandWiring(
             setThemePalette: (id): void => {
               themePaletteActions.setPalette(id);
             },
+            // IDEA-A：命令面板「切换专注模式」（直调 focusState 同一入口）
+            toggleFocus: toggleFocusMode,
             // T85-01：命令面板「切到 X 质感」三条（与配色切换同通道）
             setThemeLook: (id): void => {
               lookActions.setLook(id);
@@ -246,7 +251,7 @@ export function App() {
     setView('market');
   }, []);
   const closeMarket = useCallback(() => setView('editor'), []);
-  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor, openWorkbench, openWorkbenchMarket);
+  useCommandWiring(openSettings, openImport, openManual, openLayoutEditor, openWorkbench, openWorkbenchMarket, toggleFocus);
 
   // T51-01：侧栏开合的唯一出口（顶栏按钮 + 原生菜单 View→折叠侧栏 共用），
   // 开合写入布局状态（持久化），位置同步 effect 保持 collapsed 一致。
@@ -339,6 +344,8 @@ export function App() {
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [paletteOpenForHotkey, toggleAiPanel]);
+  // IDEA-A：F9 / Esc 快捷键（实现住在 FocusMode，与测试同源）
+  useFocusHotkeys(paletteOpenForHotkey);
 
   // T87-02：Windows 撤原生菜单 → 其注册的快捷键补挂 renderer 侧（动作单源=menu 出口）：
   //   Ctrl+N 新建页面；Ctrl+±/0 缩放（经 menu.role → 本窗 webContents.setZoomLevel）。
@@ -653,6 +660,8 @@ export function App() {
         readouts={<TopReadouts />}
         actions={
           <>
+            {/* IDEA-A 专注模式钮：必须留在 actions（CSS 只让位非本钮的元素——进得去也出得来）。 */}
+            <FocusToggleButton />
             {/* T72-01 §范围1：顶栏房子钮 = 工作台模板市场入口（Alt+H / 命令面板同效）。
                 原「我的工作台」home 入口保留为市场内的 workbench-open 行内钮（见
                 TemplateMarketPage）。glyph 曾为应用层局部自绘，T74-01 已收编进
@@ -789,6 +798,7 @@ export function App() {
           </div>
         )}
       </AppShell>
+      <FocusBadge />
       </div>{/* /app-frame_body */}
       {/* 弹层族 = 根层 fixed 定位，不参与 frame 的 flex 布局 */}
       <CommandPalette />

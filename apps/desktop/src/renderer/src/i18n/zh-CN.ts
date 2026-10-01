@@ -36,6 +36,10 @@ export const zhCN = {
     workbenchLabel: '我的工作台',
     // T72-01 §范围1：顶栏「工作台模板市场」入口钮（店铺 glyph，Alt+H 语义改开市场）
     workbenchMarketLabel: '工作台模板市场',
+    focusLabel: '专注模式（F9）',
+    focusText: '专注',
+    focusOn: '专注中',
+    focusExitHint: 'Esc 退出',
     // T65-01 §1：顶栏调色板入口钮（画廊）
   },
   // T66-01：个人工作台（home 视图）文案。
@@ -1147,6 +1151,8 @@ export const zhCN = {
       workbench: '我的工作台',
       // T72-01 §范围1：工作台模板市场命令（Alt+H 语义改开市场）
       workbenchMarket: '工作台模板市场',
+
+      focus: '切换专注模式',
     },
     theme: {
       light: '切换主题：浅色',
@@ -1188,6 +1194,7 @@ export const zhCN = {
       // T66-01 §1.2 / T72-01 §范围1
       workbench: '打开我的工作台（卡片流仪表盘）',
       workbenchMarket: '打开工作台模板市场（内置模板与卡片，Alt+H）',
+      focus: '隐藏侧栏与顶栏按钮，只留正文（F9 / Esc）',
     },
     theme: {
       light: '界面主题',
