@@ -9,9 +9,10 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 - 老板说停 → 把 STATUS 改成 STOPPED 并写明原因。
 
 ## 当前任务（IDEA-E：视图排序 —— 0.6.10 清单「创意环节」第①项，老板 10-01 授权自主做到底）
-1. ✅ 引擎 `view.ts`：`reorderById` 纯函数 + view.test 8 例（值守 10-02 04:58，`9bd581a`；dbview tsc 0·全包 184/184 绿）。落点口径：右拖占目标后、左拖占目标前、from===to/未知 id 原样拷贝、返回新数组不改入参。视图序=`collection.views` 数组序，持久化走既有 `onSaveView→viewSave→collectionUpsertOp` 整对象通道（零新增 IPC）。
-2. **下一步（渲染层接线）**：`packages/dbview/src/react/DbView.tsx` 视图条（`visibleViews`，~137 行起）加拖拽改序（draggable 页签 + onDrop → `reorderById` → 落库）。**动手前先 grep `onSaveView` 全部宿主实现**：若宿主只收单视图（`{...activeView, ...patch}`），单视图通道改不了 views 数组序 → 落点二选一：宿主加 views 重排回调，或 viewSave 全量提交路径本就带 views（侦察后再定，属 DEVIATION 就记录）。键盘等价红线：页签 Alt+←/→ 移动（拖拽必须配键盘等价，skill UI 门禁）；新 CJK 字面量走 i18n 双语。
-3. 之后：react/dbview 测试 ≥6 例 → 真机探针（建 3 视图→拖序→IPC 读回 views 序一致→重启仍在）→ 首次启动导览（清单第②项，独立子步）→ 全量门禁 + ensure-abi electron + 重打包 + 包审 + 台账（CHANGELOG 0.6.10 + MILESTONES）→ commit+push → STATUS=COMPLETE 汇报待发版。
+1. ✅ 引擎 `view.ts`：`reorderById` 纯函数 + view.test 8 例（值守 10-02 04:58，`9bd581a`；dbview tsc 0·全包 184/184 绿）。落点口径：右拖占目标后、左拖占目标前、from===to/未知 id 原样拷贝、返回新数组不改入参。
+1b. ✅ 桥接面（值守 10-02 05:50，`bc1c0df`）：**DEVIATION 追认**——main `saveView` 按 vid 原位替换（`current.map`），数组序不可改，step1 的「零新增 IPC」前提不成立 → 新开 `db:view:reorder` 通道（shared/ipc 定名 + service.reorderViews 复用引擎 reorderById + zod schema + handler + preload viewReorder 桥 + window.d.ts；序未变/from===to/未知 vid=零写，改序恰好 1 op）；dbview.test +1 例；desktop tsc 0·dbview.test 12/12 绿。
+2. **下一步（渲染层接线）**：a) `useDbPage.ts` 加 `reorderViews(fromVid,toVid)`（调 `dbApi().viewReorder` + `reload()`，照 saveView 范式）；b) `DbView.tsx` 加可选 prop `onReorderView?: (fromVid, toVid) => void`（可选=宿主未接线零回归，DbPage 接线处 `apps/desktop/src/renderer/src/db/DbPage.tsx:~365`）；c) 视图条 UI 形态侦察结论：**本仓视图切换是 PropBar 的 `Menu` 下拉（viewItems，PropBar.tsx:231/316），不是页签条**——「draggable 页签」前提不符，按最小改动落地=下拉菜单项支持拖拽重排（或菜单项「↑/↓ 移动」行内控件，择一实现并记 DEVIATION）；键盘等价红线照旧（Alt+←/→ 或等效键）；新 CJK 字面量走 i18n 双语（zh-CN/en-US 键集等价门禁 i18n.test.ts）。改 CSS 必跑 no-magic。
+3. 之后：react/dbview 测试 ≥6 例 → 真机探针（建 3 视图→改序→IPC 读回 views 序一致→重启仍在；探针数据隔离双钉）→ 首次启动导览（清单第②项，独立子步）→ 全量门禁 + ensure-abi electron + 重打包 + 包审 + 台账（CHANGELOG 0.6.10 + MILESTONES）→ commit+push → STATUS=COMPLETE 汇报待发版。
 
 ## 避让规则（主会话与值守通用——双向检查，防双写冲突）
 - **任何会话动手改代码前，先看 `.hermes/CLAIM`**：存在且 mtime <40 分钟 → 别人在干，本会话只做只读汇报，不改代码。
@@ -27,6 +28,7 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 - 17:19 主会话收编 step-1（types.ts，tsc 已验）→ `27f91c6`。看门狗阈值修正：cron 单次 3 分钟硬中断 → CLAIM 超 10 分钟判死尸（RECLAIM 态），每批=文件级子步。
 
 - 04:55 值守接管（心跳 42min 超阈、无 CLAIM、树净）：认领 IDEA-E step1=引擎 view.ts `reorderById` + 8 例；dbview tsc 0·184/184；commit 9bd581a。下一子步=渲染层接线（含 onSaveView 宿主侦察）。
+- 05:50 值守接管（心跳 51min 超阈、无 CLAIM、树净）：认领 IDEA-E step2 之桥接面子步。侦察定案：saveView 原位替换改不了数组序（幻前提「零新 IPC」证伪）→ 新 db:view:reorder 通道全链（shared→main service/handler/schema→preload→window.d.ts）+ service 测试 1 例（含零写三态）；desktop tsc 0、dbview.test 12/12；commit bc1c0df。下一子步=渲染层接线（注意：视图切换是 PropBar 下拉非页签，拖拽形态按侦察结论落地）。
 ## 红线（值守 Agent 必须遵守）
 - 真实档案 `C:/Users/Administrator/.septcats/` **只读**；探针用 `_scratch` 副本 + mtime 双钉。
 - 测试跑前 `node apps/desktop/scripts/ensure-abi.mjs node`；打包前 `... electron`。
