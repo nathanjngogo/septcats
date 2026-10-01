@@ -1,0 +1,63 @@
+/* ---------------------------------------------------------------------------
+ * PageFind.css —— 页内查找条（IDEA-D）。浮层挂编辑区右上；全 token。
+ * --------------------------------------------------------------------------- */
+
+.pv-find {
+  position: sticky;
+  top: var(--sc-space-xs);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xxs);
+  align-self: flex-end;
+  margin: 0 0 var(--sc-space-xs) auto;
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-full);
+  background: var(--sc-color-surface-raised);
+  max-width: min(92%, 34rem);
+}
+
+.pv-find-input {
+  flex: 1;
+  min-width: 8em;
+  border: 0;
+  background: none;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+}
+
+.pv-find-input:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 1px; border-radius: var(--sc-radius-sm); }
+.pv-find-input::placeholder { color: var(--sc-color-ink-secondary); }
+
+.pv-find-count {
+  flex: none;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  min-width: 3ch;
+  text-align: center;
+}
+
+.pv-find-nav {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--sc-color-ink-secondary);
+  font: var(--sc-text-ui-sm);
+  line-height: 1;
+  padding: var(--sc-space-xxs);
+  cursor: pointer;
+}
+
+.pv-find-nav:hover { color: var(--sc-color-ink); }
+.pv-find-nav:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: 1px; }
+
+.pv-find-hint {
+  flex: none;
+  max-width: 14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}

@@ -539,6 +539,12 @@ export const zhCN = {
     },
     stats: '{words} 字 · 约读 {minutes} 分钟',
     outline: '目录',
+    findTitle: '页内查找',
+    findPlaceholder: '查找本页…（Enter 下一个）',
+    findNone: '无匹配',
+    findPrev: '上一个匹配',
+    findNext: '下一个匹配',
+    findClose: '关闭查找',
   },
   // T64-01：文件夹（page_type='folder' 容器节点）
   folder: {

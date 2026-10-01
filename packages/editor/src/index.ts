@@ -10,6 +10,7 @@
 export * from './model';
 export * from './stats';
 export * from './headings';
+export * from './find';
 // R26（T78-01）：跨块多选纯函数面（区间计算 / 扩选状态机 / 组落位序）
 export * from './selection';
 // R25（T76-01）：单块自包含内容块（table/toggle）的真相层 shape 与纯函数算子

@@ -243,6 +243,19 @@ async function main() {
       record('页内大纲(缺)', await page.evaluate(SWEEP));
     }
 
+    // IDEA-D：页内查找条（浮层 + 计数 + 预览 = 新文字落点）
+    await page.keyboard.press('Control+f');
+    await wait(600);
+    await page.keyboard.type('大纲验收');
+    await wait(900);
+    if (await page.evaluate(() => document.querySelector('[data-testid="pv-find"]') !== null)) {
+      record('页内查找条', await page.evaluate(SWEEP));
+      await page.keyboard.press('Escape');
+      await wait(400);
+    } else {
+      record('页内查找条(缺)', await page.evaluate(SWEEP));
+    }
+
     // 一级轨各面
     for (const [key, label] of [
       ['knowledge', '知识库'],

@@ -531,6 +531,12 @@ export const enUS = {
     },
     stats: '{words} words · about {minutes} min read',
     outline: 'Outline',
+    findTitle: 'Find in page',
+    findPlaceholder: 'Find on this page… (Enter = next)',
+    findNone: 'No matches',
+    findPrev: 'Previous match',
+    findNext: 'Next match',
+    findClose: 'Close find',
   },
   // T64-01: folder (page_type='folder' container node)
   folder: {

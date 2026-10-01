@@ -95,6 +95,29 @@
 - 测试：`t99-bitable-ui` 新增 4 例（打开 / 改字段落库 / 卡内交互不串扰 / 关闭复位）→ 该文件 13/13。
 - 探针：`cdp-e2e-t99-01` 新增 **R10**（点开 → 纯键盘 Control+A 输入 Enter 改标题 → IPC 读回 → 关闭）。
 
+### 创意项 IDEA-C：页内大纲（标题≥2 才现身的可折叠目录）
+- 纯函数住引擎：`collectHeadings`（只认 heading 块 / 跳空标题与无 id 块 / level 夹 1..3 /
+  顺序=文档顺序）→ headings.test 5 例钉口径；组件只画表，跳转复用 PageView 既有
+  `jumpToBlockId`（data-id 锚 + scrollIntoView，定位语义单一出处）。
+- 交互：标题行下「目录 · N」可折叠；level 缩进走空间 token（l2/l3 递进）；长标题截 32 码点、
+  title 悬浮留全文；**少于 2 标题整条不渲染**（短笔记不加噪音行）。
+- 真机 cdp-e2e-idea-c **5/5**（目录·3 → 缩进分档 → 点条目滚到目标块 inView → 折叠回落）；
+  对比度扫描面 18→19；desktop 1477 绿时提交（后并入 IDEA-D 批次，当前 1484）。
+
+### 创意项 IDEA-D：页内查找（Ctrl+F 块级定位）
+- 纯函数住引擎：`collectMatches`（按块匹配、大小写不敏感、无 id 块跳过、空查询=[]）与
+  `previewMatch`（命中点开窗 ±12 码点、前后掐省略号）→ find.test 6 例钉口径。
+- 交互面 PageFind.tsx：浮层搜索条（sticky 右上），「i/N」计数 + Enter/Shift+Enter/↑↓ 环绕游走 +
+  预览命中上下文；**打字 250ms 防抖追跳、手动游走立即跳**；0 匹配如实显示「无匹配」；Esc/× 关闭。
+- Ctrl/Cmd+F 渲染层监听（accelerator grep 实证主菜单零冲突；命令面板开着让位）；
+  跳转复用大纲同一条 `jumpToBlockId`。v1 刻意**不做块内逐字高亮**（动 ProseMirror 装饰面
+  风险高收益小——块级定位已解决"长文找段落"主诉求）。
+- 接线坑入档：PageView 顶部 `import type { KeyboardEvent }` 是 React 版会遮蔽全局类型 →
+  DOM 监听器必须 `globalThis.KeyboardEvent`（照 1144 行先例）；palette 取 `paletteStore.getState()`。
+- 测试：idea-d-find.test 7 例（fake timers 验防抖）→ desktop **1484/1484**（133 文件）；
+  真机 cdp-e2e-idea-d **7 PASS / 0 FAIL**（出条聚焦 → 1/2+预览 → Enter 2/2 且目标块 inView → 无匹配如实 → Esc 关）。
+- 对比度扫描面 19→**20** → dark/light 各 1367 元素 **0 违例**；i18n find 键双语补全。
+
 ### 创意项 IDEA-B：写作洞察条（页尾「N 字 · 约读 M 分钟」）
 - 新纯函数 `packages/editor/stats.ts`：CJK 逐字 + 拉丁词 = 字数；预计阅读分钟 = 
   ceil(字数/300) 且最少 1（300 字/分钟保守值）；空文本 = null（不显示「0 字 · 读 1 分钟」的蠢话）；

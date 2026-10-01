@@ -26,6 +26,7 @@ import {
   resolveWikilinkTarget,
   type BlockDoc,
   type BulkSelection,
+  type FindSource,
   type WikilinkClickInfo,
   type WikilinkMenuState,
   collectHeadings,
@@ -67,6 +68,8 @@ import { usePageWidth } from '../state/pageWidth';
 import { registerFlushTask } from '../state/flushRegistry';
 import { BacklinksPanel } from './BacklinksPanel';
 import { PageOutline } from './PageOutline';
+import { PageFind } from './PageFind';
+import { paletteStore } from '../state/palette';
 import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
@@ -570,6 +573,8 @@ export function PageView({ page }: PageViewProps) {
   // IDEA-C：页内大纲——同「editor.state 现读」口径；change 与换页都重算。
   // blocksRevision 进依赖：换页/重载（非 update 事件的 doc 置换）也能刷出来。
   const [outlineHeadings, setOutlineHeadings] = useState<readonly HeadingEntry[]>([]);
+  // IDEA-D：页内查找条开关（Ctrl/Cmd+F 开；主菜单未注册 CmdOrCtrl+F，零冲突）
+  const [findOpen, setFindOpen] = useState(false);
   useEffect(() => {
     if (editor === null || !rendersEditor) {
       setOutlineHeadings([]);
@@ -584,6 +589,28 @@ export function PageView({ page }: PageViewProps) {
       editor.off('update', scan);
     };
   }, [editor, rendersEditor, blocksRevision, activePageId]);
+
+  // IDEA-D：Ctrl/Cmd+F 开查找条（命令面板开着时让位——一次按键只干一件事）
+  useEffect(() => {
+    if (!rendersEditor) {
+      return;
+    }
+    // 顶部 import type { KeyboardEvent } 是 React 版会遮蔽全局类型，DOM 监听器须用 globalThis（同 1144 先例）
+    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey
+        && (event.key === 'f' || event.key === 'F')) {
+        if (paletteStore.getState().open) {
+          return;
+        }
+        event.preventDefault();
+        setFindOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [rendersEditor]);
 
   /**
    * T38-01：AI 对话侧栏的编辑器桥 —— 注册当前页上下文提供者与引用块跳转。
@@ -1615,6 +1642,17 @@ export function PageView({ page }: PageViewProps) {
             blockLabels={editorBlockLabels}
           />
         ) : null}
+        {editor === null || !findOpen ? null : (
+          <PageFind
+            getDoc={(): FindSource | null => (editor === null ? null : (editor.state.doc as never))}
+            onJump={(blockId) => {
+              jumpToBlockId(editor, blockId);
+            }}
+            onClose={() => {
+              setFindOpen(false);
+            }}
+          />
+        )}
         {editor === null ? null : (
           <PageOutline
             headings={outlineHeadings}
