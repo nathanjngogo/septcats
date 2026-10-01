@@ -8,18 +8,10 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 - 收口前必刷：commit+push 完成后立刻更新本文件的「下一步」+ HEARTBEAT。
 - 老板说停 → 把 STATUS 改成 STOPPED 并写明原因。
 
-## 当前任务（T102：仪表盘 + 自动化 视图，飞书对标，老板 10-01 第⑤项）
-侦察已完成（勿重做）：主进程 `apps/desktop/src/main/dbview.ts` 读写 views 走 `decodeViews/parseViews`（引擎 collectionEntitySchema 是视图读写通道）；`svc.createRecord≈739 行` / `svc.updateRecord≈775 行` 是自动化的触发点；`commitOps` 支持多 op 同事务；record upsert 的 `base=record.version`（追加 op 用 version+1 串行）；`schema_json` 顶层键会被 `parseCollectionSchema` 剥掉 → 自动化规则**改挂在视图上**（`DbView.widgets?` / `DbView.rules?`，经 `saveView→normalizeView` 往返，零新增 IPC）。
-
-下一步按序执行（每步完成都跑对应测试）：
-1. ✅ 引擎 `types.ts`：VIEW_TYPES+=dashboard|automation + widgets/rules schema（已收编提交，见回滚清单）。
-2. 引擎 `view.ts`：`normalizeView` 清洗 widgets/rules（去重 id、剔未知类型/pid）；新纯函数 `resolveWidgets(schema, view)`（剔指向不存在/隐藏字段的项）、`evalRules(schema, rules, {kind,pid,values})` → 返回要写入的 {pid:value} 合并表（select 校验选项 id 存在）。
-3. 引擎 `react/DbView.tsx`：dashboard/automation 两型不进 TableGrid（白名单逻辑已在），新增 render 插槽 props。
-4. 主进程 `dbview.ts`：`createRecord/updateRecord` 执行规则（updateRecord 读旧值→合并 patch→逐条存活规则 eval→一个 batch 多 op；同轮再扫一遍 rules 直到不动点，防链式漏触发；规则改动（views_json 含 rules 的视图）→ 对应视图 version bump op）。
-5. 应用层 `BitablePage.tsx`：+仪表盘/+自动化 按钮（新视图带默认 widgets/rules）；`DashboardBoard`（指标卡=groupBySelect/aggregate 复用引擎、加法小计、纯 CSS 色带）与 `AutomationBoard`（规则列表 + 开关 + 删除 + 新建）；CSS/i18n 双语；跑 no-magic。
-6. 测试：引擎新纯函数 ≥10 例；`dbview.test`（主进程）规则触发/链式/版本 bump ≥4 例；`t99b/t99c` 面板 ≥8 例；T101 对比度加 2 面（dashboard/automation）。
-7. 真机：`cdp-e2e-t99-01.mjs` 加 R13（建仪表盘→指标卡数与 IPC 读回一致；建规则「状态→读完时把分数设为 10」→ 看板拖动改状态 → IPC 读回分数=10 且视图 version+1）。
-8. 门禁全量（ensure-abi node → dbview/ui/desktop test + tsc + no-magic）→ ensure-abi electron → dist 重打包 → T99/T85/T100 全绿 → 台账（CHANGELOG 0.6.10 + MILESTONES R61）→ commit+push（代理 7897 兜底脚本，gh token 一次性 URL，凭据不落日志）→ 更新本文件 STATUS/下一步 → 心跳。
+## 当前任务（IDEA-E：视图排序 —— 0.6.10 清单「创意环节」第①项，老板 10-01 授权自主做到底）
+1. ✅ 引擎 `view.ts`：`reorderById` 纯函数 + view.test 8 例（值守 10-02 04:58，`9bd581a`；dbview tsc 0·全包 184/184 绿）。落点口径：右拖占目标后、左拖占目标前、from===to/未知 id 原样拷贝、返回新数组不改入参。视图序=`collection.views` 数组序，持久化走既有 `onSaveView→viewSave→collectionUpsertOp` 整对象通道（零新增 IPC）。
+2. **下一步（渲染层接线）**：`packages/dbview/src/react/DbView.tsx` 视图条（`visibleViews`，~137 行起）加拖拽改序（draggable 页签 + onDrop → `reorderById` → 落库）。**动手前先 grep `onSaveView` 全部宿主实现**：若宿主只收单视图（`{...activeView, ...patch}`），单视图通道改不了 views 数组序 → 落点二选一：宿主加 views 重排回调，或 viewSave 全量提交路径本就带 views（侦察后再定，属 DEVIATION 就记录）。键盘等价红线：页签 Alt+←/→ 移动（拖拽必须配键盘等价，skill UI 门禁）；新 CJK 字面量走 i18n 双语。
+3. 之后：react/dbview 测试 ≥6 例 → 真机探针（建 3 视图→拖序→IPC 读回 views 序一致→重启仍在）→ 首次启动导览（清单第②项，独立子步）→ 全量门禁 + ensure-abi electron + 重打包 + 包审 + 台账（CHANGELOG 0.6.10 + MILESTONES）→ commit+push → STATUS=COMPLETE 汇报待发版。
 
 ## 避让规则（主会话与值守通用——双向检查，防双写冲突）
 - **任何会话动手改代码前，先看 `.hermes/CLAIM`**：存在且 mtime <40 分钟 → 别人在干，本会话只做只读汇报，不改代码。
@@ -34,6 +26,7 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 - 16:58 值守第一拍点火（认领 step-1）→ 无下文（疑似被拍死/会话被截）。
 - 17:19 主会话收编 step-1（types.ts，tsc 已验）→ `27f91c6`。看门狗阈值修正：cron 单次 3 分钟硬中断 → CLAIM 超 10 分钟判死尸（RECLAIM 态），每批=文件级子步。
 
+- 04:55 值守接管（心跳 42min 超阈、无 CLAIM、树净）：认领 IDEA-E step1=引擎 view.ts `reorderById` + 8 例；dbview tsc 0·184/184；commit 9bd581a。下一子步=渲染层接线（含 onSaveView 宿主侦察）。
 ## 红线（值守 Agent 必须遵守）
 - 真实档案 `C:/Users/Administrator/.septcats/` **只读**；探针用 `_scratch` 副本 + mtime 双钉。
 - 测试跑前 `node apps/desktop/scripts/ensure-abi.mjs node`；打包前 `... electron`。
