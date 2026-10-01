@@ -24,7 +24,7 @@ import {
   propertySchema,
   recordEntitySchema,
 } from '../src/types';
-import { normalizeFilter, normalizeSort } from '../src/view';
+import { normalizeFilter, normalizeSort, visibleProperties } from '../src/view';
 import {
   applyFilter,
   applySort,
@@ -673,5 +673,38 @@ describe('性能底线', () => {
     const elapsed = performance.now() - started;
     expect(sorted.length).toBeGreaterThan(0);
     expect(elapsed, `filter+sort=${elapsed.toFixed(2)}ms`).toBeLessThan(400);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// visibleProperties（老板 10-01 第②项：隐藏字段的消费入口）
+// ---------------------------------------------------------------------------
+
+describe('visibleProperties（视图隐藏字段）', () => {
+  const schema = {
+    title_pid: 'p_title',
+    properties: {
+      p_title: { id: 'p_title', name: '标题', type: 'text' },
+      p_score: { id: 'p_score', name: '评分', type: 'number' },
+      p_date: { id: 'p_date', name: '读完于', type: 'date' },
+    },
+  } as unknown as CollectionSchema;
+
+  it('未设置 / 空数组 → 全字段（零行为变化）', () => {
+    expect(visibleProperties(schema, undefined).map((p) => p.id)).toEqual(['p_title', 'p_score', 'p_date']);
+    expect(visibleProperties(schema, []).map((p) => p.id)).toEqual(['p_title', 'p_score', 'p_date']);
+  });
+
+  it('隐藏集合生效，且保持属性声明顺序', () => {
+    expect(visibleProperties(schema, ['p_date']).map((p) => p.id)).toEqual(['p_title', 'p_score']);
+    expect(visibleProperties(schema, ['p_score', 'p_date']).map((p) => p.id)).toEqual(['p_title']);
+  });
+
+  it('主字段（title_pid）永不可隐藏：写进集合也照样可见（与飞书主字段口径一致）', () => {
+    expect(visibleProperties(schema, ['p_title', 'p_score']).map((p) => p.id)).toEqual(['p_title', 'p_date']);
+  });
+
+  it('未知 pid 忽略（属性被删后的残留不报错、不影响其它列）', () => {
+    expect(visibleProperties(schema, ['p_gone']).map((p) => p.id)).toEqual(['p_title', 'p_score', 'p_date']);
   });
 });

@@ -696,6 +696,29 @@ export function applyView(
   return sorted;
 }
 
+/**
+ * 视图**可见属性**：属性表去掉 `hiddenPids` 里隐藏的列（老板 10-01 第②项）。
+ *
+ * ⚠ 落地前的实情：`hiddenPids` 此前**只被存储与校验**（normalizeView / main 侧 schema），
+ * 没有任何渲染层消费它 —— 即「隐藏字段」是个半成品。本函数是它的**消费入口**。
+ *
+ * 规则（与飞书「主字段不可隐藏」口径一致）：
+ *  ① `title_pid` **永不可隐藏**（行标识 + 换行拖拽锚点 + 表格视图首列恒为它）；
+ *  ② 未知 pid 忽略（属性被删后视图里的残留不报错）；③ 顺序保持属性声明顺序。
+ */
+export function visibleProperties(
+  schema: CollectionSchema,
+  hiddenPids: readonly string[] | undefined,
+): Property[] {
+  const all = propertyList(schema);
+  if (hiddenPids === undefined || hiddenPids.length === 0) {
+    return all;
+  }
+  const hidden = new Set(hiddenPids.filter((pid) => typeof pid === 'string'));
+  hidden.delete(schema.title_pid);
+  return all.filter((property) => !hidden.has(property.id));
+}
+
 /** 视图里引用的属性是否仍存在（属性删除后用于提示「筛选/排序引用了已删属性」）。 */
 export function danglingReferences(view: DbView, schema: CollectionSchema): string[] {
   const known = new Set(propertyList(schema).map((property) => property.id));

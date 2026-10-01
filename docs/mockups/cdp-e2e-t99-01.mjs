@@ -353,6 +353,64 @@ async function main() {
   const detailClosed = await page.evaluate(() => document.querySelector('[data-testid="bitable-detail"]') === null);
   check('R10-c 关闭钮 → 详情退场', detailClosed === true, String(detailClosed));
 
+  // ---------- R11 隐藏字段入口（老板 10-01 第②项） ----------
+  STEP = 'R11';
+  // 回表格视图（字段显示菜单在 PropBar 上，ProBar 只存在于表格视图）
+  const tableVid = await page.evaluate(() => {
+    const chips = [...document.querySelectorAll('[data-testid^="bitable-view-chip-"]')];
+    return chips.length === 0 ? '' : (chips[0].getAttribute('data-testid') ?? '').replace('bitable-view-chip-', '');
+  });
+  await page.evaluate((vid) => { document.querySelector(`[data-testid="bitable-view-chip-${vid}"]`)?.click(); }, tableVid);
+  await wait(1600);
+  const headsBefore = await page.evaluate(() => document.querySelectorAll('.sc-dbhead__cell').length);
+  const menuBtn = await page.evaluate(() => document.querySelector('[data-testid="propbar-fields"]') !== null);
+  const fieldMenu = await page.evaluate(() => {
+    document.querySelector('[data-testid="propbar-fields"]')?.click();
+    return true;
+  });
+  await wait(700);
+  const menuItems = await page.evaluate(() => {
+    const menu = document.querySelector('[role="menu"][aria-label="字段显示"]');
+    if (menu === null) return [];
+    return [...menu.querySelectorAll('[role="menuitem"]')].map((e) => ({ text: (e.textContent ?? '').trim(), id: (e.getAttribute('data-menu-id') ?? '') }));
+  });
+  const shotFields = await shot(page, 'bitable-fields-menu');
+  check('R11-a 表格视图工具条有「字段显示」入口，菜单列出可隐藏字段', menuBtn === true && menuItems.length >= 1,
+    `btn=${String(menuBtn)} items=${JSON.stringify(menuItems.map((m) => m.text))}`);
+
+  // 点第一项（select 字段）→ 该列隐藏
+  await page.evaluate(() => {
+    const menu = document.querySelector('[role="menu"][aria-label="字段显示"]');
+    if (menu !== null) {
+      const first = menu.querySelectorAll('[role="menuitem"]')[0];
+      if (first !== undefined) { (first).click(); }
+    }
+  });
+  await wait(1200);
+  const afterHide = await page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    const tv = loaded.collection.views.find((v) => v.type === 'table');
+    return {
+      heads: document.querySelectorAll('.sc-dbhead__cell').length,
+      hiddenPids: tv === undefined ? [] : (tv.hiddenPids ?? []),
+      badge: (document.querySelector('[data-testid="propbar-fields"]')?.textContent ?? '').trim(),
+    };
+  }, built.pageId);
+  check('R11-b 点字段项 → 网格少一列 + 视图 hiddenPids 已落库 + 计数徽标下降',
+    afterHide.heads === headsBefore - 1 && afterHide.hiddenPids.length === 1,
+    `heads ${String(headsBefore)}→${String(afterHide.heads)} hiddenPids=${JSON.stringify(afterHide.hiddenPids)} badge=${afterHide.badge}`);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.sc-shell__body', { timeout: 30000 });
+  await wait(2400);
+  await page.evaluate((k) => { document.querySelector(`[data-testid="nav-rail-${k}"]`)?.click(); }, 'bitable');
+  await wait(1500);
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-side-item-${pid}"]`)?.click(); }, built.pageId);
+  await wait(1700);
+  const persisted = await page.evaluate(() => ({ heads: document.querySelectorAll('.sc-dbhead__cell').length }));
+  check('R11-c reload 后仍隐藏（持久化）', persisted.heads === headsBefore - 1,
+    `heads=${String(persisted.heads)}（隐藏前 ${String(headsBefore)}）`);
+
   // ---------- R8 夹具零触碰 ----------
   STEP = 'R8';
   await h.browser.close().catch(() => {});

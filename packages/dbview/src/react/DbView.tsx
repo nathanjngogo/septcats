@@ -305,6 +305,10 @@ export function DbView(props: DbViewProps) {
         onChangeSort={(next) => {
           saveView({ sort: next });
         }}
+        hiddenPids={activeView?.hiddenPids ?? []}
+        onChangeHidden={(next) => {
+          saveView({ hiddenPids: next });
+        }}
         onAddProperty={onAddProperty}
         onRemoveProperty={onRemoveProperty}
         onRenameProperty={onRenameProperty}
@@ -325,6 +329,7 @@ export function DbView(props: DbViewProps) {
 
       <TableGrid
         schema={schema}
+        hiddenPids={activeView?.hiddenPids ?? []}
         rows={visibleRows}
         widths={activeView?.widths ?? {}}
         status={effectiveStatus}

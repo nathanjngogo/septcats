@@ -311,6 +311,73 @@ describe('CellEditor', () => {
   });
 });
 
+describe('字段显示（视图隐藏字段的界面入口，老板 10-01 第②项）', () => {
+  const dbProps = {
+    collection: COLLECTION,
+    records: RECORDS,
+    status: 'ready' as const,
+    onCreateRecord: NOOP,
+    onDeleteRecords: NOOP,
+    onChangeValue: NOOP,
+    onRenameRecord: NOOP,
+    onAddProperty: NOOP,
+    onRemoveProperty: NOOP,
+    onRenameProperty: NOOP,
+    onSaveView: NOOP,
+    onExportCsv: NOOP,
+  };
+
+  it('视图带 hiddenPids → 网格少一列（表头与单元格同步消失）', () => {
+    const hidden = collectionEntitySchema.parse({
+      ...COLLECTION,
+      views: [{ ...defaultView('v1', '表格'), hiddenPids: ['p_score'] }],
+    });
+    const { container } = render(<DbView {...dbProps} collection={hidden} />);
+    const heads = [...container.querySelectorAll('.sc-dbhead__cell')];
+    expect(heads, '勾选列 + 3 个可见属性列（原 4）').toHaveLength(4);
+    expect(heads.map((h) => h.textContent ?? '').join(' '), '被隐藏的列名不得出现').not.toContain('评分');
+    expect(heads.map((h) => h.textContent ?? '').join(' ')).toContain('书名');
+  });
+
+  it('工具条「字段显示」菜单：只列可隐藏字段（主字段不进菜单）+ 计数徽标', () => {
+    const onSaveView = vi.fn();
+    const { container } = render(<DbView {...dbProps} onSaveView={onSaveView} />);
+    const btn = container.querySelector('[data-testid="propbar-fields"]');
+    expect(btn, '缺「字段显示」入口').not.toBeNull();
+    expect(btn?.textContent, '计数徽标 = 可见/总数').toContain('字段 4/4');
+    fireEvent.click(btn as HTMLElement);
+    const menu = screen.getByRole('menu', { name: '字段显示' });
+    const labels = within(menu).getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((l) => l.includes('书名')), '主字段不可隐藏 ⇒ 不进菜单').toBe(false);
+    for (const name of ['评分', '读完于', '状态']) {
+      expect(labels.some((l) => l.includes(name)), `菜单缺 ${name}`).toBe(true);
+    }
+  });
+
+  it('点菜单项 → onSaveView 带新 hiddenPids；再点回来则移除', () => {
+    const onSaveView = vi.fn();
+    const { container } = render(<DbView {...dbProps} onSaveView={onSaveView} />);
+    fireEvent.click(container.querySelector('[data-testid="propbar-fields"]') as HTMLElement);
+    const menu = screen.getByRole('menu', { name: '字段显示' });
+    fireEvent.click(within(menu).getAllByRole('menuitem')[0] as HTMLElement); // 第一项 = 评分（title 已过滤）
+    // saveView 传的是「合并后的完整视图」（不是补丁）⇒ 用 objectContaining 断言
+    expect(onSaveView).toHaveBeenCalledWith(expect.objectContaining({ hiddenPids: ['p_score'] }));
+  });
+
+  it('已隐藏字段：菜单标「已隐藏」且计数下降', () => {
+    const hidden = collectionEntitySchema.parse({
+      ...COLLECTION,
+      views: [{ ...defaultView('v1', '表格'), hiddenPids: ['p_score'] }],
+    });
+    const { container } = render(<DbView {...dbProps} collection={hidden} />);
+    expect(container.querySelector('[data-testid="propbar-fields"]')?.textContent).toContain('字段 3/4');
+    fireEvent.click(container.querySelector('[data-testid="propbar-fields"]') as HTMLElement);
+    const menu = screen.getByRole('menu', { name: '字段显示' });
+    const items = within(menu).getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(items.some((t) => t.includes('评分') && t.includes('已隐藏')), '隐藏态要有可见标记').toBe(true);
+  });
+});
+
 describe('PropBar', () => {
   const baseProps = {
     schema: SCHEMA,

@@ -83,6 +83,10 @@ export interface PropBarProps {
   onChangeFilter: (next: FilterGroup) => void;
   sort: DbView['sort'];
   onChangeSort: (next: DbView['sort']) => void;
+  /** 当前视图隐藏的字段（视图 `hiddenPids`，老板 10-01 第②项）。 */
+  hiddenPids?: readonly string[] | undefined;
+  /** 提交新的隐藏集（缺省则不渲染「字段显示」菜单——旧宿主零影响）。 */
+  onChangeHidden?: ((next: string[]) => void) | undefined;
   onAddProperty: (type: FieldType) => void;
   /** 属性表头下拉的「重命名/删除」在 DbView 的属性管理区触发；工具条只负责新属性。 */
   onRemoveProperty?: ((pid: string) => void) | undefined;
@@ -191,6 +195,8 @@ export function PropBar({
   onChangeFilter,
   sort,
   onChangeSort,
+  hiddenPids = [],
+  onChangeHidden,
   onAddProperty,
   onRemoveProperty,
   onRenameProperty,
@@ -204,6 +210,7 @@ export function PropBar({
 }: PropBarProps) {
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [propMenuOpen, setPropMenuOpen] = useState(false);
+  const [fieldMenuOpen, setFieldMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [propManagePid, setPropManagePid] = useState<string | null>(null);
@@ -226,6 +233,23 @@ export function PropBar({
     label: view.name,
     hint: view.vid === activeVid ? '当前' : undefined,
   }));
+
+  // 「字段显示」菜单：逐字段开关；**主字段（title_pid）不可隐藏**（与飞书主字段口径一致），
+  // 故它压根不进菜单 —— 不给「点了没反应」的假入口。
+  const hiddenSet = new Set(hiddenPids);
+  const fieldItems: MenuEntry[] = properties
+    .filter((property) => property.id !== schema.title_pid)
+    .map((property) => ({
+      id: property.id,
+      label: property.name,
+      hint: hiddenSet.has(property.id) ? '已隐藏' : '显示中',
+    }));
+  const toggleHidden = (pid: string): void => {
+    if (onChangeHidden === undefined) {
+      return;
+    }
+    onChangeHidden(hiddenSet.has(pid) ? hiddenPids.filter((x) => x !== pid) : [...hiddenPids, pid]);
+  };
 
   const propItems: MenuEntry[] = NEW_PROPERTY_TYPES.map((type) => ({
     id: type,
@@ -303,6 +327,39 @@ export function PropBar({
           </div>
         ) : null}
       </div>
+
+      {onChangeHidden === undefined ? null : (
+        <div className="sc-propbar__group">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={CaretDown}
+            data-testid="propbar-fields"
+            aria-haspopup="menu"
+            aria-expanded={fieldMenuOpen}
+            onClick={() => {
+              setFieldMenuOpen((open) => !open);
+            }}
+          >
+            {`字段 ${String(properties.length - hiddenPids.length)}/${String(properties.length)}`}
+          </Button>
+          {fieldMenuOpen ? (
+            <div className="sc-propbar__pop">
+              <Menu
+                items={fieldItems}
+                label="字段显示"
+                /* 开关类菜单**不自动关闭**：连点几个字段不用每次重开（Esc/点外部仍可退） */
+                onSelect={(id) => {
+                  toggleHidden(id);
+                }}
+                onDismiss={() => {
+                  setFieldMenuOpen(false);
+                }}
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {chips.length === 0 ? null : (
         <div className="sc-propbar__group">

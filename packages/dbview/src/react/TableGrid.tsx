@@ -24,7 +24,8 @@ import type {
   UIEvent,
 } from 'react';
 import { Button, Checkbox, EmptyState, ErrorPanel, Plus, Skeleton, Trash } from '@septcats/ui';
-import { propertyList, type CollectionSchema, type RecordEntity } from '../types';
+import { type CollectionSchema, type RecordEntity } from '../types';
+import { visibleProperties } from '../view';
 import { recordTitle } from '../values';
 import { CellEditor, type RelationCandidate } from './CellEditor';
 
@@ -45,6 +46,8 @@ const OVERSCAN = 1;
 export type DbTableStatus = 'loading' | 'ready' | 'error' | 'empty';
 
 export interface TableGridProps {
+  /** 当前视图隐藏的字段（视图 hiddenPids 的消费入口，老板 10-01 第②项）。 */
+  hiddenPids?: readonly string[] | undefined;
   schema: CollectionSchema;
   rows: readonly RecordEntity[];
   widths: Readonly<Record<string, number>>;
@@ -160,6 +163,8 @@ function TitleCell({
 }
 
 interface HeaderRowProps {
+  /** 视图隐藏的字段（见 view.ts visibleProperties；title 恒可见）。 */
+  hiddenPids?: readonly string[] | undefined;
   schema: CollectionSchema;
   widths: Readonly<Record<string, number>>;
   allSelected: boolean;
@@ -170,13 +175,14 @@ interface HeaderRowProps {
 
 function HeaderRow({
   schema,
+  hiddenPids,
   widths,
   allSelected,
   someSelected,
   onToggleSelectAll,
   onResizeColumn,
 }: HeaderRowProps) {
-  const properties = propertyList(schema);
+  const properties = visibleProperties(schema, hiddenPids);
 
   const startResize = useCallback(
     (event: ReactMouseEvent<HTMLSpanElement>, pid: string) => {
@@ -239,6 +245,7 @@ function HeaderRow({
 export function TableGrid(props: TableGridProps) {
   const {
     schema,
+    hiddenPids,
     rows,
     widths,
     status,
@@ -268,7 +275,7 @@ export function TableGrid(props: TableGridProps) {
     onAiGenerateCell,
   } = props;
 
-  const properties = useMemo(() => propertyList(schema), [schema]);
+  const properties = useMemo(() => visibleProperties(schema, hiddenPids), [schema, hiddenPids]);
   const [scrollTop, setScrollTop] = useState(0);
   const dragIdRef = useRef<string | null>(null);
   const [dropId, setDropId] = useState<string | null>(null);
@@ -460,6 +467,7 @@ export function TableGrid(props: TableGridProps) {
       <div className="sc-dbgrid__header">
         <HeaderRow
           schema={schema}
+          hiddenPids={hiddenPids}
           widths={widths}
           allSelected={allSelected}
           someSelected={someSelected}
