@@ -254,6 +254,41 @@ describeDb('dbViewService（行内数据库 · create/load/record/relation/delet
     expect(loaded.collection.views[0]?.coverPid).toBe('p_cover');
   });
 
+  it('IDEA-E reorderViews：拖序落库 1 op、序读回一致；from===to/未知 vid/序未变 = 零写', async () => {
+    const created = await service.create({ workspaceId: WORKSPACE_ID, title: '排序库' });
+    const initial = await service.load({ pageId: created.pageId });
+    const first = initial.collection.views[0];
+    expect(first, '新库必有默认视图').toBeTruthy();
+    const base = first as NonNullable<typeof first>;
+    // 建第 2、3 个视图（saveView 对不存在 vid = 追加尾部）
+    const v2 = await service.saveView({ pageId: created.pageId, view: { ...base, vid: 'v-two', name: '看板' } });
+    const v3 = await service.saveView({
+      pageId: created.pageId,
+      view: { ...(v2.collection.views[1] as object as typeof base), vid: 'v-three', name: '画廊' },
+    });
+    const orderOf = (views: readonly { vid: string }[]): string[] => views.map((view) => view.vid);
+    expect(orderOf(v3.collection.views)).toEqual([(base as { vid: string }).vid, 'v-two', 'v-three']);
+
+    // 右拖：第 1 个视图拖到第 3 个位置 → reorderById 口径（右拖占目标后=落到末尾）
+    const before = await opCount();
+    const moved = await service.reorderViews({ pageId: created.pageId, fromVid: (base as { vid: string }).vid, toVid: 'v-three' });
+    expect(await opCount(), '改序 = 恰好 1 op').toBe(before + 1);
+    expect(orderOf(moved.collection.views)).toEqual(['v-two', 'v-three', (base as { vid: string }).vid]);
+
+    // 左拖：末尾拖到第 1 个位置 → 占目标前 = 回到首位
+    const back = await service.reorderViews({ pageId: created.pageId, fromVid: (base as { vid: string }).vid, toVid: 'v-two' });
+    expect(orderOf(back.collection.views)).toEqual([(base as { vid: string }).vid, 'v-two', 'v-three']);
+
+    // 零写三态：from===to / 未知 fromVid / 序未变化 → opCount 不前进，collection 仍正确返回
+    const beforeZero = await opCount();
+    const same = await service.reorderViews({ pageId: created.pageId, fromVid: 'v-two', toVid: 'v-two' });
+    expect(await opCount(), 'from===to 零写').toBe(beforeZero);
+    expect(orderOf(same.collection.views)).toEqual(orderOf(back.collection.views));
+    const ghost = await service.reorderViews({ pageId: created.pageId, fromVid: 'v-nope', toVid: 'v-two' });
+    expect(await opCount(), '未知 vid 零写').toBe(beforeZero);
+    expect(orderOf(ghost.collection.views)).toEqual(orderOf(back.collection.views));
+  });
+
   it('addProperty / removeProperty / saveView：collection 整对象/局部 patch 各 1 op', async () => {
     const created = await service.create({ workspaceId: WORKSPACE_ID, title: '研究库' });
 

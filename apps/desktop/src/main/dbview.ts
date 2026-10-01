@@ -28,6 +28,7 @@ import {
   parseCollectionSchema,
   parseDateText,
   parseViews,
+  reorderById,
   recordTitle,
   relationWritePlan,
   toCsv,
@@ -56,6 +57,7 @@ import {
   CHANNEL_DB_RECORD_UPDATE,
   CHANNEL_DB_RELATION_SEARCH,
   CHANNEL_DB_RENAME,
+  CHANNEL_DB_VIEW_REORDER,
   CHANNEL_DB_VIEW_SAVE,
   CHANNEL_PAGE_CONVERT,
   CHANNEL_PAGE_SUMMARY_SET,
@@ -128,6 +130,11 @@ export interface DbViewService {
   /** 字段左右排序（TASK-T40-01 §B2）：`beforePid=null` = 移到末尾；标题列恒首列不可移动。 */
   moveProperty(input: { pageId: string; pid: string; beforePid: string | null }): Promise<{ collection: CollectionEntity }>;
   saveView(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
+  /**
+   * IDEA-E 视图排序：把 `fromVid` 拖到 `toVid` 位置（引擎 reorderById 口径：右拖占目标后、
+   * 左拖占目标前）；未知 vid / from===to / 序未变化 → 零写返回当前 collection。
+   */
+  reorderViews(input: { pageId: string; fromVid: string; toVid: string }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;
     targetCollectionId: string;
@@ -1242,6 +1249,31 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       return { collection: await reloadCollection(row.id) };
     },
 
+    async reorderViews(input) {
+      const row = await collectionRow(input.pageId);
+      const current = decodeViews(row.views_json);
+      // 整序走引擎纯函数（IDEA-E step1，view.test 8 例口径）：未知 vid / from===to 原样返回。
+      const next = reorderById(current, (view) => view.vid, input.fromVid, input.toVid);
+      const unchanged =
+        next.length === current.length && next.every((view, i) => view.vid === current[i]?.vid);
+      if (unchanged) {
+        return { collection: await reloadCollection(row.id) };
+      }
+      const at = meta();
+      const op: Op = {
+        op_id: ulid(at),
+        lamport: { c: row.version + 1, d: actor },
+        at,
+        actor,
+        target: { table: 'collection', id: row.id },
+        kind: 'patch',
+        payload: { views: next, updated_at: at },
+        base: row.version,
+      };
+      await commitOps(executor, [op], { workspaceId: row.workspace_id });
+      return { collection: await reloadCollection(row.id) };
+    },
+
     async relationSearch(input) {
       await collectionRow(input.pageId); // 本页面必须有 collection（副作用校验，结果不需要）
       const targetData = await executor.get('collection.get', { id: input.targetCollectionId });
@@ -1427,6 +1459,7 @@ const DB_INPUT_SCHEMAS = {
   [CHANNEL_DB_PROP_REMOVE]: z.object({ pageId: zId, pid: zId }),
   [CHANNEL_DB_PROP_MOVE]: z.object({ pageId: zId, pid: zId, beforePid: zId.nullable() }),
   [CHANNEL_DB_VIEW_SAVE]: z.object({ pageId: zId, view: z.unknown() }),
+  [CHANNEL_DB_VIEW_REORDER]: z.object({ pageId: zId, fromVid: zId, toVid: zId }),
   [CHANNEL_DB_RELATION_SEARCH]: z.object({
     pageId: zId,
     targetCollectionId: zId,
@@ -1623,6 +1656,15 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
   on(CHANNEL_DB_VIEW_SAVE, DB_INPUT_SCHEMAS[CHANNEL_DB_VIEW_SAVE], (svc, data) => {
     const input = asRecord(data);
     return svc.saveView({ pageId: String(input['pageId']), view: parseViewInput(input['view']) });
+  });
+
+  on(CHANNEL_DB_VIEW_REORDER, DB_INPUT_SCHEMAS[CHANNEL_DB_VIEW_REORDER], (svc, data) => {
+    const input = asRecord(data);
+    return svc.reorderViews({
+      pageId: String(input['pageId']),
+      fromVid: String(input['fromVid']),
+      toVid: String(input['toVid']),
+    });
   });
 
   on(CHANNEL_DB_RELATION_SEARCH, DB_INPUT_SCHEMAS[CHANNEL_DB_RELATION_SEARCH], (svc, data) => {

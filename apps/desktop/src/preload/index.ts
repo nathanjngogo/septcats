@@ -135,6 +135,8 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(DB_CHANNELS.propMove, input) as ReturnType<SeptcatsApi['db']['propMove']>,
     viewSave: (input) =>
       ipcRenderer.invoke(DB_CHANNELS.viewSave, input) as ReturnType<SeptcatsApi['db']['viewSave']>,
+    viewReorder: (input) =>
+      ipcRenderer.invoke(DB_CHANNELS.viewReorder, input) as ReturnType<SeptcatsApi['db']['viewReorder']>,
     relationSearch: (input) =>
       ipcRenderer.invoke(DB_CHANNELS.relationSearch, input) as ReturnType<SeptcatsApi['db']['relationSearch']>,
     exportCsv: (input) =>

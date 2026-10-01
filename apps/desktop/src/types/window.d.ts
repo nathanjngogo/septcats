@@ -342,6 +342,8 @@ export interface SeptcatsDbApi {
     beforePid: string | null;
   }): Promise<{ collection: CollectionEntity }>;
   viewSave(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
+  /** IDEA-E 视图排序：fromVid 移到 toVid 位（右拖占目标后/左拖占目标前；序未变化=零写）。 */
+  viewReorder(input: { pageId: string; fromVid: string; toVid: string }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;
     targetCollectionId: string;

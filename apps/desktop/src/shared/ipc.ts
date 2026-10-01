@@ -138,6 +138,8 @@ export const CHANNEL_DB_PROP_REMOVE = 'db:prop:remove';
 /** TASK-T40-01 §B2：字段左右排序（beforePid=null = 移到末尾；标题列由 service 强制恒首）。 */
 export const CHANNEL_DB_PROP_MOVE = 'db:prop:move';
 export const CHANNEL_DB_VIEW_SAVE = 'db:view:save';
+/** IDEA-E 视图排序：把 fromVid 移到 toVid 位（引擎 reorderById 口径；序未变化=零写）。 */
+export const CHANNEL_DB_VIEW_REORDER = 'db:view:reorder';
 export const CHANNEL_DB_RELATION_SEARCH = 'db:relation:search';
 export const CHANNEL_DB_EXPORT_CSV = 'db:export:csv';
 
@@ -153,6 +155,7 @@ export const DB_CHANNELS = {
   propRemove: CHANNEL_DB_PROP_REMOVE,
   propMove: CHANNEL_DB_PROP_MOVE,
   viewSave: CHANNEL_DB_VIEW_SAVE,
+  viewReorder: CHANNEL_DB_VIEW_REORDER,
   relationSearch: CHANNEL_DB_RELATION_SEARCH,
   exportCsv: CHANNEL_DB_EXPORT_CSV,
 } as const;
