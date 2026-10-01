@@ -124,14 +124,15 @@ describe('真实语料（docs/manual 两份 PM 定稿）', () => {
     expect(zhTitles.indexOf('数据库视图')).toBe(enTitles.indexOf('Database View'));
   });
 
-  it('键盘快捷键总表含表格块（表头 2 列、6 行数据；两语言同构）', () => {
+  // 0.6.10 创意项加了 Ctrl+F / F9 两行（8 行数据）；IDEA-D 后钉值同步
+  it('键盘快捷键总表含表格块（表头 2 列、8 行数据；两语言同构）', () => {
     for (const doc of [zhDoc, enDoc]) {
       const index = doc.sections.findIndex((section) => section.title === '键盘快捷键总表' || section.title === 'Keyboard Shortcuts');
       const table = doc.sections[index]?.blocks.find((block) => block.kind === 'table');
       expect(table, '快捷键章节缺表格').toBeDefined();
       if (table !== undefined && table.kind === 'table') {
         expect(table.header).toHaveLength(2);
-        expect(table.rows).toHaveLength(6);
+        expect(table.rows).toHaveLength(8);
       }
     }
   });

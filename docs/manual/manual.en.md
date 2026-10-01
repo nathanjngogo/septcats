@@ -37,6 +37,10 @@ Insert a **Db View** block to manage child pages as a table:
 ## Search & Command Palette
 
 - **Search page**: from the sidebar or menu — full-text search across the workspace with highlighted snippets.
+- **Find in page**: `Ctrl+F` searches the current page; Enter jumps between matches.
+- **Outline**: with 2+ headings, a collapsible "Outline" appears under the title for one-click jumps.
+- **Focus mode**: `F9` hides rails and topbar buttons for distraction-free writing; `Esc` exits.
+- **Word count**: the page footer shows words and estimated reading time, updated as you type.
 - **Command palette**: `Ctrl+K`. Fuzzy-match any command: new page, theme, settings, AI continue/summarize/rewrite/translate, sync, import/export…
 
 ## Templates
@@ -149,6 +153,8 @@ Open via the gear button in the top bar. Four sections:
 | `Ctrl+N` | New page |
 | `Ctrl+W` | Close current tab |
 | `Ctrl+K` | Command palette (incl. search) |
+| `Ctrl+F` | Find in page (jump with Enter) |
+| `F9` | Focus mode (hide rails and topbar buttons; press again or `Esc` to exit) |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / Redo |
 | `/` at line start | Slash command menu |
 | `Esc` | Dismiss dialogs / cancel input |
