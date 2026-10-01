@@ -305,6 +305,23 @@ async function main() {
     await page.evaluate(() => { document.querySelector('[data-testid="bitable-detail-close"]')?.click(); });
     await wait(600);
 
+    // 画廊 / 表单（T99-02 新面：新界面也得进对比度扫描，别只看老面）
+    await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-gallery"]')?.click(); });
+    await wait(1600);
+    if (await page.evaluate(() => document.querySelector('[data-testid="bitable-gallery"]') !== null)) {
+      record('多维表格·画廊', await page.evaluate(SWEEP));
+    }
+    await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-form"]')?.click(); });
+    await wait(1600);
+    if (await page.evaluate(() => document.querySelector('[data-testid="bitable-form"]') !== null)) {
+      // 顺带把「配置面板」展开再扫一遍（蓝色勾选框/必填星也是界面的一部分）
+      await page.evaluate(() => { document.querySelector('[data-testid="bitable-form-config-toggle"]')?.click(); });
+      await wait(800);
+      record('多维表格·表单', await page.evaluate(SWEEP));
+      await page.evaluate(() => { document.querySelector('[data-testid="bitable-form-config-toggle"]')?.click(); });
+      await wait(500);
+    }
+
     // 命令面板
     await page.keyboard.press('Control+k');
     await wait(1000);

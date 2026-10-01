@@ -637,6 +637,84 @@ export function normalizeSort(sort: unknown): SortKey[] {
 /** 视图规范化：filter/sort 过一遍、widths 只保留正有限数。
  *  T99-01：`groupPid`（非空字符串才保留）与 `hiddenPids`（只留字符串、去重、保持顺序）
  *  必须原样带过 —— 早期实现只挑 6 个字段重建对象，会让看板配置在 saveView 时被静默丢弃。 */
+/**
+ * 画廊卡片正文的字段上限：飞书卡片也就放三两项，超过就成「表格换皮」了 ⇒ 硬上限。
+ */
+export const GALLERY_FIELD_LIMIT = 3;
+
+/** 视图内可见的属性（隐藏集合之外；标题列恒可见）。统一走 visibleProperties（一处口径）。 */
+function visibleProps(schema: CollectionSchema, view: DbView): Property[] {
+  return visibleProperties(schema, view.hiddenPids);
+}
+
+/**
+ * 画廊卡片顶部色带取哪个字段的值：`coverPid` 有效则用它；
+ * 否则取第一个 `file`/`url` 类型（这两类最像「封面」）；都没有 → `undefined`（卡片不画色带）。
+ * **永不用标题列当封面**（标题已经在卡片上单独占一行，重复没有信息量）。
+ */
+export function resolveCoverPid(schema: CollectionSchema, view: DbView): string | undefined {
+  const visible = visibleProps(schema, view).filter((p) => p.id !== schema.title_pid);
+  const wanted = view.coverPid;
+  if (wanted !== undefined && visible.some((p) => p.id === wanted)) {
+    return wanted;
+  }
+  return visible.find((p) => p.type === 'file' || p.type === 'url')?.id;
+}
+
+/**
+ * 画廊卡片正文显示哪些字段（顺序 = 属性声明顺序）：
+ * `cardPids` 有则按它过滤（未知/隐藏/标题列一律忽略），否则取可见的非标题字段；
+ * 两种情形都**去掉封面字段**（它已经以色带形式占位了）并截到 {@link GALLERY_FIELD_LIMIT}。
+ */
+export function galleryFieldPids(schema: CollectionSchema, view: DbView): string[] {
+  const cover = resolveCoverPid(schema, view);
+  const candidates = visibleProps(schema, view).filter((p) => p.id !== schema.title_pid && p.id !== cover);
+  const picked = Array.isArray(view.cardPids) && view.cardPids.length > 0
+    ? candidates.filter((p) => view.cardPids?.includes(p.id) === true)
+    : candidates;
+  return picked.slice(0, GALLERY_FIELD_LIMIT).map((p) => p.id);
+}
+
+/**
+ * 表单字段（有序）：**标题列恒在首位**（飞书表单的主字段不可移除），
+ * 其余按 `formPids` 顺序（未知 pid / 标题重复项剔除），缺省 = 全部可见的非标题字段。
+ * 隐藏列不进表单（与「视图内隐藏」口径一致）。
+ */
+export function formFieldPids(schema: CollectionSchema, view: DbView): string[] {
+  const visible = visibleProps(schema, view);
+  const title = visible.find((p) => p.id === schema.title_pid);
+  const rest = visible.filter((p) => p.id !== schema.title_pid);
+  const ordered = Array.isArray(view.formPids) && view.formPids.length > 0
+    ? view.formPids.map((pid) => rest.find((p) => p.id === pid)).filter((p): p is Property => p !== undefined)
+    : rest;
+  return [...(title === undefined ? [] : [title.id]), ...ordered.map((p) => p.id)];
+}
+
+/** 表单必填字段（只认表单里真实存在的字段）。 */
+export function formRequiredPids(schema: CollectionSchema, view: DbView): string[] {
+  const fields = new Set(formFieldPids(schema, view));
+  return (view.formRequired ?? []).filter((pid) => fields.has(pid));
+}
+
+/**
+ * 表单提交校验：返回**没填的必填字段 pid**（空数组 = 可提交）。
+ * 空值口径直接用引擎既有的 {@link isEmptyValue}（与筛选/聚合同一套「空」的定义，不另立标准）。
+ * 纯函数（不碰 DOM、不碰桥）⇒ 校验规则可以在单测里钉死，UI 只负责把红字显示出来。
+ */
+export function missingRequiredPids(
+  schema: CollectionSchema,
+  view: DbView,
+  values: Record<string, unknown>,
+): string[] {
+  // 表单口径比引擎通用空值口径**严一格**：纯空白字符串也算没填。
+  // 理由：这是**提交校验**（不是筛选比较）——把「   」当成书名提交进去就是脏数据。
+  // 其余（undefined/null/NaN/空数组）一律复用引擎的 isEmptyValue，不另立标准。
+  return formRequiredPids(schema, view).filter((pid) => {
+    const value = values[pid];
+    return isEmptyValue(value) || (typeof value === 'string' && value.trim().length === 0);
+  });
+}
+
 export function normalizeView(view: DbView): DbView {
   const widths: Record<string, number> = {};
   for (const [pid, width] of Object.entries(view.widths)) {
@@ -656,6 +734,42 @@ export function normalizeView(view: DbView): DbView {
   };
   if (typeof view.groupPid === 'string' && view.groupPid.length > 0) {
     out.groupPid = view.groupPid;
+  }
+  if (typeof view.coverPid === 'string' && view.coverPid.trim().length > 0) {
+    out.coverPid = view.coverPid;
+  }
+  // pid 列表统一去重去空（口径同 hiddenPids）
+  const cleanPids = (raw: readonly string[] | undefined): string[] | undefined => {
+    if (!Array.isArray(raw)) {
+      return undefined;
+    }
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const pid of raw) {
+      if (typeof pid === 'string' && pid.length > 0 && !seen.has(pid)) {
+        seen.add(pid);
+        list.push(pid);
+      }
+    }
+    return list.length === 0 ? undefined : list;
+  };
+  const cardPids = cleanPids(view.cardPids);
+  if (cardPids !== undefined) {
+    out.cardPids = cardPids;
+  }
+  const formPids = cleanPids(view.formPids);
+  if (formPids !== undefined) {
+    out.formPids = formPids;
+  }
+  const formRequired = cleanPids(view.formRequired);
+  if (formRequired !== undefined) {
+    out.formRequired = formRequired;
+  }
+  if (typeof view.formTitle === 'string' && view.formTitle.trim().length > 0) {
+    out.formTitle = view.formTitle;
+  }
+  if (typeof view.formDesc === 'string' && view.formDesc.trim().length > 0) {
+    out.formDesc = view.formDesc;
   }
   if (Array.isArray(view.hiddenPids)) {
     const seen = new Set<string>();

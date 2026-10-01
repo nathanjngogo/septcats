@@ -250,3 +250,140 @@
   text-transform: uppercase;
   letter-spacing: var(--sc-tracking-ui);
 }
+
+/* ---------------------------------------------------------------------------
+ * 画廊 / 表单视图（TASK-T99-02，老板 10-01 第④项）。只吃 token，无字面 hex、裸 px 仅 1px。
+ * --------------------------------------------------------------------------- */
+
+.bitable-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+  gap: var(--sc-space-md);
+  padding: var(--sc-space-sm) 0;
+}
+
+.bitable-gcard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-md);
+  background: var(--sc-color-surface);
+  overflow: hidden;
+}
+
+/* 封面「色带」：没有图床通道就不假装有图 —— 用带字段名的值文本表达 */
+.bitable-gcard-cover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  background: var(--sc-color-surface-active);
+  border-bottom: var(--sc-border-edge);
+}
+
+.bitable-gcard-cover-name {
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+}
+
+.bitable-gcard-cover-val {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bitable-gcard-open {
+  padding: var(--sc-space-sm);
+  border: 0;
+  background: none;
+  font: var(--sc-text-title-sm);
+  color: var(--sc-color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bitable-gcard-open:hover { color: var(--sc-color-accent); }
+.bitable-gcard-open:focus-visible { outline: 2px solid var(--sc-color-focus-ring); outline-offset: -2px; }
+
+.bitable-gcard-fields {
+  margin: 0;
+  padding: 0 var(--sc-space-sm) var(--sc-space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xxs);
+}
+
+.bitable-gcard-row { display: flex; gap: var(--sc-space-xs); min-width: 0; }
+
+.bitable-gcard-lab {
+  flex: none;
+  width: 5.5em;
+  font: var(--sc-text-ui-xs);
+  color: var(--sc-color-ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bitable-gcard-val {
+  margin: 0;
+  min-width: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bitable-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-md);
+  max-width: 34rem;
+}
+
+.bitable-form-head { display: flex; align-items: center; gap: var(--sc-space-sm); }
+
+.bitable-form-title { margin: 0; font: var(--sc-text-title-md); color: var(--sc-color-ink); }
+
+.bitable-form-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sc-space-xs);
+  padding: var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+}
+
+.bitable-form-config-hint { margin: 0; font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-form-config-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sc-space-sm); }
+
+.bitable-form-check { display: flex; align-items: center; gap: var(--sc-space-xxs); font: var(--sc-text-ui-sm); color: var(--sc-color-ink); }
+
+.bitable-form-body { display: flex; flex-direction: column; gap: var(--sc-space-sm); }
+
+.bitable-form-row { display: flex; flex-direction: column; gap: var(--sc-space-xxs); }
+
+.bitable-form-lab { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
+
+.bitable-form-req { margin-left: var(--sc-space-xxs); color: var(--sc-color-danger); }
+
+.bitable-form-ctl {
+  padding: var(--sc-space-xs) var(--sc-space-sm);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface);
+  cursor: text;
+}
+
+/* 校验不通过：只标红边框 + 文案，不改字色（字色仍要过 AA） */
+.bitable-form-row[data-invalid='true'] .bitable-form-ctl { border-color: var(--sc-color-danger); }
+
+.bitable-form-foot { display: flex; align-items: center; gap: var(--sc-space-sm); }
+
+.bitable-form-msg { margin: 0; font: var(--sc-text-ui-sm); color: var(--sc-color-ink-secondary); }

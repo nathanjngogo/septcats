@@ -411,6 +411,107 @@ async function main() {
   check('R11-c reload 后仍隐藏（持久化）', persisted.heads === headsBefore - 1,
     `heads=${String(persisted.heads)}（隐藏前 ${String(headsBefore)}）`);
 
+  // ---------- R12 画廊 / 表单视图（老板 10-01 第④项） ----------
+  STEP = 'R12';
+  const countRecords = async () => page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    return loaded.records.length;
+  }, built.pageId);
+  const before12 = await countRecords();
+
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-gallery"]')?.click(); });
+  await wait(1600);
+  const gal = await page.evaluate(() => ({
+    inPlace: document.querySelector('[data-testid="bitable-gallery"]') !== null,
+    cards: document.querySelectorAll('[data-testid^="bitable-gcard-"]:not([data-testid^="bitable-gcard-row-"]):not([data-testid^="bitable-gcard-cover-"])').length,
+    covers: document.querySelectorAll('[data-testid^="bitable-gcard-cover-"]').length,
+    coverSelect: document.querySelector('[data-testid="bitable-gallery-cover"]') !== null,
+  }));
+  check('R12-a 画廊视图：卡片数 = 记录数、每卡有封面色带、工具条有封面下拉',
+    gal.inPlace && gal.cards === before12 && gal.covers === before12 && gal.coverSelect,
+    `cards=${String(gal.cards)} covers=${String(gal.covers)} 记录=${String(before12)} select=${String(gal.coverSelect)}`);
+  await shot(page, 'bitable-gallery');
+
+  // 画廊卡片点开 → 记录详情（复用同一条详情路径）
+  await page.evaluate(() => { document.querySelector('[data-testid^="bitable-open-"]')?.click(); });
+  await wait(1100);
+  const galDetail = await page.evaluate(() => document.querySelector('[data-testid="bitable-detail"]') !== null);
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-detail-close"]')?.click(); });
+  await wait(600);
+  check('R12-b 画廊卡片点开 → 记录详情弹层（与看板同一入口语义）', galDetail === true, `detail=${String(galDetail)}`);
+
+  // 表单视图：字段数 = 属性数；先校验拦下，再正常提交
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-view-form"]')?.click(); });
+  await wait(1600);
+  const form = await page.evaluate(() => ({
+    inPlace: document.querySelector('[data-testid="bitable-form"]') !== null,
+    rows: document.querySelectorAll('[data-testid^="bitable-form-row-"]').length,
+    title: (document.querySelector('[data-testid="bitable-form-title"]')?.textContent ?? '').trim(),
+  }));
+  const propCount = await page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    return Object.keys(loaded.collection.schema.properties).length;
+  }, built.pageId);
+  check('R12-c 表单视图：字段行 = 属性数（标题列恒首位）、类型标签/刷题有标题',
+    form.inPlace && form.rows === propCount && form.title.length > 0,
+    `rows=${String(form.rows)} 属性=${String(propCount)} 标题=${form.title}`);
+
+  // 打开配置 → 把 select 字段设为必填 → 空着提交：必须被拦下（库里记录数不变）
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-form-config-toggle"]')?.click(); });
+  await wait(700);
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-form-required-${pid}"]`)?.click(); }, built.pid);
+  await wait(900);
+  // 取证：勾选「必填」后，配置到底有没有落库 / 表单行有没有出现必填星（别猜，先看）
+  const cfgState = await page.evaluate(async (a) => {
+    const loaded = await window.septcats.db.load({ pageId: a.pageId });
+    const fv = loaded.collection.views.find((v) => v.type === 'form');
+    const box = document.querySelector(`[data-testid="bitable-form-required-${a.pid}"]`);
+    return {
+      viewFormRequired: fv === undefined ? null : (fv.formRequired ?? null),
+      checked: box === null ? null : (box).checked,
+      stars: document.querySelectorAll('.bitable-form-req').length,
+    };
+  }, { pageId: built.pageId, pid: built.pid });
+  console.log(`    [取证] 视图 formRequired=${JSON.stringify(cfgState.viewFormRequired)} 勾选态=${String(cfgState.checked)} 表单必填星=${String(cfgState.stars)}`);
+
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-form-submit"]')?.click(); });
+  await wait(1100);
+  const blocked = await page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    return {
+      count: loaded.records.length,
+      msg: (document.querySelector('[data-testid="bitable-form-msg"]')?.textContent ?? '').trim(),
+      invalid: document.querySelectorAll('[data-testid^="bitable-form-row-"][data-invalid="true"]').length,
+    };
+  }, built.pageId);
+  check('R12-d 必填未填 → 拦下不落库（记录数不变）+ 行标红 + 提示',
+    blocked.count === before12 && blocked.msg.includes('必填') && blocked.invalid >= 1,
+    `记录 ${String(before12)}→${String(blocked.count)} msg=「${blocked.msg}」 invalid=${String(blocked.invalid)}`);
+
+  // 填标题（纯键盘）→ 关掉必填字段的勾选 → 提交 → 库里多一条
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-form-required-${pid}"]`)?.click(); }, built.pid);
+  await wait(700);
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-form-ctl-${pid}"]`)?.click(); }, titlePid);
+  await wait(500);
+  await page.keyboard.type('探针新书');
+  await page.keyboard.press('Enter');
+  await wait(600);
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-form-submit"]')?.click(); });
+  await wait(1800);
+  const submitted = await page.evaluate(async (pageId) => {
+    const loaded = await window.septcats.db.load({ pageId });
+    const titles = loaded.records.map((r) => String(r.values[Object.keys(loaded.collection.schema.properties)[0]] ?? ''));
+    return {
+      count: loaded.records.length,
+      msg: (document.querySelector('[data-testid="bitable-form-msg"]')?.textContent ?? '').trim(),
+      hasNew: titles.some((t) => t.includes('探针新书')),
+    };
+  }, built.pageId);
+  check('R12-e 填好提交 → 记录 +1 且标题已落库、提示「已提交」',
+    submitted.count === before12 + 1 && submitted.hasNew && submitted.msg.includes('已提交'),
+    `记录 ${String(before12)}→${String(submitted.count)} hasNew=${String(submitted.hasNew)} msg=「${submitted.msg}」`);
+  await shot(page, 'bitable-form');
+
   // ---------- R8 夹具零触碰 ----------
   STEP = 'R8';
   await h.browser.close().catch(() => {});

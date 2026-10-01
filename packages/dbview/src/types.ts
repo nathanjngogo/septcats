@@ -207,12 +207,13 @@ export type SortKey = z.infer<typeof sortKeySchema>;
 // 视图
 // ---------------------------------------------------------------------------
 
-export const VIEW_TYPES = ['table', 'kanban'] as const;
+export const VIEW_TYPES = ['table', 'kanban', 'gallery', 'form'] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
 
 /**
  * 视图定义。`widths` 是列宽覆盖（pid → px，拖宽后落盘）。
- * `type` 预留 kanban/calendar 名位，一期只实现 table。
+ * 四型：table（表格）/ kanban（看板）/ gallery（画廊）/ form（表单）。
+ * 各型专属配置一律**可选**且缺省即老行为 ⇒ 老数据零迁移。
  */
 export const dbViewSchema = z.object({
   vid: z.string().min(1).max(128),
@@ -225,6 +226,17 @@ export const dbViewSchema = z.object({
   groupPid: z.string().optional(),
   /** T99-01 视图内隐藏的列（pid 列表）。 */
   hiddenPids: z.array(z.string()).optional(),
+  /** 画廊：封面字段（卡片顶部色带取它的值）；缺省 = 首个 file/url 可见字段。 */
+  coverPid: z.string().optional(),
+  /** 画廊：卡片正文显示哪些字段；缺省 = 可见的非标题字段（上限见 GALLERY_FIELD_LIMIT）。 */
+  cardPids: z.array(z.string()).optional(),
+  /** 表单：标题 / 说明（缺省用视图名，不写空占位）。 */
+  formTitle: z.string().optional(),
+  formDesc: z.string().optional(),
+  /** 表单：展示哪些字段（标题列恒在首位）；缺省 = 标题列 + 全部非标题字段。 */
+  formPids: z.array(z.string()).optional(),
+  /** 表单：其中哪些必填（提交校验用；可含标题列）。 */
+  formRequired: z.array(z.string()).optional(),
 });
 export type DbView = z.infer<typeof dbViewSchema>;
 

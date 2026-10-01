@@ -32,7 +32,6 @@ import {
   relationWritePlan,
   toCsv,
   dateValueSchema,
-  VIEW_TYPES,
   type CollectionEntity,
   type CollectionSchema,
   type DbView,
@@ -40,6 +39,7 @@ import {
   type Property,
   type PropertyOption,
   type RecordEntity,
+  dbViewSchema,
 } from '@septcats/dbview';
 import { z } from 'zod';
 import {
@@ -1401,21 +1401,19 @@ function asFieldType(value: string): FieldType {
   return value as FieldType;
 }
 
+/**
+ * 视图入参 schema：**派生自引擎的 `dbViewSchema`**（single source of truth）。
+ *
+ * 只有 `filter` 放宽成 unknown —— 这是**历史行为**（脏筛选交给 normalizeFilter 清洗，
+ * 不在这里毙掉），其余字段一律跟引擎走。
+ *
+ * ⚠ 别再手抄字段清单：T99-02 就是手抄漏了画廊/表单项，而 zod 默认会**静默剥掉**未知键，
+ * 症状是「界面勾了必填却不生效」（配置根本没落盘），极难定位。
+ */
+const dbViewInputSchema = dbViewSchema.omit({ filter: true }).extend({ filter: z.unknown() });
+
 function parseViewInput(raw: unknown): DbView {
-  const parsed = z
-    .object({
-      vid: z.string().min(1),
-      name: z.string(),
-      // T99-01：视图类型白名单与引擎同源（别再写死 z.literal('table') —— 看板视图会在此被毙掉）。
-      type: z.enum(VIEW_TYPES),
-      filter: z.unknown(),
-      sort: z.array(z.object({ prop: z.string().min(1), dir: z.enum(['asc', 'desc']) })),
-      widths: z.record(z.string(), z.number()),
-      // T99-01 看板/隐藏列：可选，缺省 = 旧视图形状（normalizeView 负责清洗与保留）。
-      groupPid: z.string().optional(),
-      hiddenPids: z.array(z.string()).optional(),
-    })
-    .safeParse(raw);
+  const parsed = dbViewInputSchema.safeParse(raw);
   if (!parsed.success) {
     throw new DbViewApiError('E_MALFORMED', '视图结构非法');
   }

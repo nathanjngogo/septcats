@@ -172,6 +172,43 @@ describeDb('dbViewService（行内数据库 · create/load/record/relation/delet
     expect((page.row as { title: string }).title).toBe('新名');
   });
 
+  it('视图新配置（画廊/表单）经 saveView 往返不丢：parseViewInput 不得静默剥字段', async () => {
+    // 回归护栏（T99-02）：主进程曾**手抄**一份视图 zod schema，漏了新字段，
+    // 而 zod 默认 strip 未知键 ⇒ 配置静默丢失（症状：界面勾了必填却不生效）。
+    // 现在 parseViewInput 派生自引擎 dbViewSchema，这里钉住「新字段能往返」。
+    const created = await service.create({ workspaceId: WORKSPACE_ID, title: '画廊库' });
+    // 注意：create 只返回 { pageId, collectionId }（不带 collection）⇒ 要 load 才有视图
+    const initial = await service.load({ pageId: created.pageId });
+    const base = initial.collection.views[0];
+    expect(base).toBeTruthy();
+    const saved = await service.saveView({
+      pageId: created.pageId,
+      view: {
+        ...(base as NonNullable<typeof base>),
+        type: 'gallery',
+        coverPid: 'p_cover',
+        cardPids: ['p_score'],
+        formTitle: '登记表',
+        formDesc: '请填写',
+        formPids: ['p_score'],
+        formRequired: ['p_score'],
+      } as never,
+    });
+    const view = saved.collection.views[0];
+    expect(view?.type).toBe('gallery');
+    expect(view?.coverPid).toBe('p_cover');
+    expect(view?.cardPids).toEqual(['p_score']);
+    expect(view?.formTitle).toBe('登记表');
+    expect(view?.formDesc).toBe('请填写');
+    expect(view?.formPids).toEqual(['p_score']);
+    expect(view?.formRequired, '必填配置必须落盘（否则提交校验形同虚设）').toEqual(['p_score']);
+
+    // 再 load 一次：确认是**真落库**（不是只在返回值里）
+    const loaded = await service.load({ pageId: created.pageId });
+    expect(loaded.collection.views[0]?.formRequired).toEqual(['p_score']);
+    expect(loaded.collection.views[0]?.coverPid).toBe('p_cover');
+  });
+
   it('addProperty / removeProperty / saveView：collection 整对象/局部 patch 各 1 op', async () => {
     const created = await service.create({ workspaceId: WORKSPACE_ID, title: '研究库' });
 

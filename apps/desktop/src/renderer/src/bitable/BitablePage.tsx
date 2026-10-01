@@ -18,10 +18,16 @@ import { useDbPage } from '../db/useDbPage';
 import {
   NONE_GROUP_KEY,
   defaultView,
+  formFieldPids,
+  formRequiredPids,
+  formatValue,
+  galleryFieldPids,
   kanbanGroups,
+  missingRequiredPids,
   moveCardToGroup,
   propertyList,
   recordTitle,
+  resolveCoverPid,
   type CollectionSchema,
   type DbView,
   type Property,
@@ -51,6 +57,22 @@ function nextVid(views: readonly DbView[]): string {
   return `v${String(n)}`;
 }
 
+type AnyViewType = DbView['type'];
+
+/** 视图类型 → 人话标签（视图条 / 新建按钮共用一处，避免两处漂移）。 */
+function viewTypeLabel(type: AnyViewType): string {
+  switch (type) {
+    case 'kanban':
+      return t('bitable.viewKanban');
+    case 'gallery':
+      return t('bitable.viewGallery');
+    case 'form':
+      return t('bitable.viewForm');
+    default:
+      return t('bitable.viewTable');
+  }
+}
+
 /** 第一个 select / multi_select 属性（看板的天然分组字段）。 */
 function firstSelectable(schema: CollectionSchema): Property | undefined {
   return propertyList(schema).find((p) => p.type === 'select' || p.type === 'multi_select');
@@ -75,7 +97,7 @@ export function BitablePage(): ReactNode {
 
 function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
   const db = useDbPage(pageId);
-  const { collection, records, status, error } = db;
+  const { collection, records, status, error, createRecord } = db;
   const views = useMemo(() => collection?.views ?? [], [collection]);
   const [activeVid, setActiveVid] = useState('');
   const [renaming, setRenaming] = useState(false);
@@ -92,6 +114,8 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
 
   const activeView = views.find((view) => view.vid === activeVid) ?? views[0];
   const isKanban = activeView?.type === 'kanban';
+  const isGallery = activeView?.type === 'gallery';
+  const isForm = activeView?.type === 'form';
   const selectable = useMemo(() => (collection === null ? [] : propertyList(collection.schema).filter((p) => p.type === 'select' || p.type === 'multi_select')), [collection]);
 
   const groups = useMemo(() => {
@@ -109,17 +133,37 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
   );
 
   const addView = useCallback(
-    (type: 'table' | 'kanban'): void => {
+    (type: AnyViewType): void => {
       if (collection === null) {
         return;
       }
       const vid = nextVid(views);
-      const base = defaultView(vid, type === 'kanban' ? t('bitable.viewKanban') : t('bitable.viewTable'));
-      const view: DbView = type === 'kanban' ? { ...base, type: 'kanban', ...(firstSelectable(collection.schema) === undefined ? {} : { groupPid: firstSelectable(collection.schema)?.id }) } : base;
+      const name = viewTypeLabel(type);
+      const base = defaultView(vid, name);
+      let view: DbView = { ...base, type };
+      if (type === 'kanban') {
+        const groupPid = firstSelectable(collection.schema)?.id;
+        view = { ...view, ...(groupPid === undefined ? {} : { groupPid }) };
+      }
+      if (type === 'form') {
+        // 表单标题缺省 = 视图名（表单页面上要有个抬头，且与视图条上的名字一致，不写空占位）
+        view = { ...view, formTitle: name };
+      }
       saveView(view);
       setActiveVid(vid);
     },
     [collection, saveView, views],
+  );
+
+  /** 画廊：换封面字段 / 表单：配字段与必填 —— 一律走 saveView 落库（零新增 IPC）。 */
+  const patchActiveView = useCallback(
+    (patch: Partial<DbView>): void => {
+      if (activeView === undefined) {
+        return;
+      }
+      saveView({ ...activeView, ...patch });
+    },
+    [activeView, saveView],
   );
 
   const renameActive = useCallback(
@@ -267,7 +311,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
               onClick={() => { setActiveVid(view.vid); }}
               onDoubleClick={() => { setRenameText(view.name); setRenaming(true); }}
             >
-              {view.type === 'kanban' ? t('bitable.viewKanban') : t('bitable.viewTable')} · {view.name}
+              {viewTypeLabel(view.type)} · {view.name}
             </button>
           ),
         )}
@@ -276,6 +320,12 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
         </button>
         <button type="button" className="bitable-btn" data-testid="bitable-view-kanban" onClick={() => { addView('kanban'); }}>
           +{t('bitable.viewKanban')}
+        </button>
+        <button type="button" className="bitable-btn" data-testid="bitable-view-gallery" onClick={() => { addView('gallery'); }}>
+          +{t('bitable.viewGallery')}
+        </button>
+        <button type="button" className="bitable-btn" data-testid="bitable-view-form" onClick={() => { addView('form'); }}>
+          +{t('bitable.viewForm')}
         </button>
         <button type="button" className="bitable-btn" data-testid="bitable-view-rename" onClick={() => { setRenameText(activeView?.name ?? ''); setRenaming(true); }}>
           {t('bitable.viewRename')}
@@ -308,7 +358,21 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
               ))}
             </select>
           </label>
-        ) : (
+        ) : isGallery ? (
+          <label className="bitable-groupby">
+            {t('bitable.galleryCover')}
+            <select
+              data-testid="bitable-gallery-cover"
+              value={activeView?.coverPid ?? ''}
+              onChange={(event) => { patchActiveView({ coverPid: event.target.value }); }}
+            >
+              <option value="">{t('bitable.coverAuto')}</option>
+              {propertyList(collection.schema).filter((p) => p.id !== collection.schema.title_pid).map((property) => (
+                <option key={property.id} value={property.id}>{property.name}</option>
+              ))}
+            </select>
+          </label>
+        ) : isForm ? null : (
           <span className="bitable-toolbar-hint">{t('bitable.gridHint')}</span>
         )}
         <button type="button" className="bitable-btn" data-testid="bitable-export" onClick={exportCsv}>
@@ -332,10 +396,32 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
         )
       ) : null}
 
-      <div className="bitable-grid" data-testid="bitable-grid" hidden={isKanban}>
+      {isGallery ? (
+        records.length === 0 ? (
+          <p className="bitable-empty" data-testid="bitable-empty">{t('bitable.galleryEmpty')}</p>
+        ) : (
+          <GalleryBoard
+            schema={collection.schema}
+            records={records}
+            view={activeView}
+            onOpen={(recordId) => { setDetailId(recordId); setEditPid(null); }}
+          />
+        )
+      ) : null}
+
+      {isForm ? (
+        <FormBoard
+          schema={collection.schema}
+          view={activeView}
+          onPatchView={patchActiveView}
+          onSubmit={(values) => createRecord(values)}
+        />
+      ) : null}
+
+      <div className="bitable-grid" data-testid="bitable-grid" hidden={isKanban || isGallery || isForm}>
         <DbPage pageId={pageId} />
       </div>
-      {records.length === 0 && !isKanban ? (
+      {records.length === 0 && !isKanban && !isGallery && !isForm ? (
         <p className="bitable-empty" data-testid="bitable-empty">{t('bitable.addRowHint')}</p>
       ) : null}
 
@@ -458,6 +544,231 @@ function KanbanBoard({ groups, options, schema, onMove, onOpen }: KanbanBoardPro
           </div>
         </section>
       ))}
+    </div>
+  );
+}
+
+interface GalleryBoardProps {
+  schema: CollectionSchema;
+  records: readonly RecordEntity[];
+  view: DbView;
+  /** 点卡片标题 → 打开记录详情（与看板同一入口语义）。 */
+  onOpen: (recordId: string) => void;
+}
+
+/**
+ * 画廊视图（TASK-T99-02）：记录 = 卡片，铺成自适应网格。
+ *
+ * 「显示哪几个字段 / 拿谁当封面」全部来自引擎纯函数（galleryFieldPids / resolveCoverPid），
+ * 渲染层不自己挑字段 —— 这样规则可单测、三种视图口径一致。
+ * 封面不做图片渲染（引擎没有附件取图通道）：以**色带 + 该字段的值文本**表达，
+ * 空值用统一占位「—」，不假装有图。
+ */
+function GalleryBoard({ schema, records, view, onOpen }: GalleryBoardProps): ReactNode {
+  const properties = propertyList(schema);
+  const byId = new Map(properties.map((p) => [p.id, p]));
+  const coverPid = resolveCoverPid(schema, view);
+  const cover = coverPid === undefined ? undefined : byId.get(coverPid);
+  const fieldPids = galleryFieldPids(schema, view);
+
+  return (
+    <div className="bitable-gallery" data-testid="bitable-gallery">
+      {records.map((record: RecordEntity) => (
+        <article className="bitable-gcard" key={record.id} data-testid={`bitable-gcard-${record.id}`}>
+          <div className="bitable-gcard-cover" data-testid={`bitable-gcard-cover-${record.id}`}>
+            <span className="bitable-gcard-cover-name">{cover === undefined ? t('bitable.coverAuto') : cover.name}</span>
+            <span className="bitable-gcard-cover-val">
+              {cover === undefined ? t('bitable.coverEmpty') : formatValue(cover, record.values[cover.id])}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="bitable-gcard-open"
+            data-testid={`bitable-open-${record.id}`}
+            onClick={() => { onOpen(record.id); }}
+          >
+            {recordTitle(schema, record.values, record.id)}
+          </button>
+          {fieldPids.length === 0 ? null : (
+            <dl className="bitable-gcard-fields">
+              {fieldPids.map((pid: string) => {
+                const property = byId.get(pid);
+                if (property === undefined) {
+                  return null;
+                }
+                return (
+                  <div className="bitable-gcard-row" key={pid} data-testid={`bitable-gcard-row-${pid}`}>
+                    <dt className="bitable-gcard-lab">{property.name}</dt>
+                    <dd className="bitable-gcard-val">{formatValue(property, record.values[pid])}</dd>
+                  </div>
+                );
+              })}
+            </dl>
+          )}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+interface FormBoardProps {
+  schema: CollectionSchema;
+  view: DbView;
+  /** 改表单配置（展示字段 / 必填）→ 走 saveView 落库。 */
+  onPatchView: (patch: Partial<DbView>) => void;
+  /** 提交一条新记录（走 useDbPage.createRecord，与表格/看板同一条记录创建通道）。 */
+  onSubmit: (values: Record<string, unknown>) => Promise<void>;
+}
+
+/**
+ * 表单视图（TASK-T99-02）：一次录入一条记录。
+ *
+ * 语义全部来自引擎：formFieldPids（字段与顺序，标题列恒首位）/ formRequiredPids（必填）/
+ * missingRequiredPids（提交校验）。渲染层只负责：草稿态、把红字显示出来、提交后清空。
+ * 校验**不通过就不提交**（而不是提交了再报错）—— 脏数据不进库。
+ */
+function FormBoard({ schema, view, onPatchView, onSubmit }: FormBoardProps): ReactNode {
+  const properties = propertyList(schema);
+  const byId = new Map(properties.map((p) => [p.id, p]));
+  const fields = formFieldPids(schema, view);
+  const required = new Set(formRequiredPids(schema, view));
+  const configurable = properties.filter((p) => p.id !== schema.title_pid);
+
+  const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [editPid, setEditPid] = useState<string | null>(fields[0] ?? null);
+  const [missing, setMissing] = useState<readonly string[]>([]);
+  const [done, setDone] = useState(false);
+  /** 提交成功后递增：给表单区换 key ⇒ 整片重挂，编辑器的内部草稿也一起归零。
+   *  （只清 state 不够：CellEditor 有自己的编辑草稿，重挂才是「表单真的重置了」。） */
+  const [formKey, setFormKey] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [openConfig, setOpenConfig] = useState(false);
+
+  const shown = new Set(fields.filter((pid) => pid !== schema.title_pid));
+  const toggleField = (pid: string, on: boolean): void => {
+    const next = on
+      ? [...shown, pid]
+      : [...shown].filter((x) => x !== pid);
+    const ordered = properties.filter((p) => next.includes(p.id)).map((p) => p.id);
+    const stillRequired = (view.formRequired ?? []).filter((x) => ordered.includes(x));
+    onPatchView({ formPids: ordered, formRequired: stillRequired });
+  };
+  const toggleRequired = (pid: string, on: boolean): void => {
+    const next = on
+      ? [...new Set([...(view.formRequired ?? []), pid])]
+      : (view.formRequired ?? []).filter((x) => x !== pid);
+    onPatchView({ formRequired: next });
+  };
+
+  const submit = (): void => {
+    const miss = missingRequiredPids(schema, view, draft);
+    setMissing(miss);
+    if (miss.length > 0) {
+      setDone(false);
+      return;
+    }
+    setBusy(true);
+    void onSubmit(draft).then(() => {
+      setDraft({});
+      setEditPid(fields[0] ?? null);
+      setMissing([]);
+      setDone(true);
+      setFormKey((k) => k + 1);
+      setBusy(false);
+    }).catch(() => { setBusy(false); });
+  };
+
+  return (
+    <div className="bitable-form" data-testid="bitable-form">
+      <header className="bitable-form-head">
+        <h2 className="bitable-form-title" data-testid="bitable-form-title">
+          {view.formTitle ?? viewTypeLabel('form')}
+        </h2>
+        <button
+          type="button"
+          className="bitable-btn"
+          data-testid="bitable-form-config-toggle"
+          aria-expanded={openConfig}
+          onClick={() => { setOpenConfig((open) => !open); }}
+        >
+          {t('bitable.formFields')}
+        </button>
+      </header>
+
+      {openConfig ? (
+        <div className="bitable-form-config" data-testid="bitable-form-config">
+          <p className="bitable-form-config-hint">{t('bitable.formConfigHint')}</p>
+          {configurable.map((property) => (
+            <div className="bitable-form-config-row" key={property.id}>
+              <label className="bitable-form-check">
+                <input
+                  type="checkbox"
+                  data-testid={`bitable-form-field-${property.id}`}
+                  checked={shown.has(property.id)}
+                  onChange={(event) => { toggleField(property.id, event.target.checked); }}
+                />
+                {property.name}
+              </label>
+              <label className="bitable-form-check">
+                <input
+                  type="checkbox"
+                  data-testid={`bitable-form-required-${property.id}`}
+                  checked={required.has(property.id)}
+                  disabled={!shown.has(property.id)}
+                  onChange={(event) => { toggleRequired(property.id, event.target.checked); }}
+                />
+                {t('bitable.formRequired')}
+              </label>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="bitable-form-body" key={formKey}>
+        {fields.map((pid: string) => {
+          const property = byId.get(pid);
+          if (property === undefined) {
+            return null;
+          }
+          const bad = missing.includes(pid);
+          return (
+            <div className="bitable-form-row" key={pid} data-testid={`bitable-form-row-${pid}`} data-invalid={bad ? 'true' : 'false'}>
+              <span className="bitable-form-lab">
+                {property.name}
+                {required.has(pid) ? <b className="bitable-form-req" aria-hidden="true">*</b> : null}
+              </span>
+              <div className="bitable-form-ctl" data-testid={`bitable-form-ctl-${pid}`} onClick={() => { setEditPid(pid); }}>
+                <CellEditor
+                  property={property}
+                  value={draft[pid]}
+                  editing={editPid === pid}
+                  onBeginEdit={() => { setEditPid(pid); }}
+                  onEndEdit={() => { setEditPid(null); }}
+                  onCommit={(value: unknown) => {
+                    setDraft((current) => ({ ...current, [pid]: value }));
+                    setEditPid(null);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <footer className="bitable-form-foot">
+        <Button
+          variant="primary"
+          data-testid="bitable-form-submit"
+          disabled={busy}
+          onClick={submit}
+        >
+          {t('bitable.formSubmit')}
+        </Button>
+        {/* 校验失败 / 提交成功都用同一个 live region：读屏用户能听到结果，视觉用户看到红字/绿字 */}
+        <p className="bitable-form-msg" data-testid="bitable-form-msg" role="status" aria-live="polite">
+          {missing.length > 0 ? t('bitable.formMissing') : (done ? t('bitable.formSubmitted') : '')}
+        </p>
+      </footer>
     </div>
   );
 }
