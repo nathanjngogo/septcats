@@ -19,12 +19,13 @@ import {
   type FilterGroup,
   type RecordEntity,
   coerceValue,
+  defaultView,
   emptyFilter,
   propertyOptionSchema,
   propertySchema,
   recordEntitySchema,
 } from '../src/types';
-import { normalizeFilter, normalizeSort, visibleProperties } from '../src/view';
+import { normalizeFilter, normalizeSort, reorderById, visibleProperties } from '../src/view';
 import {
   applyFilter,
   applySort,
@@ -706,5 +707,56 @@ describe('visibleProperties（视图隐藏字段）', () => {
 
   it('未知 pid 忽略（属性被删后的残留不报错、不影响其它列）', () => {
     expect(visibleProperties(schema, ['p_gone']).map((p) => p.id)).toEqual(['p_title', 'p_score', 'p_date']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IDEA-E：拖拽改序（视图页签拖动 → collection.views 数组序）
+// ---------------------------------------------------------------------------
+
+describe('reorderById —— 拖拽改序（创意 IDEA-E / 0.6.10 清单「视图排序」）', () => {
+  const views = ['v1', 'v2', 'v3', 'v4'].map((vid) => defaultView(vid, `视图 ${vid}`));
+  const byVid = (view: (typeof views)[number]) => view.vid;
+  const ids = (list: readonly { vid: string }[]) => list.map((v) => v.vid);
+
+  it('向右拖：占目标原索引（结果里排在目标之后）', () => {
+    expect(ids(reorderById(views, byVid, 'v1', 'v3'))).toEqual(['v2', 'v3', 'v1', 'v4']);
+  });
+
+  it('向左拖：排在目标之前', () => {
+    expect(ids(reorderById(views, byVid, 'v4', 'v2'))).toEqual(['v1', 'v4', 'v2', 'v3']);
+  });
+
+  it('拖到末尾可达（最后一个页签也能被放到队尾）', () => {
+    expect(ids(reorderById(views, byVid, 'v1', 'v4'))).toEqual(['v2', 'v3', 'v4', 'v1']);
+  });
+
+  it('相邻交换两个方向都是对调', () => {
+    expect(ids(reorderById(views, byVid, 'v2', 'v3'))).toEqual(['v1', 'v3', 'v2', 'v4']);
+    expect(ids(reorderById(views, byVid, 'v3', 'v2'))).toEqual(['v1', 'v3', 'v2', 'v4']);
+  });
+
+  it('原地拖（from === to）与原样拷贝：不改入参引用', () => {
+    const before = [...views];
+    const same = reorderById(views, byVid, 'v2', 'v2');
+    expect(same).toEqual(before);
+    expect(same).not.toBe(views);
+    expect(views).toEqual(before);
+  });
+
+  it('未知 vid / 空串 → 原样拷贝（页面并发刷新时的防御）', () => {
+    expect(ids(reorderById(views, byVid, 'v9', 'v1'))).toEqual(['v1', 'v2', 'v3', 'v4']);
+    expect(ids(reorderById(views, byVid, 'v1', 'v9'))).toEqual(['v1', 'v2', 'v3', 'v4']);
+    expect(ids(reorderById(views, byVid, '', 'v1'))).toEqual(['v1', 'v2', 'v3', 'v4']);
+  });
+
+  it('同口径可用于字符串数组（规则/磁贴列表顺序 = 展示序）', () => {
+    expect(reorderById(['a', 'b', 'c'], (s) => s, 'c', 'a')).toEqual(['c', 'a', 'b']);
+  });
+
+  it('两个元素的列表互换', () => {
+    const two = [defaultView('x', 'X'), defaultView('y', 'Y')];
+    expect(ids(reorderById(two, byVid, 'x', 'y'))).toEqual(['y', 'x']);
+    expect(ids(reorderById(two, byVid, 'y', 'x'))).toEqual(['y', 'x']);
   });
 });

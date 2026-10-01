@@ -1058,6 +1058,42 @@ export function danglingReferences(view: DbView, schema: CollectionSchema): stri
 }
 
 // ---------------------------------------------------------------------------
+// 拖拽排序（创意 IDEA-E：视图页签拖动改序；同样适用于「顺序 = 数组序」的列表）
+// ---------------------------------------------------------------------------
+
+/**
+ * 把 id 为 `fromId` 的项挪到 `toId` 项所在的位置（返回**新数组**，不改入参）。
+ *
+ * 落点口径（与真实拖动手感一致，尾部可达）：
+ * - 向右拖（from 在 to 之前）→ 结果里 from 排在 to **之后**（占 to 的原索引）；
+ * - 向左拖（from 在 to 之后）→ 结果里 from 排在 to **之前**；
+ * - `fromId === toId` / 任一 id 不在列表 → 原样拷贝（防御：视图可能被并发刷新）。
+ *
+ * 视图的展示顺序就是 `collection.views` 的数组序（持久化走既有
+ * `viewSave → collectionUpsertOp` 整对象通道，零新增 IPC）；调用方传
+ * `idOf = (v) => v.vid`。同口径可用于规则/磁贴列表（widgets/rules 顺序即展示序）。
+ */
+export function reorderById<T>(
+  items: readonly T[],
+  idOf: (item: T) => string,
+  fromId: string,
+  toId: string,
+): T[] {
+  const copy = [...items];
+  if (fromId === toId || fromId.length === 0 || toId.length === 0) {
+    return copy;
+  }
+  const from = copy.findIndex((item) => idOf(item) === fromId);
+  const to = items.findIndex((item) => idOf(item) === toId);
+  if (from < 0 || to < 0) {
+    return copy;
+  }
+  const [moved] = copy.splice(from, 1);
+  copy.splice(Math.min(to, copy.length), 0, moved as T);
+  return copy;
+}
+
+// ---------------------------------------------------------------------------
 // 关系双写计划（纯函数；apps 层据此在同一 batch 内写主记录 + 对方 backlink）
 // ---------------------------------------------------------------------------
 
