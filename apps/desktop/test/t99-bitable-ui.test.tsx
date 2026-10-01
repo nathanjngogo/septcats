@@ -10,7 +10,7 @@
  *    写入正确的值**（select 落选项 id、落未分组桶落 null）；分组字段切换经 saveView 落 groupPid；
  *  - 表格视图：交给既有 DbPage（bitable-grid 容器在位，视图条仍可用）。
  */
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { within, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import { BitablePage } from '../src/renderer/src/bitable/BitablePage';
@@ -273,5 +273,67 @@ describe('T99-01 主区：视图条 / 看板 / 表格', () => {
     await waitFor(() => expect(api.exportCsv).toHaveBeenCalledWith({ pageId: TABLE_A }));
     // 视图删除本期不提供（不做假 UI）：按钮在位但禁用
     expect(container.querySelector('[data-testid="bitable-view-remove"]')?.hasAttribute('disabled')).toBe(true);
+  });
+});
+// ---------------------------------------------------------------------------
+// 记录详情（老板 10-01 第①项：看板卡片点开记录，对标飞书）
+// ---------------------------------------------------------------------------
+
+describe('T99-01b 记录详情（卡片点开）', () => {
+  /** 进看板视图并等到卡片标题按钮就位。 */
+  async function openKanban(): Promise<{ container: HTMLElement }> {
+    bitableStore.setState(() => ({ tableId: TABLE_A }));
+    const view = render(<BitablePage />);
+    await waitFor(() => expect(view.container.querySelector('[data-testid="bitable-view-chip-v2"]')).not.toBeNull());
+    fireEvent.click(view.container.querySelector('[data-testid="bitable-view-chip-v2"]')!);
+    await waitFor(() => expect(view.container.querySelector('[data-testid="bitable-open-r1"]')).not.toBeNull());
+    return { container: view.container };
+  }
+
+  it('点卡片标题 → 打开记录详情（逐字段一行 + 弹层标题取标题列原文）', async () => {
+    const { container } = await openKanban();
+    fireEvent.click(container.querySelector('[data-testid="bitable-open-r1"]')!);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-detail"]')).not.toBeNull());
+    expect(container.querySelector('[data-testid="bitable-detail-row-p_title"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="bitable-detail-row-p_status"]')).not.toBeNull();
+    expect(within(container.querySelector('[data-testid="bitable-detail-row-p_title"]') as HTMLElement).getByText('标题')).toBeDefined();
+    // 弹层标题 = 「写方案」（r1 的标题列）
+    expect(container.textContent).toContain('写方案');
+  });
+
+  it('详情里改字段 → 走 recordUpdate（与拖动/行内编辑同一条写值通道）', async () => {
+    const { container } = await openKanban();
+    fireEvent.click(container.querySelector('[data-testid="bitable-open-r1"]')!);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-detail-ctl-p_title"]')).not.toBeNull());
+    api.recordUpdate.mockClear();
+    fireEvent.click(container.querySelector('[data-testid="bitable-detail-ctl-p_title"]')!);
+    const input = await waitFor(() => {
+      const el = container.querySelector('[data-testid="bitable-detail-row-p_title"] input');
+      expect(el, '点字段后未进入编辑态（应出现输入框）').not.toBeNull();
+      return el as HTMLInputElement;
+    });
+    fireEvent.change(input, { target: { value: '写方案 v2' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(api.recordUpdate).toHaveBeenCalledWith({
+      pageId: TABLE_A, recordId: 'r1', patch: { p_title: '写方案 v2' },
+    }));
+  });
+
+  it('卡内交互不串扰：「移到」下拉照常改值，且不会打开详情', async () => {
+    const { container } = await openKanban();
+    api.recordUpdate.mockClear();
+    fireEvent.change(container.querySelector('[data-testid="bitable-move-r1"]')!, { target: { value: 's-todo' } });
+    await waitFor(() => expect(api.recordUpdate).toHaveBeenCalledWith({
+      pageId: TABLE_A, recordId: 'r1', patch: { p_status: 's-todo' },
+    }));
+    expect(container.querySelector('[data-testid="bitable-detail"]'), '操作下拉不得打开详情').toBeNull();
+  });
+
+  it('关闭钮 → 弹层消失（编辑态一并复位）', async () => {
+    const { container } = await openKanban();
+    fireEvent.click(container.querySelector('[data-testid="bitable-open-r1"]')!);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-detail"]')).not.toBeNull());
+    fireEvent.click(container.querySelector('[data-testid="bitable-detail-close"]')!);
+    await waitFor(() => expect(container.querySelector('[data-testid="bitable-detail"]')).toBeNull());
   });
 });

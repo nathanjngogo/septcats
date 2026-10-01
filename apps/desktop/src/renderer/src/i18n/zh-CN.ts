@@ -243,6 +243,7 @@ export const zhCN = {
     groupBy: '分组字段',
     moveTo: '移到',
     gridHint: '表格视图的筛选 / 排序 / 字段就在表头栏里',
+    close: '关闭',
     groupByNone: '未选择',
     cardCount: '张卡片',
     itemSuffix: ' 张表',

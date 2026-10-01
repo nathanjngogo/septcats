@@ -242,6 +242,7 @@ export const enUS = {
     groupBy: 'Group by',
     moveTo: 'Move to',
     gridHint: 'Filter / sort / fields live in the grid header bar',
+    close: 'Close',
     groupByNone: 'None',
     cardCount: 'cards',
     itemSuffix: ' tables',

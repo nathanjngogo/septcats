@@ -27,6 +27,8 @@ import {
   type Property,
   type RecordEntity,
 } from '@septcats/dbview';
+import { CellEditor } from '@septcats/dbview/react';
+import { Button, Dialog } from '@septcats/ui';
 import { t } from '../i18n';
 import { bitableActions, useBitable } from './state';
 import './Bitable.css';
@@ -155,6 +157,26 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
       URL.revokeObjectURL(url);
     }).catch(() => { /* 导出失败：主进程不可用/锁页，静默 */ });
   }, [collection, pageId]);
+
+  // ---- 记录详情（老板 10-01 第①项：看板卡片点开记录，对标飞书）----
+  const [detailId, setDetailId] = useState<string | null>(null);
+  /** 同一时刻只允许一个字段处于编辑态（与表格视图的 focused/editing 单点口径一致）。 */
+  const [editPid, setEditPid] = useState<string | null>(null);
+  const detailRecord = useMemo(
+    () => (detailId === null ? null : (records.find((r) => r.id === detailId) ?? null)),
+    [detailId, records],
+  );
+  const closeDetail = useCallback((): void => {
+    setDetailId(null);
+    setEditPid(null);
+  }, []);
+  /** 详情里改字段：走与看板拖动/表格行内编辑**同一条**写值通道（db.updateRecord）。 */
+  const commitField = useCallback(
+    (recordId: string, pid: string, value: unknown): void => {
+      void db.updateRecord(recordId, { [pid]: value });
+    },
+    [db],
+  );
 
   const moveCard = useCallback(
     (recordId: string, key: string): void => {
@@ -305,6 +327,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
             options={groups.map((g) => ({ key: g.key, label: g.label }))}
             schema={collection.schema}
             onMove={moveCard}
+            onOpen={(recordId) => { setDetailId(recordId); setEditPid(null); }}
           />
         )
       ) : null}
@@ -315,11 +338,54 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
       {records.length === 0 && !isKanban ? (
         <p className="bitable-empty" data-testid="bitable-empty">{t('bitable.addRowHint')}</p>
       ) : null}
+
+      {/* 记录详情：字段编辑**复用引擎的 CellEditor**（每种字段类型的编辑器不重造），
+          提交走 db.updateRecord（与拖动/行内编辑同源）；Esc / 关闭钮 / 遮罩都能退。 */}
+      {detailRecord === null ? null : (
+        <Dialog
+          open
+          onClose={closeDetail}
+          title={recordTitle(collection.schema, detailRecord.values, detailRecord.id)}
+          footer={
+            <Button variant="secondary" data-testid="bitable-detail-close" onClick={closeDetail}>
+              {t('bitable.close')}
+            </Button>
+          }
+          className="bitable-detail-dialog"
+        >
+          <div className="bitable-detail" data-testid="bitable-detail">
+            {propertyList(collection.schema).map((p: Property) => (
+              <div className="bitable-detail__row" key={p.id} data-testid={`bitable-detail-row-${p.id}`}>
+                <span className="bitable-detail__lab">{p.name}</span>
+                <div
+                  className="bitable-detail__ctl"
+                  data-testid={`bitable-detail-ctl-${p.id}`}
+                  onClick={() => { setEditPid(p.id); }}
+                >
+                  <CellEditor
+                    property={p}
+                    value={detailRecord.values[p.id]}
+                    editing={editPid === p.id}
+                    onBeginEdit={() => { setEditPid(p.id); }}
+                    onEndEdit={() => { setEditPid(null); }}
+                    onCommit={(value: unknown) => {
+                      commitField(detailRecord.id, p.id, value);
+                      setEditPid(null);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }
 
 interface KanbanBoardProps {
+  /** 点卡片标题 → 打开记录详情（老板 10-01 第①项）。 */
+  onOpen: (recordId: string) => void;
   /** 分组列（可选项 + 未分组桶）：卡片上的「移到」下拉直接用它的 key/label。 */
   options: readonly { key: string; label: string }[];
   groups: ReturnType<typeof kanbanGroups>;
@@ -329,7 +395,7 @@ interface KanbanBoardProps {
 }
 
 /** 看板：列 = 分组，卡片 = 记录；拖动卡片到另一列 = 改分组字段值（语义来自引擎纯函数）。 */
-function KanbanBoard({ groups, options, schema, onMove }: KanbanBoardProps): ReactNode {
+function KanbanBoard({ groups, options, schema, onMove, onOpen }: KanbanBoardProps): ReactNode {
   const [dragId, setDragId] = useState<string | null>(null);
   return (
     <div className="bitable-kanban" data-testid="bitable-kanban">
@@ -361,7 +427,16 @@ function KanbanBoard({ groups, options, schema, onMove }: KanbanBoardProps): Rea
                 onDragStart={() => { setDragId(record.id); }}
                 onDragEnd={() => { setDragId(null); }}
               >
-                <span className="bitable-card-title">{recordTitle(schema, record.values, record.id)}</span>
+                {/* 标题做成真按钮（不是给整张卡挂 onClick）：卡内还有「移到」下拉，
+                    嵌套交互元素会让 a11y 树语义打架；按钮同时天然键盘可达（Tab + Enter）。 */}
+                <button
+                  type="button"
+                  className="bitable-card-open"
+                  data-testid={`bitable-open-${record.id}`}
+                  onClick={() => { onOpen(record.id); }}
+                >
+                  {recordTitle(schema, record.values, record.id)}
+                </button>
                 {/* 键盘 / 无拖拽设备的等价路径：拖动是鼠标专属操作，只给拖动等于把看板对键盘用户关掉
                     （a11y 红线）。每张卡片一个「移到」下拉 —— 与拖动共用同一个 onMove。 */}
                 <label className="bitable-card-move">

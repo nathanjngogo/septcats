@@ -191,3 +191,62 @@
 .bitable-card-move { display: flex; align-items: center; gap: var(--sc-space-sm); }
 .bitable-card-move-label { font: var(--sc-text-ui-xs); color: var(--sc-color-ink-secondary); }
 .bitable-card-move select { font: var(--sc-text-ui-xs); }
+
+/* ===== 卡片标题＝真按钮（老板 10-01 第①项：点开记录详情）=====
+   为什么不是给整张卡挂 onClick：卡内已有「移到」下拉，嵌套交互元素会让 a11y 树语义打架；
+   按钮同时天然键盘可达（Tab + Enter/Space）。 */
+.bitable-card-open {
+  display: block;
+  width: 100%;
+  margin-bottom: var(--sc-space-sm);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--sc-color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bitable-card-open:hover {
+  color: var(--sc-color-accent);
+}
+
+.bitable-card-open:focus-visible {
+  outline: 2px solid var(--sc-color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ===== 记录详情弹层 ===== */
+.bitable-detail {
+  display: flex;
+  flex-direction: column;
+  min-width: 420px;
+}
+
+.bitable-detail__row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--sc-space-sm);
+  align-items: start;
+  padding: var(--sc-space-sm) 0;
+  /* 行分隔走背景条（不是在用 border 属性 ⇒ 不触 T62-01 框线纪律） */
+  background-image: linear-gradient(180deg, transparent calc(100% - 1px), var(--sc-color-hairline) calc(100% - 1px));
+}
+
+.bitable-detail__lab {
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  padding-top: var(--sc-space-xxs);
+}
+
+.bitable-detail__ctl {
+  min-width: 0;
+}
+
+/* 方向 B：字段名走等宽大写（与看板列头/表头同一语言） */
+[data-look='instrument'] .bitable-detail__lab {
+  font: var(--sc-text-code);
+  text-transform: uppercase;
+  letter-spacing: var(--sc-tracking-ui);
+}

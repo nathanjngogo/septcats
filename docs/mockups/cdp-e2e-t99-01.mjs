@@ -305,6 +305,54 @@ async function main() {
     b4.sideItems.some((i) => i.id === built.pageId) && after.records === 3 && after.kanban.length >= 1 && after.kanban[0].groupPid === built.pid,
     JSON.stringify({ sideItems: b4.sideItems.slice(0, 4), after }));
 
+  // ---------- R10 记录详情（老板 10-01 第①项：卡片点开记录） ----------
+  STEP = 'R10';
+  await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-side-item-${pid}"]`)?.click(); }, built.pageId);
+  await wait(1500);
+  await page.evaluate((vid) => { document.querySelector(`[data-testid="bitable-view-chip-${vid}"]`)?.click(); }, built.vid);
+  await wait(1400);
+  const titlePid = await page.evaluate(async (pageId) => (await window.septcats.db.load({ pageId })).collection.schema.title_pid, built.pageId);
+  const cardId10 = await page.evaluate(() => (document.querySelector('article.bitable-card')?.getAttribute('data-testid') ?? '').replace('bitable-card-', ''));
+  const opened = await page.evaluate((rid) => {
+    const btn = document.querySelector(`[data-testid="bitable-open-${rid}"]`);
+    if (btn === null) return { found: false };
+    btn.click();
+    return { found: true };
+  }, cardId10);
+  await wait(900);
+  const detail = await page.evaluate(() => ({
+    present: document.querySelector('[data-testid="bitable-detail"]') !== null,
+    rows: document.querySelectorAll('[data-testid^="bitable-detail-row-"]').length,
+  }));
+  const shotDetail = await shot(page, 'bitable-detail');
+  check('R10-a 点卡片标题 → 记录详情打开（逐字段一行）',
+    opened.found && detail.present && detail.rows >= 2, JSON.stringify({ opened, detail, titlePid }));
+
+  await page.evaluate((sel) => { document.querySelector(sel)?.click(); }, `[data-testid="bitable-detail-ctl-${titlePid}"]`);
+  await wait(600);
+  const wrote = await page.evaluate((pid) => {
+    const input = document.querySelector(`[data-testid="bitable-detail-row-${pid}"] input`);
+    if (input === null) return { found: false };
+    input.focus();
+    return { found: true, before: input.value };
+  }, titlePid);
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('夜航详情改标题');
+  await page.keyboard.press('Enter');
+  await wait(1400);
+  const readBack = await page.evaluate(async (info) => {
+    const loaded = await window.septcats.db.load({ pageId: info.pageId });
+    const rec = loaded.records.find((r) => r.id === info.rid);
+    return { stored: rec === undefined ? null : (rec.values[info.pid] ?? null), stillOpen: document.querySelector('[data-testid="bitable-detail"]') !== null };
+  }, { pageId: built.pageId, pid: titlePid, rid: cardId10 });
+  check('R10-b 详情里纯键盘改标题 → IPC 读回已落库（写值与拖动/行内编辑同源）',
+    wrote.found && readBack.stored === '夜航详情改标题', JSON.stringify({ wrote, readBack }));
+
+  await page.evaluate(() => { document.querySelector('[data-testid="bitable-detail-close"]')?.click(); });
+  await wait(800);
+  const detailClosed = await page.evaluate(() => document.querySelector('[data-testid="bitable-detail"]') === null);
+  check('R10-c 关闭钮 → 详情退场', detailClosed === true, String(detailClosed));
+
   // ---------- R8 夹具零触碰 ----------
   STEP = 'R8';
   await h.browser.close().catch(() => {});
