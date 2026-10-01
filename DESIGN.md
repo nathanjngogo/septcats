@@ -288,3 +288,12 @@ Septcats 是一款本地优先的块式笔记与轻量数据库工具。设计�
 - Don't：**任何色相**（除 danger/success 两粒）——状态一律走明度差 + 描边；Don't：控件上用带 blur 的阴影或大圆角胶囊按钮（像素风红线）。
 - Don't：animate `width/height/top/left`；Don't：linear 缓动（全部 spring 或 `cubic-bezier(0.16,1,0.3,1)` 近似）。
 - Don't：emoji 当图标；图标只用 `Icon.tsx`（T58-01 起族 = 仓内像素 glyph 自绘，尺寸档 16/20/24，色值只走 `currentColor` + opacity 档——见「Icons」节）。
+
+## Extra tokens
+
+> 生成器（`packages/ui/tokens/build-tokens.mjs`）逐条原样搬运到 `tokens.css` 的 motion/typography 之后；
+> 新增追加 token 请写在这里，**不要在生成产物里手改**（`build-tokens.mjs --check` 会红）。
+
+- `--sc-tracking-ui: 0.017em` — 小字字距（11–12px 中文标签/按键），em 单位随字号缩放；中文小字加极小正字距是刻意观感。
+- `--sc-motion-drawer: 450ms` — T95-01 侧栏开合弹簧时长（Apple「Fluid Interfaces」抽屉口径：response ≈0.3s、约 4% 过冲）。
+- `--sc-ease-spring: linear(0.0, 0.0592, 0.1957, 0.3623, 0.5284, 0.6762, 0.7973, 0.8898, 0.9557, 0.9989, 1.0243, 1.0365, 1.0399, 1.0376, 1.0324, 1.026, 1.0196, 1.0139, 1.0093, 1.0057, 1.0032, 1.0015, 1.0005, 1.0, 0.9999, 1.0)` — 开合弹簧缓动：采样自欠阻尼弹簧解析解 x(t)=1-e^(-ζω₀t)(cos ω_d t + ζω₀/ω_d·sin ω_d t)，ζ=0.72、ω₀=2π/0.3，26 点 / 450ms，峰值 1.0399；reduced-motion 由 tokens.css 全局块统一压掉。

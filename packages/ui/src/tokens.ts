@@ -177,6 +177,12 @@ export const zIndex = {
 
 export const easeOut = 'cubic-bezier(0.16,1,0.3,1)';
 
+export const extraTokens = {
+  "tracking-ui": "0.017em",
+  "motion-drawer": "450ms",
+  "ease-spring": "linear(0.0, 0.0592, 0.1957, 0.3623, 0.5284, 0.6762, 0.7973, 0.8898, 0.9557, 0.9989, 1.0243, 1.0365, 1.0399, 1.0376, 1.0324, 1.026, 1.0196, 1.0139, 1.0093, 1.0057, 1.0032, 1.0015, 1.0005, 1.0, 0.9999, 1.0)"
+} as const;
+
 export const COLOR_NAMES = ['canvas', 'surface', 'surface-raised', 'content', 'surface-active', 'ink', 'ink-secondary', 'ink-faint', 'icon-faint', 'hairline', 'hairline-strong', 'accent', 'accent-soft', 'on-accent', 'danger', 'danger-soft', 'success', 'focus-ring', 'selection', 'bevel-hi', 'bevel-lo', 'shadow-pixel', 'ink-edge'] as const;
 
 export const TOKEN_PREFIX = '--sc-';

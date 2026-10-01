@@ -129,7 +129,24 @@ function extractProse(md) {
   const zScale = [...zLine[1].matchAll(/([a-z][a-z-]*)\s+(\d+)/g)].map((m) => [m[1], Number(m[2])]);
   if (zScale.length === 0) throw new Error('z-index 刻度解析为空');
 
-  return { easeOut, layout, zScale };
+  return { easeOut, layout, zScale, extras: extractExtras(md) };
+}
+
+function extractExtras(md) {
+  const head = md.indexOf('## Extra tokens');
+  if (head === -1) return [];
+  const body = md.slice(head).split('\n').slice(1);
+  const out = [];
+  for (const line of body) {
+    if (line.startsWith('## ')) break;
+    const m = /^- `(--sc-[a-z0-9-]+:\s*[^`]+)`/.exec(line);
+    if (m === null) continue;
+    const name = m[1].split(':')[0].trim();
+    const value = m[1].slice(m[1].indexOf(':') + 1).trim();
+    if (out.some((e) => e.name === name)) throw new Error(`Extra tokens 小节有重名：${name}`);
+    out.push({ name, value });
+  }
+  return out;
 }
 
 // --- 颜色模型 ---------------------------------------------------------------
@@ -266,6 +283,9 @@ function renderCss(fm, colorModel, shadowsDark, prose) {
   L.push('');
   L.push('  /* typography：字体族 + 复合字阶（font shorthand，含中文系统栈） */');
   for (const line of renderTypographyLines(fm)) L.push(`  ${line}`);
+  for (const e of prose.extras) {
+    if (e.name.startsWith('--sc-tracking-')) L.push(`  ${e.name}: ${e.value};`);
+  }
   L.push('');
   L.push('  /* rounded */');
   for (const [k, v] of Object.entries(fm.rounded)) L.push(`  --sc-radius-${k}: ${v};`);
@@ -279,6 +299,9 @@ function renderCss(fm, colorModel, shadowsDark, prose) {
   L.push("  /* motion：时长与唯一弹簧参数；ease-out 解析自「Do's and Don'ts」 */");
   for (const [k, v] of Object.entries(fm.motion)) L.push(`  --sc-motion-${k}: ${v};`);
   L.push(`  --sc-ease-out: ${prose.easeOut};`);
+  for (const e of prose.extras) {
+    if (e.name.startsWith('--sc-motion-') || e.name === '--sc-ease-spring') L.push(`  ${e.name}: ${e.value};`);
+  }
   L.push('');
   L.push('  /* layout（解析自 DESIGN.md「Layout」章节） */');
   L.push(`  --sc-layout-topbar: ${prose.layout.topbar}px;`);
@@ -388,6 +411,8 @@ function renderTs(fm, colorModel, prose) {
   L.push(`export const zIndex = ${tsObject(zIndex)} as const;`);
   L.push('');
   L.push(`export const easeOut = '${prose.easeOut}';`);
+  L.push('');
+  L.push(`export const extraTokens = ${tsObject(Object.fromEntries(prose.extras.map((e) => [e.name.slice(5), e.value])))} as const;`);
   L.push('');
   L.push(`export const COLOR_NAMES = ${tsStringArray(colorModel.names)} as const;`);
   L.push('');
