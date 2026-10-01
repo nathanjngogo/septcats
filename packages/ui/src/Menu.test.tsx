@@ -135,4 +135,80 @@ describe('Menu outside-close（T60-01 ③）', () => {
     fireEvent.click(trigger);
     expect(screen.queryByRole('menu')).toBeNull();
   });
+
+
+/** 本 describe 内取第 n 个同名钮（noUncheckedIndexedAccess 下的收敛助手）。 */
+function actionBtn(name: string, index = 0): HTMLElement {
+  const found = screen.getAllByRole('button', { name })[index];
+  if (found === undefined) {
+    throw new Error(`action button not found: ${String(name)}#${String(index)}`);
+  }
+  return found;
+}
+  describe('行内动作钮（IDEA-E 视图排序）', () => {
+    const withActions = [
+      {
+        id: 'v1',
+        label: '表格',
+        actions: [
+          { id: 'up', label: '前移', disabled: true },
+          { id: 'down', label: '后移' },
+        ],
+      },
+      {
+        id: 'v2',
+        label: '看板',
+        actions: [
+          { id: 'up', label: '前移' },
+          { id: 'down', label: '后移', disabled: true },
+        ],
+      },
+    ] as const;
+
+    it('动作钮是真 button：无障碍名可见，主项仍为 role=menuitem', () => {
+      render(<Menu items={withActions} label="视图" />);
+      expect(screen.getAllByRole('menuitem')).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: '前移' })).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: '后移' })).toHaveLength(2);
+    });
+
+    it('点动作钮只发 onAction（带 entryId），不发 onSelect、不关菜单', () => {
+      const onSelect = vi.fn();
+      const onAction = vi.fn();
+      render(<Menu items={withActions} label="视图" onSelect={onSelect} onAction={onAction} />);
+      fireEvent.click(actionBtn('后移'));
+      expect(onAction).toHaveBeenCalledWith('down', 'v1');
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(screen.queryByRole('menu')).not.toBeNull();
+    });
+
+    it('disabled 的动作钮点击零回调', () => {
+      const onAction = vi.fn();
+      render(<Menu items={withActions} label="视图" onAction={onAction} />);
+      const up = actionBtn('前移', 0);
+      expect(up.hasAttribute('disabled')).toBe(true);
+      fireEvent.click(up);
+      expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('键盘：动作钮 Enter 不被根的 menuitem 选择吞掉（stopPropagation），激活走 click', () => {
+      const onSelect = vi.fn();
+      const onAction = vi.fn();
+      render(<Menu items={withActions} label="视图" onSelect={onSelect} onAction={onAction} />);
+      const down = actionBtn('后移');
+      down.focus();
+      // 浏览器里 Enter 会「keydown + click」两步；jsdom 不合成 click，分两步各验一半：
+      fireEvent.keyDown(down, { key: 'Enter' });
+      expect(onSelect).not.toHaveBeenCalled(); // keydown 已阻断冒泡 → 根不选主项
+      fireEvent.click(down); // 原生 Enter 紧随的激活 = 本钮 click
+      expect(onAction).toHaveBeenCalledWith('down', 'v1');
+    });
+
+    it('无 actions 的项 = 旧 DOM（菜单项不被包进额外容器）', () => {
+      const { container } = render(<Menu items={items} label="页面操作" />);
+      const row = container.querySelector('.sc-menu__row');
+      expect(row).toBeNull();
+      expect(container.querySelectorAll('.sc-menu > .sc-menu__item')).toHaveLength(3);
+    });
+  });
 });

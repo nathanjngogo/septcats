@@ -42,3 +42,39 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 行内动作钮行（IDEA-E 视图排序）：主项吃掉剩余宽度，动作钮贴右成组。 */
+.sc-menu__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-xs);
+  padding-right: var(--sc-space-xxs);
+}
+
+.sc-menu__row .sc-menu__item--with-actions {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-menu__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sc-size-control-sm);
+  height: var(--sc-size-control-sm);
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--sc-radius-sm);
+  background: transparent;
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-menu__action:hover:not(:disabled) {
+  background: var(--sc-color-accent-soft);
+  color: var(--sc-color-ink);
+}
+
+.sc-menu__action:disabled {
+  color: var(--sc-color-ink-faint);
+  cursor: not-allowed;
+}

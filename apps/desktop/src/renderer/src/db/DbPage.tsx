@@ -365,6 +365,9 @@ export function DbPage({ pageId }: DbPageProps) {
         onSaveView={(view) => {
           void db.saveView(view);
         }}
+        onMoveView={(fromVid, toVid) => {
+          void db.reorderViews(fromVid, toVid);
+        }}
         onExportCsv={handleExportCsv}
         onAiGenerate={handleAiGenerate}
         onAiBatchGenerate={handleAiBatchGenerate}

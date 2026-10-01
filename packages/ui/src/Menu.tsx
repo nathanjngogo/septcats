@@ -4,18 +4,37 @@ import clsx from 'clsx';
 import { Kbd } from './Kbd';
 import './Menu.css';
 
+export interface MenuEntryAction {
+  /** 动作稳定 id（宿主 onAction(id) 用它分派，禁依赖数组下标）。 */
+  id: string;
+  /** 无障碍名（CJK 由宿主传入，如「前移视图」）。 */
+  label: string;
+  /** 动作钮图形（仓内 Icon 出口传入）。 */
+  icon?: ReactNode;
+  /** true = 动作不可用（如首项的「前移」）。 */
+  disabled?: boolean;
+}
+
 export interface MenuEntry {
   id: string;
   label: ReactNode;
   hint?: string | undefined;
   danger?: boolean;
   disabled?: boolean;
+  /**
+   * 行内动作钮（IDEA-E 视图排序等：菜单项右侧「↑/↓ 移动」）。
+   * 键盘等价红线：动作钮是**真 button**（role=menuitem 的父项内），Tab 直达、Enter/Space 触发；
+   * 点击**不**走 onSelect（不关闭菜单、不误选视图）。
+   */
+  actions?: readonly MenuEntryAction[] | undefined;
 }
 
 export interface MenuProps {
   items: readonly MenuEntry[];
   label?: string | undefined;
   onSelect?: (id: string) => void;
+  /** 行内动作钮触发（actionId = MenuEntryAction.id，entryId = 所在菜单项 id）。 */
+  onAction?: (actionId: string, entryId: string) => void;
   onDismiss?: () => void;
   className?: string;
 }
@@ -24,7 +43,7 @@ export interface MenuProps {
  * Menu —— role="menu" / role="menuitem"，方向键移动焦点、Enter 触发、Esc 关闭。
  * 方向键只落在可用项上（跳过 disabled），焦点真实移动（不靠视觉高亮假装可达）。
  */
-export function Menu({ items, label, onSelect, onDismiss, className }: MenuProps) {
+export function Menu({ items, label, onSelect, onAction, onDismiss, className }: MenuProps) {
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -122,35 +141,73 @@ export function Menu({ items, label, onSelect, onDismiss, className }: MenuProps
       className={clsx('sc-menu', className)}
       onKeyDown={onKeyDown}
     >
-      {items.map((entry, index) => (
-        <button
-          key={entry.id}
-          ref={(node) => {
-            itemRefs.current[index] = node;
-          }}
-          type="button"
-          role="menuitem"
-          tabIndex={index === activeIndex ? 0 : -1}
-          disabled={entry.disabled}
-          aria-disabled={entry.disabled === true ? true : undefined}
-          className={clsx(
-            'sc-menu__item',
-            index === activeIndex && 'sc-menu__item--active',
-            entry.danger === true && 'sc-menu__item--danger',
-          )}
-          onMouseEnter={() => {
-            setActiveIndex(index);
-          }}
-          onClick={() => {
-            if (entry.disabled !== true) {
-              onSelect?.(entry.id);
-            }
-          }}
-        >
-          <span className="sc-menu__label">{entry.label}</span>
-          {entry.hint === undefined ? null : <Kbd>{entry.hint}</Kbd>}
-        </button>
-      ))}
+      {items.map((entry, index) => {
+        const itemButton = (
+          <button
+            key={entry.id}
+            ref={(node) => {
+              itemRefs.current[index] = node;
+            }}
+            type="button"
+            role="menuitem"
+            tabIndex={index === activeIndex ? 0 : -1}
+            disabled={entry.disabled}
+            aria-disabled={entry.disabled === true ? true : undefined}
+            className={clsx(
+              'sc-menu__item',
+              entry.actions !== undefined && 'sc-menu__item--with-actions',
+              index === activeIndex && 'sc-menu__item--active',
+              entry.danger === true && 'sc-menu__item--danger',
+            )}
+            onMouseEnter={() => {
+              setActiveIndex(index);
+            }}
+            onClick={() => {
+              if (entry.disabled !== true) {
+                onSelect?.(entry.id);
+              }
+            }}
+          >
+            <span className="sc-menu__label">{entry.label}</span>
+            {entry.hint === undefined ? null : <Kbd>{entry.hint}</Kbd>}
+          </button>
+        );
+        const actions = entry.actions;
+        if (actions === undefined || actions.length === 0) {
+          // 无动作项 = 旧 DOM 原样（既有样式/测试零扰动）
+          return itemButton;
+        }
+        // 行内动作钮：与主项**同级**（button 不套 button）；点击只发 onAction，不触发 onSelect
+        // （IDEA-E：改序不关菜单、不误选视图）。真 button ⇒ Tab 直达 + Enter/Space 天然可用。
+        return (
+          <div key={entry.id} className="sc-menu__row">
+            {itemButton}
+            {actions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                disabled={action.disabled === true || entry.disabled === true}
+                aria-label={action.label}
+                className="sc-menu__action"
+                onKeyDown={(event) => {
+                  // 焦点在动作钮上时，Enter/Space 只激活本钮（阻止冒泡到根的
+                  // menuitem 选择逻辑，否则回车改序会连带「选中该视图」）。
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.stopPropagation();
+                  }
+                }}
+                onClick={() => {
+                  if (action.disabled !== true && entry.disabled !== true) {
+                    onAction?.(action.id, entry.id);
+                  }
+                }}
+              >
+                {action.icon ?? action.label}
+              </button>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -14,7 +14,7 @@
  */
 import { useState } from 'react';
 import clsx from 'clsx';
-import { Button, CaretDown, Icon, Menu, Plus, X, type MenuEntry } from '@septcats/ui';
+import { Button, CaretDown, CaretUp, Icon, Menu, Plus, X, type MenuEntry, type MenuEntryAction } from '@septcats/ui';
 import {
   FIELD_TYPES,
   FILTER_KINDS,
@@ -78,6 +78,11 @@ export interface PropBarProps {
   views: readonly DbView[];
   activeVid: string;
   onSwitchView: (vid: string) => void;
+  /**
+   * IDEA-E 视图排序：把视图 fromVid 移到 toVid 位（右/下拖占目标后的口径由引擎定）。
+   * 缺省 = 视图菜单不渲染「↑/↓ 移动」动作钮（旧宿主零影响）。
+   */
+  onMoveView?: ((fromVid: string, toVid: string) => void) | undefined;
   /** 整棵筛选树（含递归 and 子组）。 */
   filter: FilterGroup;
   onChangeFilter: (next: FilterGroup) => void;
@@ -191,6 +196,7 @@ export function PropBar({
   views,
   activeVid,
   onSwitchView,
+  onMoveView,
   filter,
   onChangeFilter,
   sort,
@@ -228,10 +234,35 @@ export function PropBar({
   const chips = flattenClauses(filter);
   const activeView = views.find((view) => view.vid === activeVid) ?? views[0];
 
-  const viewItems: MenuEntry[] = views.map((view) => ({
+  // IDEA-E：宿主接线 onMoveView 时，每个视图项带「↑/↓ 移动」动作钮（键盘等价红线：
+  // 动作钮是真 button，Tab 直达 + Enter 激活；首/末项对应方向 disabled，不造假入口）。
+  // 无障碍名带目标视图名（「前移到「表格」」），比裸「前移」在屏幕阅读器里更自明。
+  function viewMoveActions(index: number): MenuEntryAction[] | undefined {
+    if (onMoveView === undefined || views.length < 2) {
+      return undefined;
+    }
+    const prev = views[index - 1];
+    const next = views[index + 1];
+    return [
+      {
+        id: 'view-move-up',
+        label: prev === undefined ? '前移（已在最前）' : `前移到「${prev.name}」`,
+        icon: <Icon icon={CaretUp} size="sm" />,
+        disabled: prev === undefined,
+      },
+      {
+        id: 'view-move-down',
+        label: next === undefined ? '后移（已在最后）' : `后移到「${next.name}」`,
+        icon: <Icon icon={CaretDown} size="sm" />,
+        disabled: next === undefined,
+      },
+    ];
+  }
+  const viewItems: MenuEntry[] = views.map((view, index) => ({
     id: view.vid,
     label: view.name,
     hint: view.vid === activeVid ? '当前' : undefined,
+    actions: viewMoveActions(index),
   }));
 
   // 「字段显示」菜单：逐字段开关；**主字段（title_pid）不可隐藏**（与飞书主字段口径一致），
@@ -319,6 +350,22 @@ export function PropBar({
               onSelect={(id) => {
                 setViewMenuOpen(false);
                 onSwitchView(id);
+              }}
+              onAction={(actionId, entryId) => {
+                if (onMoveView === undefined) {
+                  return;
+                }
+                const i = views.findIndex((view) => view.vid === entryId);
+                const j = actionId === 'view-move-up' ? i - 1 : actionId === 'view-move-down' ? i + 1 : i;
+                const target = views[j];
+                const self = views[i];
+                // 边界（首项上移/末项下移）与未知项 = 零调用（main 侧本就零写，双保险）。
+                // DEVIATION 观测：宿主带 viewTypes 过滤时，相邻=「可见序列」相邻，
+                // 落库后可能与被过滤掉的视图产生非相邻换位 —— 语义仍是「移到邻位视图处」，可接受。
+                if (self === undefined || target === undefined || j === i) {
+                  return;
+                }
+                onMoveView(entryId, target.vid);
               }}
               onDismiss={() => {
                 setViewMenuOpen(false);

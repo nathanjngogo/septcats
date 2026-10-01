@@ -87,6 +87,11 @@ export interface DbViewProps {
   /** select/multi_select 单元格内新建选项：创建并返回选项 id（已存在同名返回既有 id）。 */
   onCreateCellOption?: ((pid: string, name: string) => string | undefined) | undefined;
   onSaveView: (view: DbViewEntity) => void;
+  /**
+   * IDEA-E 视图排序透传（可选 = 宿主未接线时视图菜单无动作钮，零回归）。
+   * 宿主应走 `db.reorderViews(fromVid, toVid)`（db:view:reorder 通道）。
+   */
+  onMoveView?: ((fromVid: string, toVid: string) => void) | undefined;
   onExportCsv: () => void;
   onOpenRelation?: ((recordId: string) => void) | undefined;
   /** AI 列单行生成（受控回调：dbview 不 import electron、不直接调 window.septcats）。 */
@@ -122,6 +127,7 @@ export function DbView(props: DbViewProps) {
     onMoveProperty,
     onCreateCellOption,
     onSaveView,
+    onMoveView,
     onExportCsv,
     onOpenRelation,
     onAiGenerate,
@@ -297,6 +303,7 @@ export function DbView(props: DbViewProps) {
         views={visibleViews}
         activeVid={activeView?.vid ?? ''}
         onSwitchView={setActiveVid}
+        onMoveView={onMoveView}
         filter={activeView?.filter ?? { op: 'and', clauses: [] }}
         onChangeFilter={(next) => {
           saveView({ filter: next });
