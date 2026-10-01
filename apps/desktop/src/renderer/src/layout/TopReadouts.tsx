@@ -19,37 +19,27 @@ import type { PageNodeView } from '../../../types/window';
 import type { SyncStatusSnapshot } from '../../../shared/sync';
 import './TopReadouts.css';
 
-/** 同步态 → 短标签（i18n；缺值时按「未启用」）。 */
-function syncLabel(status: SyncStatusSnapshot | null): string {
+/**
+ * 第①格取值 = **最近同步时刻**（不是同步状态）。
+ *
+ * ⚠ 这里曾经写的是「同步态 → 短标签 + 灯色」，两个真问题（T101-01 截图复核抓到）：
+ *   1) `SyncRuntimeState` 里**根本没有 `disabled`**（只有 idle/syncing/ok/degraded/error/key_mismatch），
+ *      同步关闭时运行时报 `idle` ⇒ 落到 fallback「已同步」+ 绿灯，与顶上那粒药丸「同步未开启」
+ *      **互相矛盾**（谎报）；
+ *   2) 顶栏同一行已有状态药丸（`SyncStatusButton`），再放一粒状态灯就是**同一信号两处**——
+ *      既冗余又会各自漂移。
+ * 定策：**状态只由药丸表达**（它的权威判据是 `enabled === false → 「同步未开启」`），
+ * 读数区只补一条**事实型**信息（什么时候同步过），与药丸互补、不可能互相矛盾。
+ */
+function lastSyncValue(status: SyncStatusSnapshot | null): string {
   if (status === null) {
-    return t('readouts.syncUnknown');
+    return t('readouts.unknown');
   }
-  const state = String((status as { state?: string }).state ?? '');
-  if (state === 'syncing') {
-    return t('readouts.syncBusy');
+  const at = Number((status as { lastSyncAt?: unknown }).lastSyncAt ?? 0);
+  if (!Number.isFinite(at) || at <= 0) {
+    return t('readouts.never');
   }
-  if (state === 'error') {
-    return t('readouts.syncError');
-  }
-  if (state === 'disabled') {
-    return t('readouts.syncOff');
-  }
-  return t('readouts.syncOk');
-}
-
-/** 同步态 → 灯色档（instrument 档用：ok=accent / busy=amber / error=danger / off=灰）。 */
-function syncTone(status: SyncStatusSnapshot | null): string {
-  const state = status === null ? '' : String((status as { state?: string }).state ?? '');
-  if (state === 'syncing') {
-    return 'busy';
-  }
-  if (state === 'error') {
-    return 'error';
-  }
-  if (state === 'disabled') {
-    return 'off';
-  }
-  return status === null ? 'off' : 'ok';
+  return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export function TopReadouts(): ReactNode {
@@ -108,12 +98,9 @@ export function TopReadouts(): ReactNode {
 
   return (
     <div className="sc-readouts" role="group" aria-label={t('readouts.label')}>
-      <div className="sc-readouts__cell" data-tone={syncTone(sync)} data-testid="readout-sync">
-        <span className="sc-readouts__lab">{t('readouts.sync')}</span>
-        <span className="sc-readouts__val">
-          <i className="sc-readouts__lamp" aria-hidden="true" />
-          {syncLabel(sync)}
-        </span>
+      <div className="sc-readouts__cell" data-testid="readout-sync">
+        <span className="sc-readouts__lab">{t('readouts.lastSync')}</span>
+        <span className="sc-readouts__val">{lastSyncValue(sync)}</span>
       </div>
       <div className="sc-readouts__cell" data-testid="readout-todo">
         <span className="sc-readouts__lab">{t('readouts.todo')}</span>

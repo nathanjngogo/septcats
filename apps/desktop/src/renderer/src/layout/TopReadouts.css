@@ -7,7 +7,6 @@
  */
 .sc-readouts {
   /* 局部尺寸常量（消重复裸 px：no-magic 门禁要求同值裸 px 不得重复 ≥3 次） */
-  --ro-lamp: 6px;
   --ro-glow: 4px;
   display: flex;
   align-items: stretch;
@@ -47,37 +46,20 @@
   font-variant-numeric: tabular-nums;
 }
 
-.sc-readouts__lamp {
-  display: block;
-  width: var(--ro-lamp);
-  height: var(--ro-lamp);
-  border-radius: 50%;
-  background: var(--sc-color-ink-faint);
-}
+
 
 /* 状态灯色档（全部走既有语义 token） */
-.sc-readouts__cell[data-tone='ok'] .sc-readouts__lamp {
-  background: var(--sc-color-success);
-}
-.sc-readouts__cell[data-tone='busy'] .sc-readouts__lamp {
-  background: var(--sc-color-accent);
-}
-.sc-readouts__cell[data-tone='error'] .sc-readouts__lamp {
-  background: var(--sc-color-danger);
-}
-.sc-readouts__cell[data-tone='error'] .sc-readouts__val {
-  color: var(--sc-color-danger);
-}
+.sc-readouts__cell[data-tone='ok'] 
+.sc-readouts__cell[data-tone='busy'] 
+.sc-readouts__cell[data-tone='error'] 
+
 
 /* ---- 方向 B：仪表读数（大写字距标签 + 灯辉光；其它档保持朴素） ---- */
 [data-look='instrument'] .sc-readouts__lab {
   text-transform: uppercase;
   letter-spacing: var(--sc-tracking-ui);
 }
-[data-look='instrument'] .sc-readouts__lamp {
-  /* 读数灯辉光（灯是状态指示，不属于「层次/浮起」⇒ 与本档「零模糊层次」不冲突） */
-  box-shadow: 0 0 var(--ro-glow) currentColor;
-}
+[data-look='instrument'] 
 
 /* ---- 窄窗收缩（先收标签，再整体隐藏） ---- */
 @media (max-width: 1180px) {

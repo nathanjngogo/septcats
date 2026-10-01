@@ -544,14 +544,11 @@ export const zhCN = {
   // 方向 B 结构层：顶栏读数区（只放可核对的事实）
   readouts: {
     label: '状态读数',
-    sync: '同步',
     todo: '待办',
     pages: '页面',
-    syncOk: '已同步',
-    syncBusy: '同步中',
-    syncError: '同步失败',
-    syncOff: '未启用',
-    syncUnknown: '—',
+    lastSync: '最近同步',
+    never: '未同步过',
+    unknown: '—',
   },
   palette: {
     title: '命令面板',

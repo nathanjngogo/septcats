@@ -318,6 +318,14 @@ async function main() {
     await topBtn(page, 'AI');
     record('AI 面板', await page.evaluate(SWEEP));
 
+    // 收尾取证：关掉面板回到主壳，留一张全屏图（顶栏 + 侧栏 + 主区都在画面里）
+    await page.keyboard.press('Escape');
+    await wait(500);
+    await page.evaluate(() => { document.querySelector('[data-testid="nav-rail-notes"]')?.click(); });
+    await wait(1600);
+    await page.screenshot({ path: join(SHOTS, `${RUN_NAME}-shell.png`) });
+    console.log(`截图：${join(SHOTS, `${RUN_NAME}-shell.png`)}`);
+
     const after = rootMtime();
     const viol = SURFACES.reduce((n, s2) => n + s2.violations.length, 0);
     const indet = SURFACES.reduce((n, s2) => n + s2.indeterminate.length, 0);

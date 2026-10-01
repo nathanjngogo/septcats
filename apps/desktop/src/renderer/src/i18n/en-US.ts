@@ -539,14 +539,11 @@ export const enUS = {
   // Direction B structural layer: top-bar readouts (verifiable facts only)
   readouts: {
     label: 'Status readouts',
-    sync: 'Sync',
     todo: 'To-do',
     pages: 'Pages',
-    syncOk: 'Synced',
-    syncBusy: 'Syncing',
-    syncError: 'Sync failed',
-    syncOff: 'Off',
-    syncUnknown: '—',
+    lastSync: 'Last sync',
+    never: 'Never',
+    unknown: '—',
   },
   palette: {
     title: 'Command Palette',
