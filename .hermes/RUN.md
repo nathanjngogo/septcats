@@ -21,6 +21,11 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 7. 真机：`cdp-e2e-t99-01.mjs` 加 R13（建仪表盘→指标卡数与 IPC 读回一致；建规则「状态→读完时把分数设为 10」→ 看板拖动改状态 → IPC 读回分数=10 且视图 version+1）。
 8. 门禁全量（ensure-abi node → dbview/ui/desktop test + tsc + no-magic）→ ensure-abi electron → dist 重打包 → T99/T85/T100 全绿 → 台账（CHANGELOG 0.6.10 + MILESTONES R61）→ commit+push（代理 7897 兜底脚本，gh token 一次性 URL，凭据不落日志）→ 更新本文件 STATUS/下一步 → 心跳。
 
+## 避让规则（主会话与值守通用——双向检查，防双写冲突）
+- **任何会话动手改代码前，先看 `.hermes/CLAIM`**：存在且 mtime <40 分钟 → 别人在干，本会话只做只读汇报，不改代码。
+- 主会话（PM）开工第一件事 = 写 `.hermes/CLAIM`（时间+将做的步骤），收口时删除；值守协议本就如此。
+- 交接以 CLAIM 为唯一锁；RUN.md 的「下一步」在 CLAIM 持有期间只许持有者改。
+
 ## 红线（值守 Agent 必须遵守）
 - 真实档案 `C:/Users/Administrator/.septcats/` **只读**；探针用 `_scratch` 副本 + mtime 双钉。
 - 测试跑前 `node apps/desktop/scripts/ensure-abi.mjs node`；打包前 `... electron`。
