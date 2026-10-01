@@ -25,14 +25,20 @@
 
 .cal-side-count {
   font: var(--sc-text-ui-xs);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
+  /* ⚠ chrome 落点：本元素直接铺在侧栏淡化面（instrument 档 = canvas + 12~14% ink-edge）上，
+     ink-faint 实测 3.65:1 < AA 4.5（T101-01 全站扫描）⇒ 提档 ink-secondary。
+     政策：弱化面 × 弱字冲突时**提文字档**，不改淡化强度（否则 chrome 与主区又会糊成一片）。 */
 }
 
 .cal-side-empty {
   margin: 0;
   padding: var(--sc-space-sm);
   font: var(--sc-text-ui-xs);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
+  /* ⚠ chrome 落点：本元素直接铺在侧栏淡化面（instrument 档 = canvas + 12~14% ink-edge）上，
+     ink-faint 实测 3.65:1 < AA 4.5（T101-01 全站扫描）⇒ 提档 ink-secondary。
+     政策：弱化面 × 弱字冲突时**提文字档**，不改淡化强度（否则 chrome 与主区又会糊成一片）。 */
 }
 
 .cal-side-list {
@@ -69,8 +75,11 @@
 
 .cal-side-when {
   font: var(--sc-text-ui-xs);
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
   letter-spacing: var(--sc-tracking-ui);
+  /* ⚠ chrome 落点：本元素直接铺在侧栏淡化面（instrument 档 = canvas + 12~14% ink-edge）上，
+     ink-faint 实测 3.65:1 < AA 4.5（T101-01 全站扫描）⇒ 提档 ink-secondary。
+     政策：弱化面 × 弱字冲突时**提文字档**，不改淡化强度（否则 chrome 与主区又会糊成一片）。 */
 }
 
 .cal-side-text {

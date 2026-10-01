@@ -6,6 +6,7 @@
  * + key_mismatch 红条（T17-01 六态新增）；
  * 面板：设备列表、待发段、最近错误、立即同步、加密/启用开关。
  */
+import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncStatusSnapshot } from '../src/shared/sync';
@@ -208,5 +209,32 @@ describe('sync/UI 面板', () => {
     expect(
       (screen.getByRole('button', { name: '立即同步' }) as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T101-01 契约：顶栏同步药丸落在 chrome（淡化面）上 ⇒ 文字档位不得用 ink-faint
+// （全站对比度扫描实测 ink-faint × chrome = 3.65:1 < AA 4.5）
+// ---------------------------------------------------------------------------
+describe('T101-01 同步药丸文字档位（chrome 落点不得低于 ink-secondary）', () => {
+  const css = readFileSync('src/renderer/src/sync/SyncStatus.css', 'utf8');
+  const rule = (cls: string): string => {
+    const m = new RegExp(`\\.sc-sync-status__pill--${cls}\\s*\\{([^}]*)\\}`, 'u').exec(css);
+    return m === null ? '' : m[1];
+  };
+
+  it('idle 档 = ink-secondary（曾为 ink-faint：3.65:1 不达 AA）', () => {
+    expect(rule('idle')).toContain('var(--sc-color-ink-secondary)');
+    expect(rule('idle'), 'chrome 上不得回退到 ink-faint').not.toContain('ink-faint');
+  });
+
+  it('各档药丸一律不得用 ink-faint（含 ok / syncing / degraded）', () => {
+    for (const cls of ['idle', 'ok', 'syncing', 'degraded']) {
+      const body = rule(cls);
+      if (body === '') {
+        continue;
+      }
+      expect(body, `${cls} 档不得落在 ink-faint`).not.toContain('ink-faint');
+    }
   });
 });

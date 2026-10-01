@@ -49,9 +49,13 @@
   background: var(--sc-color-ink-faint);
 }
 
-/* idle：灰点（默认） */
+/* idle：灰点（默认）
+ * ⚠ 文字档位 = ink-secondary，**不是 ink-faint**：这粒药丸落在**顶栏 chrome** 上，
+ * 而 instrument 档的 chrome 是「canvas + 12~14% ink-edge」的淡化面，实测
+ * ink-faint × chrome = 3.65:1（浅色）< AA 4.5（T101-01 全站扫描抓到）。
+ * 同族 ok 档早就是 ink-secondary，此处与它对齐；状态区分仍靠点色（灰 vs 绿）+ 文案。 */
 .sc-sync-status__pill--idle {
-  color: var(--sc-color-ink-faint);
+  color: var(--sc-color-ink-secondary);
 }
 
 /* syncing：T53-01 §0 —— 同步语义色保留 success 绿一粒（原 accent 琥珀点灰阶后与闲置灰点
