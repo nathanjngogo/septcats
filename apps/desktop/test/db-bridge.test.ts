@@ -61,6 +61,7 @@ function installMockDb(): MockDb {
     propRemove: vi.fn(),
     propMove: vi.fn(),
     viewSave: vi.fn(),
+    viewReorder: vi.fn(),
     relationSearch: vi.fn(),
     exportCsv: vi.fn(),
   };

@@ -64,6 +64,8 @@ export interface UseDbPage {
   /** AI 列生成指令提交（空串 = 清除配置回落默认指令；TASK-T18-04 §2.2）。 */
   updatePropertyPrompt(pid: string, prompt: string): Promise<void>;
   saveView(view: DbView): Promise<void>;
+  /** IDEA-E 视图排序：把 fromVid 移到 toVid 位（main 侧零写语义，见 db:view:reorder）。 */
+  reorderViews(fromVid: string, toVid: string): Promise<void>;
   renameCollection(title: string): Promise<void>;
   /** 返回 CSV 文本（由调用方决定下载/复制）。 */
   exportCsv(): Promise<string>;
@@ -196,6 +198,14 @@ export function useDbPage(pageId: string): UseDbPage {
     [pageId, reload],
   );
 
+  const reorderViews = useCallback(
+    async (fromVid: string, toVid: string): Promise<void> => {
+      await dbApi().viewReorder({ pageId, fromVid, toVid });
+      reload();
+    },
+    [pageId, reload],
+  );
+
   const renameCollection = useCallback(
     async (title: string): Promise<void> => {
       await dbApi().rename({ pageId, title });
@@ -226,6 +236,7 @@ export function useDbPage(pageId: string): UseDbPage {
     moveProperty,
     updatePropertyPrompt,
     saveView,
+    reorderViews,
     renameCollection,
     exportCsv,
   };
