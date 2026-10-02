@@ -25,7 +25,7 @@
  */
 import { createRequire } from 'node:module';
 import { spawn, execSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync, statSync, appendFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, statSync, appendFileSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -156,10 +156,26 @@ async function openViewMenu(page, pageId) {
   return btnFound;
 }
 
-/** 读视图下拉的行序 + 动作钮禁用态 + 当前视图名（菜单开着时调用）。 */
+/**
+ * 读视图下拉的行序 + 动作钮禁用态 + 当前视图名。
+ * 值守 10-02 加固：若菜单不在（openViewMenu 那次开未成/被宿主重挂收掉），
+ * 在**同一次 evaluate** 内重点视图钮（PropBar 首个 haspopup 必是视图切换）并页内等 900ms 再读——
+ * 排除跨 evaluate 的开合竞态。
+ */
 async function readMenu(page) {
-  return page.evaluate(() => {
-    const menu = document.querySelector('[role="menu"][aria-label="视图"]');
+  return page.evaluate(async () => {
+    const snap = () => {
+      const menu = document.querySelector('[role="menu"][aria-label="视图"]');
+      if (menu === null) return null;
+      return menu;
+    };
+    let menu = snap();
+    if (menu === null) {
+      const btns = [...document.querySelectorAll('.sc-propbar button[aria-haspopup="menu"]')];
+      btns[0]?.click();
+      await new Promise((r) => { setTimeout(r, 900); });
+      menu = snap();
+    }
     if (menu === null) return { open: false };
     const rows = [...menu.querySelectorAll('.sc-menu__row')];
     const items = rows.map((row) => {
@@ -179,10 +195,28 @@ async function readMenu(page) {
   });
 }
 
-/** 按「行标签 + 动作」点动作钮（aria-label 唯一：如 前移到「视图C」）。 */
+/** 严格版 readMenu：只读当前态、不补开——给 R4「动作钮点后面板仍开」这类断言用（防补开掩盖）。 */
+async function readMenuStrict(page) {
+  return page.evaluate(() => {
+    const menu = document.querySelector('[role="menu"][aria-label="视图"]');
+    if (menu === null) return { open: false };
+    const bar = document.querySelector('.sc-propbar');
+    const switchBtn = [...(bar?.querySelectorAll('button[aria-haspopup="menu"]') ?? [])][0];
+    return { open: true, activeName: (switchBtn?.textContent ?? '').trim() };
+  });
+}
+
+/** 按「行标签 + 动作」点动作钮；菜单不在则同一 evaluate 内先补开再点（排除开合竞态）。 */
 async function clickAction(page, ariaLabel) {
-  return page.evaluate((lab) => {
-    const b = document.querySelector(`[role="menu"][aria-label="视图"] button.sc-menu__action[aria-label="${lab}"]`);
+  return page.evaluate(async (lab) => {
+    const findBtn = () => document.querySelector(`[role="menu"][aria-label="视图"] button.sc-menu__action[aria-label="${lab}"]`);
+    let b = findBtn();
+    if (b === null) {
+      const btns = [...document.querySelectorAll('.sc-propbar button[aria-haspopup="menu"]')];
+      btns[0]?.click();
+      await new Promise((r) => { setTimeout(r, 900); });
+      b = findBtn();
+    }
     if (b === null || (b).disabled === true) return false;
     (b).click();
     return true;
@@ -195,14 +229,18 @@ async function main() {
   let h = await boot();
   let page = h.page;
 
-  // ---------- R1 隔离双钉 ----------
+  // ---------- R1 隔离双钉（值守 10-02 修正：AppSettings 线上契约**没有 rootPath 字段**
+  // ——readAppSettings 只回 theme/locale/privacy/editor/trayClose/data.note(同步目录)/sync/ai，
+  // 拿 IPC rootPath 断言=必假红。改为**磁盘直读**夹具 settings.json（应用启动消费的即此文件），
+  // 双钉=UD 副本在位 + 该文件 rootPath 指向 _scratch data + 库文件确实落在 _scratch。 ----------
   STEP = 'R1';
-  const iso = await page.evaluate(async () => {
-    const s = await window.septcats.settings.get();
-    return { rootPath: s.rootPath ?? '' };
-  });
-  check('R1 夹具隔离双钉：UD=_scratch\\t102-01\\ud 且 settings rootPath=_scratch\\t102-01\\data',
-    iso.rootPath.replace(/\//g, '\\').toLowerCase() === ROOTD.toLowerCase(),
+  let iso = {};
+  try {
+    const s = JSON.parse(readFileSync(`${UD}\\septcats.settings.json`, 'utf8'));
+    iso = { rootPath: String(s.rootPath ?? ''), dbInScratch: existsSync(`${ROOTD}\\septcats.db`) };
+  } catch (e) { iso = { err: String(e) }; }
+  check('R1 夹具隔离双钉：settings.json rootPath=_scratch\\t102-01\\data 且库文件在 _scratch',
+    iso.rootPath.replace(/\//g, '\\').toLowerCase() === ROOTD.toLowerCase() && iso.dbInScratch === true,
     JSON.stringify(iso));
 
   // ---------- R2 IPC 造表 + 3 视图（表格|视图B|视图C） ----------
@@ -216,6 +254,10 @@ async function main() {
     const pageId = made.pageId;
     const base = await api.db.load({ pageId });
     const tableVid = base.collection.views[0].vid;
+    // 值守 10-02 修正（活体诊断定案）：useDbPage 记录数为 0 → status='empty' → DbPage
+    // 只渲染 EmptyState、**不挂 DbView/PropBar**（DbPage.tsx:307），视图下拉钮压根不存在。
+    // T99 夹具先造记录（recordCreate 后 reload 由 R2b 承担）——此处同口径造 1 条。
+    await api.db.recordCreate({ pageId, values: {} });
     const stamp = Date.now() % 100000;
     // 静态对账修正（值守 10-02）：bitable 宿主 DbPage 传 viewTypes=['table']
     // （DbPage.tsx:35/333 -> DbView.tsx:143 visibleViews 过滤），PropBar 视图下拉
@@ -266,7 +308,7 @@ async function main() {
   // 末行=视图C，其前邻=视图B -> 换位 -> [表格,视图C,视图B]
   const clicked1 = await clickAction(page, '前移到「视图B」');
   await wait(1400);
-  menu = await readMenu(page);
+  menu = await readMenuStrict(page);
   check('R4 点动作钮 → 菜单保持打开且当前视图仍「表格」（不误选、不关菜单）',
     clicked1 === true && menu.open === true && menu.activeName === '表格',
     JSON.stringify({ clicked1, open: menu.open, activeName: menu.activeName }));
