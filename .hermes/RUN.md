@@ -29,6 +29,7 @@ PURPOSE: 0.6.10 发布前清单（老板 2026-10-01 授权：自主做到底 + �
 
 - 04:55 值守接管（心跳 42min 超阈、无 CLAIM、树净）：认领 IDEA-E step1=引擎 view.ts `reorderById` + 8 例；dbview tsc 0·184/184；commit 9bd581a。下一子步=渲染层接线（含 onSaveView 宿主侦察）。
 - 05:50 值守接管（心跳 51min 超阈、无 CLAIM、树净）：认领 IDEA-E step2 之桥接面子步。侦察定案：saveView 原位替换改不了数组序（幻前提「零新 IPC」证伪）→ 新 db:view:reorder 通道全链（shared→main service/handler/schema→preload→window.d.ts）+ service 测试 1 例（含零写三态）；desktop tsc 0、dbview.test 12/12；commit bc1c0df。下一子步=渲染层接线（注意：视图切换是 PropBar 下拉非页签，拖拽形态按侦察结论落地）。
+- 05:32 值守接管（心跳 04:46 超阈 46min、无 CLAIM、树净）：IDEA-E 已全链闭环（a1ba39d 真机 10/10），认领创意清单第②项「首次启动导览」step A=状态层 tourState.ts（旁路 localStorage septcats.tour.done，init 纯读零写入、next/back/finish/openTour、5 步 welcome/nav/palette/sync/ai）+ test/tour-state.test.ts 11 例；tsc.web 0、tour-state 11/11、i18n 门禁 18/18（本文件零 CJK）。DEVIATION 观测：RUN.md 第 2 条渲染层接线已被 a1ba39d 覆盖，接力源以 commit 链为准。下一子步=B：tour.* i18n 双语键（zh/en 等价）→ C：TourOverlay 组件+CSS（no-magic）+ App 挂载接线 → D：设置页重放入口 → E：测试≥6 例并入全量 → 真机探针 → 全量门禁+重打包+包审+台账 → push → COMPLETE。禁 publish。
 ## 红线（值守 Agent 必须遵守）
 - 真实档案 `C:/Users/Administrator/.septcats/` **只读**；探针用 `_scratch` 副本 + mtime 双钉。
 - 测试跑前 `node apps/desktop/scripts/ensure-abi.mjs node`；打包前 `... electron`。
