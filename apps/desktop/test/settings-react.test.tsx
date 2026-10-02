@@ -13,6 +13,11 @@ import type { Mock } from 'vitest';
 import type { AppSettings } from '../src/shared/settings';
 import type { SeptcatsApi } from '../src/types/window';
 import { SettingsPage } from '../src/renderer/src/pages/SettingsPage';
+import { TourOverlay } from '../src/renderer/src/tour/TourOverlay';
+import {
+  TOUR_STORAGE_KEY,
+  tourStore,
+} from '../src/renderer/src/tour/tourState';
 import { pagesStore } from '../src/renderer/src/state/pages';
 
 function defaultSettings(): AppSettings {
@@ -675,5 +680,75 @@ describe('设置页 · 更新区手动更新态（macOS 未签名构建，老板
     await waitFor(() => {
       expect(openExternal).toHaveBeenCalledWith({ url: 'https://example.com/releases/latest' });
     });
+  });
+});
+
+
+describe('设置页 · 导览重放入口（0.6.10 创意清单② step D）', () => {
+  beforeEach(() => {
+    tourStore.setState(() => ({ open: false, stepIndex: 0 }));
+    window.localStorage.removeItem(TOUR_STORAGE_KEY);
+  });
+  afterEach(() => {
+    tourStore.setState(() => ({ open: false, stepIndex: 0 }));
+    window.localStorage.removeItem(TOUR_STORAGE_KEY);
+  });
+
+  it('关于区块有「重新观看导览」钮；点击 → TourOverlay 真开在第 1 步（效果断言非调用断言）', async () => {
+    render(
+      <>
+        <SettingsPage />
+        <TourOverlay />
+      </>,
+    );
+    await screen.findByTestId('settings-page');
+    expect(screen.queryByTestId('tour-overlay')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('settings-tour-replay'));
+
+    const overlay = await screen.findByTestId('tour-overlay');
+    expect(overlay).not.toBeNull();
+    expect(screen.getByTestId('tour-title').textContent).toBe('欢迎来到 Septcats');
+    expect(screen.getByTestId('tour-progress').textContent).toContain('1 / 5');
+    expect(tourStore.getState()).toEqual({ open: true, stepIndex: 0 });
+  });
+
+  it('重放不清 septcats.tour.done 戳：已有戳 → 点开仍出浮层、戳保留（下次启动仍静默）', async () => {
+    window.localStorage.setItem(TOUR_STORAGE_KEY, '1');
+    render(
+      <>
+        <SettingsPage />
+        <TourOverlay />
+      </>,
+    );
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByTestId('settings-tour-replay'));
+
+    await screen.findByTestId('tour-overlay');
+    expect(window.localStorage.getItem(TOUR_STORAGE_KEY)).toBe('1');
+  });
+
+  it('重放中跳过（跳过钮）→ 落戳 + 闭卷；再点重放 → 再次打开且戳不动', async () => {
+    render(
+      <>
+        <SettingsPage />
+        <TourOverlay />
+      </>,
+    );
+    await screen.findByTestId('settings-page');
+
+    fireEvent.click(screen.getByTestId('settings-tour-replay'));
+    await screen.findByTestId('tour-overlay');
+    fireEvent.click(screen.getByTestId('tour-skip'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('tour-overlay')).toBeNull();
+    });
+    expect(window.localStorage.getItem(TOUR_STORAGE_KEY)).toBe('1');
+
+    fireEvent.click(screen.getByTestId('settings-tour-replay'));
+    await screen.findByTestId('tour-overlay');
+    expect(tourStore.getState().stepIndex).toBe(0);
+    expect(window.localStorage.getItem(TOUR_STORAGE_KEY)).toBe('1');
   });
 });

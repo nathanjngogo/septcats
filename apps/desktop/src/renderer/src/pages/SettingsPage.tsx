@@ -32,6 +32,7 @@ import { AiSection } from '../settings/AiSection';
 import { LayoutSection } from '../layout/LayoutSection';
 import { TemplatesSection } from '../templates/TemplatesSection';
 import { ThemeSection } from '../theme/ThemeSection';
+import { tourActions } from '../tour/tourState';
 import './SettingsPage.css';
 
 /** i18n 模板替换：'{version}' / '{percent}' 槽位（t() 本身不做插值）。 */
@@ -1210,6 +1211,23 @@ export function SettingsPage() {
                     {t('settings.about.checkUpdate')}
                   </Button>
                 )
+              }
+            />
+            {/* 导览 step D（0.6.10 创意清单②）：重放入口 = tourActions.openTour()，
+                不清 septcats.tour.done 戳——重放只影响本次会话，下次启动仍静默。 */}
+            <SettingsRow
+              title={t('tour.replay')}
+              control={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  data-testid="settings-tour-replay"
+                  onClick={() => {
+                    tourActions.openTour();
+                  }}
+                >
+                  {t('tour.replay')}
+                </Button>
               }
             />
           </fieldset>
