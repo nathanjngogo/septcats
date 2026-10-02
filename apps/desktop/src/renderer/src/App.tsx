@@ -61,6 +61,8 @@ import { paletteActions as themePaletteActions } from './theme/paletteState';
 import { lookActions } from './theme/lookState';
 import { toggleFocus } from './theme/focusState';
 import { FocusBadge, FocusToggleButton, useFocusHotkeys } from './layout/FocusMode';
+import { TourOverlay } from './tour/TourOverlay';
+import { tourActions } from './tour/tourState';
 import { useWallpaperUnderlay } from './theme/wallpaperUnderlay';
 import './App.css';
 
@@ -283,6 +285,12 @@ export function App() {
   // T85-01：挂载时初始化质感派系（读存储 + 挂根属性 data-look；pixel 缺省 = 现状）。
   useEffect(() => {
     lookActions.init();
+  }, []);
+
+  // IDEA-E 后续（0.6.10 创意清单②导览 step C2）：挂载时读导览戳（纯读零写入，
+  // 同 lookActions 范式）；未见戳 → tourStore.open=true → TourOverlay 自动弹出。
+  useEffect(() => {
+    tourActions.init();
   }, []);
 
   // T39-01：侧栏位置随布局状态同步（预设切换/导入布局后生效）
@@ -821,6 +829,9 @@ export function App() {
       <PageExportDialog />
       {/* T54-01 §1②：关窗询问框（自绘像素模态；main 拦 close 并冲刷完后推 close:ask） */}
       <CloseAskDialog />
+      {/* 0.6.10 创意清单②导览 step C2：首次启动导览浮层（自绘模态，同 CloseAskDialog
+          范式；tourStore.open 驱动，未见戳才挂载内容，非弹出时组件返回 null 零开销） */}
+      <TourOverlay />
       {/* T24-01 §0.C：全局 Toast 视口（pushToast 队列渲染；根层挂载，底部居中、
           不遮挡居中 Dialog；样式全部走 @septcats/ui 既有 token） */}
       <ToastViewport
