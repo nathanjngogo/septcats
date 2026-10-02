@@ -49,9 +49,10 @@ function rules(css: string): { selector: string; body: string }[] {
   const re = /([^{}]+)\{([^{}]*)\}/gu;
   let m = re.exec(css);
   while (m !== null) {
-    const selector = m[1].trim();
+    // noUncheckedIndexedAccess：捕获组要显式兜底，否则 m[1] 是 string | undefined
+    const selector = (m[1] ?? '').trim();
     if (!selector.startsWith('@')) {
-      out.push({ selector, body: m[2] });
+      out.push({ selector, body: m[2] ?? '' });
     }
     m = re.exec(css);
   }

@@ -209,7 +209,7 @@ describe('表单视图', () => {
     await waitFor(() => expect(api.recordCreate).toHaveBeenCalledTimes(1));
     // 注意：**校验严 ≠ 改写数据** —— 纯空白会被拦下（校验口径），但一旦通过，值按用户输入原样入库
     // （与表格视图行内编辑同口径：引擎不在提交时替用户 trim）。
-    expect(api.recordCreate.mock.calls[0][0].values).toMatchObject({ p_title: ' 新的书 ' });
+    expect(api.recordCreate.mock.calls[0]?.[0]?.values).toMatchObject({ p_title: ' 新的书 ' });
     await waitFor(() => expect(screen.getByTestId('bitable-form-msg').textContent).toContain('已提交'));
     // 重挂后必须**重新取节点**（旧引用已是分离节点）——表单要视觉上也真的清空
     const fresh = screen.getByTestId('bitable-form-ctl-p_title').querySelector('input');

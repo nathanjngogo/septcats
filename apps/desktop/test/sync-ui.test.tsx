@@ -220,7 +220,8 @@ describe('T101-01 同步药丸文字档位（chrome 落点不得低于 ink-secon
   const css = readFileSync('src/renderer/src/sync/SyncStatus.css', 'utf8');
   const rule = (cls: string): string => {
     const m = new RegExp(`\\.sc-sync-status__pill--${cls}\\s*\\{([^}]*)\\}`, 'u').exec(css);
-    return m === null ? '' : m[1];
+    // exec 成功时 m[1] 运行时必为 string，但 noUncheckedIndexedAccess 下类型是 |undefined
+    return m === null ? '' : (m[1] ?? '');
   };
 
   it('idle 档 = ink-secondary（曾为 ink-faint：3.65:1 不达 AA）', () => {

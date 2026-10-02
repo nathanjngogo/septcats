@@ -45,12 +45,14 @@ function record(id: string, title: string, status: string, score: number): Recor
 
 const RECORDS = [record('r1', '夜航船', 's-done', 9), record('r2', '万历', 's-todo', 7), record('r3', '人类简史', 's-done', 8)];
 
+// 字面量必须逐键 as const：这些对象经 vi.fn(async () => …) 返回后失去上下文类型，
+// 不钉死会被拓宽成 string 而和 dbViewSchema 的枚举对不上（tsc.node TS2322）。
 const DASH_VIEW = { ...defaultView('vd', '仪表盘'), type: 'dashboard' as const, widgets: [
-  { id: 'w1', type: 'number', config: { pid: 'p_score', agg: 'sum' } },
-  { id: 'w2', type: 'distribution', config: { groupPid: 'p_status' } },
+  { id: 'w1', type: 'number' as const, config: { pid: 'p_score', agg: 'sum' as const } },
+  { id: 'w2', type: 'distribution' as const, config: { groupPid: 'p_status' } },
 ] };
 const AUTO_VIEW = { ...defaultView('va', '自动化'), type: 'automation' as const, rules: [
-  { id: 'a1', name: '读完记10分', enabled: true, on: { kind: 'update', pid: 'p_status' }, if: { pid: 'p_status', eq: 's-done' }, set: { pid: 'p_score', to: 10 } },
+  { id: 'a1', name: '读完记10分', enabled: true, on: { kind: 'update' as const, pid: 'p_status' }, if: { pid: 'p_status', eq: 's-done' }, set: { pid: 'p_score', to: 10 } },
 ] };
 
 const api = {
