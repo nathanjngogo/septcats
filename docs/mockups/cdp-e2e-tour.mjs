@@ -37,17 +37,29 @@ const SETTINGS = join(UD, 'septcats.settings.json');
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 function killStaleApp() { for (const n of ['Septcats.exe', 'electron.exe']) { try { execSync(`taskkill /F /IM ${n}`, { stdio: 'ignore' }); } catch { /* */ } } }
+function procAlive() {
+  try { return execSync('tasklist /FI "IMAGENAME eq Septcats.exe" /NH', { encoding: 'utf8' }).includes('Septcats.exe'); } catch { return false; }
+}
+/** 正规退出：septcats.window.close()（trayClose=quit → closeGuard 冲刷 → app.quit）；
+ *  轮询等进程真退净（flush2 实测：不退净就重连 = 连上旧实例读到内存值，字节取证可证伪）。 */
+async function gracefulExit(page) {
+  try { await page.evaluate(() => { window.septcats?.window?.close?.(); }); } catch { /* 退回 taskkill */ }
+  for (let i = 0; i < 20 && procAlive(); i += 1) { await wait(500); }
+  if (procAlive()) { killStaleApp(); for (let i = 0; i < 8 && procAlive(); i += 1) { await wait(500); } }
+}
+
 function rootMtime() { try { return statSync(REAL_ROOT).mtimeMs; } catch { return -1; } }
 
 /** mode='fresh'：整目录清空（全新档案=无戳）；mode='keep'：仅杀旧进程后原样重启（验跨重启持久化）。 */
 async function boot(mode) {
   killStaleApp();
+  for (let i = 0; i < 12 && procAlive(); i += 1) { await wait(500); }  // 退净再拉起：防连上旧实例的假绿
   await wait(1200);
   if (mode === 'fresh') {
     try { rmSync(RUN, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 }); } catch { /* 占用：复用 */ }
     mkdirSync(UD, { recursive: true }); mkdirSync(ROOT, { recursive: true }); mkdirSync(SHOTS, { recursive: true });
     writeFileSync(SETTINGS, JSON.stringify({
-      schema: 1, rootPath: ROOT, theme: 'dark', locale: 'zh-CN',
+      schema: 1, rootPath: ROOT, theme: 'dark', locale: 'zh-CN', trayClose: 'quit',
       privacy: { telemetry: false, linkPreviewOnType: true },
       editor: { defaultEditMode: 'rich', spellcheck: true },
       data: { note: '' }, sync: { enabled: false, encrypt: false, gc: false },
@@ -149,7 +161,11 @@ async function main() {
       check('③ 末步「开始使用」→ 关闭 + 落戳 1', done.overlay === false && done.stamp === '1', `overlay=${String(done.overlay)} stamp=${String(done.stamp)}`);
       await shot(page, '03-after-finish');
 
-      // ── 阶段二：原档案重启（跨重启持久化） ──
+      // ── 阶段二：原档案重启（跨重启持久化）──
+      // 用正规退出桥（window.septcats.window.close + trayClose=quit → closeGuard 冲刷）替代
+      // 「强杀+等刷盘」：flush2 实测正规退出后 leveldb 键存在、跨重启读回真值；强杀路径
+      // 是否留值取决于 leveldb 周期刷盘（~5s），作为探针时序不可靠，且不是用户路径。
+      await gracefulExit(page);
       await killSession(); CHILD = null; BROWSER = null;
       {
         const s2 = await boot('keep'); CHILD = s2.child; BROWSER = s2.browser;
