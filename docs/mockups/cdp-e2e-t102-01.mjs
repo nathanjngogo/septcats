@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO = join(SCRIPT_DIR, '..', '..');
-const PACKAGE_APP = join(REPO, 'apps', 'desktop', 'dist', 'win-unpacked', 'Septcats.exe');
+const PACKAGE_APP = process.env.SEPTCATS_APP_BIN ?? join(REPO, 'apps', 'desktop', 'dist', 'win-unpacked', 'Septcats.exe');
 const RUN = 'E:\\Hermes Agent工作空间\\_scratch\\t102-01';
 const UD = `${RUN}\\ud`;
 const ROOTD = `${RUN}\\data`;
