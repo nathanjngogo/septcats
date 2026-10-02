@@ -10,7 +10,7 @@
  * 本用例只验证 renderer 侧状态机与组装，不碰真实 IPC。
  */
 import { createElement } from 'react';
-import { cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CollectionEntity, RecordEntity } from '@septcats/dbview';
 import { DbPage } from '../src/renderer/src/db/DbPage';
@@ -112,6 +112,31 @@ describe('useDbPage 四态', () => {
     result.current.reload();
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(result.current.collection?.name).toBe('研究库');
+  });
+
+  it('IDEA-E R4：reorderViews 软刷新——status 不回 loading、collection.views 换新序、不重发 load', async () => {
+    const base = makeCollection();
+    db.load.mockResolvedValue({
+      collection: { ...base, views: [...base.views, { vid: 'v2', name: '看板', type: 'kanban' as const, filter: { op: 'and' as const, clauses: [] }, sort: [], widths: {} }] },
+      records: [makeRecord('r1', '第一条')],
+    });
+    const { result } = renderHook(() => useDbPage('pg-1'));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    const loadCalls = db.load.mock.calls.length;
+
+    // main 回包 = 改序后的 collection（v2 换到最前）。
+    const moved = makeCollection();
+    moved.views = [{ vid: 'v2', name: '看板', type: 'kanban' as const, filter: { op: 'and' as const, clauses: [] }, sort: [], widths: {} }, { vid: 'v1', name: '表格', type: 'table', filter: { op: 'and', clauses: [] }, sort: [], widths: {} }];
+    db.viewReorder.mockResolvedValue({ collection: moved });
+    await act(async () => {
+      await result.current.reorderViews('v2', 'v1');
+    });
+
+    // 效果断言：序已换、状态没被打回 loading（旧缺陷=reload() 致 Skeleton 重挂关菜单）、records 保留、未二次 load。
+    expect(result.current.collection?.views.map((v) => v.vid)).toEqual(['v2', 'v1']);
+    expect(result.current.status).toBe('ready');
+    expect(result.current.records).toHaveLength(1);
+    expect(db.load.mock.calls.length).toBe(loadCalls);
   });
 });
 

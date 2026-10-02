@@ -200,10 +200,14 @@ export function useDbPage(pageId: string): UseDbPage {
 
   const reorderViews = useCallback(
     async (fromVid: string, toVid: string): Promise<void> => {
-      await dbApi().viewReorder({ pageId, fromVid, toVid });
-      reload();
+      const { collection } = await dbApi().viewReorder({ pageId, fromVid, toVid });
+      // 软刷新（IDEA-E R4 修复）：改序只动 collection.views，records 不变。
+      // 走 reload() 会把 status 打回 'loading' → DbPage 整体换 Skeleton → PropBar/Menu
+      // 重挂 → 菜单被物理关闭，违反「点动作钮不关菜单」契约（64882e7）。
+      // 因此直接以 IPC 回包替换 collection，保留 status/records/error。
+      setSnapshot((current) => ({ ...current, collection }));
     },
-    [pageId, reload],
+    [pageId],
   );
 
   const renameCollection = useCallback(
