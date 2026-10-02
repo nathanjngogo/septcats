@@ -8,13 +8,13 @@
  *
  * 判据（10 条）：
  *   R1 夹具隔离双钉：settings.json rootPath=_scratch 副本 + UD 独立（真实档案根 mtime 不变 R9）。
- *   R2 IPC 造 3 视图（表格|看板|画廊，均合法类型）落库序正确；进入 bitable 后视图 chip 序一致。
+ *   R2 IPC 造 3 视图（表格|视图B|视图C，均合法类型）落库序正确；进入 bitable 后视图 chip 序一致。
  *   R3 视图下拉按落库序列出行；首行「前移（已在最前）」钮 disabled。
- *   R4 点末行(画廊)「前移到 X」→ 菜单仍开、当前视图名不变（不误选/不关菜单）。
- *   R5 IPC db.load 读回 views 序 = [表格,画廊,看板]（move1 落库）。
- *   R6 再点(现末行)看板「前移到 画廊」→ 读回 [表格,画廊,看板] 保持? 否——R6 设计为
- *      点(现第2位)画廊「后移到 看板」→ [表格,看板,画廊]… 为避免歧义，实现固定为：
- *      R6 move2=首行「表格」后移到「画廊」→ 读回 [画廊,表格,看板]（首项后移方向未被 disabled，合法）。
+ *   R4 点末行(视图C)「前移到 X」→ 菜单仍开、当前视图名不变（不误选/不关菜单）。
+ *   R5 IPC db.load 读回 views 序 = [表格,视图C,视图B]（move1 落库）。
+ *   R6 再点(现末行)视图B「前移到 视图C」→ 读回 [表格,视图C,视图B] 保持? 否——R6 设计为
+ *      点(现第2位)视图C「后移到 视图B」→ [表格,视图B,视图C]… 为避免歧义，实现固定为：
+ *      R6 move2=首行「表格」后移到「视图C」→ 读回 [视图C,表格,视图B]（首项后移方向未被 disabled，合法）。
  *   R7 page.reload 后 UI chip 序 = move2 读回序（渲染层重取）。
  *   R8 进程 relaunch 后 UI chip 序仍 = move2 读回序（真落盘，重启仍在）。
  *   R9 真实档案根 mtime 不变（红线）。
@@ -133,7 +133,6 @@ async function shot(page, name) {
 
 const CHIPS = () => [...document.querySelectorAll('[data-testid^="bitable-view-chip-"]')].map((e) =>
   ((e.getAttribute('data-testid') ?? '').replace('bitable-view-chip-', '')));
-const CHIP_NAMES = () => [...document.querySelectorAll('[data-testid^="bitable-view-chip-"]')].map((e) => (e.textContent ?? '').trim());
 
 async function clickRail(page, key) {
   await page.evaluate((k) => { document.querySelector(`[data-testid="nav-rail-${k}"]`)?.click(); }, key);
@@ -180,7 +179,7 @@ async function readMenu(page) {
   });
 }
 
-/** 按「行标签 + 动作」点动作钮（aria-label 唯一：如 前移到「画廊」）。 */
+/** 按「行标签 + 动作」点动作钮（aria-label 唯一：如 前移到「视图C」）。 */
 async function clickAction(page, ariaLabel) {
   return page.evaluate((lab) => {
     const b = document.querySelector(`[role="menu"][aria-label="视图"] button.sc-menu__action[aria-label="${lab}"]`);
@@ -206,7 +205,7 @@ async function main() {
     iso.rootPath.replace(/\//g, '\\').toLowerCase() === ROOTD.toLowerCase(),
     JSON.stringify(iso));
 
-  // ---------- R2 IPC 造表 + 3 视图（表格|看板|画廊） ----------
+  // ---------- R2 IPC 造表 + 3 视图（表格|视图B|视图C） ----------
   STEP = 'R2';
   const built = await page.evaluate(async () => {
     const api = window.septcats;
@@ -218,28 +217,29 @@ async function main() {
     const base = await api.db.load({ pageId });
     const tableVid = base.collection.views[0].vid;
     const stamp = Date.now() % 100000;
-    const kanbanVid = `e2ek${String(stamp)}`;
-    const galleryVid = `e2eg${String(stamp)}`;
+    // 静态对账修正（值守 10-02）：bitable 宿主 DbPage 传 viewTypes=['table']
+    // （DbPage.tsx:35/333 -> DbView.tsx:143 visibleViews 过滤），PropBar 视图下拉
+    // 只列 table 型视图 —— 非 table 型压根不进菜单，拿它们当菜单行必假红。
+    // 夹具改为 3 个 table 视图：表格(默认) / 视图B / 视图C。
+    const bVid = `e2eb${String(stamp)}`;
+    const cVid = `e2ec${String(stamp)}`;
     await api.db.viewSave({
       pageId,
-      view: { vid: kanbanVid, name: '看板', type: 'kanban', filter: { op: 'and', clauses: [] }, sort: [], widths: {} },
+      view: { vid: bVid, name: '视图B', type: 'table', filter: { op: 'and', clauses: [] }, sort: [], widths: {} },
     });
-    // 注意：viewSave 按 vid 原位替换；新 vid=追加。dbViewSchema 里 gallery 只有
-    // coverPid/cardPids 且是 optional（不接受 null，未知键会被 zod strip），
-    // 本探针只依赖 vid/name/type 的最小形态。
     await api.db.viewSave({
       pageId,
-      view: { vid: galleryVid, name: '画廊', type: 'gallery', filter: { op: 'and', clauses: [] }, sort: [], widths: {} },
+      view: { vid: cVid, name: '视图C', type: 'table', filter: { op: 'and', clauses: [] }, sort: [], widths: {} },
     });
     const loaded = await api.db.load({ pageId });
     return {
-      ok: true, pageId, tableVid, kanbanVid, galleryVid,
+      ok: true, pageId, tableVid, bVid, cVid,
       vids: loaded.collection.views.map((v) => v.vid),
       names: loaded.collection.views.map((v) => v.name),
     };
   });
-  check('R2 造表 + 追加两视图 → 落库视图序 [表格,看板,画廊]',
-    built.ok === true && built.names.join('|') === '表格|看板|画廊',
+  check('R2 造表 + 追加两 table 视图 -> 落库视图序 [表格,视图B,视图C]',
+    built.ok === true && built.names.join('|') === '表格|视图B|视图C',
     JSON.stringify(built).slice(0, 240));
 
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -263,8 +263,8 @@ async function main() {
 
   // ---------- R4 点末行「前移到 X」：不关菜单、不误选视图 ----------
   STEP = 'R4';
-  // 末行=画廊，其前邻=看板 → 「前移到「看板」」= 画廊与看板换位 → [表格,画廊,看板]
-  const clicked1 = await clickAction(page, '前移到「看板」');
+  // 末行=视图C，其前邻=视图B -> 换位 -> [表格,视图C,视图B]
+  const clicked1 = await clickAction(page, '前移到「视图B」');
   await wait(1400);
   menu = await readMenu(page);
   check('R4 点动作钮 → 菜单保持打开且当前视图仍「表格」（不误选、不关菜单）',
@@ -275,23 +275,23 @@ async function main() {
   STEP = 'R5';
   const after1 = await page.evaluate(async (pid) => {
     const loaded = await window.septcats.db.load({ pageId: pid });
-    return loaded.collection.views.map((v) => v.name);
+    return { names: loaded.collection.views.map((v) => v.name), vids: loaded.collection.views.map((v) => v.vid) };
   }, built.pageId);
-  check('R5 IPC 读回：move1 后落库序 = [表格,画廊,看板]',
-    after1.join('|') === '表格|画廊|看板',
+  check('R5 IPC 读回：move1 后落库序 = [表格,视图C,视图B]',
+    after1.names.join('|') === '表格|视图C|视图B',
     JSON.stringify(after1));
 
-  // ---------- R6 move2：首行「表格」后移到「画廊」→ [画廊,表格,看板] ----------
+  // ---------- R6 move2：首行「表格」后移到「视图C」→ [视图C,表格,视图B] ----------
   STEP = 'R6';
-  // 菜单此刻开着且已 reload 过列表（R4 后 readMenu）。首行=表格，其下=画廊。
-  const clicked2 = await clickAction(page, '后移到「画廊」');
+  // 菜单此刻开着（R4 后 readMenu）。首行=表格，其下=视图C。
+  const clicked2 = await clickAction(page, '后移到「视图C」');
   await wait(1400);
   const after2 = await page.evaluate(async (pid) => {
     const loaded = await window.septcats.db.load({ pageId: pid });
-    return loaded.collection.views.map((v) => v.name);
+    return { names: loaded.collection.views.map((v) => v.name), vids: loaded.collection.views.map((v) => v.vid) };
   }, built.pageId);
-  check('R6 move2（首项后移，方向未被禁用）→ 落库序 = [画廊,表格,看板]',
-    clicked2 === true && after2.join('|') === '画廊|表格|看板',
+  check('R6 move2（首项后移，方向未被禁用）-> 落库序 = [视图C,表格,视图B]',
+    clicked2 === true && after2.names.join('|') === '视图C|表格|视图B',
     JSON.stringify({ clicked2, after2 }));
 
   // ---------- R7 reload 后 UI 序一致 ----------
@@ -303,9 +303,10 @@ async function main() {
   await wait(1200);
   await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-side-item-${pid}"]`)?.click(); }, built.pageId);
   await wait(1600);
-  const chips7 = await page.evaluate(CHIP_NAMES);
-  check('R7 page.reload 后 UI chip 序 = [画廊,表格,看板]',
-    chips7.join('|') === '画廊|表格|看板',
+  // chip textContent =「类型 · 名」，不能拿纯名比 —— 按 vid 序对账（静态对账修正）。
+  const chips7 = await page.evaluate(CHIPS);
+  check('R7 page.reload 后 UI chip(vid) 序 = move2 落库序',
+    chips7.join(',') === after2.vids.join(','),
     JSON.stringify(chips7));
 
   // ---------- R8 进程 relaunch 后仍在（真落盘） ----------
@@ -316,10 +317,10 @@ async function main() {
   await wait(1500);
   await page.evaluate((pid) => { document.querySelector(`[data-testid="bitable-side-item-${pid}"]`)?.click(); }, built.pageId);
   await wait(1800);
-  const chips8 = await page.evaluate(CHIP_NAMES);
+  const chips8 = await page.evaluate(CHIPS);
   const shotB = await shot(page, 'view-order-after');
-  check('R8 relaunch 后 UI chip 序仍 = [画廊,表格,看板]（重启仍在）',
-    chips8.join('|') === '画廊|表格|看板',
+  check('R8 relaunch 后 UI chip(vid) 序仍 = move2 落库序（重启仍在）',
+    chips8.join(',') === after2.vids.join(','),
     JSON.stringify(chips8));
 
   // ---------- R9 真实档案零触碰 ----------
