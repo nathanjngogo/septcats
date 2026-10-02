@@ -1288,4 +1288,36 @@ export const enUS = {
     canceled: 'Export canceled',
     failed: 'Export failed: {message}',
   },
+  // First-run tour (0.6.10 creative list item #2; step ids align with tourState.TOUR_STEPS)
+  // Must be naturally nested: `t()` walks the dictionary segment by segment, so a
+  // dotted leaf key like 'welcome.title' would never resolve (the key-set parity
+  // gate would still pass — a false-green trap).
+  tour: {
+    welcome: {
+      title: 'Welcome to Septcats',
+      body: 'A local-first knowledge workspace: everything lives on your own computer and works offline. These few steps take about 30 seconds.',
+    },
+    nav: {
+      title: 'Pages & navigation',
+      body: 'The sidebar holds your page tree; the top bar switches workspaces, layout and search. Press Ctrl+K to open the command palette and jump to any page by name.',
+    },
+    palette: {
+      title: 'Make it yours',
+      body: 'Settings → Appearance: light/dark base, color palette and texture (Minimal / Night Instrument / Glass) are three independent axes, and your picks are remembered.',
+    },
+    sync: {
+      title: 'Carry it between devices',
+      body: 'Turn on Settings → Sync and your data writes into a sync folder you choose; use any cloud drive to bring changes to another machine — no server of ours involved.',
+    },
+    ai: {
+      title: 'Bring your own AI',
+      body: 'Settings → AI connects a local model (Ollama / LM Studio) or your own cloud endpoint; press Ctrl+J inside a page to chat, continue writing or summarize.',
+    },
+    next: 'Next',
+    back: 'Back',
+    finish: 'Get started',
+    skip: 'Skip tour',
+    progress: 'Step {n} of {total}',
+    replay: 'Replay the tour',
+  },
 } as const;
