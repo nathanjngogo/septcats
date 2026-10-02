@@ -451,6 +451,9 @@ describe('registerUpdaterIpc（五通道 + 预验签 + 事件流）', () => {
       fetch: async () => ({ ok: true, status: 200, bytes: async () => new Uint8Array(0) }),
       env: {},
       isPackaged: false,
+      // 平台钉 win32：darwin 下 manual 守卫先短路（本意正确），不钉则 mac runner 上
+      // 期望 error 收到 manual = 假红（与 makeHarness 同款缺陷的直调版）。
+      platform: 'win32' as NodeJS.Platform,
       autoCheckDelayMs: null,
       log: () => {},
     });
