@@ -285,7 +285,10 @@ function makeHarness(options: {
     feedPublicKeyPem: options.feedPublicKeyPem,
     isPackaged: options.isPackaged ?? true,
     autoCheckDelayMs: options.autoCheckDelayMs ?? null,
-    platform: options.platform,
+    // 平台必须确定：不注入时 harness 会继承 CI runner 的 process.platform，
+    // 在 macos-latest 上 darwin → manualUpdate=true，所有 feed/验签用例集体变 manual 态假红。
+    // 默认钉 win32（自动更新全链路语义），darwin 用例各自显式传 platform: 'darwin'。
+    platform: options.platform ?? 'win32',
     log: () => {},
   });
   return { states, handlers, updater, service, fetched };

@@ -18,6 +18,8 @@
  * 纪律：主进程桥用 vi.stubGlobal 假桥（断言落假桥调用与 DOM）；不写真实档案目录。
  */
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarPage, localDateKey } from '../src/renderer/src/calendar/CalendarPage';
@@ -424,7 +426,9 @@ describe('T97-01 渲染层容错 · 主进程不可用', () => {
 
 describe('日历 · 跨月补白对比度契约', () => {
   it('补白走整格 opacity，取值必须 ≥0.7（低于此日期数字掉出 AA 4.5:1）', () => {
-    const css = readFileSync('src/renderer/src/calendar/CalendarPage.css', 'utf8');
+    // 路径按「测试文件自身位置」推导（不依赖 CWD）：根聚合跑 `vitest run` 的 CWD=仓库根，
+    // 相对路径会读不到；且 jsdom 下 new URL 的实例是 jsdom 的类，readFileSync 品牌检查不认。
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'renderer', 'src', 'calendar', 'CalendarPage.css'), 'utf8');
     const block = /\.calendar-cell--out\s*\{([^}]*)\}/.exec(css);
     expect(block, '找不到 .calendar-cell--out 规则').not.toBeNull();
     const inner = block?.[1] ?? '';

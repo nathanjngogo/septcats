@@ -1,6 +1,6 @@
 # Septcats 0.6.11 —— 多维表格视图排序 + 首次启动导览
 
-0.6.10 之后的增量收口。两项都是「第一次打开就该顺手感」的补齐，全部本地完成、零外部请求。已通过全部门禁与真机验收（自动化 1512 例全绿 + 真机探针 26 项断言全绿），安装包逐字节审过。
+0.6.10 之后的增量收口。两项都是「第一次打开就该顺手感」的补齐，全部本地完成、零外部请求。已通过全部门禁与真机验收（自动化 1511 例全绿 + 真机探针 26 项断言全绿），安装包逐字节审过。
 
 ## 新增
 - **多维表格·视图排序**：视图下拉里每行新增「前移到 / 后移到」按钮，可把任意视图挪到指定位置；排序结果落库，重载与重启后保持不变。首行的「前移到」自动禁用（已在最前），末行同理。点排序按钮时菜单不会闪闭、也不会误切换当前视图。
@@ -21,7 +21,7 @@
 
 # Septcats 0.6.11 — Multi-table view ordering + first-run tour
 
-Incremental polish on top of 0.6.10. Everything is local, zero external requests. Verified end to end: 1,512 automated tests, 26 on-device probe assertions, installer verified byte-for-byte.
+Incremental polish on top of 0.6.10. Everything is local, zero external requests. Verified end to end: 1,511 automated tests, 26 on-device probe assertions, installer verified byte-for-byte.
 
 ## New
 - **Multi-table view ordering**: the view dropdown now has "move before / move after" on each row to reorder views arbitrarily; the order persists across reloads and restarts. The first row's "move before" is disabled (it's already first), same for the last row's "move after". Reordering never flashes the menu shut or accidentally switches the active view.

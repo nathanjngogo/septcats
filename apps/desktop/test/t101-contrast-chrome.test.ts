@@ -13,10 +13,13 @@
  * 负责；本文件是廉价、必跑的静态兜底。
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const SRC = 'src/renderer/src';
+// SRC 按「测试文件自身位置」推导（不依赖 CWD）：根聚合跑 `pnpm test`（vitest run）时 CWD=仓库根，
+// 相对 'src/renderer/src' 会扫不到任何 CSS → 护栏静默空跑（假绿）。
+const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'renderer', 'src');
 
 /** 直接铺在 chrome（淡化面）上的容器：这些容器里的弱字必须 ≥ ink-secondary。 */
 const CHROME_CONTAINERS = [

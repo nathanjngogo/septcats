@@ -247,5 +247,5 @@
 - [x] ~~T19-05-1 双空同开重复种子~~ → **已修**（attach 回 `ledgerHasCrdt` 种子门，editor `attach({seed})` 最小面；单测 §H×2 + editor 158 钉住；真机冒烟复跑 ALL-PASS 10/10。残留边界：attach 时刻双方账本**真同时**为空仍各自种子——网盘轮询天然错峰、概率极低，二期状态向量协商根治）
 
 - [x] **R65（10-02 值守）IDEA-E 多维表格视图排序**：`reorderById` 引擎纯函数 + `db:view:reorder` 通道 + PropBar 动作钮「前移到/后移到」；R4 真缺陷（排序后 reload 闪闭菜单）治本=useDbPage 软刷新 stale-while-revalidate；真机 cdp-e2e-t102-01 10/10。
-- [x] **R66（10-02 主会话收口）首次启动导览 + 0.6.11 终包**：TourOverlay 五步（i18n tour.* 16 键、旁路戳 septcats.tour.done）；跨重启静默真机 16/16；桌面门禁 1512、包审终包 102,749,699/sha256=4576d9c6…、老板机已静默重装=终包逐字节一致（a28f035c）。publish 待老板点头（0.6.10 已发，0.6.11=值守增量）。
+- [x] **R66（10-02 主会话收口）首次启动导览 + 0.6.11 终包**：TourOverlay 五步（i18n tour.* 16 键、旁路戳 septcats.tour.done）；跨重启静默真机 16/16；桌面门禁 1511、包审终包 102,749,699/sha256=4576d9c6…、老板机已静默重装=终包逐字节一致（a28f035c）。publish 待老板点头（0.6.10 已发，0.6.11=值守增量）。
 - [x] **R65（10-02 值守）IDEA-E 多维表格视图排序**：`reorderById` 引擎纯函数 + `db:view:reorder` 通道 + PropBar 动作钮「前移到/后移到」；R4 真缺陷（排序后 reload 闪闭菜单）治本=useDbPage 软刷新 stale-while-revalidate；真机 cdp-e2e-t102-01 10/10。

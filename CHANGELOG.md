@@ -13,8 +13,17 @@
 - **多维表格·视图排序（IDEA-E）**：视图下拉每行「前移到/后移到」动作钮（首行前移禁用），排序经 `reorderById` 纯函数 → `db:view:reorder` 通道落库，reload/重启后顺序保持；动作钮点击**不关菜单、不误选视图**（useDbPage 软刷新：回包直换 collection，status 不再回 loading——修掉「排序成功但菜单闪闭」的真缺陷）。
 - **首次启动导览**：五步（欢迎/一级导航/命令面板/同步/AI），无戳首启自动弹出、进度「第 n / 5 步」随步切换、末步主钮「开始使用」；完成/跳过同口径落 `septcats.tour.done='1'`（旁路存储，不进 Op 账本），跨重启永久静默；设置页「重新观看导览」重放且**不清**已完成的戳；Esc/点遮罩=跳过、焦点圈闭+归还。
 
+### 工程卫生（双平台 CI 首次全绿）
+- GitHub Actions 双平台门禁**从未绿过**（remote 建立后 4 次全红），本轮取证定性=4 个测试文件的可移植性缺陷（非产品 bug）：
+  ① 静态契约测试（t97 日历/sync-ui/t101 对比度护栏）用 CWD 相对路径读源码——CI 的 `pnpm test` 从仓库根聚合跑，
+    读不到 → 红或（t101 若不设防）扫空假绿；改按 `import.meta.url` 推导（jsdom 下 `new URL` 全局被劫持，
+    `readFileSync(URL对象)` 品牌检查不认——踩过后换 `fileURLToPath` 字符串路径）；
+  ② updater 测试 harness 平台缺省继承 runner 的 `process.platform`：macos-latest 上 darwin→manual 态，
+    feed/验签用例集体假红；harness 钉确定性默认 win32（darwin 用例本就显式注入），
+    顺带修 `feedYmlName()` 漏传注入平台的真小缺陷（生产传参未接 platform 形参）。
+  验证：双 CWD（包内/仓根聚合）各跑 4 文件 53/53 绿；desktop 全量 1511/1511 · 0 skip。
 ### 验证
-- 门禁：desktop **1512/1512** · dbview 195 · ui 197 · editor 294 · tsc 0 · no-magic 0。
+- 门禁：desktop **1511/1511** · dbview 195 · ui 197 · editor 294 · tsc 0 · no-magic 0。
 - 真机：`cdp-e2e-t102-01.mjs` 10/10（排序+软刷新+重启保持+档案红线）；`cdp-e2e-tour.mjs` **16/16**（首启弹出/跨重启静默/重放/Esc 跳过/焦点/真实档案零触碰）。
 - 探针时序坑入档：**强杀重启验 localStorage 持久化不可靠**（Chromium leveldb ~5 秒周期刷盘、renderer kill 路径不保证冲刷；`_probe-ls-flush` 现场对照——同窗口强杀一次 11B 空转、一次 297B 有值）。正解=走正规退出桥 `septcats.window.close()` + settings 钉 `trayClose:'quit'`（真实用户路径，closeGuard 冲刷），boot('keep') 前轮询等进程退净（防连上旧实例读到内存值的假绿）。
 

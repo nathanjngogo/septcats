@@ -394,7 +394,7 @@ export function registerUpdaterIpc(deps: UpdaterIpcDeps): { check(): Promise<Upd
         // dev-feed 门对 http(s) 源统一生效（含注入与 app-update.yml 配置的源）
         assertFeedUrlAllowed(feedUrl, devFeedEnabled);
         // 平台分化：mac 拉 latest-mac.yml(.sig)、win 拉 latest.yml(.sig)
-        const ymlName = feedYmlName();
+        const ymlName = feedYmlName(platform);
         const [ymlRes, sigRes] = await Promise.all([
           deps.fetch(new URL(ymlName, feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),
           deps.fetch(new URL(`${ymlName}.sig`, feedUrl.endsWith('/') ? feedUrl : `${feedUrl}/`).toString()),

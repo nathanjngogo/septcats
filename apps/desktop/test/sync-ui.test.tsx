@@ -7,6 +7,8 @@
  * 面板：设备列表、待发段、最近错误、立即同步、加密/启用开关。
  */
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SyncStatusSnapshot } from '../src/shared/sync';
@@ -217,7 +219,7 @@ describe('sync/UI 面板', () => {
 // （全站对比度扫描实测 ink-faint × chrome = 3.65:1 < AA 4.5）
 // ---------------------------------------------------------------------------
 describe('T101-01 同步药丸文字档位（chrome 落点不得低于 ink-secondary）', () => {
-  const css = readFileSync('src/renderer/src/sync/SyncStatus.css', 'utf8');
+  const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'renderer', 'src', 'sync', 'SyncStatus.css'), 'utf8');
   const rule = (cls: string): string => {
     const m = new RegExp(`\\.sc-sync-status__pill--${cls}\\s*\\{([^}]*)\\}`, 'u').exec(css);
     // exec 成功时 m[1] 运行时必为 string，但 noUncheckedIndexedAccess 下类型是 |undefined
