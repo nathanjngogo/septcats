@@ -1,0 +1,59 @@
+/* TourOverlay.css —— 首次启动导览浮层（0.6.10 创意清单第②项 step C）。
+ *
+ * 浮层族统一口径（同 CloseAskDialog）：遮罩 --sc-color-overlay、面板
+ * --sc-border-edge 轮廓 + --sc-shadow-modal 抬升；全部尺寸走 token，零裸 hex。
+ * 本文件不引入 transition —— 无需 prefers-reduced-motion 兜底块。
+ */
+
+.sc-tour__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sc-z-dialog);
+  display: grid;
+  place-items: center;
+  background: var(--sc-color-overlay);
+}
+
+.sc-tour {
+  width: 460px;
+  max-width: calc(100vw - var(--sc-space-gutter));
+  padding: var(--sc-space-xl);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  background: var(--sc-color-surface-raised);
+  color: var(--sc-color-ink);
+  box-shadow: var(--sc-shadow-modal);
+}
+
+.sc-tour__progress {
+  margin: 0 0 var(--sc-space-xs);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-tour__title {
+  margin: 0 0 var(--sc-space-md);
+  font: var(--sc-text-h3);
+}
+
+.sc-tour__body {
+  margin: 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+}
+
+.sc-tour__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sc-space-sm);
+  margin-top: var(--sc-space-xl);
+  padding-top: var(--sc-space-md);
+  border-top: 1px solid var(--sc-color-ink-edge);
+}
+
+.sc-tour__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-sm);
+}
