@@ -107,6 +107,9 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
   const { collection, records, status, error, createRecord } = db;
   const views = useMemo(() => collection?.views ?? [], [collection]);
   const [activeVid, setActiveVid] = useState('');
+  /** T103 删除视图：不可撤销（无回收站）→ 首次点击「上膛」二次确认；移开焦点解除。 */
+  const [removeArmed, setRemoveArmed] = useState(false);
+  const [viewMsg, setViewMsg] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [renameText, setRenameText] = useState('');
 
@@ -141,6 +144,19 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
     [db],
   );
 
+  const doRemoveView = useCallback((): void => {
+    if (activeView === undefined || views.length <= 1) {
+      return; // 护栏与按钮禁用同源（引擎 viewRemovalOutcome 的 last 分支在 main 侧兜底）
+    }
+    const vid = activeView.vid;
+    void db.removeView(vid).then(
+      () => { setViewMsg(null); },
+      // IPC 错误序列化后只剩 message；这里不猜码，原样播报（正常路径不该到这里：
+      // 末视图已被按钮禁用拦住，未知 vid 是幂等零写）。
+      (error: unknown) => { setViewMsg(error instanceof Error ? error.message : String(error)); },
+    );
+  }, [activeView, db, views.length]);
+
   const addView = useCallback(
     (type: AnyViewType): void => {
       if (collection === null) {
@@ -172,6 +188,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
       }
       saveView(view);
       setActiveVid(vid);
+      setRemoveArmed(false);
     },
     [collection, saveView, views],
   );
@@ -329,7 +346,7 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
               className={`bitable-chip${view.vid === activeView?.vid ? ' bitable-chip--active' : ''}`}
               data-testid={`bitable-view-chip-${view.vid}`}
               aria-pressed={view.vid === activeView?.vid}
-              onClick={() => { setActiveVid(view.vid); }}
+              onClick={() => { setActiveVid(view.vid); setRemoveArmed(false); }}
               onDoubleClick={() => { setRenameText(view.name); setRenaming(true); }}
             >
               {viewTypeLabel(view.type)} · {view.name}
@@ -357,18 +374,31 @@ function BitableWorkspace({ pageId }: { pageId: string }): ReactNode {
         <button type="button" className="bitable-btn" data-testid="bitable-view-rename" onClick={() => { setRenameText(activeView?.name ?? ''); setRenaming(true); }}>
           {t('bitable.viewRename')}
         </button>
-        {/* v1 已知项：视图删除需要「整表视图集覆盖」的引擎路径（现 saveView 是单视图 upsert），
-            本期**不提供按钮**而不是给一个点了没反应的假动作（见 PRD 第 3 节「明确不在 v1」）。 */}
         <button
           type="button"
           className="bitable-btn"
           data-testid="bitable-view-remove"
-          disabled
-          title={t('bitable.viewRemove')}
+          disabled={views.length <= 1}
+          aria-live="polite"
+          title={views.length <= 1 ? t('bitable.removeHint') : t('bitable.viewRemove')}
+          onBlur={() => { setRemoveArmed(false); }}
+          onClick={() => {
+            if (!removeArmed) {
+              setRemoveArmed(true);
+              return;
+            }
+            setRemoveArmed(false);
+            doRemoveView();
+          }}
         >
-          {t('bitable.viewRemove')}
+          {removeArmed ? `${t('bitable.confirmRemove')} ${activeView?.name ?? ''}` : t('bitable.viewRemove')}
         </button>
       </div>
+      {viewMsg === null && !removeArmed ? null : (
+        <p className="bitable-viewmsg" data-testid="bitable-view-msg" role="status">
+          {viewMsg ?? t('bitable.confirmHint')}
+        </p>
+      )}
 
       <div className="bitable-toolbar" data-testid="bitable-toolbar">
         {isKanban ? (

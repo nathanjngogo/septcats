@@ -344,6 +344,8 @@ export interface SeptcatsDbApi {
   viewSave(input: { pageId: string; view: DbView }): Promise<{ collection: CollectionEntity }>;
   /** IDEA-E 视图排序：fromVid 移到 toVid 位（右拖占目标后/左拖占目标前；序未变化=零写）。 */
   viewReorder(input: { pageId: string; fromVid: string; toVid: string }): Promise<{ collection: CollectionEntity }>;
+  /** T103 删除视图：未知 vid 幂等零写；只剩最后一个视图 = E_INVARIANT（UI 应先禁用）。 */
+  viewRemove(input: { pageId: string; vid: string }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;
     targetCollectionId: string;

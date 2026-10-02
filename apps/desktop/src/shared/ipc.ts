@@ -140,6 +140,8 @@ export const CHANNEL_DB_PROP_MOVE = 'db:prop:move';
 export const CHANNEL_DB_VIEW_SAVE = 'db:view:save';
 /** IDEA-E 视图排序：把 fromVid 移到 toVid 位（引擎 reorderById 口径；序未变化=零写）。 */
 export const CHANNEL_DB_VIEW_REORDER = 'db:view:reorder';
+/** T103 删除视图：从视图集摘掉指定 vid（最后一个视图不可删 = E_INVARIANT；未知 vid 幂等零写）。 */
+export const CHANNEL_DB_VIEW_REMOVE = 'db:view:remove';
 export const CHANNEL_DB_RELATION_SEARCH = 'db:relation:search';
 export const CHANNEL_DB_EXPORT_CSV = 'db:export:csv';
 
@@ -156,6 +158,7 @@ export const DB_CHANNELS = {
   propMove: CHANNEL_DB_PROP_MOVE,
   viewSave: CHANNEL_DB_VIEW_SAVE,
   viewReorder: CHANNEL_DB_VIEW_REORDER,
+  viewRemove: CHANNEL_DB_VIEW_REMOVE,
   relationSearch: CHANNEL_DB_RELATION_SEARCH,
   exportCsv: CHANNEL_DB_EXPORT_CSV,
 } as const;

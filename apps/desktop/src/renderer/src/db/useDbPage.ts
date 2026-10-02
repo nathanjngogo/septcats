@@ -66,6 +66,8 @@ export interface UseDbPage {
   saveView(view: DbView): Promise<void>;
   /** IDEA-E 视图排序：把 fromVid 移到 toVid 位（main 侧零写语义，见 db:view:reorder）。 */
   reorderViews(fromVid: string, toVid: string): Promise<void>;
+  /** T103 删除视图（vid）：软刷新换 collection，未知 vid 幂等；最后一个视图 main 侧 E_INVARIANT 拒绝。 */
+  removeView(vid: string): Promise<void>;
   renameCollection(title: string): Promise<void>;
   /** 返回 CSV 文本（由调用方决定下载/复制）。 */
   exportCsv(): Promise<string>;
@@ -210,6 +212,16 @@ export function useDbPage(pageId: string): UseDbPage {
     [pageId],
   );
 
+  const removeView = useCallback(
+    async (vid: string): Promise<void> => {
+      const { collection: next } = await dbApi().viewRemove({ pageId, vid });
+      // 软刷新（IDEA-E R4 同款）：删视图只动 collection.views，records 不变 →
+      // 直接替换 collection，不走 reload()（避免 status 回 loading 把菜单/编辑态冲掉）。
+      setSnapshot((current) => ({ ...current, collection: next }));
+    },
+    [pageId],
+  );
+
   const renameCollection = useCallback(
     async (title: string): Promise<void> => {
       await dbApi().rename({ pageId, title });
@@ -241,6 +253,7 @@ export function useDbPage(pageId: string): UseDbPage {
     updatePropertyPrompt,
     saveView,
     reorderViews,
+    removeView,
     renameCollection,
     exportCsv,
   };

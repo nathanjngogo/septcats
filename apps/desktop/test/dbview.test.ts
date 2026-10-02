@@ -289,6 +289,46 @@ describeDb('dbViewService（行内数据库 · create/load/record/relation/delet
     expect(orderOf(ghost.collection.views)).toEqual(orderOf(back.collection.views));
   });
 
+  it('removeView：删中间视图=恰好 1 op 且序保持；最后一个=E_INVARIANT；未知 vid=幂等零写', async () => {
+    const created = await service.create({ workspaceId: WORKSPACE_ID, title: '删除视图库' });
+    const initial = await service.load({ pageId: created.pageId });
+    // 既有惯例：views[0] 在 noUncheckedIndexedAccess 下先收窄再 spread（参考 IDEA-E 用例）
+    const base = initial.collection.views[0] as NonNullable<(typeof initial.collection.views)[number]>;
+    expect(base, '新库必有默认视图').toBeTruthy();
+    await service.saveView({ pageId: created.pageId, view: { ...base, vid: 'v-two', name: '看板' } });
+    const three = await service.saveView({
+      pageId: created.pageId,
+      view: { ...base, vid: 'v-three', name: '画廊' },
+    });
+    const orderOf = (views: readonly { vid: string }[]): string[] => views.map((view) => view.vid);
+    expect(orderOf(three.collection.views)).toEqual([base.vid, 'v-two', 'v-three']);
+
+    const before = await opCount();
+    const gone = await service.removeView({ pageId: created.pageId, vid: 'v-two' });
+    expect(await opCount(), '删一个视图 = 恰好 1 op').toBe(before + 1);
+    expect(orderOf(gone.collection.views)).toEqual([base.vid, 'v-three']);
+
+    // 持久化：重新 load 仍是删后序（Op 落账非仅内存）
+    const reloaded = await service.load({ pageId: created.pageId });
+    expect(orderOf(reloaded.collection.views)).toEqual([base.vid, 'v-three']);
+
+    // 幂等：未知 vid 零写、collection 正确返回
+    const beforeZero = await opCount();
+    const ghost = await service.removeView({ pageId: created.pageId, vid: 'v-nope' });
+    expect(await opCount(), '未知 vid 零写').toBe(beforeZero);
+    expect(orderOf(ghost.collection.views)).toEqual([base.vid, 'v-three']);
+
+    // 护栏：只剩两个时删到剩一个 OK；再删最后一个 = E_INVARIANT 且零写
+    await service.removeView({ pageId: created.pageId, vid: 'v-three' });
+    const beforeLast = await opCount();
+    await expect(service.removeView({ pageId: created.pageId, vid: base.vid })).rejects.toMatchObject({
+      code: 'E_INVARIANT',
+    });
+    expect(await opCount(), '拒删最后一个 = 零写').toBe(beforeLast);
+    const still = await service.load({ pageId: created.pageId });
+    expect(orderOf(still.collection.views), '拒绝后最后一个视图仍在').toEqual([base.vid]);
+  });
+
   it('addProperty / removeProperty / saveView：collection 整对象/局部 patch 各 1 op', async () => {
     const created = await service.create({ workspaceId: WORKSPACE_ID, title: '研究库' });
 

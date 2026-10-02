@@ -1093,6 +1093,28 @@ export function reorderById<T>(
   return copy;
 }
 
+/**
+ * 删除视图的纯决策（T103：视图条「删除视图」假按钮补成真实入口）。
+ * - 视图不存在 → `missing`（调用方零写回当前 collection，与 reorder 未知 vid 同口径）。
+ * - 只剩最后一个视图 → `last`：**不删**（表必须至少有一个视图，否则工作区无处渲染）。
+ *   调用方据此回 E_INVARIANT，UI 侧禁用按钮 + 提示。
+ * - 正常 → `remove`，返回去掉该 vid 后的新序（其余顺序保持）。
+ */
+export function viewRemovalOutcome<T>(
+  views: readonly T[],
+  idOf: (item: T) => string,
+  vid: string,
+): { readonly kind: 'remove'; views: T[] } | { readonly kind: 'missing' } | { readonly kind: 'last' } {
+  const exists = views.some((view) => idOf(view) === vid);
+  if (!exists) {
+    return { kind: 'missing' };
+  }
+  if (views.length <= 1) {
+    return { kind: 'last' };
+  }
+  return { kind: 'remove', views: views.filter((view) => idOf(view) !== vid) };
+}
+
 // ---------------------------------------------------------------------------
 // 关系双写计划（纯函数；apps 层据此在同一 batch 内写主记录 + 对方 backlink）
 // ---------------------------------------------------------------------------

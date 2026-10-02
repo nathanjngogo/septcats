@@ -249,3 +249,5 @@
 - [x] **R65（10-02 值守）IDEA-E 多维表格视图排序**：`reorderById` 引擎纯函数 + `db:view:reorder` 通道 + PropBar 动作钮「前移到/后移到」；R4 真缺陷（排序后 reload 闪闭菜单）治本=useDbPage 软刷新 stale-while-revalidate；真机 cdp-e2e-t102-01 10/10。
 - [x] **R66（10-02 主会话收口）首次启动导览 + 0.6.11 终包**：TourOverlay 五步（i18n tour.* 16 键、旁路戳 septcats.tour.done）；跨重启静默真机 16/16；桌面门禁 1511、包审终包 102,749,699/sha256=4576d9c6…、老板机已静默重装=终包逐字节一致（a28f035c）。publish 待老板点头（0.6.10 已发，0.6.11=值守增量）。
 - [x] **R65（10-02 值守）IDEA-E 多维表格视图排序**：`reorderById` 引擎纯函数 + `db:view:reorder` 通道 + PropBar 动作钮「前移到/后移到」；R4 真缺陷（排序后 reload 闪闭菜单）治本=useDbPage 软刷新 stale-while-revalidate；真机 cdp-e2e-t102-01 10/10。
+
+- [x] **R67（10-02 深夜）删除视图（T103 挂账收口）**：`viewRemovalOutcome` 引擎纯函数（remove/missing/last 三态）+ `db:view:remove` 通道（zod schema+注册+preload 桥+window.d.ts）+ BitablePage 上膛二次确认（aria-live 引导/失焦与换视图解除/末视图禁用+E_INVARIANT 兜底）+ 软刷新。单测 +6（engine 5/service 1 大块/UI 5 例含旧契约转真）、真机 11/11、T99 24/24 零回归。坑入档：React onBlur 由 focusout（冒泡）驱动，dispatch 非冒泡 blur 不触发；vi 单例 mock 的 mockResolvedValue 会跨用例污染——installBridge 每次显式 mockImplementation 复位默认实现。

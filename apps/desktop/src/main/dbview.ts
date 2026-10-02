@@ -32,6 +32,7 @@ import {
   recordTitle,
   relationWritePlan,
   toCsv,
+  viewRemovalOutcome,
   dateValueSchema,
   type CollectionEntity,
   type CollectionSchema,
@@ -58,6 +59,7 @@ import {
   CHANNEL_DB_RELATION_SEARCH,
   CHANNEL_DB_RENAME,
   CHANNEL_DB_VIEW_REORDER,
+  CHANNEL_DB_VIEW_REMOVE,
   CHANNEL_DB_VIEW_SAVE,
   CHANNEL_PAGE_CONVERT,
   CHANNEL_PAGE_SUMMARY_SET,
@@ -135,6 +137,11 @@ export interface DbViewService {
    * 左拖占目标前）；未知 vid / from===to / 序未变化 → 零写返回当前 collection。
    */
   reorderViews(input: { pageId: string; fromVid: string; toVid: string }): Promise<{ collection: CollectionEntity }>;
+  /**
+   * T103 删除视图：从 `collection.views` 摘掉 `vid`（引擎 viewRemovalOutcome 口径）。
+   * 未知 vid = 零写返回当前 collection（幂等）；只剩最后一个视图 = E_INVARIANT（表必须有视图）。
+   */
+  removeView(input: { pageId: string; vid: string }): Promise<{ collection: CollectionEntity }>;
   relationSearch(input: {
     pageId: string;
     targetCollectionId: string;
@@ -1274,6 +1281,32 @@ export function createDbViewService(options: DbViewServiceOptions): DbViewServic
       return { collection: await reloadCollection(row.id) };
     },
 
+    async removeView(input) {
+      const row = await collectionRow(input.pageId);
+      const current = decodeViews(row.views_json);
+      // 决策全在引擎纯函数（viewRemovalOutcome）：护栏「至少留一个视图」单一出处。
+      const outcome = viewRemovalOutcome(current, (view) => view.vid, input.vid);
+      if (outcome.kind === 'missing') {
+        return { collection: await reloadCollection(row.id) }; // 幂等：已被并发删除 = 目标态达成
+      }
+      if (outcome.kind === 'last') {
+        throw new DbViewApiError('E_INVARIANT', '一张表至少要保留一个视图，最后一个视图不可删除');
+      }
+      const at = meta();
+      const op: Op = {
+        op_id: ulid(at),
+        lamport: { c: row.version + 1, d: actor },
+        at,
+        actor,
+        target: { table: 'collection', id: row.id },
+        kind: 'patch',
+        payload: { views: outcome.views, updated_at: at },
+        base: row.version,
+      };
+      await commitOps(executor, [op], { workspaceId: row.workspace_id });
+      return { collection: await reloadCollection(row.id) };
+    },
+
     async relationSearch(input) {
       await collectionRow(input.pageId); // 本页面必须有 collection（副作用校验，结果不需要）
       const targetData = await executor.get('collection.get', { id: input.targetCollectionId });
@@ -1460,6 +1493,7 @@ const DB_INPUT_SCHEMAS = {
   [CHANNEL_DB_PROP_MOVE]: z.object({ pageId: zId, pid: zId, beforePid: zId.nullable() }),
   [CHANNEL_DB_VIEW_SAVE]: z.object({ pageId: zId, view: z.unknown() }),
   [CHANNEL_DB_VIEW_REORDER]: z.object({ pageId: zId, fromVid: zId, toVid: zId }),
+  [CHANNEL_DB_VIEW_REMOVE]: z.object({ pageId: zId, vid: zId }),
   [CHANNEL_DB_RELATION_SEARCH]: z.object({
     pageId: zId,
     targetCollectionId: zId,
@@ -1665,6 +1699,11 @@ export function registerDbViewIpc(service: DbViewService | null, registrar: DbVi
       fromVid: String(input['fromVid']),
       toVid: String(input['toVid']),
     });
+  });
+
+  on(CHANNEL_DB_VIEW_REMOVE, DB_INPUT_SCHEMAS[CHANNEL_DB_VIEW_REMOVE], (svc, data) => {
+    const input = asRecord(data);
+    return svc.removeView({ pageId: String(input['pageId']), vid: String(input['vid']) });
   });
 
   on(CHANNEL_DB_RELATION_SEARCH, DB_INPUT_SCHEMAS[CHANNEL_DB_RELATION_SEARCH], (svc, data) => {

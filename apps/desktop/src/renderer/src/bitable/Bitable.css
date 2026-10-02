@@ -23,6 +23,8 @@
   cursor: pointer;
 }
 .bitable-grid { flex: 1 1 auto; min-height: 0; }
+/* T103 视图删除提示行（上膛引导 / IPC 错误播报）：与 bitable-empty 同族，落 chrome 上 ⇒ ink-secondary（对比度纪律，禁 ink-faint）。 */
+.bitable-viewmsg { margin: 0; font: var(--sc-text-ui-sm); color: var(--sc-color-ink-secondary); }
 .bitable-empty { margin: 0; font: var(--sc-text-ui-sm); color: var(--sc-color-ink-secondary); }
 
 .bitable-side { display: flex; flex-direction: column; gap: var(--sc-space-sm); padding: var(--sc-space-md); min-height: 0; }

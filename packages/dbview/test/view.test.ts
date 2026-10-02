@@ -25,7 +25,7 @@ import {
   propertySchema,
   recordEntitySchema,
 } from '../src/types';
-import { normalizeFilter, normalizeSort, reorderById, visibleProperties } from '../src/view';
+import { normalizeFilter, normalizeSort, reorderById, viewRemovalOutcome, visibleProperties } from '../src/view';
 import {
   applyFilter,
   applySort,
@@ -714,6 +714,41 @@ describe('visibleProperties（视图隐藏字段）', () => {
 // IDEA-E：拖拽改序（视图页签拖动 → collection.views 数组序）
 // ---------------------------------------------------------------------------
 
+// T103：删除视图的纯决策（护栏「至少留一个视图」单一出处，main 侧只消费）
+describe('viewRemovalOutcome —— 删除视图决策（T103）', () => {
+  const byVid = (view: { vid: string }): string => view.vid;
+  const ids = (list: readonly { vid: string }[]): string[] => list.map((view) => view.vid);
+
+  it('正常删除：摘掉目标 vid，其余顺序原样保持', () => {
+    const views = [{ vid: 'v1' }, { vid: 'v2' }, { vid: 'v3' }];
+    const out = viewRemovalOutcome(views, byVid, 'v2');
+    expect(out.kind).toBe('remove');
+    expect(out.kind === 'remove' && ids(out.views)).toEqual(['v1', 'v3']);
+  });
+
+  it('只剩最后一个视图：判 last（不许删空，表必须至少有一个视图）', () => {
+    const out = viewRemovalOutcome([{ vid: 'v1' }], byVid, 'v1');
+    expect(out.kind).toBe('last');
+  });
+
+  it('空视图集（脏数据）：判 missing（先查存在性），绝不出 remove 空列表', () => {
+    // 顺序有讲究：missing 先于 last ⇒ 空集请求删任意 vid 走幂等零写，
+    // 而不是抛 E_INVARIANT 假装「还剩一个不能删」。
+    expect(viewRemovalOutcome([], byVid, 'v1').kind).toBe('missing');
+  });
+
+  it('未知 vid：判 missing（调用方幂等零写）', () => {
+    const out = viewRemovalOutcome([{ vid: 'v1' }, { vid: 'v2' }], byVid, 'nope');
+    expect(out.kind).toBe('missing');
+  });
+
+  it('返回新数组不改入参（纯函数纪律）', () => {
+    const views = [{ vid: 'v1' }, { vid: 'v2' }];
+    const out = viewRemovalOutcome(views, byVid, 'v1');
+    expect(out.kind === 'remove' && out.views).not.toBe(views);
+    expect(views).toHaveLength(2);
+  });
+});
 describe('reorderById —— 拖拽改序（创意 IDEA-E / 0.6.10 清单「视图排序」）', () => {
   const views = ['v1', 'v2', 'v3', 'v4'].map((vid) => defaultView(vid, `视图 ${vid}`));
   const byVid = (view: (typeof views)[number]) => view.vid;
