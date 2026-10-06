@@ -9,7 +9,7 @@
 // 用法：pnpm -C apps/desktop dist:win-cross
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -47,6 +47,21 @@ const abi = nodeAbi.getAbi(electronVersion, 'electron');
 console.log(`electron ${electronVersion} → ABI ${String(abi)}`);
 
 // —— ③ better-sqlite3：确保 build/Release/better_sqlite3.node 是 **win PE**（不是就拉 prebuild 覆盖）——
+// 构建前备份仓内原生模块与 ABI 标记（构建后还原，避免污染单测环境）
+const ABI_MODULE = join(REPO, 'node_modules', '.pnpm', 'better-sqlite3@12.11.1', 'node_modules', 'better-sqlite3', 'build', 'Release', 'better_sqlite3.node');
+let abiBackup = null;
+let abiTargetBackup = null;
+try {
+  if (existsSync(ABI_MODULE)) {
+    abiBackup = join(APP, '.abi-cache', `prebuild-snapshot${existsSync(join(APP, '.abi-cache')) ? '' : ''}.node`);
+    copyFileSync(ABI_MODULE, abiBackup);
+  }
+  const t = join(APP, '.abi-target');
+  if (existsSync(t)) abiTargetBackup = readFileSync(t, 'utf8');
+} catch (e) {
+  console.log(`备份原生模块失败（不阻断构建）：${String(e)}`);
+}
+
 const bsDirName = readdirSync(PNPMPKGS).find((d) => d.startsWith('better-sqlite3@'));
 if (bsDirName === undefined) throw new Error('找不到 better-sqlite3（先 pnpm install --ignore-scripts）');
 const bsDir = join(PNPMPKGS, bsDirName, 'node_modules', 'better-sqlite3');
@@ -82,6 +97,15 @@ run('pnpm', ['exec', 'electron-vite', 'build']);
 
 // —— ⑤ 打包：npmRebuild=false 让 builder 收编我们预置的 win 模块，不再尝试 node-gyp ——
 run('pnpm', ['exec', 'electron-builder', '--win', 'nsis', '--x64', '--config', 'electron-builder.yml', '-c.npmRebuild=false']);
+
+// —— 收尾：把仓内原生模块还原成构建前的身份 —— //
+// 为什么必须还原：构建前脚本会把 win 版 better_sqlite3.node 摆进仓内 store 路径，
+// 若就此留在树里，下次跑 node-ABI 单测会以「ABI 不匹配」整片假红（本仓实测踩过）。
+if (abiBackup !== null && abiTargetBackup !== null) {
+  copyFileSync(abiBackup, ABI_MODULE);
+  writeFileSync(join(APP, '.abi-target'), abiTargetBackup, 'utf8');
+  console.log(`收尾：仓内原生模块已还原（abi-target=${abiTargetBackup}）—— 单测环境未被污染`);
+}
 
 // —— ⑥ 产物报告 + 体积护栏（同 dist:check 的 150MB 线）——
 const version = JSON.parse(readFileSync(join(APP, 'package.json'), 'utf8')).version;

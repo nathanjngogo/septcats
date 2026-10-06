@@ -24,6 +24,10 @@
 - 类型：`tsc` 双配置 **0 / 0**；样式纪律：`no-magic` **PASS**。
 - 视觉自审三轮（3x/4x 裁图自读）：笔记去装订竖线（原读作"侧栏"）、表格撤窄列线、日历挂钉贯穿上沿、待办改勾选框并松绑、模板叠层改模板页画廊、导轨档位 20px→24px（描边约 1.5px，密线不糊）。
 - 真机探针口径已随动（`cdp-e2e-t85-01.mjs` B4-j 改认线族图标）；**真机复跑待 Windows 机**（🟡 待补）。
+- **内测包（本地交付，不上 feed）**：Linux 交叉打包一条命令 `pnpm -C apps/desktop dist:win-cross` 产物
+  `Septcats.Setup.0.6.13-rc.exe` = **102,700,805 B / sha256=61713a04…**；NSIS 解包核过（79 文件 / PE32+ / win 原生模块 unpacked / asar 65,264,238 B），
+  并抽检 asar 内 renderer bundle 含 `data-line-glyph` · `sc-icon--line` · `nav-rail__label`（证明新图标真在包里，不是旧代码）。
+  ⚠ 该包**未推发布通道**（feed 仍指 0.6.12=Latest），仅供老板真机观感/功能验证。
 
 ---
 
