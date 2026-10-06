@@ -10,6 +10,8 @@
 
 export * from './tokens';
 export * from './Icon';
+// 线族（老板 2026-10-06 令「取消像素风」）：与像素族共用唯一出口 ./Icon，见 ./lineIcons。
+export * from './lineIcons';
 export * from './Button';
 export * from './IconButton';
 export * from './Input';

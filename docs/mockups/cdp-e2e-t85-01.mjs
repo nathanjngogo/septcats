@@ -341,15 +341,18 @@ async function main() {
     const struct = await page.evaluate(() => {
       const ro = document.querySelector('[data-testid="shell-readouts"]');
       const cells = ro === null ? [] : [...ro.querySelectorAll('[data-testid^="readout-"]')].map((e) => e.getAttribute('data-testid') ?? '');
-      const railNums = [...document.querySelectorAll('.nav-rail__item')].map((e) => e.getAttribute('data-num') ?? '');
+      // T104-01（老板 10-06「红框内全部改为线条图标」）：编号结构层下线，改认线族图标
+      const railGlyphs = [...document.querySelectorAll('.nav-rail__item')].map(
+        (e) => e.querySelector('svg[data-line-glyph]')?.getAttribute('data-line-glyph') ?? '',
+      );
       const railOnBg = (() => {
         const on = document.querySelector('.nav-rail__item--on');
         return on === null ? '' : getComputedStyle(on).backgroundColor;
       })();
       const kcolCount = document.querySelector('.bitable-kcol-count');
-      return { hasReadouts: ro !== null, cells, railNums, railOnBg, kcolCount: kcolCount !== null };
+      return { hasReadouts: ro !== null, cells, railGlyphs, railOnBg, kcolCount: kcolCount !== null };
     });
-    check('B4-j 结构层：顶栏读数区在位（3 格）+ 导轨八项编号 data-num', struct.hasReadouts && struct.cells.length === 3 && struct.railNums.filter((x) => x !== '').length >= 8, `cells=${struct.cells.join(',')} nums=${struct.railNums.slice(0, 3).join(',')}…`);
+    check('B4-j 结构层：顶栏读数区在位（3 格）+ 导轨八项线条图标（data-line-glyph，T104-01）', struct.hasReadouts && struct.cells.length === 3 && struct.railGlyphs.filter((x) => x !== '').length >= 8, `cells=${struct.cells.join(',')} glyphs=${struct.railGlyphs.slice(0, 3).join(',')}…`);
     check('B4-k 结构层：导轨选中态为主色实心（= 该档 --sc-color-accent，非 surface-active 淡底）', (() => {
       const accent = String(it_.accent).trim(); // 形如 #0E7C6E
       const want = accent.startsWith('#')

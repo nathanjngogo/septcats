@@ -13,28 +13,14 @@
  *     （浅色 chrome 淡化后 faint 实测 <AA，见 skill 记录）。
  */
 
-/* ===== 一级轨：两位编号（::before + attr(data-num)，不进 DOM 文本）+ 选中主色实心 =====
-   为什么用 ::before：编号若写成子元素文本，`.nav-rail__item` 的 textContent 会变成「01笔记」，
-   既有导轨断言与真机探针（按 textContent 取标签）全红 —— CSS 生成内容不进 textContent。 */
-[data-look='instrument'] .nav-rail__item::before {
-  content: attr(data-num);
-  display: block;
-  font: var(--sc-text-code);
-  font-size: 9px;
-  line-height: 1;
-  letter-spacing: var(--sc-tracking-ui);
-  color: var(--sc-color-ink-secondary);
-}
-
+/* ===== 一级轨：线条图标族（老板 2026-10-06 令「红框内全部改为线条图标，设计要简约」
+   ＋ 同日追加「取消像素风吧，不适合这个软件。」）=====
+   编号结构层下线：两位编号（原 `::before + attr(data-num)`）与线族图标并列会让 56px 窄轨
+   出现「数字 + 图形」双载体，与"简约"直接冲突 → 编号数据与 ::before 规则一并撤除；
+   图标本体几何在 @septcats/ui 线族（stroke=currentColor），本层只管选中态的面与色。 */
 [data-look='instrument'] .nav-rail__item--on {
   background: var(--sc-color-accent);
   color: var(--sc-color-on-accent);
-  font-weight: 600;
-}
-
-[data-look='instrument'] .nav-rail__item--on::before {
-  color: var(--sc-color-on-accent);
-  opacity: 0.72;
 }
 
 /* ===== 看板：列头等宽大写 + 计数徽标 + 卡片主色左条 ===== */

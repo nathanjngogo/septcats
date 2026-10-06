@@ -201,6 +201,28 @@ describe('T93-01 一级导航轨（App 集成）', () => {
     expect(railItem(container, 'kb').getAttribute('aria-current')).toBeNull();
   });
 
+  it('①b 线条图标层（T104-01）：每项一枚线族图标、顺序固定、编号结构层已下线', async () => {
+    const container = await renderApp();
+    const items = [...container.querySelectorAll('.nav-rail__item')];
+    expect(items).toHaveLength(8);
+    expect(
+      items.map((b) => b.querySelector('svg[data-line-glyph]')?.getAttribute('data-line-glyph') ?? ''),
+    ).toEqual(['Note', 'BookOpen', 'Calendar', 'Table', 'Todo', 'Home', 'Layers', 'Trash']);
+    for (const b of items) {
+      // 一枚，不多不少
+      expect(b.querySelectorAll('svg')).toHaveLength(1);
+      const svg = b.querySelector('svg')!;
+      // 线族外观契约（零填充 + 描边跟随 currentColor ⇒ 选中态自动吃 on-accent）
+      expect(svg.getAttribute('stroke')).toBe('currentColor');
+      expect(svg.getAttribute('stroke-width')).toBe('1.5');
+      expect(svg.getAttribute('fill')).toBe('none');
+      // 编号结构层下线（老板 10-06「设计要简约」）：条目上不得再有 data-num
+      expect(b.getAttribute('data-num')).toBeNull();
+    }
+    // 读屏/tooltip 语义不丢：无障碍名 = 中文标签
+    expect(railItem(container, 'notes').getAttribute('aria-label')).toBe('笔记');
+  });
+
   it('② 二级栏分流：点「知识库」→ 库列表（kb-panel）；点回「笔记」→ 页面树', async () => {
     const container = await renderApp();
     expect(container.querySelector('[data-testid="kb-panel"]')).toBeNull();

@@ -1,6 +1,9 @@
 /**
- * NavRail.css —— 一级导航轨（T93-01）。56px 宽（--sc-layout-rail），全高，
- * 与侧栏同底色（canvas）；条目 = 中文短标签的 ghost 钮，当前项弱底 + ink 字。
+ * NavRail.css —— 一级导航轨（T93-01；视觉 T104-01）。
+ *
+ * 56px 宽（--sc-layout-rail），全高，与侧栏同底色（canvas）。
+ * 条目（老板 2026-10-06 令「全部改为线条图标，设计要简约」）= **一枚 20px 线条图标**居中，
+ * 无文字、无编号；文字转视觉隐藏标签（无障碍名 / tooltip / textContent 契约）。
  * 全 var(--sc-*) token，三轴（明暗/配色/质感）随主题；无描边（与侧栏同面）。
  */
 .nav-rail {
@@ -14,24 +17,26 @@
 }
 
 .nav-rail__item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
   min-height: var(--sc-size-control-md);
-  padding: var(--sc-space-xxs);
+  padding: 0;
   border-radius: var(--sc-radius-sm);
   background: transparent;
   color: var(--sc-color-ink-secondary);
-  font: var(--sc-text-ui-xs);
-  letter-spacing: var(--sc-tracking-ui);
-  /* 两字竖排观感：不换行，窄轨里居中 */
-  white-space: nowrap;
   cursor: pointer;
   transition:
     background var(--sc-motion-fast) var(--sc-ease-out),
     color var(--sc-motion-fast) var(--sc-ease-out),
     box-shadow var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+/* 图标块级化：inline svg 的基线间隙会让 32px 盒里的图标视觉偏上 */
+.nav-rail__item svg {
+  display: block;
 }
 
 .nav-rail__item:hover:not(.nav-rail__item--on) {
@@ -49,6 +54,21 @@
 .nav-rail__item--on {
   background: var(--sc-color-surface-active);
   color: var(--sc-color-ink);
+}
+
+/**
+ * 视觉隐藏标签：给读屏与 tooltip 语义，同时让 `item.textContent` 保持「笔记」这类纯标签
+ * —— 既有导轨断言与真机探针（按 textContent 取标签）因此零改动。
+ */
+.nav-rail__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
