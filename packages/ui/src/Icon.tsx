@@ -53,37 +53,18 @@ export function Icon({ icon: Glyph, size = 'md', color, label, className, ...res
 
 // 全仓图标单族出口：像素 glyph 自绘于 ./pixelIcons；业务代码不得 import 任何图标库。
 export {
-  AiRobot,
-  ArrowClockwise,
   ArrowsClockwise,
-  BookOpen,
-  CaretDown,
-  CaretRight,
-  CaretUp,
-  Check,
-  CheckCircle,
-  Circle,
-  Clock,
   Close,
-  Copy,
-  DotsThree,
-  FileText,
-  FolderSimple,
-  GearSix,
   Info,
-  Layout,
-  MagnifyingGlass,
-  Note,
   PencilSimple,
-  Plus,
   Search,
-  SidebarSimple,
-  Star,
-  Trash,
-  WarningCircle,
-  WarningOctagon,
-  X,
 } from './pixelIcons';
+// 老板 10-06「取消像素风吧，不适合这个软件」：**应用面图标语言 = 线族**（见 ./lineIcons）。
+// 本模块就是「全仓唯一图标出口」的实体（ui 包内部组件如 AppShell/Select/Toast 也照旧只 import 本模块），
+// 故线族在此流出——三处消费目录的 `icon={X}` 调用点因此零改动换装。
+export * from './lineIcons';
+// 上面这 5 个是**零消费冷名**，暂留像素族出口（作旧观感对照）；一旦有调用点，
+// 先按线族补几何再加别名，别把像素画带回应用面。
 export { PIXEL_GLYPHS, PIXEL_GLYPH_GRID, TONE_OPACITY, GLYPH_TONES } from './pixelIcons';
 export type { PixelGlyphName, PixelGlyphProps } from './pixelIcons';
 

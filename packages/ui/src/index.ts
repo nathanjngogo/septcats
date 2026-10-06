@@ -10,8 +10,8 @@
 
 export * from './tokens';
 export * from './Icon';
-// 线族（老板 2026-10-06 令「取消像素风」）：与像素族共用唯一出口 ./Icon，见 ./lineIcons。
-export * from './lineIcons';
+// 线族（老板 2026-10-06 令「取消像素风」）：由唯一出口 ./Icon 统一转出（见 Icon.tsx 的
+// `export * from './lineIcons'`），此处**不再重复 star-export**（同名会撞）。
 export * from './Button';
 export * from './IconButton';
 export * from './Input';

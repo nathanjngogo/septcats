@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { blockContentTextLines } from '@septcats/editor';
-import { CheckCircle, Circle, Clock, FolderSimple, Icon, Note, PixelTodoGlyph, Plus, Star, X } from '@septcats/ui';
+import { CheckCircle, Circle, Clock, FolderSimple, Icon, LineTodo, Note, Plus, Star, X } from '@septcats/ui';
 import { t } from '../i18n';
 import {
   ancestorsOf,
@@ -224,7 +224,7 @@ function TodoCardBody() {
   return (
     <>
       <div className="wb-todo">
-        <PixelTodoGlyph size={16} className="wb-todo__glyph" aria-hidden="true" />
+        <LineTodo size={16} className="wb-todo__glyph" aria-hidden="true" />
         {todos.length === 0 ? (
           <p className="wb-empty" data-testid="wb-todo-empty">
             {t('workbench.todoEmpty')}

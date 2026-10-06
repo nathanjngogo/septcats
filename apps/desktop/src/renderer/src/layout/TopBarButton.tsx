@@ -7,7 +7,7 @@
  *   语义保留），既有按 aria-label / [data-testid] 取钮的测试与探针路径不破；
  * - 可见文案 = 短中文（topbar.* 双语键）；tooltip 用完整 label（快捷键提示）；
  * - 无图标（老板令）：像素 glyph 全部撤出顶栏——顶层图标族本体仍在
- *   （AI 面板标题用 AiRobot、模板市场页用 PixelShopGlyph 等，见 T58/T74 资产），
+ *   （AI 面板标题用 AiRobot、模板市场页用 LineShop 等，见 T58/T74 资产），
  *   只是不再挂在这排钮上；
  * - 样式 .sc-topbtn（TopBarButton.css，全 var(--sc-*) token，三轴随主题）。
  */

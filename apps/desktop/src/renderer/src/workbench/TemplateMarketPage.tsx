@@ -14,7 +14,7 @@
  * 零外联（模板 JSON 不内嵌 URL 请求，未新增 openExternal 通道）。
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, Icon, PixelShopGlyph, Switch, X } from '@septcats/ui';
+import { Button, Dialog, Icon, LineShop, Switch, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { pushToast } from '../state/pages';
 import { templatesActions, useTemplates } from '../state/templates';
@@ -254,7 +254,7 @@ export function TemplateMarketPage({ onClose, onOpenWorkbench }: TemplateMarketP
     >
       <div className="wbm-head">
         <h1 className="wbm-title">
-          <PixelShopGlyph size={20} className="wbm-title__glyph" aria-hidden="true" />
+          <LineShop size={20} className="wbm-title__glyph" aria-hidden="true" />
           {t('workbench.market.title')}
         </h1>
         <div className="wbm-head__actions">

@@ -146,12 +146,38 @@ describe('T58-01 桌面侧 · 门禁产物与依赖面', () => {
     expect(ui.ICON_STROKE_WIDTH).toBe(1.5);
   });
 
-  it('像素表逐名有同名组件出口 + 两个旧权利名别名指向同一组件（调用点零改动的实现）', () => {
+  it('T105-02 换装口径：应用面名字一律指向线族；像素族只作基线（族内几何 + 零消费冷名）', () => {
     const table = ui as unknown as Record<string, unknown>;
-    for (const name of Object.keys(ui.PIXEL_GLYPHS)) {
-      expect(typeof table[name], `${name} 无同名像素组件出口`).toBe('function');
+    /** 应用面（沿用旧名）→ 一律线族（老板 10-06「取消像素风」）。 */
+    const APP_FACING = [
+      'AiRobot', 'ArrowClockwise', 'BookOpen', 'CaretDown', 'CaretRight', 'CaretUp', 'Check',
+      'CheckCircle', 'Circle', 'Clock', 'Copy', 'DotsThree', 'FileText', 'FolderSimple', 'GearSix',
+      'Layout', 'MagnifyingGlass', 'Note', 'Plus', 'SidebarSimple', 'Star', 'Trash',
+      'WarningCircle', 'WarningOctagon', 'X',
+    ];
+    for (const name of APP_FACING) {
+      const comp = table[name] as { displayName?: string } | undefined;
+      expect(typeof comp, `${name} 无出口`).toBe('function');
+      expect(
+        comp?.displayName?.startsWith('Line'),
+        `${name} 仍指向像素族（displayName=${String(comp?.displayName)}）`,
+      ).toBe(true);
     }
-    expect(table['X']).toBe(table['Close']);
-    expect(table['MagnifyingGlass']).toBe(table['Search']);
+    // 像素族几何本体仍在（层测/质检走 ./pixelIcons 直取，不经应用出口）
+    expect(Object.keys(ui.PIXEL_GLYPHS)).toHaveLength(28);
+    // 零消费冷名暂留像素族（旧观感对照）；一旦有调用点，先补线族几何再加别名
+    for (const cold of ['ArrowsClockwise', 'Close', 'Info', 'PencilSimple', 'Search']) {
+      const comp = table[cold] as { displayName?: string } | undefined;
+      expect(typeof comp, `${cold} 冷名出口丢失`).toBe('function');
+      expect(comp?.displayName?.startsWith('Pixel'), `${cold} 应为像素族冷名`).toBe(true);
+    }
+  });
+
+  it('应用源码零像素族 import（换装完成后的防回退护栏）', () => {
+    const offenders = consumerFiles.filter((file) => {
+      const text = readFileSync(file, 'utf8');
+      return /import[^;]*\b(?:Pixel\w+Glyph|pixelIcons|PixelGlyphName)\b[^;]*from/.test(text);
+    });
+    expect(offenders.map((f) => f.replace(REPO, ''))).toEqual([]);
   });
 });

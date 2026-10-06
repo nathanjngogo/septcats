@@ -13,7 +13,7 @@
  * 钉五件事：
  *  ① 顶栏 AI 钮 = 纯文字钮（无 svg、可见「AI 对话」、aria-label 含快捷键）；
  *  ② 两态：点击 aria-pressed 在 false/true 间翻转（面板开合语义不变）；
- *  ③ 面板标题栏图标仍是同一枚 AiRobot 像素 glyph（眼分组 4 格，几何基线不破）；
+ *  ③ 面板标题栏图标 = AiRobot 线族 glyph（T105-01 换装；两态组类名契约不破）；
  *  ④ 顶栏全组 = 纯文字钮（无 svg、无 .sc-iconbtn、每个钮可见文字非空）；
  *  ⑤ 相对顺序护栏（AI 钮紧邻搜索钮右侧）。
  */
@@ -192,12 +192,15 @@ describe('T58-01 顶栏 AI 钮（09-29 老板令后 = 纯文字钮）', () => {
       return node!;
     });
     expect(panel).not.toBeNull();
-    // 像素资产本体仍在：面板标题栏的 AiRobot 两态分组（几何基线不破）
-    const headEyes = panel.querySelectorAll('.ai-chat__head-icon .sc-icon__eye rect');
-    expect(headEyes.length).toBe(4);
+    // 老板 10-06「取消像素风」后（T105-01）：面板标题栏 AiRobot = **线族**同族 glyph，
+    // 两态分组（眼/天线）类名契约不破 —— 明暗切换仍由 pixelIcons.css 的 aria-pressed 规则驱动。
     const headSvg = panel.querySelector('.ai-chat__head-icon svg');
-    expect(headSvg?.getAttribute('viewBox')).toBe('0 0 16 16');
-    expect(headSvg?.getAttribute('shape-rendering')).toBe('crispEdges');
+    expect(headSvg?.getAttribute('data-line-glyph')).toBe('AiRobot');
+    expect(headSvg?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(headSvg?.getAttribute('stroke')).toBe('currentColor');
+    expect(headSvg?.getAttribute('fill')).toBe('none');
+    expect(panel.querySelectorAll('.ai-chat__head-icon .sc-icon__eye').length).toBeGreaterThanOrEqual(1);
+    expect(panel.querySelectorAll('.ai-chat__head-icon .sc-icon__antenna').length).toBeGreaterThanOrEqual(1);
   });
 
   it('④ 再点关：回到关态（aria-pressed=false、面板消失、钮文字不变、钮内始终无 svg）', async () => {

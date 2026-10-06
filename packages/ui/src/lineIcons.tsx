@@ -36,7 +36,7 @@ export interface LineGlyphProps extends Omit<SVGProps<SVGSVGElement>, 'color'> {
 
 /** 线族形状基元（数据即几何，便于测试逐枚核对）。 */
 export type LineShape =
-  | { readonly tag: 'path'; readonly d: string }
+  | { readonly tag: 'path'; readonly d: string; readonly className?: string }
   | {
       readonly tag: 'rect';
       readonly x: number;
@@ -44,6 +44,7 @@ export type LineShape =
       readonly width: number;
       readonly height: number;
       readonly rx: number;
+      readonly className?: string;
     };
 
 /**
@@ -104,8 +105,131 @@ export const LINE_GLYPHS = {
     { tag: 'path', d: 'M4.5 7.25h15' },
     { tag: 'path', d: 'M9.9 7.25V4.75h4.2v2.5' },
     { tag: 'path', d: 'M6.6 7.25 7.5 20h9l.9-12.75' },
-    { tag: 'path', d: 'M10 10.75v5.5' },
-    { tag: 'path', d: 'M14 10.75v5.5' },
+  ],
+
+  /* ===== 以下为 T105-01 应用面补齐（老板 10-06「取消像素风」）：
+     名字与像素族应用面一一对应，几何语言与导轨八枚同源。 =====
+   */
+  /** 关闭 / X。 */
+  X: [
+    { tag: 'path', d: 'M6.5 6.5 17.5 17.5' },
+    { tag: 'path', d: 'M17.5 6.5 6.5 17.5' },
+  ],
+  /** 对勾。 */
+  Check: [{ tag: 'path', d: 'M5.25 12.4 9.75 16.9 18.75 7.4' }],
+  /** 加号。 */
+  Plus: [
+    { tag: 'path', d: 'M12 5.5v13' },
+    { tag: 'path', d: 'M5.5 12h13' },
+  ],
+  /** 下拉箭头。 */
+  CaretDown: [{ tag: 'path', d: 'M6.75 9.75 12 15 17.25 9.75' }],
+  /** 上收箭头。 */
+  CaretUp: [{ tag: 'path', d: 'M6.75 14.25 12 9 17.25 14.25' }],
+  /** 右向箭头。 */
+  CaretRight: [{ tag: 'path', d: 'M9.75 6.75 15 12 9.75 17.25' }],
+  /** 带折角的文档（页面 + 两条内文线）。 */
+  FileText: [
+    { tag: 'path', d: 'M6.5 3.75h7l4.5 4.5v11.5h-11.5z' },
+    { tag: 'path', d: 'M13.5 3.75v4.5h4.5' },
+    { tag: 'path', d: 'M9.25 12.25h5.5' },
+    { tag: 'path', d: 'M9.25 15.5h3.5' },
+  ],
+  /** 文件夹（单层）。 */
+  FolderSimple: [
+    { tag: 'path', d: 'M3.75 19.75V6.5h5.4l1.8 2.1h9.3v11.15z' },
+  ],
+  /** 更多（三点）。 */
+  DotsThree: [
+    { tag: 'path', d: 'M6.5 11.25v1.5' },
+    { tag: 'path', d: 'M12 11.25v1.5' },
+    { tag: 'path', d: 'M17.5 11.25v1.5' },
+  ],
+  /** AI 机器人（两态组沿用像素族类名契约：眼 sc-icon__eye / 天线 sc-icon__antenna，
+   *  由 pixelIcons.css 的 aria-pressed 规则切换明暗 → 换族后开合态语义保持不变）。 */
+  AiRobot: [
+    { tag: 'path', d: 'M12 3.6v2.15', className: 'sc-icon__antenna' },
+    { tag: 'path', d: 'M12 3.6h0.01', className: 'sc-icon__antenna' },
+    { tag: 'rect', x: 4.5, y: 5.75, width: 15, height: 12.75, rx: 3 },
+    { tag: 'path', d: 'M9 10.9v2.3', className: 'sc-icon__eye' },
+    { tag: 'path', d: 'M15 10.9v2.3', className: 'sc-icon__eye' },
+  ],
+  /** 圆形对勾（成功）。 */
+  CheckCircle: [
+    { tag: 'path', d: 'M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5' },
+    { tag: 'path', d: 'M8.25 12.35 10.8 14.9 15.75 9.3' },
+  ],
+  /** 圆形叹号（警告）。 */
+  WarningCircle: [
+    { tag: 'path', d: 'M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5' },
+    { tag: 'path', d: 'M12 8v4.75' },
+    { tag: 'path', d: 'M12 15.9v0.5' },
+  ],
+  /** 八角叹号（严重警告）。 */
+  WarningOctagon: [
+    { tag: 'path', d: 'M8.7 3.75h6.6l4.95 4.95v6.6l-4.95 4.95H8.7l-4.95-4.95v-6.6z' },
+    { tag: 'path', d: 'M12 8v4.75' },
+    { tag: 'path', d: 'M12 15.9v0.5' },
+  ],
+  /** 放大镜（搜索）。 */
+  MagnifyingGlass: [
+    { tag: 'path', d: 'M16.75 10.75a6 6 0 1 0-12 0 6 6 0 0 0 12 0' },
+    { tag: 'path', d: 'M15.1 15.1 19.5 19.5' },
+  ],
+  /** 顺时针箭头（刷新 / 重试）。 */
+  ArrowClockwise: [
+    { tag: 'path', d: 'M19.25 12a7.25 7.25 0 1 1-2.1-5.1' },
+    { tag: 'path', d: 'M17.15 6.9 14.1 8.4' },
+    { tag: 'path', d: 'M17.15 6.9 15.6 9.95' },
+  ],
+  /** 时钟。 */
+  Clock: [
+    { tag: 'path', d: 'M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5' },
+    { tag: 'path', d: 'M12 7.5V12' },
+    { tag: 'path', d: 'M12 12 15.9 14.3' },
+  ],
+  /** 复制（两张错位卡片）。 */
+  Copy: [
+    { tag: 'rect', x: 3.75, y: 8.25, width: 11.75, height: 11.75, rx: 2 },
+    { tag: 'path', d: 'M8.25 8.25V5.75a2 2 0 0 1 2-2h7.75a2 2 0 0 1 2 2v7.75a2 2 0 0 1-2 2h-2.5' },
+  ],
+  /** 侧栏（外框 + 左栏线）。 */
+  SidebarSimple: [
+    { tag: 'rect', x: 3.75, y: 5, width: 16.5, height: 14, rx: 2.25 },
+    { tag: 'path', d: 'M9.75 5v14' },
+  ],
+  /** 星标（收藏）。 */
+  Star: [
+    {
+      tag: 'path',
+      d: 'M12 4.1 14.35 8.85 19.6 9.6 15.8 13.3 16.7 18.5 12 16.05 7.3 18.5 8.2 13.3 4.4 9.6 9.65 8.85z',
+    },
+  ],
+  /** 店铺 / 货架（模板市场入口）。 */
+  Shop: [
+    { tag: 'path', d: 'M4.1 9.5 5.6 4.75h12.8l1.5 4.75' },
+    { tag: 'path', d: 'M5.6 9.5v10h12.8v-10' },
+    { tag: 'path', d: 'M8.35 9.75v1.5' },
+    { tag: 'path', d: 'M12 9.75v1.5' },
+    { tag: 'path', d: 'M15.65 9.75v1.5' },
+    { tag: 'path', d: 'M10.25 19.5v-4.6h3.5v4.6' },
+  ],
+  /** 空圈（待办未完成标记）。 */
+  Circle: [{ tag: 'path', d: 'M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5' }],
+  /** 齿轮（设置 / 命令回退图标）：双环 + 四枚齿（六齿在 16px 下会糊成噪点）。 */
+  GearSix: [
+    { tag: 'path', d: 'M19.5 12a7.5 7.5 0 1 0-15 0 7.5 7.5 0 0 0 15 0' },
+    { tag: 'path', d: 'M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0' },
+    { tag: 'path', d: 'M12 4.5V2' },
+    { tag: 'path', d: 'M12 19.5V22' },
+    { tag: 'path', d: 'M4.5 12H2' },
+    { tag: 'path', d: 'M19.5 12H22' },
+  ],
+  /** 布局（四格仪表盘，与「多维表格=表头行」的造型区分开）。 */
+  Layout: [
+    { tag: 'rect', x: 3.75, y: 4.5, width: 16.5, height: 15, rx: 2.25 },
+    { tag: 'path', d: 'M12 4.5v15' },
+    { tag: 'path', d: 'M3.75 12h16.5' },
   ],
 } as const satisfies Record<string, readonly LineShape[]>;
 
@@ -146,10 +270,11 @@ function renderShape(shape: LineShape, index: number): ReactNode {
         width={shape.width}
         height={shape.height}
         rx={shape.rx}
+        className={shape.className}
       />
     );
   }
-  return <path key={index} d={shape.d} />;
+  return <path key={index} d={shape.d} className={shape.className} />;
 }
 
 /** 线族组件工厂：一枚 glyph = 一组描边基元。 */
@@ -181,3 +306,92 @@ export const LineHome = createLineGlyph('Home');
 export const LineLayers = createLineGlyph('Layers');
 /** 24×24 线条：垃圾桶（回收站）。 */
 export const LineTrash = createLineGlyph('Trash');
+
+/* ===== T105-01 应用面补齐（老板 10-06「取消像素风吧，不适合这个软件」）===== */
+
+/** 24×24 线条：关闭 / X。 */
+export const LineX = createLineGlyph('X');
+/** 24×24 线条：对勾。 */
+export const LineCheck = createLineGlyph('Check');
+/** 24×24 线条：加号。 */
+export const LinePlus = createLineGlyph('Plus');
+/** 24×24 线条：下拉箭头。 */
+export const LineCaretDown = createLineGlyph('CaretDown');
+/** 24×24 线条：上收箭头。 */
+export const LineCaretUp = createLineGlyph('CaretUp');
+/** 24×24 线条：右向箭头。 */
+export const LineCaretRight = createLineGlyph('CaretRight');
+/** 24×24 线条：带折角的文档。 */
+export const LineFileText = createLineGlyph('FileText');
+/** 24×24 线条：文件夹。 */
+export const LineFolderSimple = createLineGlyph('FolderSimple');
+/** 24×24 线条：更多（三点）。 */
+export const LineDotsThree = createLineGlyph('DotsThree');
+/** 24×24 线条：AI 机器人（两态组沿用像素族类名契约）。 */
+export const LineAiRobot = createLineGlyph('AiRobot');
+/** 24×24 线条：圆形对勾（成功）。 */
+export const LineCheckCircle = createLineGlyph('CheckCircle');
+/** 24×24 线条：圆形叹号（警告）。 */
+export const LineWarningCircle = createLineGlyph('WarningCircle');
+/** 24×24 线条：八角叹号（严重警告）。 */
+export const LineWarningOctagon = createLineGlyph('WarningOctagon');
+/** 24×24 线条：放大镜（搜索）。 */
+export const LineMagnifyingGlass = createLineGlyph('MagnifyingGlass');
+/** 24×24 线条：顺时针箭头（刷新）。 */
+export const LineArrowClockwise = createLineGlyph('ArrowClockwise');
+/** 24×24 线条：时钟。 */
+export const LineClock = createLineGlyph('Clock');
+/** 24×24 线条：复制。 */
+export const LineCopy = createLineGlyph('Copy');
+/** 24×24 线条：侧栏。 */
+export const LineSidebarSimple = createLineGlyph('SidebarSimple');
+/** 24×24 线条：星标。 */
+export const LineStar = createLineGlyph('Star');
+/** 24×24 线条：店铺 / 货架（模板市场入口）。 */
+export const LineShop = createLineGlyph('Shop');
+
+/** 24×24 线条：空圈（待办未完成）。 */
+export const LineCircle = createLineGlyph('Circle');
+/** 24×24 线条：齿轮（设置）。 */
+export const LineGearSix = createLineGlyph('GearSix');
+/** 24×24 线条：布局（四格）。 */
+export const LineLayout = createLineGlyph('Layout');
+
+/* ===== 应用面名字别名（**唯一图标语言切换点**）=====
+ * 老板 10-06「取消像素风」：自本版起，下列**沿用像素族旧名的名字**一律指向线族实现，
+ * 因此三处消费目录（renderer / editor / dbview）的 `icon={X}` 调用点**零改动**即换装。
+ *
+ * 纪律：
+ *  - 像素族实现与其层测仍在 `./pixelIcons` / `./icons`（作**旧观感基线**，应用零消费）；
+ *    需要像素画本体时从 `./pixelIcons` 直接取（层测/质检脚本已如此）。
+ *  - 应用代码一律用这里的名字（或 `Line*` 显式名），禁直接 import 图标库（§16.6 单出口）。
+ *  - 冷名（ArrowsClockwise / BookOpen / Circle / Close / GearSix / Info / Layout / PencilSimple /
+ *    Search）零消费，暂留像素族出口；要用时先按线族补几何再加别名，别把像素画带回应用面。
+ */
+export {
+  LineAiRobot as AiRobot,
+  LineArrowClockwise as ArrowClockwise,
+  LineCaretDown as CaretDown,
+  LineCaretRight as CaretRight,
+  LineCaretUp as CaretUp,
+  LineBookOpen as BookOpen,
+  LineCircle as Circle,
+  LineCheck as Check,
+  LineCheckCircle as CheckCircle,
+  LineClock as Clock,
+  LineCopy as Copy,
+  LineDotsThree as DotsThree,
+  LineFileText as FileText,
+  LineFolderSimple as FolderSimple,
+  LineGearSix as GearSix,
+  LineLayout as Layout,
+  LineMagnifyingGlass as MagnifyingGlass,
+  LineNote as Note,
+  LinePlus as Plus,
+  LineSidebarSimple as SidebarSimple,
+  LineStar as Star,
+  LineTrash as Trash,
+  LineWarningCircle as WarningCircle,
+  LineWarningOctagon as WarningOctagon,
+  LineX as X,
+};

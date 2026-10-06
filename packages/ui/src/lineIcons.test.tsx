@@ -16,33 +16,30 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ICON_STROKE_WIDTH, Icon } from './Icon';
+import * as lineIconsModule from './lineIcons';
 import {
   LINE_GLYPHS,
   LINE_GLYPH_GRID,
   LINE_GLYPH_STROKE,
-  LineBookOpen,
-  LineCalendar,
-  LineHome,
-  LineLayers,
   LineNote,
-  LineTable,
   LineTodo,
   LineTrash,
   type LineGlyphName,
 } from './lineIcons';
 
-const COMPONENTS: Record<LineGlyphName, typeof LineNote> = {
-  Note: LineNote,
-  BookOpen: LineBookOpen,
-  Calendar: LineCalendar,
-  Table: LineTable,
-  Todo: LineTodo,
-  Home: LineHome,
-  Layers: LineLayers,
-  Trash: LineTrash,
-};
-
 const NAMES = Object.keys(LINE_GLYPHS) as LineGlyphName[];
+
+/**
+ * 每枚几何 → 组件：从模块导出面派生（新增 glyph 时**不必再手工登记**——上一版是手写映射，
+ * 补 23 枚时漏登记 → `Element type is invalid`，这条就是防它复发）。
+ */
+const COMPONENTS = Object.fromEntries(
+  NAMES.map((name) => {
+    const found = (lineIconsModule as unknown as Record<string, unknown>)[`Line${name}`];
+    if (typeof found !== 'function') throw new Error(`线族缺组件 Line${name}（几何与组件不同步）`);
+    return [name, found];
+  }),
+) as Record<LineGlyphName, typeof LineNote>;
 
 /** 从 path 的 d 里抽出所有坐标数字（含相对指令的数值——仅用于范围检查，语义按几何盒取绝对值）。 */
 function coordsOf(d: string): number[] {
@@ -50,17 +47,49 @@ function coordsOf(d: string): number[] {
 }
 
 describe('T104-01 线族 · 几何与族面', () => {
-  it('八枚 glyph，每枚至少一个基元', () => {
-    expect(NAMES).toEqual([
-      'Note',
-      'BookOpen',
-      'Calendar',
-      'Table',
-      'Todo',
-      'Home',
-      'Layers',
-      'Trash',
-    ]);
+  it('导轨八枚 + 应用面 23 枚 = 31 枚，每枚至少一个基元', () => {
+    // 导轨（T104-01）
+    expect(NAMES).toEqual(
+      expect.arrayContaining([
+        'Note',
+        'BookOpen',
+        'Calendar',
+        'Table',
+        'Todo',
+        'Home',
+        'Layers',
+        'Trash',
+      ]),
+    );
+    // 应用面补齐（T105-01）
+    expect(NAMES).toEqual(
+      expect.arrayContaining([
+        'X',
+        'Check',
+        'Plus',
+        'CaretDown',
+        'CaretUp',
+        'CaretRight',
+        'FileText',
+        'FolderSimple',
+        'DotsThree',
+        'AiRobot',
+        'CheckCircle',
+        'WarningCircle',
+        'WarningOctagon',
+        'MagnifyingGlass',
+        'ArrowClockwise',
+        'Clock',
+        'Copy',
+        'SidebarSimple',
+        'Star',
+        'Shop',
+        'Circle',
+        'GearSix',
+        'Layout',
+      ]),
+    );
+    expect(NAMES).toHaveLength(31);
     for (const name of NAMES) {
       expect(LINE_GLYPHS[name].length, `${name} 没有基元`).toBeGreaterThanOrEqual(1);
     }
@@ -148,5 +177,60 @@ describe('T104-01 线族 · 尺寸与颜色透传', () => {
     expect(svg.getAttribute('aria-label')).toBe('待办');
     const { container: decorative } = render(<Icon icon={LineTodo} />);
     expect(decorative.querySelector('svg')!.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('T105-01 线族 · 应用面别名面（唯一图标语言切换点）', () => {
+  /** 应用面沿用旧名的 25 个名字（老板 10-06「取消像素风」后一律指向线族）。 */
+  const APP_FACING = [
+    'AiRobot',
+    'ArrowClockwise',
+    'BookOpen',
+    'CaretDown',
+    'CaretRight',
+    'CaretUp',
+    'Check',
+    'CheckCircle',
+    'Circle',
+    'Clock',
+    'Copy',
+    'DotsThree',
+    'FileText',
+    'FolderSimple',
+    'GearSix',
+    'Layout',
+    'MagnifyingGlass',
+    'Note',
+    'Plus',
+    'SidebarSimple',
+    'Star',
+    'Trash',
+    'WarningCircle',
+    'WarningOctagon',
+    'X',
+  ];
+
+  it('25 个别名全部落在本族（渲染出 data-line-glyph 且描边跟随 currentColor）', async () => {
+    const ui = await import('./index');
+    const table = ui as unknown as Record<string, unknown>;
+    for (const name of APP_FACING) {
+      const Glyph = table[name] as typeof LineNote;
+      expect(typeof Glyph, `${name} 不是出口组件`).toBe('function');
+      const { container } = render(<Glyph />);
+      const svg = container.querySelector('svg');
+      expect(svg, `${name} 未渲染 svg`).not.toBeNull();
+      expect(svg!.getAttribute('data-line-glyph'), `${name} 未走线族`).not.toBeNull();
+      expect(svg!.getAttribute('stroke')).toBe('currentColor');
+      expect(svg!.getAttribute('fill')).toBe('none');
+      expect(svg!.getAttribute('stroke-width')).toBe(String(LINE_GLYPH_STROKE));
+    }
+  });
+
+  it('像素族应用面名字已从 @septcats/ui 出口摘除；零消费冷名仍在（留作对照）', async () => {
+    const ui = await import('./index');
+    const table = ui as unknown as Record<string, unknown>;
+    for (const cold of ['ArrowsClockwise', 'Close', 'Info', 'PencilSimple', 'Search']) {
+      expect(typeof table[cold], `${cold} 冷名出口丢失`).toBe('function');
+    }
   });
 });

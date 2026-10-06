@@ -12,7 +12,7 @@
  * 数据面全走现成通道 / tree 缓存 / settings localStorage；main/preload/shared/ipc 零改动。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon, Menu, PixelHomeGlyph, X } from '@septcats/ui';
+import { Icon, LineHome, Menu, X } from '@septcats/ui';
 import { t } from '../i18n';
 import { pagesActions } from '../state/pages';
 import {
@@ -124,7 +124,7 @@ export function WorkbenchPage({ onClose }: WorkbenchPageProps) {
     >
       <div className="wb-head">
         <h1 className="wb-title">
-          <PixelHomeGlyph size={20} className="wb-title__glyph" aria-hidden="true" />
+          <LineHome size={20} className="wb-title__glyph" aria-hidden="true" />
           {t('workbench.title')}
         </h1>
         <div className="wb-head__actions">
@@ -275,7 +275,7 @@ function WelcomeBar() {
   const dateText = now.toLocaleDateString();
   return (
     <div className="wb-welcome" data-testid="wb-welcome">
-      <PixelHomeGlyph size={24} className="wb-welcome__glyph" aria-hidden="true" />
+      <LineHome size={24} className="wb-welcome__glyph" aria-hidden="true" />
       <div className="wb-welcome__text">
         <h2 className="wb-welcome__title">{greeting}</h2>
         <p className="wb-welcome__date">{t('workbench.today').replace('{date}', dateText)}</p>

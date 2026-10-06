@@ -113,10 +113,13 @@ describe('T58-01 像素图标族 · 矩阵与出口完整性', () => {
     expect(pixel.X).toBe(pixel.Close);
   });
 
-  it('Icon.tsx 出口块里的每个名字都能在像素表里落地（re-export 清单 ⊆ pixel glyph 表）', () => {
-    // 逐名渲染一遍：拿不到组件 / 渲染不出 rect 即红
+  it('Icon.tsx 出口块里的**像素族冷名**都能在像素表里落地（应用面名字已改道线族）', () => {
+    // 逐名渲染一遍：拿不到组件 / 渲染不出 rect 即红。
+    // 老板 10-06「取消像素风」后（T105-01）：LEGACY_ICON_EXPORTS 那批名字仍从 Icon.tsx 出口，
+    // 但**已改由线族提供**（见 ./lineIcons 别名块；线族身份由 lineIcons.test / t58-T105 审计钉住），
+    // 故此处只核仍在像素族出口的零消费冷名。
     const table = iconExports as unknown as Record<string, unknown>;
-    for (const name of [...LEGACY_ICON_EXPORTS, 'AiRobot', 'Layout', 'BookOpen', 'Search', 'Close']) {
+    for (const name of ['ArrowsClockwise', 'Close', 'Info', 'PencilSimple', 'Search']) {
       const Comp = table[name] as ComponentType<PixelGlyphProps> | undefined;
       expect(Comp, `${name} 未从 Icon.tsx 出口`).toBeTypeOf('function');
       const { container } = render(<Icon icon={Comp!} />);

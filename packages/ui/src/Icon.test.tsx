@@ -2,10 +2,12 @@ import { expectTokenOnlyCssFile } from '../test/css-discipline';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Check, Icon, ICON_SIZES, ICON_STROKE_WIDTH, resolveIconSize, type IconProps } from './Icon';
+import { Plus as PixelPlus } from './pixelIcons';
 
 describe('Icon', () => {
-  it('单一出口：默认装饰性（aria-hidden）；族=像素 glyph（16×16 viewBox + crispEdges + rect 网格）', () => {
-    const { container } = render(<Icon icon={Check} />);
+  it('单一出口：默认装饰性（aria-hidden）；像素族 glyph（16×16 viewBox + crispEdges + rect 网格）', () => {
+    // 10-06 换装后应用面已无像素族，故显式从族内取一枚做像素契约（族本体仍在，作基线）
+    const { container } = render(<Icon icon={PixelPlus} />);
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute('class')).toContain('sc-icon');
@@ -17,6 +19,18 @@ describe('Icon', () => {
     // T58-01：线宽契约保留为 legacy 出口（像素族无描边，改它不影响外观）
     expect(ICON_STROKE_WIDTH).toBe(1.5);
     expectTokenOnlyCssFile('src/Icon.css');
+  });
+
+  it('T105-01：应用面名字（Check）现在走线族 —— viewBox 24 / stroke=currentColor / 无 crispEdges', () => {
+    const { container } = render(<Icon icon={Check} />);
+    const svg = container.querySelector('svg');
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(svg?.getAttribute('stroke')).toBe('currentColor');
+    expect(svg?.getAttribute('fill')).toBe('none');
+    expect(svg?.getAttribute('stroke-width')).toBe('1.5');
+    expect(svg?.getAttribute('shape-rendering')).toBeNull();
+    expect(svg?.getAttribute('data-line-glyph')).toBe('Check');
+    expect(svg?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('有 label → role=img + aria-label；尺寸档解析（含显式数字与缺省档）', () => {

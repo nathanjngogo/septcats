@@ -13,7 +13,10 @@
 - **一级导航轨改线条图标**（T104-01）：导航项由「两位编号 + 中文短标签」改为**一枚 24×24 线条图标**（`stroke=currentColor`、1.5、圆头圆角、零填充）。中文标签转为视觉隐藏（读屏名 / tooltip / `textContent` 契约三保），选中态仍为主色实心（图标描边随 `currentColor` 自动吃 `on-accent`）。
 - **两位编号结构层下线**：`data-num` 与仪表档 `::before` 编号规则撤除（与"简约"冲突；撤销留档于 `ui/instrument.css` 注释）。
 - **设计系统新增线族**（`@septcats/ui` · `lineIcons.tsx`）：8 枚（笔记/知识库/日历/多维表格/待办/工作台/模板/回收站），与像素族共用唯一出口 `Icon`，`data-line-glyph` 带族标记。§16.6「全仓单图标族」经老板明令放宽为**双族**，边界写死：除导航轨外的新调用点须先问老板。
-- 像素族退役路线图立项：`docs/PRD-图标语言.md`（R69/T105 在途，全应用换装 74 处调用点）。
+- 像素族退役路线图立项：`docs/PRD-图标语言.md`（R69）。
+- **应用面图标语言全量换线族**（T105-01/02，老板同日追加「取消像素风吧，不适合这个软件」）：线族补齐到 **31 枚**；`lineIcons.tsx` 末尾设**唯一切换点**（25 个沿用旧名的名字别名指向线族）→ 三处消费目录的 `icon={X}` 调用点**零改动**换装；线族改从唯一出口 `./Icon` 流出（ui 包内部组件 AppShell/Select/Toast/Checkbox/EmptyState/ErrorPanel 均只 import 该模块）；像素族出口仅留 5 个零消费冷名，族内几何与 PNG 质检资产原样保留作**旧观感基线**。
+- 族外四枚像素 glyph 的应用调用点（WorkbenchPage ×2 / TemplateMarketPage / cards）改走 `LineHome` / `LineTodo` / `LineShop`。
+- 审计改判（T105-02）：`t58-pixel-icons` 由「像素表逐名同名出口」改为「应用面名字必为线族 + 应用源码零像素族 import」；`t58-ai-button` ③ 的像素几何断言改为线族同族 + 两态组类名契约。
 
 ### 验证
 - 层测：`packages/ui` 线族 **8/8**（几何盒 / 零填充 / 描边 / 尺寸 / 颜色 / 族标记 / 跨族描边重量一致）。
