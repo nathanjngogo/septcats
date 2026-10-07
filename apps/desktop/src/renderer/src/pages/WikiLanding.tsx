@@ -102,9 +102,6 @@ export function WikiLanding({ node }: { node: PageNodeView }) {
   return (
     <div className="pv-root">
       <div className="pv-title-row">
-        <span className="pv-page-icon" aria-hidden="true">
-          📓
-        </span>
         {editingTitle ? (
           <input
             className="app-nav-input wiki-title-input"

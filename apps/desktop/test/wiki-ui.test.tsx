@@ -175,6 +175,13 @@ describe('PageView 承载判定（T42-01 §0 + T40-01-2 闭环）', () => {
     render(<PageView />);
     expect(await screen.findByTestId('wiki-index')).toBeTruthy();
     expect(screen.getByTestId('wiki-title').textContent).toBe('研究 Wiki');
+
+    // T106-02（老板 10-07「需要」= 一起摘掉）：标题行左侧的装饰图标槽已下线，
+    // 不得再出现 .pv-page-icon，也不得用 emoji 当图标（§ 图标纪律）。
+    const row = screen.getByTestId('wiki-title').closest('.pv-title-row');
+    expect(row).not.toBeNull();
+    expect(row!.querySelector('.pv-page-icon')).toBeNull();
+    expect(/\p{Extended_Pictographic}/u.test(row!.textContent ?? '')).toBe(false);
     expect((screen.getByTestId('wiki-summary') as HTMLTextAreaElement).value).toBe('简介草稿');
     expect(screen.getAllByTestId('wiki-index-row').length).toBe(2);
   });
