@@ -182,6 +182,25 @@ WHERE id = @id AND workspace_id = @workspace_id`,
       updated_at: nullableTimestamp,
     }),
   },
+  /**
+   * N1-②：页面外观（图标/封面）。两列**全量提交**（null = 清除，由 API 层保证总会同时给两个字段）；
+   * 与 rename 同款：WHERE 带 workspace_id，version/updated_at 一并推进。
+   * 为什么单独一条语句而不是放宽 'page.rename' 的 params：rename 的 params 不含 icon/cover，
+   * 硬塞会破坏「一个 sqlId 一种形状」的既有纪律。
+   */
+  'page.setAppearance': {
+    kind: 'run',
+    sql: `UPDATE page SET icon = @icon, cover = @cover, version = @version, updated_at = @updated_at
+WHERE id = @id AND workspace_id = @workspace_id`,
+    params: z.object({
+      id: idText,
+      workspace_id: workspaceIdText,
+      icon: nullableText,
+      cover: nullableText,
+      version: versionInt,
+      updated_at: nullableTimestamp,
+    }),
+  },
   'page.setSort': {
     kind: 'run',
     sql: `UPDATE page SET sort_key = @sort_key, version = @version, updated_at = @updated_at

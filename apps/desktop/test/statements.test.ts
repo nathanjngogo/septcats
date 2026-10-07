@@ -251,7 +251,8 @@ describe('v5 白名单（import_source）', () => {
     }
     expect(getStatement('importSource.list')).not.toBeNull();
     expect(getStatement('importSource.list')!.params.safeParse({}).success).toBe(true);
-    expect(SQL_IDS.length).toBe(105); // 95 + T97-01 calendar.* 五条 + T98-01 todo.* 五条
+    // N1-②：+1 条 page.setAppearance（页面图标/封面）→ 105 → 106
+    expect(SQL_IDS.length).toBe(106); // 95 + T97-01 calendar.* 五条 + T98-01 todo.* 五条
     expect(SQL_IDS.length).toBeLessThan(115);
   });
 

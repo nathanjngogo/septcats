@@ -330,8 +330,24 @@ function materializePageStatement(
       return pageUpsertStatement(op, workspaceId);
 
     case 'patch': {
+      // N1-②：外观（icon/cover）与改名同属 patch，但物化到不同白名单语句。
+      // 契约：外观 op 的 payload 必须**同时**带 icon 与 cover（null = 清除），
+      // 见 pages.setPageAppearance 与 types/window.d.ts 的同款注释。
+      if (op.payload['icon'] !== undefined || op.payload['cover'] !== undefined) {
+        return {
+          sqlId: 'page.setAppearance',
+          params: {
+            id: op.target.id,
+            workspace_id: workspaceId,
+            icon: readNullableString(op, 'icon'),
+            cover: readNullableString(op, 'cover'),
+            version: op.lamport.c,
+            updated_at: readNumber(op, 'updated_at', op.at),
+          },
+        };
+      }
       if (op.payload['title'] === undefined) {
-        throw malformed(op, 'patch 目前只支持 title（page.rename）');
+        throw malformed(op, 'patch 目前只支持 title（page.rename）与 icon/cover（page.setAppearance）');
       }
       return {
         sqlId: 'page.rename',
