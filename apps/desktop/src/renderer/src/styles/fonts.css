@@ -1,5 +1,13 @@
 /*
- * fonts.css —— 自托管思源黑体（TASK-T50-01 / §16.5 老板 09-21 全局规则）。
+ * fonts.css —— 内置兜底字体（Noto Sans SC）。
+ *
+ * ⚠ 规矩变更（老板 2026-10-07 令，覆盖 09-21「界面一律思源黑体」）：
+ *   界面字体改为**系统 UI 字体栈**（DESIGN.md `typography.font-ui`：system-ui/Segoe UI/…/Microsoft YaHei），
+ *   以求与 Notion 一致的观感。本 @font-face 自此降级为**离线兜底**（栈尾 `"Noto Sans SC"`）：
+ *   仅当系统既无 Segoe UI/苹方/雅黑等可用族时才启用，保证任何环境都不空白。
+ *   字体文件因此**保留在包内**（离线红线不变：仍禁任何在线字体/CDN，CSP `font-src 'self' data:` 不放行远程）。
+ *
+ * 历史实现说明（仍然成立）：
  *
  * 为什么是手写声明而不是 DESIGN.md 的 token 产物：
  *   DESIGN.md 管的是「用哪个族」（`--sc-font-ui` 等 token），字体文件本体是资产，

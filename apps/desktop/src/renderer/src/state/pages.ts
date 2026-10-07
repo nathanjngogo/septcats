@@ -717,6 +717,24 @@ export const pagesActions = {
   },
 
   /**
+   * N1-②：页面外观（图标/封面）。与 renamePage 同款乐观更新（先改 nodes 再落库，
+   * 失败自动回滚 + toast）；两个字段总是全量提交（null = 清除）。
+   */
+  async setPageAppearance(
+    id: string,
+    patch: { icon: string | null; cover: string | null },
+  ): Promise<void> {
+    await optimistic({
+      apply: (state) => ({
+        nodes: state.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node)),
+      }),
+      run: async () => {
+        await bridge().pages.appearance({ id, icon: patch.icon, cover: patch.cover });
+      },
+    });
+  },
+
+  /**
    * T42-01：页面承载类型双向转换（普通页 ↔ Wiki）。转换不动正文块/子页/收藏/
    * 最近/页签（内容零丢失）；成功后 refresh() 对账——侧栏分区、落地页、页签标题
    * 全部随 nodes 更新实时生效。

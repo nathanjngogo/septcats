@@ -628,6 +628,16 @@ export const enUS = {
     onlyPages: 'Pages only',
   },
   pages: {
+    appearance: {
+      addIcon: 'Add icon',
+      changeIcon: 'Change icon',
+      removeIcon: 'Remove icon',
+      addCover: 'Add cover',
+      changeCover: 'Change cover',
+      removeCover: 'Remove cover',
+      iconSearch: 'Search icons',
+      iconEmpty: 'No matching icon',
+    },
     toastTrashed: 'Moved to Trash',
     toastRestored: 'Restored',
     toastPurged: 'Deleted permanently',

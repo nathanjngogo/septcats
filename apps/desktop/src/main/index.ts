@@ -36,6 +36,7 @@ import {
   CHANNEL_PAGE_MOVE,
   CHANNEL_PAGE_PURGE,
   CHANNEL_PAGE_RENAME,
+  CHANNEL_PAGE_APPEARANCE,
   CHANNEL_PAGE_RESTORE,
   CHANNEL_PAGE_TREE,
   CHANNEL_PING,
@@ -1235,6 +1236,13 @@ function registerPagesIpc(service: PagesService | null): void {
   );
   on(CHANNEL_PAGE_RENAME, (input) =>
     requireService().renamePage({ id: readText(input, 'id'), title: readText(input, 'title', true) }),
+  );
+  on(CHANNEL_PAGE_APPEARANCE, (input) =>
+    requireService().setPageAppearance({
+      id: readText(input, 'id'),
+      icon: readNullableText(input, 'icon'),
+      cover: readNullableText(input, 'cover'),
+    }),
   );
   on(CHANNEL_PAGE_MOVE, (input) => requireService().movePage(readMoveInput(input)));
   on(CHANNEL_PAGE_DELETE, (input) => requireService().deletePage({ id: readText(input, 'id') }));

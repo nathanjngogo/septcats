@@ -85,6 +85,10 @@ const api: SeptcatsApi = {
       ipcRenderer.invoke(PAGES_CHANNELS.createFolder, input) as ReturnType<SeptcatsApi['pages']['createFolder']>,
     rename: (input) => ipcRenderer.invoke(PAGES_CHANNELS.rename, input) as ReturnType<SeptcatsApi['pages']['rename']>,
     move: (input) => ipcRenderer.invoke(PAGES_CHANNELS.move, input) as ReturnType<SeptcatsApi['pages']['move']>,
+    appearance: (input) =>
+      ipcRenderer.invoke(PAGES_CHANNELS.appearance, input) as ReturnType<
+        SeptcatsApi['pages']['appearance']
+      >,
     remove: (input) => ipcRenderer.invoke(PAGES_CHANNELS.delete, input) as ReturnType<SeptcatsApi['pages']['remove']>,
     restore: (input) => ipcRenderer.invoke(PAGES_CHANNELS.restore, input) as ReturnType<SeptcatsApi['pages']['restore']>,
     purge: (input) => ipcRenderer.invoke(PAGES_CHANNELS.purge, input) as ReturnType<SeptcatsApi['pages']['purge']>,

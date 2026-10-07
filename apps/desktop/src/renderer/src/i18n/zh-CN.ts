@@ -633,6 +633,16 @@ export const zhCN = {
     onlyPages: '仅页面',
   },
   pages: {
+    appearance: {
+      addIcon: '添加图标',
+      changeIcon: '更换图标',
+      removeIcon: '移除图标',
+      addCover: '添加封面',
+      changeCover: '更换封面',
+      removeCover: '移除封面',
+      iconSearch: '搜索图标',
+      iconEmpty: '没有匹配的图标',
+    },
     toastTrashed: '已移入回收站',
     toastRestored: '已恢复',
     toastPurged: '已彻底删除',

@@ -50,6 +50,8 @@ export const CHANNEL_PAGE_CREATE = 'page:create';
 export const CHANNEL_PAGE_CREATE_FOLDER = 'page:createFolder';
 export const CHANNEL_PAGE_RENAME = 'page:rename';
 export const CHANNEL_PAGE_MOVE = 'page:move';
+/** N1-②：页面外观（图标/封面；patch op 落库，null = 清除）。 */
+export const CHANNEL_PAGE_APPEARANCE = 'page:appearance';
 export const CHANNEL_PAGE_DELETE = 'page:delete';
 export const CHANNEL_PAGE_RESTORE = 'page:restore';
 /** 从回收站彻底删除（deleted_at=0 标记；物理清除归 GC）。 */
@@ -61,6 +63,7 @@ export const PAGES_CHANNELS = {
   createFolder: CHANNEL_PAGE_CREATE_FOLDER,
   rename: CHANNEL_PAGE_RENAME,
   move: CHANNEL_PAGE_MOVE,
+  appearance: CHANNEL_PAGE_APPEARANCE,
   delete: CHANNEL_PAGE_DELETE,
   restore: CHANNEL_PAGE_RESTORE,
   purge: CHANNEL_PAGE_PURGE,

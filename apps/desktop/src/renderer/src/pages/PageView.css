@@ -214,3 +214,79 @@
   font: var(--sc-text-ui-xs);
   color: var(--sc-color-ink-secondary);
 }
+
+/* ===== N1-②：页面封面 / 图标（Notion 对齐；封面视觉定义在 PageAppearance.css 的 [data-cover]） ===== */
+.pv-cover {
+  position: relative;
+  height: 176px;
+  /* 破出 .pv-root 的上/左右内边距 → 通栏封面（Notion 封面贴内容区两边及顶） */
+  margin: calc(var(--sc-space-xl) * -1) calc(var(--sc-space-gutter) * -1) var(--sc-space-md);
+  border-bottom: var(--sc-border-edge);
+  background-color: var(--sc-color-surface);
+  background-size: cover;
+  background-position: center;
+}
+
+.pv-cover__actions {
+  position: absolute;
+  right: var(--sc-space-md);
+  bottom: var(--sc-space-sm);
+  display: flex;
+  gap: var(--sc-space-xs);
+  opacity: 0;
+  transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.pv-cover:hover .pv-cover__actions,
+.pv-cover__actions:focus-within {
+  opacity: 1;
+}
+
+.pv-cover__btn {
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-surface);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+}
+
+/* 「添加图标/封面」触发器：hover 题头行时显形（Notion 同款克制），键盘聚焦也显形 */
+.pv-appearance-add {
+  position: relative;
+  display: flex;
+  gap: var(--sc-space-xs);
+  margin-bottom: var(--sc-space-xxs);
+  opacity: 0;
+  transition: opacity var(--sc-motion-fast) var(--sc-ease-out);
+}
+
+.pv-title-row:hover .pv-appearance-add,
+.pv-appearance-add:focus-within {
+  opacity: 1;
+}
+
+.pv-appearance-add__btn {
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+  background: transparent;
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+}
+
+.pv-appearance-add__btn:hover {
+  color: var(--sc-color-ink-secondary);
+}
+
+.pv-page-icon {
+  display: block;
+  padding: 0;
+  font-size: 56px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}

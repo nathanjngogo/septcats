@@ -34,48 +34,48 @@ colors:
   # ---- 深色主题覆盖值不写在这里：由 tokens 构建脚本从 colors-dark 组生成 [data-theme=dark] ----
 typography:
   font-ui:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
   font-serif-note:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
   font-mono:
     fontFamily: "Geist Mono, Sarasa Mono SC, Microsoft YaHei Mono, Consolas, monospace"
   editor-body:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 16px
     fontWeight: 400
     lineHeight: 1.75
     letterSpacing: "0.01em"
   h1:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 28px
     fontWeight: 650
     lineHeight: 1.3
     letterSpacing: "-0.01em"
   h2:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 22px
     fontWeight: 620
     lineHeight: 1.35
     letterSpacing: "-0.005em"
   h3:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 18px
     fontWeight: 600
     lineHeight: 1.4
     # UI 评估（Apple §15 字距随字号）：18px 仍属大字号 → 轻微收紧
     letterSpacing: "-0.002em"
   ui-sm:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 13px
     fontWeight: 500
     lineHeight: 1.5
   ui-md:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 14px
     fontWeight: 450
     lineHeight: 1.5
   ui-xs:
-    fontFamily: "Noto Sans SC, Source Han Sans SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif"
+    fontFamily: "system-ui, -apple-system, Segoe UI Variable Text, Segoe UI, Roboto, Helvetica Neue, Arial, PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif"
     fontSize: 12px
     fontWeight: 450
     lineHeight: 1.5

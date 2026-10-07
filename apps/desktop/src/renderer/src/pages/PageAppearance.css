@@ -1,0 +1,163 @@
+/**
+ * PageAppearance.css —— 页面图标/封面选择器 + **内置封面视觉的单一定义源**。
+ *
+ * 封面口径：`[data-cover='<token>']` 只在此处定义；页面头部（PageView.css 的 .pv-cover）
+ * 与选择器缩略图（.pv-appearance__cover）挂同一个 data-cover，故两者视觉恒一致。
+ * 色值全部由 --sc-color-* 派生（无字面 hex，符合 no-magic 门禁），随明暗主题与配色自适应。
+ */
+
+/* ===== 内置封面（8 款） ===== */
+[data-cover='aurora'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-accent) 72%, transparent),
+    color-mix(in srgb, var(--sc-color-success) 46%, transparent)
+  );
+}
+[data-cover='dusk'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-accent) 62%, transparent),
+    color-mix(in srgb, var(--sc-color-danger) 42%, transparent)
+  );
+}
+[data-cover='mint'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-success) 58%, transparent),
+    color-mix(in srgb, var(--sc-color-canvas) 70%, transparent)
+  );
+}
+[data-cover='sand'] {
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--sc-color-ink-edge) 22%, transparent),
+    color-mix(in srgb, var(--sc-color-surface) 92%, transparent)
+  );
+}
+[data-cover='slate'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-ink) 62%, transparent),
+    color-mix(in srgb, var(--sc-color-ink) 28%, transparent)
+  );
+}
+[data-cover='rose'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-danger) 52%, transparent),
+    color-mix(in srgb, var(--sc-color-accent) 34%, transparent)
+  );
+}
+[data-cover='ocean'] {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--sc-color-accent) 58%, transparent),
+    color-mix(in srgb, var(--sc-color-ink) 44%, transparent)
+  );
+}
+[data-cover='forest'] {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sc-color-success) 74%, transparent),
+    color-mix(in srgb, var(--sc-color-ink) 38%, transparent)
+  );
+}
+
+/* ===== 选择浮层 ===== */
+.pv-appearance {
+  position: absolute;
+  z-index: var(--sc-z-dropdown);
+  left: 0;
+  top: calc(100% + var(--sc-space-xs));
+  width: 320px;
+  padding: var(--sc-space-sm);
+  background: var(--sc-color-surface);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-md);
+  box-shadow: var(--sc-shadow-modal);
+}
+
+.pv-appearance__search {
+  width: 100%;
+  padding: var(--sc-space-xxs) var(--sc-space-xs);
+  font: var(--sc-text-ui-md);
+  color: var(--sc-color-ink);
+  background: var(--sc-color-content);
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+}
+
+.pv-appearance__grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--sc-space-xxs);
+  margin-top: var(--sc-space-xs);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.pv-appearance__emoji {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+}
+
+.pv-appearance__emoji:hover,
+.pv-appearance__emoji:focus-visible {
+  background: var(--sc-color-content);
+}
+
+.pv-appearance__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--sc-space-sm) 0;
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-faint);
+  text-align: center;
+}
+
+.pv-appearance__covers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sc-space-xs);
+}
+
+.pv-appearance__cover {
+  height: 44px;
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+}
+
+.pv-appearance__cover[aria-pressed='true'] {
+  outline: 2px solid var(--sc-color-accent);
+  outline-offset: 1px;
+}
+
+.pv-appearance__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sc-space-sm);
+}
+
+.pv-appearance__remove {
+  padding: var(--sc-space-xxs) var(--sc-space-sm);
+  font: var(--sc-text-ui-sm);
+  color: var(--sc-color-ink-secondary);
+  background: transparent;
+  border: var(--sc-border-edge);
+  border-radius: var(--sc-radius-sm);
+  cursor: pointer;
+}
+
+.pv-appearance__remove:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

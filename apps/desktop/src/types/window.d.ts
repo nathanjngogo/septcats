@@ -238,6 +238,11 @@ export interface SeptcatsPagesApi {
   createFolder(input: { parentId: string | null; title: string }): Promise<{ id: string; sortKey: string }>;
   rename(input: { id: string; title: string }): Promise<{ id: string }>;
   /**
+   * N1-②：页面外观（图标/封面）。两字段总是全量提交（null = 清除）；
+   * 落库走 page 表既有 icon/cover 列（早于本功能就已在 schema 里）。
+   */
+  appearance(input: { id: string; icon: string | null; cover: string | null }): Promise<{ id: string }>;
+  /**
    * 移动/排序。`newSortKey` 与 `placeAfterId` 二选一（都不给 = 追加到目标层末尾）；
    * 邻居之间无空位时 main 侧自动整层重平衡（`rebalanced=true`）。
    * 新父 ∈ descendants(id) → E_CYCLE。

@@ -115,6 +115,16 @@ export interface PagesService {
   /** T64-01：新建文件夹（page_type='folder'，标题由调用方按 locale 传入）。 */
   createFolder(input: { parentId: string | null; title: string }): Promise<{ id: string; sortKey: string }>;
   renamePage(input: { id: string; title: string }): Promise<{ id: string }>;
+  /**
+   * N1-②：页面外观（图标 emoji / 封面图片路径）。与 renamePage 同为 `kind:'patch'` op，
+   * icon/cover 已在 page 表与 entityToParams 里（本方法只负责造 op）。
+   * 两字段**总是全量提交**（null = 清除），不做省略三态，避免歧义。
+   */
+  setPageAppearance(input: {
+    id: string;
+    icon: string | null;
+    cover: string | null;
+  }): Promise<{ id: string }>;
   movePage(input: MovePageInput): Promise<MovePageResult>;
   deletePage(input: { id: string }): Promise<{ deleted: number }>;
   /** 恢复回收站页面；id 已被物理清除（T81-01 GC）→ 抛 E_NOT_FOUND。 */
@@ -575,6 +585,24 @@ export function createPagesService(options: PagesServiceOptions): PagesService {
         target: { table: 'page', id: node.id },
         kind: 'patch',
         payload: { title: input.title, updated_at: c.now },
+        base: node.version,
+      };
+      await commitOps(executor, [op], { workspaceId });
+      return { id: node.id };
+    },
+
+    async setPageAppearance(input) {
+      const workspaceId = await requireActiveWorkspace();
+      const { node } = await requirePage(workspaceId, input.id);
+      const c = ctx();
+      const op: Op = {
+        op_id: ulid(c.now),
+        lamport: { c: node.version + 1, d: actor },
+        at: c.now,
+        actor,
+        target: { table: 'page', id: node.id },
+        kind: 'patch',
+        payload: { icon: input.icon, cover: input.cover, updated_at: c.now },
         base: node.version,
       };
       await commitOps(executor, [op], { workspaceId });

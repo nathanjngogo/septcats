@@ -68,6 +68,11 @@ import { usePageWidth } from '../state/pageWidth';
 import { registerFlushTask } from '../state/flushRegistry';
 import { BacklinksPanel } from './BacklinksPanel';
 import { PageOutline } from './PageOutline';
+import {
+  PageAppearancePicker,
+  appearanceActionLabel,
+  type PageAppearanceKind,
+} from './PageAppearance';
 import { PageFind } from './PageFind';
 import { paletteStore } from '../state/palette';
 import { reconcileWikilinkTargets } from './wikilinkResolve';
@@ -91,6 +96,9 @@ export interface PageViewPage {
   title: string;
   /** 一期 page 行无 kind 列；'database' 表示行内数据库页（缺省按普通编辑器页处理）。 */
   kind?: 'page' | 'database' | undefined;
+  /** N1-②：页面图标（emoji）与封面（内置 token 或图片 URL）；来自页面树节点。 */
+  icon?: string | null | undefined;
+  cover?: string | null | undefined;
 }
 
 export interface PageViewProps {
@@ -169,8 +177,20 @@ export function PageView({ page }: PageViewProps) {
       ? (pageNodes.find((node) => node.id === selectedId) ?? null)
       : null;
   const activePage: PageViewPage | null =
-    page ?? (selectedNode !== null ? { id: selectedNode.id, title: selectedNode.title } : null);
+    page ??
+    (selectedNode !== null
+      ? {
+          id: selectedNode.id,
+          title: selectedNode.title,
+          icon: selectedNode.icon,
+          cover: selectedNode.cover,
+        }
+      : null);
   const activePageId = activePage?.id ?? null;
+  /** N1-②：页面外观（图标/封面）选择器开关 + 当前值（值从页面树节点取，落库走 pagesActions）。 */
+  const [appearancePicker, setAppearancePicker] = useState<PageAppearanceKind | null>(null);
+  const pageIcon = activePage?.icon ?? null;
+  const pageCover = activePage?.cover ?? null;
   /**
    * T42-01 承载判定（统一处理，同时闭环 T40-01-2）：页面类型来自 pagesStore 真树
    * （main 侧权威判定：存活 collection 行 → database；否则 page_type 列）。
@@ -1588,7 +1608,77 @@ export function PageView({ page }: PageViewProps) {
 
   return (
     <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
+      {pageCover !== null ? (
+        <div className="pv-cover" data-cover={pageCover} data-testid="page-cover">
+          <div className="pv-cover__actions">
+            <button type="button" className="pv-cover__btn" onClick={() => setAppearancePicker('cover')}>
+              {t('pages.appearance.changeCover')}
+            </button>
+            <button
+              type="button"
+              className="pv-cover__btn"
+              onClick={() =>
+                void pagesActions.setPageAppearance(activePage.id, { icon: pageIcon, cover: null })
+              }
+            >
+              {t('pages.appearance.removeCover')}
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="pv-title-row">
+        {pageIcon !== null ? (
+          <button
+            type="button"
+            className="pv-page-icon"
+            data-testid="page-icon"
+            aria-label={t('pages.appearance.changeIcon')}
+            onClick={() => setAppearancePicker('icon')}
+          >
+            {pageIcon}
+          </button>
+        ) : null}
+        <div className="pv-appearance-add">
+          <button
+            type="button"
+            className="pv-appearance-add__btn"
+            data-testid="page-add-icon"
+            onClick={() => setAppearancePicker('icon')}
+          >
+            {appearanceActionLabel('icon', pageIcon !== null)}
+          </button>
+          <button
+            type="button"
+            className="pv-appearance-add__btn"
+            data-testid="page-add-cover"
+            onClick={() => setAppearancePicker('cover')}
+          >
+            {appearanceActionLabel('cover', pageCover !== null)}
+          </button>
+          {appearancePicker !== null ? (
+            <PageAppearancePicker
+              kind={appearancePicker}
+              current={appearancePicker === 'icon' ? pageIcon : pageCover}
+              onPick={(value) => {
+                void pagesActions
+                  .setPageAppearance(activePage.id, {
+                    icon: appearancePicker === 'icon' ? value : pageIcon,
+                    cover: appearancePicker === 'cover' ? value : pageCover,
+                  })
+                  .then(() => setAppearancePicker(null));
+              }}
+              onRemove={() => {
+                void pagesActions
+                  .setPageAppearance(activePage.id, {
+                    icon: appearancePicker === 'icon' ? null : pageIcon,
+                    cover: appearancePicker === 'cover' ? null : pageCover,
+                  })
+                  .then(() => setAppearancePicker(null));
+              }}
+              onClose={() => setAppearancePicker(null)}
+            />
+          ) : null}
+        </div>
         <h1 className="pv-page-title">{activePage.title}</h1>
         <Button variant="secondary" size="sm" onClick={convertToDatabase}>
           {t('editor.convertToDatabase')}
