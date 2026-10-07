@@ -74,7 +74,6 @@ import { reconcileWikilinkTargets } from './wikilinkResolve';
 import { DbPage } from '../db/DbPage';
 import { WikiLanding } from './WikiLanding';
 import { PageLockScreen } from './PageLockScreen';
-import { TelescopeGlyph } from '../components/TelescopeGlyph';
 import type { LockStatusView } from '../lockStatus';
 import './PageView.css';
 
@@ -191,11 +190,20 @@ export function PageView({ page }: PageViewProps) {
    * setEditor(null) 重渲染之间的残留编辑器实例会带着 wiki 页 id 去接协作层
    * （Y→PM 初始投影失败 + y-sync$ 插件重复注册，两条 console 错误）。
    */
+  /**
+   * 「转为多维数据」兜底是否生效（老板 10-07 报障修复，T106-03）。
+   *
+   * 判据 = **当前选中页就是被转换的那一页**，而不是「本地态非空」。旧实现只判
+   * `dbPageId !== null`（该状态只设不清）→ 转换过一次之后，新建/切到任何页面都仍被
+   * 这一个 `DbPage` 顶掉：症状 = 「新建页面后全是多维表格」，且编辑器永不挂载。
+   */
+  const dbFallbackActive = dbPageId !== null && activePageId === dbPageId;
+
   const rendersEditor =
     activePage !== null &&
     !(activePage.kind === 'database' || activeNodeType === 'database') &&
     !(activeNodeType === 'wiki' && selectedNode !== null) &&
-    dbPageId === null;
+    !dbFallbackActive;
 
   // T41-01：页面级「全宽 / 固定宽度」开关（Notion 式）。只读状态切片（toggle 在
   // 侧栏 ⋯ 菜单 / 命令面板），宽度表现由 .pv-root[data-measure='full'] CSS 承载，
@@ -1525,14 +1533,16 @@ export function PageView({ page }: PageViewProps) {
   }
 
   // T42-01：承载判定统一走真树注解——database 页（含重开/重载后的库页，T40-01-2
-  // 闭环）→ DbPage；wiki 页 → WikiLanding；dbPageId 本地态仅作转换瞬间的兜底。
+  // 闭环）→ DbPage；wiki 页 → WikiLanding；dbPageId 本地态仅作转换瞬间的兜底
+  //（且只在**选中页仍是被转换那页**时生效，见 dbFallbackActive —— T106-03）。
   if (activePage.kind === 'database' || activeNodeType === 'database') {
     return <DbPage pageId={activePage.id} />;
   }
   if (activeNodeType === 'wiki' && selectedNode !== null) {
     return <WikiLanding key={selectedNode.id} node={selectedNode} />;
   }
-  if (dbPageId !== null) {
+  if (dbFallbackActive && dbPageId !== null) {
+    // 仅转换瞬间（树尚未把选中页标成 database）兜底；选中页一旦切走即失效，见 dbFallbackActive。
     return <DbPage pageId={dbPageId} />;
   }
 
@@ -1579,9 +1589,6 @@ export function PageView({ page }: PageViewProps) {
   return (
     <div className="pv-root" ref={containerRef} data-measure={isFullWidth ? 'full' : undefined}>
       <div className="pv-title-row">
-        <span className="pv-page-icon" aria-hidden="true">
-          <TelescopeGlyph />
-        </span>
         <h1 className="pv-page-title">{activePage.title}</h1>
         <Button variant="secondary" size="sm" onClick={convertToDatabase}>
           {t('editor.convertToDatabase')}

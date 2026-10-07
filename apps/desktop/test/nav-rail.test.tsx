@@ -17,7 +17,7 @@
  *  ⑦ 日历/待办两条新一级项：二级栏换各自的 side 面板、主区渲染各自页面、选择持久化、
  *     且与工作台/回收站互斥（切过去会退出那些视图）。
  */
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageNode } from '@septcats/editor';
 import { App } from '../src/renderer/src/App';
@@ -221,6 +221,25 @@ describe('T93-01 一级导航轨（App 集成）', () => {
     }
     // 读屏/tooltip 语义不丢：无障碍名 = 中文标签
     expect(railItem(container, 'notes').getAttribute('aria-label')).toBe('笔记');
+  });
+
+  it('T106-01 侧栏浮层不被裁剪：箭头「新建」菜单挂在 shell 级浮层宿主里（祖先链不穿侧栏）', async () => {
+    // 老板 10-07 报障：玻璃档下箭头菜单只剩左半截。根因=侧栏被 look 上了 backdrop-filter
+    // （成为 fixed 后代的包含块）→ 挂在侧栏里的 fixed 浮层被侧栏边界硬裁。
+    // 这条钉死「浮层不再住在侧栏里」，避免以后有人把菜单搬回去。
+    const container = await renderApp();
+    fireEvent.click(screen.getByTestId('side-new-page-arrow'));
+    const menu = await screen.findByRole('menu', { name: '新建' });
+
+    expect(menu.closest('.sc-shell__sidebar'), '浮层不得住在侧栏内（会被 backdrop-filter 包含块裁掉）').toBeNull();
+    const host = container.querySelector('[data-testid="app-overlay-host"]');
+    expect(host, '缺 shell 级浮层宿主').not.toBeNull();
+    expect(host!.contains(menu)).toBe(true);
+
+    // 几何与 z 轴语义不变：浮层自身仍是 fixed + dropdown 层级
+    const layer = menu.parentElement as HTMLElement | null;
+    expect(layer?.style.position).toBe('fixed');
+    expect(layer?.style.zIndex).toBe('var(--sc-z-dropdown)');
   });
 
   it('② 二级栏分流：点「知识库」→ 库列表（kb-panel）；点回「笔记」→ 页面树', async () => {

@@ -17,6 +17,7 @@ import { TopBarButton } from './layout/TopBarButton';
 import { TopReadouts } from './layout/TopReadouts';
 // T93-01：一级导航轨 + 「知识库」二级栏（老板 09-29 令：侧栏再加一级区分一级菜单）
 import { NavRail, type RailKey } from './nav/NavRail';
+import { OverlayHostProvider } from './layout/overlayHost';
 import { KnowledgePanel } from './nav/KnowledgePanel';
 import { CalendarPage } from './calendar/CalendarPage';
 import { CalendarSidePanel } from './calendar/CalendarSidePanel';
@@ -217,6 +218,8 @@ export function App() {
   // T39-01 §0.2：侧栏收起态由布局状态持有（持久化）；顶栏开合钮写入布局状态
   const sidebarPosition = useLayout((state) => state.layout.sidebar.position);
   const [collapsed, setCollapsed] = useState(sidebarPosition === 'collapsed');
+  /** T106-01：浮层宿主节点（侧栏菜单挂这里，见 layout/overlayHost.tsx 的口径说明）。 */
+  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
   const [view, setView] = useState<'editor' | 'settings' | 'import' | 'manual' | 'layout' | 'market'>('editor');
   // T57-01 §1.1/§1.2：顶栏「布局」钮的弹框开合（aria-pressed 同源）
   const [layoutPickerOpen, setLayoutPickerOpen] = useState(false);
@@ -660,6 +663,7 @@ export function App() {
       <TitleBarBand />
       <MenuBarBand />
       <div className="app-frame_body">
+      <OverlayHostProvider value={overlayHost}>
       <AppShell
         className={editorView ? 'app-shell--fused' : ''}
         sidebarCollapsed={collapsed}
@@ -807,6 +811,11 @@ export function App() {
         )}
       </AppShell>
       <FocusBadge />
+      {/* T106-01 浮层宿主：零尺寸 fixed 容器，位于 shell 之外 —— 侧栏/顶栏被 look 上了
+          backdrop-filter（玻璃档）后会成为 fixed 后代的包含块，浮层挂侧栏里会被硬裁
+          （老板 10-07 报障：新建页面箭头菜单只剩左半截）。 */}
+      <div className="app-overlay-host" data-testid="app-overlay-host" ref={setOverlayHost} />
+      </OverlayHostProvider>
       </div>{/* /app-frame_body */}
       {/* 弹层族 = 根层 fixed 定位，不参与 frame 的 flex 布局 */}
       <CommandPalette />

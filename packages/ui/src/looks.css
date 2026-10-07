@@ -172,6 +172,11 @@
 
 /* chrome 真玻璃（T88 再通透一档）：32% 面板 + 30px 模糊 + 饱和 2.4 ——
  * alpha 从 42→32：底光可透；saturate 1.9→2.4：磨出的彩光才「看得见」。 */
+/* ⚠ 结构约束（T106-01，老板 10-07 报障换来的一条）：顶栏/侧栏一旦有 `backdrop-filter`，
+ * 就按规范成为 **fixed 后代的包含块** —— 挂在它们内部的 `position: fixed` 浮层会被这个面的
+ * 边界硬裁（玻璃档真机像素证据：新建页面箭头菜单只剩左半截，切线正好压在侧栏↔主区分界线，
+ * 且无菜单边框/阴影溢出 = 裁切而非遮挡）。**故侧栏/顶栏之内不得再挂 fixed 浮层**，
+ * 一律走 shell 级浮层宿主（`renderer/layout/overlayHost.tsx` 的 `<FloatingLayer>`）。 */
 [data-look='glass'] .sc-shell__topbar,
 [data-look='glass'] .sc-shell__sidebar,
 [data-look='glass'] .menub_band,

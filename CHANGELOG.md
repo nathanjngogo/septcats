@@ -18,6 +18,21 @@
 - 族外四枚像素 glyph 的应用调用点（WorkbenchPage ×2 / TemplateMarketPage / cards）改走 `LineHome` / `LineTodo` / `LineShop`。
 - 审计改判（T105-02）：`t58-pixel-icons` 由「像素表逐名同名出口」改为「应用面名字必为线族 + 应用源码零像素族 import」；`t58-ai-button` ③ 的像素几何断言改为线族同族 + 两态组类名契约。
 
+### 修复（老板 10-07 报障三项，附截图）
+- **箭头「新建」下拉菜单被裁**（T106-01）：根因 = 毛玻璃档给 `.sc-shell__sidebar` 上了 `backdrop-filter`，
+  按规范它成为 **fixed 后代的包含块** ⇒ 挂在侧栏里的 `position: fixed` 菜单被侧栏边界硬裁
+  （真机像素证据：切线正好压在侧栏↔主区分界、无边框/阴影溢出 = 裁切而非遮挡；极简/夜航仪表档不受影响）。
+  修法：新增 **shell 级浮层宿主**（`layout/overlayHost.tsx` + `.app-overlay-host`），侧栏三处浮层
+  （工作区菜单 / 新建箭头菜单 / 页面行 ⋯ 与右键菜单）全部门户化 —— 几何仍是 `position: fixed` + 视口坐标，
+  宿主零尺寸不吃指针事件，**几何与 z 轴语义零变化**；宿主缺失时回退就地渲染（裸组件单测不受影响）。
+  防复发：结构契约测试钉「浮层祖先链不得穿过侧栏」+ 材质规则旁写死约束注释。
+- **页头装饰图标去掉**（T106-02）：`PageView` 标题上方的像素风望远镜 glyph（纯装饰）连 import 一并删除；
+  契约测试钉 `.pv-title-row` 内不得再有 `.pv-page-icon` / `svg`。（`WikiLanding` 同槽位的 📓 未动，待老板口径。）
+- **「转为多维数据」后新建页面全是多维表格**（T106-03）：根因 = `dbPageId` 本地态**只设不清**，
+  而承载判定写的是 `dbPageId !== null` ⇒ 转换过一次后任何选中页都被那一个 `DbPage` 顶掉
+  （同因第二症状：编辑器永不挂载）。修法 = 兜底判据改为「**当前选中页就是被转换的那一页**」
+  （`dbFallbackActive`，承载分支与 `rendersEditor` 同源消费）；契约测试钉「切页后库 UI 必须消失」。
+
 ### 验证
 - 层测：`packages/ui` 线族 **8/8**（几何盒 / 零填充 / 描边 / 尺寸 / 颜色 / 族标记 / 跨族描边重量一致）。
 - 导轨契约：`test/nav-rail.test.tsx` **9/9**（含新 ①b：每项一枚 `svg[data-line-glyph]`、顺序固定、`data-num` 已下线、无障碍名=中文标签）。

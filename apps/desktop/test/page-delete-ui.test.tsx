@@ -13,7 +13,7 @@
  * - ToastViewport 挂载（§0.C）：pushToast 后 .sc-toast 落地、可关闭。
  * 纪律：window.septcats 用 vi.stubGlobal 假桥；断言落在 store 状态与假桥调用。
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   collectionEntitySchema,
@@ -349,6 +349,32 @@ describe('「转为数据库」后选中同步（T24-01 §0.B 判别①修法）
     expect(convertBridge.tree).toHaveBeenCalled();
     // 库 UI（DbPage 经本地状态承载渲染，空库 = 新建记录空态）
     await waitFor(() => expect(screen.getByText('新建记录')).toBeDefined());
+  });
+
+  it('T106-03 转换兜底不粘滞：选中页切走后不再渲染那个 DbPage（老板报障：新建页面全是多维表格）', async () => {
+    render(<PageView />);
+
+    fireEvent.click(screen.getByText('转为多维数据'));
+    await waitFor(() => expect(pagesStore.getState().selectedId).toBe(DB_PAGE_ID));
+    await waitFor(() => expect(screen.getByText('新建记录')).toBeDefined());
+
+    // 模拟「新建页面」：选中切到另一个普通页
+    act(() => {
+      resetPagesStore({
+        nodes: [...nodesDb, pageNode({ id: 'pg-new', title: '未命名' })],
+        selectedId: 'pg-new',
+      });
+    });
+
+    // 旧实现里 dbPageId 只设不清 → 这一页仍被那一个 DbPage 顶掉（症状即老板报的那条）
+    await waitFor(() => expect(screen.queryByText('新建记录')).toBeNull());
+  });
+
+  it('T106-02 标题上方的装饰图标已去掉（老板 10-07 令）', async () => {
+    const { container } = render(<PageView />);
+    await waitFor(() => expect(container.querySelector('.pv-title-row')).not.toBeNull());
+    expect(container.querySelector('.pv-page-icon')).toBeNull();
+    expect(container.querySelector('.pv-title-row svg')).toBeNull();
   });
 
   it('kind 判定 UI 链回归：转换后「另存为模板」按 selectedId 存的是新库页', async () => {

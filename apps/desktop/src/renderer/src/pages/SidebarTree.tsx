@@ -27,6 +27,7 @@ import { aliveNodes, ancestorsOf, nodeMap, pageTypeOf, pagesActions, trashNodes,
 import { registerFlushTask } from '../state/flushRegistry';
 import { pageWidthActions, usePageWidth } from '../state/pageWidth';
 import { templatesActions, useTemplates } from '../state/templates';
+import { FloatingLayer } from '../layout/overlayHost';
 import { t } from '../i18n';
 import { TemplateIcon } from '../templates/TemplateIcon';
 import { LockGlyph } from '../components/LockGlyph';
@@ -941,7 +942,7 @@ export function SidebarTree() {
         </div>
       )}
       {wsMenuOpen && wsMenuAt !== null ? (
-        <span
+        <FloatingLayer
           style={{
             position: 'fixed',
             left: `${String(wsMenuAt.x)}px`,
@@ -950,7 +951,7 @@ export function SidebarTree() {
           }}
         >
           <Menu label={t('workspace.menuTitle')} items={wsItems} onSelect={onSelectWs} onDismiss={() => setWsMenuOpen(false)} />
-        </span>
+        </FloatingLayer>
       ) : null}
       <div className="app-side-scroll">
         {/* T23-02 §C.1：主体点击仍 = 新建空白页；右侧箭头展开模板子菜单 */}
@@ -983,7 +984,7 @@ export function SidebarTree() {
             >
               <Icon icon={CaretDown} size="sm" />
               {newMenuOpen && newMenuAt !== null ? (
-                <span
+                <FloatingLayer
                   style={{
                     position: 'fixed',
                     left: `${String(newMenuAt.x)}px`,
@@ -1010,7 +1011,7 @@ export function SidebarTree() {
                     }}
                     onDismiss={() => setNewMenuOpen(false)}
                   />
-                </span>
+                </FloatingLayer>
               ) : null}
             </span>
           }
@@ -1132,8 +1133,8 @@ export function SidebarTree() {
           样式只借用 .sc-menu 自身（不再叠 .app-nav-menu 的 absolute/right/top，
           否则会被二次偏移）；z-index 走既有 dropdown token。 */}
       {openMenu !== null && rowMenuAt !== null ? (
-        <span
-          ref={ctxHostRef}
+        <FloatingLayer
+          hostRef={ctxHostRef}
           style={{
             position: 'fixed',
             left: `${String(rowMenuAt.x)}px`,
@@ -1148,7 +1149,7 @@ export function SidebarTree() {
             onSelect={openMenu.onSelect}
             onDismiss={closeRowMenu}
           />
-        </span>
+        </FloatingLayer>
       ) : null}
       {/* T70-01 ②：新建库弹框（名字 + 类型三选卡）；从库菜单「新建库…」开。 */}
       <NewWorkspaceDialog open={newWsOpen} onClose={() => setNewWsOpen(false)} />

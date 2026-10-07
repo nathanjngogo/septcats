@@ -314,6 +314,17 @@ html, body {
 }
 
 /* T23-02 §C.1：新建页面行的右侧箭头（模板子菜单开关；主体点击仍是新建空白页） */
+/* T106-01 浮层宿主：零尺寸 + 不吃指针事件；浮层自身仍是 position:fixed + 视口坐标，
+   故宿主不改变任何几何与 z 轴语义（z-index 仍由浮层自己带 dropdown 令牌）。 */
+.app-overlay-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
 .app-nav-suffix {
   margin-left: auto;
   display: grid;
