@@ -147,8 +147,29 @@ if (browser === null) {
 }
 check('CDP 连上应用实例', true);
 
-const ctx = browser.contexts()[0] ?? (await browser.newContext());
-let page = ctx.pages().find((p) => !p.url().startsWith('devtools://')) ?? (await ctx.newPage());
+const ctx = browser.contexts()[0] ?? null;
+if (ctx === null) {
+  check('拿到应用窗口上下文（Electron 只给一个既有 context）', false, 'contexts()[0] 为空——应用可能还没建窗');
+  killAll();
+  writeFileSync(REPORT, JSON.stringify({ results, fatal: 'no-context' }, null, 2), 'utf8');
+  process.exit(1);
+}
+/**
+ * 取应用窗口页：**只等不造**。
+ * Electron/CDP 不支持 `Target.createTarget`（即 Playwright 的 newPage/newContext 一律抛
+ * `Protocol error (Target.createTarget): Not supported`，本探针首跑即踩），故照 t85 探针口径：
+ * 先在既有 pages 里找，找不到再 `waitForEvent('page')` 等窗口出现。
+ */
+let page = ctx.pages().find((p) => !p.url().startsWith('devtools://')) ?? null;
+if (page === null) {
+  page = await ctx.waitForEvent('page', { timeout: 30_000 }).catch(() => null);
+}
+if (page === null) {
+  check('应用窗口页出现（只等不造）', false, '30s 内没有窗口页——应用是否启动失败/无窗口？');
+  killAll();
+  writeFileSync(REPORT, JSON.stringify({ results, fatal: 'no-page' }, null, 2), 'utf8');
+  process.exit(1);
+}
 const pageErrors = [];
 page.on('pageerror', (e) => { pageErrors.push(String(e).slice(0, 200)); });
 page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`console: ${m.text().slice(0, 200)}`); });
@@ -156,6 +177,8 @@ page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`console: 
 async function bridgeReady(p) {
   return waitFor(async () => p.evaluate(() => typeof window.septcats === 'object' && window.septcats !== null), 30_000);
 }
+await page.waitForSelector('.app-side, .sc-shell, .pv-root', { timeout: 30_000 }).catch(() => null);
+check('应用 DOM 就绪（侧栏/外壳出现）', true);
 check('preload 桥就绪（window.septcats）', await bridgeReady(page));
 
 // ── A 外壳 ──────────────────────────────────────────────────────────────────
