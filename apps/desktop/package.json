@@ -1,6 +1,6 @@
 {
   "name": "@septcats/desktop",
-  "version": "0.6.14",
+  "version": "0.6.15",
   "private": true,
   "license": "UNLICENSED",
   "description": "Septcats 桌面壳（Electron + React，electron-vite 三进程脚手架）",
